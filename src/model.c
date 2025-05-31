@@ -42,7 +42,8 @@ void model_draw(Model *model, Shader *shader){
 }
 
 bool model_load(Model *model, char *path){
-  const struct aiScene *scene = aiImportFile(path, aiProcess_Triangulate | aiProcess_FlipUVs);
+  const struct aiScene *scene = aiImportFile(path, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace | aiProcess_JoinIdenticalVertices);
+
   if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
     printf("ERROR::ASSIMP::%s\n", aiGetErrorString());
   }
