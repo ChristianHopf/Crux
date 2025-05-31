@@ -16,6 +16,17 @@ typedef struct {
   float lastFrame;
 } Engine;
 
+typedef struct {
+  unsigned int ID;
+  Model *model;
+} Entity;
+
+typedef struct {
+  Entity *entities;
+  int num_entities;
+  int cap_entities;
+} Scene;
+
 void framebuffer_size_callback(GLFWwindow *window, int width, int height);
 void processInput(GLFWwindow *window);
 void mouse_callback(GLFWwindow *window, double xpos, double ypos);
@@ -172,6 +183,10 @@ int main(){
   if (!model){
     printf("Error: failed to create Model\n");
   }
+
+  // starting entity and scene
+  Entity entity = {0, model};
+  Scene scene = {&entity, 1, 1};
 
 	// glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
