@@ -162,6 +162,8 @@ int main(){
 		engine->deltaTime = currentFrame - engine->lastFrame;
 		engine->lastFrame = currentFrame;
 
+    printf("FPS: %f\n", 1.0 / engine->deltaTime);
+
 		// Handle input
 		processInput(engine->window);
 
