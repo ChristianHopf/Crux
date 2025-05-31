@@ -1,6 +1,7 @@
 #include "utils.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <cJSON/cJSON.h>
 
 // Helper to read from file to string
 unsigned char *read_file(const char *path){
@@ -29,4 +30,28 @@ unsigned char *read_file(const char *path){
 	buffer[read_size] = '\0';
 	fclose(file);
 	return buffer;
+}
+
+// Might want to rename this
+unsigned char *cjson_get_gltf_uri(cJSON *json){
+  if (!json){
+    return NULL;
+  }
+
+  // Get buffers
+  cJSON *buffers = cJSON_GetObjectItem(json, "buffers");
+  if (!buffers || !cJSON_IsArray(buffers)){
+    return NULL;
+  }
+  // Get first buffer
+  cJSON *firstBuffer = cJSON_GetArrayItem(buffers, 0);
+  if (!firstBuffer || !cJSON_IsObject(firstBuffer)){
+    return NULL;
+  }
+  // Get uri
+  cJSON *uri = cJSON_GetObjectItem(firstBuffer, "uri");
+  if (!uri || !cJSON_IsString(uri)){
+    return NULL;
+  }
+  return uri->valuestring;
 }
