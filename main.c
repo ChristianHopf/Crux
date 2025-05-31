@@ -10,6 +10,10 @@
 
 typedef struct {
   GLFWwindow *window;
+  Camera *camera;
+  // Timing
+  float deltaTime;
+  float lastFrame;
 } Engine;
 
 void framebuffer_size_callback(GLFWwindow *window, int width, int height);
@@ -30,29 +34,32 @@ bool firstMouse = true;
 float lastX = 400.0f;
 float lastY = 300.0f;
 
+Engine engine;
+
 void processInput(GLFWwindow *window){
 	if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS){
 		glfwSetWindowShouldClose(window, 1);
 	}
-  Camera *camera_ptr = (Camera *)glfwGetWindowUserPointer(window);
+  Engine *engine = (Engine *)glfwGetWindowUserPointer(window);
+  Camera *camera = engine->camera;
 
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS){
-    camera_process_keyboard_input(camera_ptr, CAMERA_FORWARD, deltaTime);
+    camera_process_keyboard_input(camera, CAMERA_FORWARD, engine->deltaTime);
 	}
 	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS){
-    camera_process_keyboard_input(camera_ptr, CAMERA_BACKWARD, deltaTime);
+    camera_process_keyboard_input(camera, CAMERA_BACKWARD, engine->deltaTime);
 	}
 	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS){
-    camera_process_keyboard_input(camera_ptr, CAMERA_LEFT, deltaTime);
+    camera_process_keyboard_input(camera, CAMERA_LEFT, engine->deltaTime);
   }
 	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS){
-    camera_process_keyboard_input(camera_ptr, CAMERA_RIGHT, deltaTime);
+    camera_process_keyboard_input(camera, CAMERA_RIGHT, engine->deltaTime);
 	}
 	if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS){
-    camera_process_keyboard_input(camera_ptr, CAMERA_DOWN, deltaTime);
+    camera_process_keyboard_input(camera, CAMERA_DOWN, engine->deltaTime);
   }
 	if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS){
-    camera_process_keyboard_input(camera_ptr, CAMERA_UP, deltaTime);
+    camera_process_keyboard_input(camera, CAMERA_UP, engine->deltaTime);
   }
 }
 
@@ -61,7 +68,8 @@ void framebuffer_size_callback(GLFWwindow *window, int width, int height){
 }
 
 void mouse_callback(GLFWwindow *window, double xpos, double ypos){
-  Camera *camera_ptr = (Camera *)glfwGetWindowUserPointer(window);
+  Engine *engine = (Engine *)glfwGetWindowUserPointer(window);
+  Camera *camera = engine->camera;
 
 	if (firstMouse){
 		lastX = (float)xpos;
@@ -75,12 +83,13 @@ void mouse_callback(GLFWwindow *window, double xpos, double ypos){
 	lastY = (float)ypos;
 
   // Update camera
-  camera_process_mouse_input(camera_ptr, xoffset, yoffset);
+  camera_process_mouse_input(camera, xoffset, yoffset);
 }
 
 void scroll_callback(GLFWwindow *window, double xoffset, double yoffset){
-  Camera *camera_ptr = (Camera *)glfwGetWindowUserPointer(window);
-  camera_process_scroll_input(camera_ptr, yoffset);
+  Engine *engine = (Engine *)glfwGetWindowUserPointer(window);
+  Camera *camera = engine->camera;
+  camera_process_scroll_input(camera, yoffset);
 }
 
 Engine *engine_create(){
@@ -104,6 +113,21 @@ Engine *engine_create(){
 		return NULL;
 	}
   engine->window = window;
+  glfwSetWindowUserPointer(engine->window, engine);
+
+  // Camera
+  Camera *camera = camera_create((vec3){0.0f, 0.0f, 3.0f}, (vec3){0.0f, 1.0f, 0.0f}, -90.0f, 0.0f, 45.0f, 0.1f, 2.5f);
+  if (!camera){
+    printf("Error: failed to create camera\n");
+    free(engine);
+    return NULL;
+  }
+  engine->camera = camera;
+
+  // Timing
+  engine->deltaTime = 0.0f;
+  engine->lastFrame = 0.0f;
+
   return engine;
 }
 
@@ -134,9 +158,6 @@ int main(){
 	// Configure global OpenGL state
 	glEnable(GL_DEPTH_TEST);
 
-  // Camera
-  Camera camera = camera_create((vec3){0.0f, 0.0f, 3.0f}, (vec3){0.0f, 1.0f, 0.0f}, -90.0f, 0.0f, 45.0f, 0.1f, 2.5f);
-  glfwSetWindowUserPointer(engine->window, &camera);
 
 	// Shader program
 	Shader shader = shader_create("shaders/shader.vs", "shaders/shader.fs");
@@ -158,8 +179,8 @@ int main(){
 	while (!glfwWindowShouldClose(engine->window)){
 		// Per-frame timing logic
 		float currentFrame = (float)(glfwGetTime());
-		deltaTime = currentFrame - lastFrame;
-		lastFrame = currentFrame;
+		engine->deltaTime = currentFrame - engine->lastFrame;
+		engine->lastFrame = currentFrame;
 
 		// Handle input
 		processInput(engine->window);
@@ -173,12 +194,12 @@ int main(){
 
 		// Projection matrix for scroll zoom feature
 		mat4 projection;
-		glm_perspective(glm_rad(camera.fov), (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT, 0.1f, 100.0f, projection);
+		glm_perspective(glm_rad(engine->camera->fov), (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT, 0.1f, 100.0f, projection);
 		shader_set_mat4(&shader, "projection", projection);
 		
 		// Camera/view transformation
 		mat4 view;
-    camera_get_view_matrix(&camera, view);
+    camera_get_view_matrix(engine->camera, view);
 		shader_set_mat4(&shader, "view", view);
 
     // Render loaded model
