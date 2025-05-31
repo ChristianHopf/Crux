@@ -165,32 +165,8 @@ int main(){
 		// Handle input
 		processInput(engine->window);
 
+    // Render scene
     scene_render(engine->active_scene);
-
-		// Render (clear and replace with background of specified color)
-		//glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-		//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-		// Use the shader program
-		//shader_use(&shader);
-
-		// Projection matrix for scroll zoom feature
-		//mat4 projection;
-		//glm_perspective(glm_rad(engine->camera->fov), (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT, 0.1f, 100.0f, projection);
-		//shader_set_mat4(&shader, "projection", projection);
-		
-		// Camera/view transformation
-		//mat4 view;
-    //camera_get_view_matrix(engine->camera, view);
-		//shader_set_mat4(&shader, "view", view);
-
-    // Render loaded model
-    //mat4 model_matrix;
-    //glm_mat4_identity(model_matrix);
-    //glm_translate(model_matrix, (vec3){0.0f, 0.0f, 0.0f});
-    //glm_scale(model_matrix, (vec3){1.0f, 1.0f, 1.0f});
-    //shader_set_mat4(&shader, "model", model_matrix);
-    //model_draw(model, &shader);
 
 		// Check and call events, swap buffers
 		glfwSwapBuffers(engine->window);
