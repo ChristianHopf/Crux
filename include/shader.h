@@ -9,7 +9,7 @@ typedef struct {
 } Shader;
 
 // Creates and compiles shader program with vertex and fragment shader source files
-Shader shader_create(const char *vertexPath, const char *fragmentPath);
+Shader *shader_create(const char *vertexPath, const char *fragmentPath);
 
 // Activates shader program
 void shader_use(const Shader *shader);
