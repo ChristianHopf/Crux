@@ -11,7 +11,7 @@
 
 typedef struct {
   GLFWwindow *window;
-  Camera *camera;
+  Scene *active_scene;
   // Timing
   float deltaTime;
   float lastFrame;
@@ -25,7 +25,8 @@ typedef struct {
 typedef struct {
   Entity *entities;
   int num_entities;
-  int cap_entities;
+  int max_entities;
+  Camera *camera;
 } Scene;
 
 void framebuffer_size_callback(GLFWwindow *window, int width, int height);
@@ -37,16 +38,56 @@ void scroll_callback(GLFWwindow *window, double xoffset, double yoffset);
 const unsigned int SCREEN_WIDTH = 800;
 const unsigned int SCREEN_HEIGHT = 600;
 
-// Timing
-float deltaTime = 0.0f;
-float lastFrame = 0.0f;
-
 // Mouse
 bool firstMouse = true;
 float lastX = 400.0f;
 float lastY = 300.0f;
 
 // Move to a scene.c when done
+//
+Scene *scene_create(){
+  // Allocate scene
+  Scene *scene = (Scene *)malloc(sizeof(Scene));
+  if (!scene){
+    printf("Error: failed to allocate scene\n");
+    return NULL;
+  }
+  scene->entity_count = 1;
+  scene->max_entities = 1;
+  scene->entities = (Entity *)malloc(scene->max_entities * sizeof(Entity));
+  if (!scene->entities){
+    printf("Error: failed to allocate scene entities\n");
+    free(scene);
+    return NULL;
+  }
+
+  // Camera
+  scene->camera = camera_create((vec3){0.0f, 0.0f, 3.0f}, (vec3){0.0f, 1.0f, 0.0f}, -90.0f, 0.0f, 45.0f, 0.1f, 2.5f);
+  if (!scene->camera){
+    printf("Error: failed to create camera\n");
+    free(scene->entities);
+    free(scene);
+    return NULL;
+  }
+
+  // Load our backpack model
+  // Later make this use some kind of loading function
+  Entity *backpack = (Entity *)malloc(sizeof(Entity));
+  if (!backpack){
+    printf("Error: failed to allocate backpack entity\n");
+    free(scene->entities);
+    free(scene);
+    return NULL;
+  }
+  backpack->ID = 1;
+  Model *model = model_create("resources/objects/backpack/backpack.obj");
+  if (!model){
+    printf("Error: failed to create Model\n");
+  }
+  entity->model = model;
+
+  return scene;
+}
 void scene_render(Scene *scene){
   // Render (clear color and depth buffer bits)
   glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
@@ -86,7 +127,7 @@ void processInput(GLFWwindow *window){
 		glfwSetWindowShouldClose(window, 1);
 	}
   Engine *engine = (Engine *)glfwGetWindowUserPointer(window);
-  Camera *camera = engine->camera;
+  Camera *camera = engine->active_scene->camera;
 
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS){
     camera_process_keyboard_input(camera, CAMERA_FORWARD, engine->deltaTime);
@@ -133,7 +174,7 @@ void mouse_callback(GLFWwindow *window, double xpos, double ypos){
 
 void scroll_callback(GLFWwindow *window, double xoffset, double yoffset){
   Engine *engine = (Engine *)glfwGetWindowUserPointer(window);
-  Camera *camera = engine->camera;
+  Camera *camera = engine->active_scene->camera;
   camera_process_scroll_input(camera, yoffset);
 }
 
@@ -160,14 +201,13 @@ Engine *engine_create(){
   engine->window = window;
   glfwSetWindowUserPointer(engine->window, engine);
 
-  // Camera
-  Camera *camera = camera_create((vec3){0.0f, 0.0f, 3.0f}, (vec3){0.0f, 1.0f, 0.0f}, -90.0f, 0.0f, 45.0f, 0.1f, 2.5f);
-  if (!camera){
-    printf("Error: failed to create camera\n");
+  engine->active_scene = scene_create();
+  if (!engine->active_scene){
+    printf("Error: failed to create scene\n");
     free(engine);
+    glfwTerminate();
     return NULL;
   }
-  engine->camera = camera;
 
   // Timing
   engine->deltaTime = 0.0f;
@@ -211,16 +251,6 @@ int main(){
 		glfwTerminate();
 		return -1;
 	}
-
-  // Load models
-  Model *model = model_create("resources/objects/backpack/backpack.obj");
-  if (!model){
-    printf("Error: failed to create Model\n");
-  }
-
-  // starting entity and scene
-  Entity entity = {0, model};
-  Scene scene = {&entity, 1, 1};
 
 	// glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
