@@ -10,14 +10,6 @@
 #include "model.h"
 
 typedef struct {
-  GLFWwindow *window;
-  Scene *active_scene;
-  // Timing
-  float deltaTime;
-  float lastFrame;
-} Engine;
-
-typedef struct {
   unsigned int ID;
   Model *model;
   Shader *shader;
@@ -29,6 +21,14 @@ typedef struct {
   int max_entities;
   Camera *camera;
 } Scene;
+
+typedef struct {
+  GLFWwindow *window;
+  Scene *active_scene;
+  // Timing
+  float deltaTime;
+  float lastFrame;
+} Engine;
 
 void framebuffer_size_callback(GLFWwindow *window, int width, int height);
 void processInput(GLFWwindow *window);
@@ -53,7 +53,7 @@ Scene *scene_create(){
     printf("Error: failed to allocate scene\n");
     return NULL;
   }
-  scene->entity_count = 1;
+  scene->num_entities = 1;
   scene->max_entities = 1;
   scene->entities = (Entity *)malloc(scene->max_entities * sizeof(Entity));
   if (!scene->entities){
@@ -85,16 +85,16 @@ Scene *scene_create(){
   if (!model){
     printf("Error: failed to create Model\n");
   }
-  entity->model = model;
+  backpack->model = model;
 
   // Shader program
-	Shader shader = shader_create("shaders/shader.vs", "shaders/shader.fs");
-	if (!shader.ID){
+	Shader *shader = shader_create("shaders/shader.vs", "shaders/shader.fs");
+	if (!shader->ID){
 		printf("Error: failed to create shader program\n");
 		glfwTerminate();
 		return NULL;
 	}
-  entity->shader = shader;
+  backpack->shader = shader;
 
   return scene;
 }
@@ -113,7 +113,7 @@ void scene_render(Scene *scene){
   for(int i = 0; i < scene->num_entities; i++){
     // Bind its shader
     Entity *entity = &scene->entities[i];
-    shader_use(entity->shader->ID);
+    shader_use(entity->shader);
 
     // Get its model matrix
     mat4 model;
@@ -165,7 +165,7 @@ void framebuffer_size_callback(GLFWwindow *window, int width, int height){
 
 void mouse_callback(GLFWwindow *window, double xpos, double ypos){
   Engine *engine = (Engine *)glfwGetWindowUserPointer(window);
-  Camera *camera = engine->camera;
+  Camera *camera = engine->active_scene->camera;
 
 	if (firstMouse){
 		lastX = (float)xpos;
@@ -255,12 +255,12 @@ int main(){
 
 
 	// Shader program
-	Shader shader = shader_create("shaders/shader.vs", "shaders/shader.fs");
-	if (!shader.ID){
-		printf("Error: failed to create shader program\n");
-		glfwTerminate();
-		return -1;
-	}
+	//Shader shader = shader_create("shaders/shader.vs", "shaders/shader.fs");
+	//if (!shader.ID){
+	//	printf("Error: failed to create shader program\n");
+	//	glfwTerminate();
+	//	return -1;
+	//}
 
 	// glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
@@ -274,30 +274,32 @@ int main(){
 		// Handle input
 		processInput(engine->window);
 
+    scene_render(engine->active_scene);
+
 		// Render (clear and replace with background of specified color)
-		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		//glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+		//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		// Use the shader program
-		shader_use(&shader);
+		//shader_use(&shader);
 
 		// Projection matrix for scroll zoom feature
-		mat4 projection;
-		glm_perspective(glm_rad(engine->camera->fov), (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT, 0.1f, 100.0f, projection);
-		shader_set_mat4(&shader, "projection", projection);
+		//mat4 projection;
+		//glm_perspective(glm_rad(engine->camera->fov), (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT, 0.1f, 100.0f, projection);
+		//shader_set_mat4(&shader, "projection", projection);
 		
 		// Camera/view transformation
-		mat4 view;
-    camera_get_view_matrix(engine->camera, view);
-		shader_set_mat4(&shader, "view", view);
+		//mat4 view;
+    //camera_get_view_matrix(engine->camera, view);
+		//shader_set_mat4(&shader, "view", view);
 
     // Render loaded model
-    mat4 model_matrix;
-    glm_mat4_identity(model_matrix);
-    glm_translate(model_matrix, (vec3){0.0f, 0.0f, 0.0f});
-    glm_scale(model_matrix, (vec3){1.0f, 1.0f, 1.0f});
-    shader_set_mat4(&shader, "model", model_matrix);
-    model_draw(model, &shader);
+    //mat4 model_matrix;
+    //glm_mat4_identity(model_matrix);
+    //glm_translate(model_matrix, (vec3){0.0f, 0.0f, 0.0f});
+    //glm_scale(model_matrix, (vec3){1.0f, 1.0f, 1.0f});
+    //shader_set_mat4(&shader, "model", model_matrix);
+    //model_draw(model, &shader);
 
 		// Check and call events, swap buffers
 		glfwSwapBuffers(engine->window);
