@@ -53,20 +53,22 @@ Scene *scene_create(){
     printf("Error: failed to allocate scene\n");
     return NULL;
   }
-  scene->num_entities = 1;
-  scene->max_entities = 1;
-  scene->entities = (Entity *)malloc(scene->max_entities * sizeof(Entity));
-  if (!scene->entities){
-    printf("Error: failed to allocate scene entities\n");
-    free(scene);
-    return NULL;
-  }
 
   // Camera
   scene->camera = camera_create((vec3){0.0f, 0.0f, 3.0f}, (vec3){0.0f, 1.0f, 0.0f}, -90.0f, 0.0f, 45.0f, 0.1f, 2.5f);
   if (!scene->camera){
     printf("Error: failed to create camera\n");
     free(scene->entities);
+    free(scene);
+    return NULL;
+  }
+
+  // Entities
+  scene->num_entities = 1;
+  scene->max_entities = 1;
+  scene->entities = (Entity *)malloc(scene->max_entities * sizeof(Entity));
+  if (!scene->entities){
+    printf("Error: failed to allocate scene entities\n");
     free(scene);
     return NULL;
   }
@@ -87,7 +89,7 @@ Scene *scene_create(){
   }
   backpack->model = model;
 
-  // Shader program
+  // Model shader
 	Shader *shader = shader_create("shaders/shader.vs", "shaders/shader.fs");
 	if (!shader->ID){
 		printf("Error: failed to create shader program\n");
@@ -95,6 +97,9 @@ Scene *scene_create(){
 		return NULL;
 	}
   backpack->shader = shader;
+
+  // Add backpack to entities
+  scene->entities[0] = *backpack;
 
   return scene;
 }
@@ -205,11 +210,33 @@ Engine *engine_create(){
 	GLFWwindow *window = glfwCreateWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "LearnOpenGL", NULL, NULL);
 	if (window == NULL){
 		printf("Failed to create GLFW window\n");
+    free(engine);
 		glfwTerminate();
 		return NULL;
 	}
   engine->window = window;
+  glfwMakeContextCurrent(engine->window);
+	glfwSetFramebufferSizeCallback(engine->window, framebuffer_size_callback);
+	glfwSetCursorPosCallback(engine->window, mouse_callback);
+	glfwSetScrollCallback(engine->window, scroll_callback);
   glfwSetWindowUserPointer(engine->window, engine);
+
+	// Capture mouse
+	glfwSetInputMode(engine->window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
+	// Init GLAD
+	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)){
+		printf("Failed to initialize GLAD\n");
+    free(engine);
+		return NULL;
+	}
+
+  // Flip textures across y-axis
+  stbi_set_flip_vertically_on_load(true);
+
+	// Configure global OpenGL state
+	glEnable(GL_DEPTH_TEST);
+  //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
   engine->active_scene = scene_create();
   if (!engine->active_scene){
@@ -232,37 +259,6 @@ int main(){
     printf("Error: failed to create Engine\n");
     return -1;
   }
-
-	glfwMakeContextCurrent(engine->window);
-	glfwSetFramebufferSizeCallback(engine->window, framebuffer_size_callback);
-	glfwSetCursorPosCallback(engine->window, mouse_callback);
-	glfwSetScrollCallback(engine->window, scroll_callback);
-
-	// Capture mouse
-	glfwSetInputMode(engine->window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-
-	// Init GLAD
-	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)){
-		printf("Failed to initialize GLAD\n");
-		return -1;
-	}
-
-  // Flip textures across y-axis
-  stbi_set_flip_vertically_on_load(true);
-
-	// Configure global OpenGL state
-	glEnable(GL_DEPTH_TEST);
-
-
-	// Shader program
-	//Shader shader = shader_create("shaders/shader.vs", "shaders/shader.fs");
-	//if (!shader.ID){
-	//	printf("Error: failed to create shader program\n");
-	//	glfwTerminate();
-	//	return -1;
-	//}
-
-	// glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
 	// Render loop
 	while (!glfwWindowShouldClose(engine->window)){
