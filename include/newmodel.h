@@ -10,7 +10,7 @@ typedef struct {
   cJSON *json;
 } NewModel;
 
-Model *model_create(const char *path);
-void model_draw(Shader *shader, Camera *camera);
+NewModel *newModel_create(const char *path);
+void newModel_draw(NewModel *newModel, Shader *shader, Camera *camera);
 
 #endif
