@@ -18,8 +18,8 @@ Scene *scene_create(){
   }
 
   // Entities
-  scene->num_entities = 1;
-  scene->max_entities = 1;
+  scene->num_entities = 0;
+  scene->max_entities = 5;
   scene->entities = (Entity *)malloc(scene->max_entities * sizeof(Entity));
   if (!scene->entities){
     printf("Error: failed to allocate scene entities\n");
@@ -27,33 +27,37 @@ Scene *scene_create(){
     return NULL;
   }
 
-  // Load our backpack model
-  // Later make this use some kind of loading function
-  Entity *backpack = (Entity *)malloc(sizeof(Entity));
-  if (!backpack){
-    printf("Error: failed to allocate backpack entity\n");
-    free(scene->entities);
-    free(scene);
-    return NULL;
-  }
-  backpack->ID = 1;
-  Model *model = model_create("resources/objects/backpack/backpack.obj");
-  if (!model){
-    printf("Error: failed to create Model\n");
-  }
-  backpack->model = model;
-
-  // Model shader
+  // Model shader (for now, only use one shader)
 	Shader *shader = shader_create("shaders/shader.vs", "shaders/shader.fs");
 	if (!shader->ID){
 		printf("Error: failed to create shader program\n");
 		glfwTerminate();
 		return NULL;
 	}
-  backpack->shader = shader;
+  //backpack->shader = shader;
 
-  // Add backpack to entities
-  scene->entities[0] = *backpack;
+  // Make a bunch of backpacks
+  for(int i = 0; i < 5; i++){
+    Entity *backpack = (Entity *)malloc(sizeof(Entity));
+    if (!backpack){
+      printf("Error: failed to allocate backpack entity\n");
+      free(scene->entities);
+      free(scene);
+      return NULL;
+    }
+    backpack->ID = i;
+    glm_vec3_copy((vec3){(float)(5 * i), 0.0f, 0.0f}, backpack->position);
+    glm_vec3_copy((vec3){(float)(45 * i), (float)(45 * i), (float)(45 * i)}, backpack->rotation);
+    glm_vec3_copy((vec3){(float)(i + 1), (float)(i + 1), (float)(i + 1)}, backpack->scale);
+    Model *model = model_create("resources/objects/backpack/backpack.obj");
+    if (!model){
+      printf("Error: failed to create Model\n");
+    }
+    backpack->model = model;
+    backpack->shader = shader;
+    scene->entities[i] = *backpack;
+    scene->num_entities = i + 1;
+  }
 
   return scene;
 }
@@ -78,9 +82,15 @@ void scene_render(Scene *scene){
     // Get its model matrix
     mat4 model;
     glm_mat4_identity(model);
-    glm_translate(model, (vec3){0.0f, 0.0f, 0.0f});
-    glm_scale(model, (vec3){1.0f, 1.0f, 1.0f});
-    shader_set_mat4(entity->shader, "model", model);
+    // Apply transformations to model matrix
+    // Translate
+    glm_translate(model, entity->position);
+    // Rotate
+    glm_rotate_y(model, glm_rad(entity->rotation[1]), model);
+    glm_rotate_x(model, glm_rad(entity->rotation[0]), model);
+    glm_rotate_z(model, glm_rad(entity->rotation[2]), model);
+    // Scale
+    glm_scale(model, entity->scale);
 
     // Set its model, view, and projection matrix uniforms
     shader_set_mat4(entity->shader, "model", model);
