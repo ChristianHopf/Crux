@@ -9,6 +9,7 @@
 #include "shader.h"
 #include "model.h"
 #include "scene.h"
+#include "newmodel.h"
 
 typedef struct {
   GLFWwindow *window;
