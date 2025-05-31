@@ -20,6 +20,7 @@ typedef struct {
 typedef struct {
   unsigned int ID;
   Model *model;
+  Shader *shader;
 } Entity;
 
 typedef struct {
@@ -86,6 +87,15 @@ Scene *scene_create(){
   }
   entity->model = model;
 
+  // Shader program
+	Shader shader = shader_create("shaders/shader.vs", "shaders/shader.fs");
+	if (!shader.ID){
+		printf("Error: failed to create shader program\n");
+		glfwTerminate();
+		return NULL;
+	}
+  entity->shader = shader;
+
   return scene;
 }
 void scene_render(Scene *scene){
@@ -110,15 +120,15 @@ void scene_render(Scene *scene){
     glm_mat4_identity(model);
     glm_translate(model, (vec3){0.0f, 0.0f, 0.0f});
     glm_scale(model, (vec3){1.0f, 1.0f, 1.0f});
-    shader_set_mat4(&shader, "model", model);
+    shader_set_mat4(entity->shader, "model", model);
 
     // Set its model, view, and projection matrix uniforms
-    shader_set_mat4(&shader, "model", model);
-    shader_set_mat4(&shader, "view", view);
-    shader_set_mat4(&shader, "projection", projection);
+    shader_set_mat4(entity->shader, "model", model);
+    shader_set_mat4(entity->shader, "view", view);
+    shader_set_mat4(entity->shader, "projection", projection);
 
     // Draw model
-    model_draw(entity->model, &shader);
+    model_draw(entity->model, entity->shader);
   }
 }
 
