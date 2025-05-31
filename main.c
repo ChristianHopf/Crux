@@ -2,12 +2,15 @@
 #include <GLFW/glfw3.h>
 #include <stdio.h>
 #include <stdbool.h>
-#include <math.h>
 #include "stb_image/stb_image.h"
 #include <cglm/cglm.h>
 #include "camera.h"
 #include "shader.h"
 #include "model.h"
+
+typedef struct {
+  GLFWwindow *window;
+} Engine;
 
 void framebuffer_size_callback(GLFWwindow *window, int width, int height);
 void processInput(GLFWwindow *window);
@@ -80,26 +83,44 @@ void scroll_callback(GLFWwindow *window, double xoffset, double yoffset){
   camera_process_scroll_input(camera_ptr, yoffset);
 }
 
-int main(){
+Engine *engine_create(){
+  Engine *engine = (Engine *)malloc(sizeof(Engine));
+  if (!engine){
+    printf("Error: failed to allocate Engine\n");
+    return NULL;
+  }
+
 	// Init GLFW
 	glfwInit();
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
+  // Create window
 	GLFWwindow *window = glfwCreateWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "LearnOpenGL", NULL, NULL);
 	if (window == NULL){
 		printf("Failed to create GLFW window\n");
 		glfwTerminate();
-		return -1;
+		return NULL;
 	}
-	glfwMakeContextCurrent(window);
-	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-	glfwSetCursorPosCallback(window, mouse_callback);
-	glfwSetScrollCallback(window, scroll_callback);
+  engine->window = window;
+  return engine;
+}
+
+int main(){
+  Engine *engine = engine_create();
+  if (!engine){
+    printf("Error: failed to create Engine\n");
+    return -1;
+  }
+
+	glfwMakeContextCurrent(engine->window);
+	glfwSetFramebufferSizeCallback(engine->window, framebuffer_size_callback);
+	glfwSetCursorPosCallback(engine->window, mouse_callback);
+	glfwSetScrollCallback(engine->window, scroll_callback);
 
 	// Capture mouse
-	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+	glfwSetInputMode(engine->window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
 	// Init GLAD
 	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)){
@@ -115,7 +136,7 @@ int main(){
 
   // Camera
   Camera camera = camera_create((vec3){0.0f, 0.0f, 3.0f}, (vec3){0.0f, 1.0f, 0.0f}, -90.0f, 0.0f, 45.0f, 0.1f, 2.5f);
-  glfwSetWindowUserPointer(window, &camera);
+  glfwSetWindowUserPointer(engine->window, &camera);
 
 	// Shader program
 	Shader shader = shader_create("shaders/shader.vs", "shaders/shader.fs");
@@ -126,7 +147,7 @@ int main(){
 	}
 
   // Load models
-  Model *model = model_create("resources/objects/pochita/scene.gltf");
+  Model *model = model_create("resources/objects/backpack/backpack.obj");
   if (!model){
     printf("Error: failed to create Model\n");
   }
@@ -134,14 +155,14 @@ int main(){
 	// glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
 	// Render loop
-	while (!glfwWindowShouldClose(window)){
+	while (!glfwWindowShouldClose(engine->window)){
 		// Per-frame timing logic
 		float currentFrame = (float)(glfwGetTime());
 		deltaTime = currentFrame - lastFrame;
 		lastFrame = currentFrame;
 
 		// Handle input
-		processInput(window);
+		processInput(engine->window);
 
 		// Render (clear and replace with background of specified color)
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
@@ -169,7 +190,7 @@ int main(){
     model_draw(model, &shader);
 
 		// Check and call events, swap buffers
-		glfwSwapBuffers(window);
+		glfwSwapBuffers(engine->window);
 		glfwPollEvents();
   }
 
