@@ -5,10 +5,12 @@
 #include <cglm/cglm.h>
 
 typedef struct {
-unsigned int ID;
-Model *model;
-Shader *shader;
+  unsigned int ID;
+  vec3 position;
+  vec3 rotation;
+  vec3 scale;
+  Model *model;
+  Shader *shader;
 } Entity;
-
 
 #endif
