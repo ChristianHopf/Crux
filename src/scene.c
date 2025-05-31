@@ -67,7 +67,7 @@ void scene_render(Scene *scene){
   mat4 view;
   mat4 projection;
   camera_get_view_matrix(scene->camera, view);
-  glm_perspective(glm_rad(scene->camera->fov), (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT, 0.1f, 100.0f, projection);
+  glm_perspective(glm_rad(scene->camera->fov), 800.0f / 600.0f, 0.1f, 100.0f, projection);
 
   // For each entity in the scene
   for(int i = 0; i < scene->num_entities; i++){

@@ -1,6 +1,10 @@
 #ifndef SCENE_H
 #define SCENE_H
 
+#include <glad/glad.h>
+#include "entity.h"
+#include "camera.h"
+
 typedef struct {
   Entity *entities;
   int num_entities;
