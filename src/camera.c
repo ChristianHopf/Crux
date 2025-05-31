@@ -1,16 +1,20 @@
 #include "camera.h"
 #include <GLFW/glfw3.h>
 
-Camera camera_create(vec3 position, vec3 up, float yaw, float pitch, float fov, float sensitivity, float speed){
-  Camera camera;
-  glm_vec3_copy(position, camera.position); // Copy vec3 to vec3
-  glm_vec3_copy(up, camera.up);
-  camera.yaw = yaw;
-  camera.pitch = pitch;
-  camera.fov = fov;
-  camera.sensitivity = sensitivity;
-  camera.speed = speed;
-  camera_update_vectors(&camera);
+Camera *camera_create(vec3 position, vec3 up, float yaw, float pitch, float fov, float sensitivity, float speed){
+  Camera *camera = (Camera *)malloc(sizeof(Camera));
+  if (!camera){
+    printf("Error: failed to allocate camera\n");
+    return NULL;
+  }
+  glm_vec3_copy(position, camera->position); // Copy vec3 to vec3
+  glm_vec3_copy(up, camera->up);
+  camera->yaw = yaw;
+  camera->pitch = pitch;
+  camera->fov = fov;
+  camera->sensitivity = sensitivity;
+  camera->speed = speed;
+  camera_update_vectors(camera);
   return camera;
 }
 
