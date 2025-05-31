@@ -1,13 +1,22 @@
+#include <cglm/mat4.h>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <stdio.h>
 #include <stdbool.h>
-#include <math.h>
 #include "stb_image/stb_image.h"
 #include <cglm/cglm.h>
 #include "camera.h"
 #include "shader.h"
 #include "model.h"
+#include "scene.h"
+
+typedef struct {
+  GLFWwindow *window;
+  Scene *active_scene;
+  // Timing
+  float deltaTime;
+  float lastFrame;
+} Engine;
 
 void framebuffer_size_callback(GLFWwindow *window, int width, int height);
 void processInput(GLFWwindow *window);
@@ -18,10 +27,6 @@ void scroll_callback(GLFWwindow *window, double xoffset, double yoffset);
 const unsigned int SCREEN_WIDTH = 800;
 const unsigned int SCREEN_HEIGHT = 600;
 
-// Timing
-float deltaTime = 0.0f;
-float lastFrame = 0.0f;
-
 // Mouse
 bool firstMouse = true;
 float lastX = 400.0f;
@@ -31,25 +36,26 @@ void processInput(GLFWwindow *window){
 	if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS){
 		glfwSetWindowShouldClose(window, 1);
 	}
-  Camera *camera_ptr = (Camera *)glfwGetWindowUserPointer(window);
+  Engine *engine = (Engine *)glfwGetWindowUserPointer(window);
+  Camera *camera = engine->active_scene->camera;
 
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS){
-    camera_process_keyboard_input(camera_ptr, CAMERA_FORWARD, deltaTime);
+    camera_process_keyboard_input(camera, CAMERA_FORWARD, engine->deltaTime);
 	}
 	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS){
-    camera_process_keyboard_input(camera_ptr, CAMERA_BACKWARD, deltaTime);
+    camera_process_keyboard_input(camera, CAMERA_BACKWARD, engine->deltaTime);
 	}
 	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS){
-    camera_process_keyboard_input(camera_ptr, CAMERA_LEFT, deltaTime);
+    camera_process_keyboard_input(camera, CAMERA_LEFT, engine->deltaTime);
   }
 	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS){
-    camera_process_keyboard_input(camera_ptr, CAMERA_RIGHT, deltaTime);
+    camera_process_keyboard_input(camera, CAMERA_RIGHT, engine->deltaTime);
 	}
 	if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS){
-    camera_process_keyboard_input(camera_ptr, CAMERA_DOWN, deltaTime);
+    camera_process_keyboard_input(camera, CAMERA_DOWN, engine->deltaTime);
   }
 	if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS){
-    camera_process_keyboard_input(camera_ptr, CAMERA_UP, deltaTime);
+    camera_process_keyboard_input(camera, CAMERA_UP, engine->deltaTime);
   }
 }
 
@@ -58,7 +64,8 @@ void framebuffer_size_callback(GLFWwindow *window, int width, int height){
 }
 
 void mouse_callback(GLFWwindow *window, double xpos, double ypos){
-  Camera *camera_ptr = (Camera *)glfwGetWindowUserPointer(window);
+  Engine *engine = (Engine *)glfwGetWindowUserPointer(window);
+  Camera *camera = engine->active_scene->camera;
 
 	if (firstMouse){
 		lastX = (float)xpos;
@@ -72,39 +79,51 @@ void mouse_callback(GLFWwindow *window, double xpos, double ypos){
 	lastY = (float)ypos;
 
   // Update camera
-  camera_process_mouse_input(camera_ptr, xoffset, yoffset);
+  camera_process_mouse_input(camera, xoffset, yoffset);
 }
 
 void scroll_callback(GLFWwindow *window, double xoffset, double yoffset){
-  Camera *camera_ptr = (Camera *)glfwGetWindowUserPointer(window);
-  camera_process_scroll_input(camera_ptr, yoffset);
+  Engine *engine = (Engine *)glfwGetWindowUserPointer(window);
+  Camera *camera = engine->active_scene->camera;
+  camera_process_scroll_input(camera, yoffset);
 }
 
-int main(){
+Engine *engine_create(){
+  Engine *engine = (Engine *)malloc(sizeof(Engine));
+  if (!engine){
+    printf("Error: failed to allocate Engine\n");
+    return NULL;
+  }
+
 	// Init GLFW
 	glfwInit();
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
+  // Create window
 	GLFWwindow *window = glfwCreateWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "LearnOpenGL", NULL, NULL);
 	if (window == NULL){
 		printf("Failed to create GLFW window\n");
+    free(engine);
 		glfwTerminate();
-		return -1;
+		return NULL;
 	}
-	glfwMakeContextCurrent(window);
-	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-	glfwSetCursorPosCallback(window, mouse_callback);
-	glfwSetScrollCallback(window, scroll_callback);
+  engine->window = window;
+  glfwMakeContextCurrent(engine->window);
+	glfwSetFramebufferSizeCallback(engine->window, framebuffer_size_callback);
+	glfwSetCursorPosCallback(engine->window, mouse_callback);
+	glfwSetScrollCallback(engine->window, scroll_callback);
+  glfwSetWindowUserPointer(engine->window, engine);
 
 	// Capture mouse
-	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+	glfwSetInputMode(engine->window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
 	// Init GLAD
 	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)){
 		printf("Failed to initialize GLAD\n");
-		return -1;
+    free(engine);
+		return NULL;
 	}
 
   // Flip textures across y-axis
@@ -112,64 +131,45 @@ int main(){
 
 	// Configure global OpenGL state
 	glEnable(GL_DEPTH_TEST);
+  //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
-  // Camera
-  Camera camera = camera_create((vec3){0.0f, 0.0f, 3.0f}, (vec3){0.0f, 1.0f, 0.0f}, -90.0f, 0.0f, 45.0f, 0.1f, 2.5f);
-  glfwSetWindowUserPointer(window, &camera);
-
-	// Shader program
-	Shader shader = shader_create("shaders/shader.vs", "shaders/shader.fs");
-	if (!shader.ID){
-		printf("Error: failed to create shader program\n");
-		glfwTerminate();
-		return -1;
-	}
-
-  // Load models
-  Model *model = model_create("resources/objects/pochita/scene.gltf");
-  if (!model){
-    printf("Error: failed to create Model\n");
+  engine->active_scene = scene_create();
+  if (!engine->active_scene){
+    printf("Error: failed to create scene\n");
+    free(engine);
+    glfwTerminate();
+    return NULL;
   }
 
-	// glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+  // Timing
+  engine->deltaTime = 0.0f;
+  engine->lastFrame = 0.0f;
+
+  return engine;
+}
+
+int main(){
+  Engine *engine = engine_create();
+  if (!engine){
+    printf("Error: failed to create Engine\n");
+    return -1;
+  }
 
 	// Render loop
-	while (!glfwWindowShouldClose(window)){
+	while (!glfwWindowShouldClose(engine->window)){
 		// Per-frame timing logic
 		float currentFrame = (float)(glfwGetTime());
-		deltaTime = currentFrame - lastFrame;
-		lastFrame = currentFrame;
+		engine->deltaTime = currentFrame - engine->lastFrame;
+		engine->lastFrame = currentFrame;
 
 		// Handle input
-		processInput(window);
+		processInput(engine->window);
 
-		// Render (clear and replace with background of specified color)
-		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-		// Use the shader program
-		shader_use(&shader);
-
-		// Projection matrix for scroll zoom feature
-		mat4 projection;
-		glm_perspective(glm_rad(camera.fov), (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT, 0.1f, 100.0f, projection);
-		shader_set_mat4(&shader, "projection", projection);
-		
-		// Camera/view transformation
-		mat4 view;
-    camera_get_view_matrix(&camera, view);
-		shader_set_mat4(&shader, "view", view);
-
-    // Render loaded model
-    mat4 model_matrix;
-    glm_mat4_identity(model_matrix);
-    glm_translate(model_matrix, (vec3){0.0f, 0.0f, 0.0f});
-    glm_scale(model_matrix, (vec3){1.0f, 1.0f, 1.0f});
-    shader_set_mat4(&shader, "model", model_matrix);
-    model_draw(model, &shader);
+    // Render scene
+    scene_render(engine->active_scene);
 
 		// Check and call events, swap buffers
-		glfwSwapBuffers(window);
+		glfwSwapBuffers(engine->window);
 		glfwPollEvents();
   }
 

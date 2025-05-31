@@ -1,4 +1,5 @@
 #include "shader.h"
+#include <linux/limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -52,9 +53,13 @@ static unsigned int compile_shader(unsigned int type, const char *shaderCode){
 	return shader;
 }
 
-Shader shader_create(const char *vertexPath, const char *fragmentPath) {
+Shader *shader_create(const char *vertexPath, const char *fragmentPath) {
 	// Initialize with ID 0
-	Shader shader = {0};
+	Shader *shader = (Shader *)malloc(sizeof(Shader));
+  if (!shader){
+    printf("Error: failed to allocate shader\n");
+    return NULL;
+  }
 
 	// Read in vertex shader
 	char *vertexCode = read_file(vertexPath);
@@ -78,20 +83,20 @@ Shader shader_create(const char *vertexPath, const char *fragmentPath) {
 	}
 
 	// Link shaders
-	shader.ID = glCreateProgram();
-	glAttachShader(shader.ID, vertexShader);
-	glAttachShader(shader.ID, fragmentShader);
-	glLinkProgram(shader.ID);
+	shader->ID = glCreateProgram();
+	glAttachShader(shader->ID, vertexShader);
+	glAttachShader(shader->ID, fragmentShader);
+	glLinkProgram(shader->ID);
 
 	// Check for linking errors
 	int success;
 	char infoLog[512];
-	glGetProgramiv(shader.ID, GL_LINK_STATUS, &success);
+	glGetProgramiv(shader->ID, GL_LINK_STATUS, &success);
 	if (!success){
-		glGetProgramInfoLog(shader.ID, 512, NULL, infoLog);
+		glGetProgramInfoLog(shader->ID, 512, NULL, infoLog);
 		printf("ERROR::SHADER::PROGRAM_LINKING_FAILED: %s\n", infoLog);
-		glDeleteProgram(shader.ID);
-		shader.ID = 0;
+		glDeleteProgram(shader->ID);
+		shader->ID = 0;
 	}
 
 	glDeleteShader(vertexShader);

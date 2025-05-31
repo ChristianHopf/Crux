@@ -42,7 +42,7 @@ void model_draw(Model *model, Shader *shader){
 }
 
 bool model_load(Model *model, char *path){
-  const struct aiScene *scene = aiImportFile(path, aiProcess_Triangulate | aiProcess_FlipUVs);
+  const struct aiScene *scene = aiImportFile(path, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace | aiProcess_JoinIdenticalVertices);
   if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
     printf("ERROR::ASSIMP::%s\n", aiGetErrorString());
   }
@@ -80,7 +80,6 @@ bool model_load(Model *model, char *path){
   // Process root node
   unsigned int model_mesh_index = 0;
   model_process_node(model, scene->mRootNode, scene, &model_mesh_index);
-
   aiReleaseImport(scene);
   return true;
 }
@@ -264,7 +263,8 @@ unsigned int TextureFromFile(const char *path, const char *directory)
     else
     {
         printf("Error: failed to load texture at path: %s\n", path);
-        stbi_image_free(data);
+        printf("STB error: %s\n", stbi_failure_reason());
+        glDeleteTextures(1, &textureID);
     }
 
     return textureID;
