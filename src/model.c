@@ -166,15 +166,12 @@ void model_draw(Model *model, Shader *shader){
     // Diffuse
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, model->meshes[i].diffuse_texture_id);
-    printf("bound texture\n");
     shader_set_int(shader, "diffuseMap", 0);
-    printf("Set diffuseMap uniform\n");
     
     // Specular
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, model->meshes[i].specular_texture_id);
     shader_set_int(shader, "specularMap", 1);
-    printf("Set specularMap uniform\n");
 
     // Bind its vertex array and draw its triangles
     glBindVertexArray(model->meshes[i].VAO);

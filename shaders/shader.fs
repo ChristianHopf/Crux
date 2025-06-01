@@ -11,6 +11,6 @@ void main(){
   vec3 diffuseColor = texture(diffuseMap, TexCoord).rgb;
   float specStrength = texture(specularMap, TexCoord).r;
 
-  //vec3 color = diffuseColor + vec3(specStrength);
-	FragColor = vec4(vec3(specStrength), 1.0);
+  vec3 color = diffuseColor + vec3(specStrength);
+  FragColor = vec4(color, 1.0);
 }
