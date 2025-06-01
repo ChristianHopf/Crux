@@ -162,21 +162,24 @@ void model_process_mesh(Model *model, struct aiMesh *ai_mesh, const struct aiSce
 void model_draw(Model *model){
   // For each mesh in the model
   for(unsigned int i = 0; i < model->num_meshes; i++){
+
+    // Bind textures
+    // Diffuse
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, mesh->diffuse_texture_id);
+    shader_set_int(model->shader, "diffuseMap", 0);
+    
+    // Specular
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, mesh->specular_texture_id);
+    shader_set_int(model->shader, "specularMap", 1);
+
     // Bind its vertex array and draw its triangles
     glBindVertexArray(model->meshes[i].VAO);
     glDrawElements(GL_TRIANGLES, model->meshes[i].num_indices, GL_UNSIGNED_INT, 0);
   }
   // Next mesh will bind its VAO first, so this shouldn't matter. Experiment with and without
   glBindVertexArray(0);
-}
-
-// Need more of these later, move to a model helpers file?
-char *get_diffuse_texture_path(const struct aiMaterial *material){
-  struct aiString path;
-  if (aiGetMaterialTexture(material, aiTextureType_DIFFUSE, 0, &path, NULL, NULL, NULL, NULL, NULL, NULL) != AI_SUCCESS) {
-    return NULL;
-  }
-  return strdup(path.data);
 }
 
 char *get_texture_path(const struct aiMaterial *material, enum aiTextureType type){

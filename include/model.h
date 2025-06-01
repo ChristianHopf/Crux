@@ -58,7 +58,7 @@ void model_process_mesh(Model *model, struct aiMesh *ai_mesh, const struct aiSce
 void model_draw(Model *model);
 void model_free(Model *model);
 GLuint model_load_texture(const char *path);
-char *get_diffuse_texture_path(const struct aiMaterial *material);
+char *get_texture_path(const struct aiMaterial *material, enum aiTextureType type);
 GLuint model_check_loaded_texture(const char *path);
 void model_add_loaded_texture(const char *path, GLuint texture_id);
 
