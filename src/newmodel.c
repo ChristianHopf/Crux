@@ -36,7 +36,7 @@ bool model_load(Model *model, const char *path){
 
 void model_process_mesh(struct aiMesh *ai_mesh, Mesh *dest_mesh){
   // Allocate vertices and indices
-  Vertex *vertices = (Vertex *)malloc(ai_mesh->mNumVertices, sizeof(Vertex));
+  Vertex *vertices = (Vertex *)malloc(ai_mesh->mNumVertices * sizeof(Vertex));
   if (!vertices){
     printf("Error: failed to allocate vertices in model_process_mesh\n");
   }
@@ -49,7 +49,7 @@ void model_process_mesh(struct aiMesh *ai_mesh, Mesh *dest_mesh){
   for (unsigned int i = 0; i < ai_mesh->mNumVertices; i++){
     // Copy position vertices to vertex position vector
     memcpy(vertices[i].position, &ai_mesh->mVertices[i], sizeof(float) * 3);
-    if (ai_mesh->HasNormals()){
+    if (ai_mesh->mNormals){
       memcpy(vertices[i].normal, &ai_mesh->mNormals[i], sizeof(float) * 3);
     }else{
       memset(vertices[i].normal, 0, sizeof(float) * 3);
@@ -64,21 +64,21 @@ void model_process_mesh(struct aiMesh *ai_mesh, Mesh *dest_mesh){
       indices[index++] = face.mIndices[j];
     }
   }
-  mesh->num_indices = index;
+  dest_mesh->num_indices = index;
 
   // Bind vertex buffers and buffer vertex data
-  glGenBuffers(1, &mesh->VBO);
-  glGenBuffers(1, &mesh->EBO);
-  glGenVertexArrays(1, &mesh->VAO);
+  glGenBuffers(1, &dest_mesh->VBO);
+  glGenBuffers(1, &dest_mesh->EBO);
+  glGenVertexArrays(1, &dest_mesh->VAO);
 
   // Bind vertex array
-  glBindVertexArray(&mesh->VAO);
+  glBindVertexArray(dest_mesh->VAO);
 
   // Bind element buffers and buffer indices data
-  glBindBuffer(GL_ARRAY_BUFFER, mesh->VBO);
-  glBufferData(GL_ARRAY_BUFFER, ai_mesh->mNumvertices * sizeof(Vertex), vertices, GL_STATIC_DRAW);
+  glBindBuffer(GL_ARRAY_BUFFER, dest_mesh->VBO);
+  glBufferData(GL_ARRAY_BUFFER, ai_mesh->mNumVertices * sizeof(Vertex), vertices, GL_STATIC_DRAW);
 
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh->EBO);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, dest_mesh->EBO);
   glBufferData(GL_ELEMENT_ARRAY_BUFFER, index * sizeof(unsigned int), indices, GL_STATIC_DRAW);
 
   // Configure attribute pointers
@@ -100,7 +100,7 @@ void model_draw(Model *model){
   for(unsigned int i = 0; i < model->num_meshes; i++){
     // Bind its vertex array and draw its triangles
     glBindVertexArray(model->meshes[i].VAO);
-    glDrawElements(GL_TRIANGLES, mesh->num_indices, GL_UNSIGNED_INT, 0);
+    glDrawElements(GL_TRIANGLES, model->meshes[i].num_indices, GL_UNSIGNED_INT, 0);
   }
   // Next mesh will bind its VAO first, so this shouldn't matter. Experiment with and without
   glBindVertexArray(0);

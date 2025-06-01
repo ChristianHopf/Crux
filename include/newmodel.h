@@ -7,6 +7,7 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 #include <assimp/cimport.h>
+#include "shader.h"
 
 typedef enum {
   TEXTURE_TYPE_DIFFUSE,
@@ -31,12 +32,13 @@ typedef struct {
 typedef struct {
   GLuint VAO, VBO, EBO;
   unsigned int num_indices;
-  GLuint texture_id;
+  //GLuint texture_id;
 } Mesh;
 
 typedef struct {
   Mesh *meshes;
   unsigned int num_meshes;
+  Shader *shader;
 } Model;
 
 bool model_load(Model *model, const char *path);

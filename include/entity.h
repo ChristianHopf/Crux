@@ -1,6 +1,6 @@
 #ifndef ENTITY_H
 #define ENTITY_H
-#include "model.h"
+#include "newmodel.h"
 #include "shader.h"
 #include <cglm/cglm.h>
 

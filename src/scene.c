@@ -37,25 +37,27 @@ Scene *scene_create(){
 	}
 
   // Pochita
-  Entity *pochita = (Entity *)malloc(sizeof(Entity));
-  if (!pochita){
-    printf("Error: failed to allocate pochita entity\n");
+  Entity *my_entity = (Entity *)malloc(sizeof(Entity));
+  if (!my_entity){
+    printf("Error: failed to allocate entity\n");
     free(scene->entities);
     free(scene);
     return NULL;
   }
-  pochita->ID = 1;
+  my_entity->ID = 1;
 
-  glm_vec3_copy((vec3){0.0f, 0.0f, 0.0f}, pochita->position);
-  glm_vec3_copy((vec3){0.0f, 0.0f, 0.0f}, pochita->rotation);
-  glm_vec3_copy((vec3){1.0f, 1.0f, 1.0f}, pochita->scale);
-  Model *model = model_create("resources/objects/pochita/scene.gltf");
+  glm_vec3_copy((vec3){0.0f, 0.0f, 0.0f}, my_entity->position);
+  glm_vec3_copy((vec3){0.0f, 0.0f, 0.0f}, my_entity->rotation);
+  glm_vec3_copy((vec3){1.0f, 1.0f, 1.0f}, my_entity->scale);
+  //Model *model = model_create("resources/objects/pochita/scene.gltf");
+  Model *model = (Model *)malloc(sizeof(Model));
   if (!model){
     printf("Error: failed to create Model\n");
+    return NULL;
   }
-  pochita->model = model;
-  pochita->shader = shader;
-  scene->entities[0] = *pochita;
+  my_entity->model = model;
+  my_entity->shader = shader;
+  scene->entities[0] = *my_entity;
   scene->num_entities = 1;
 
 
@@ -121,6 +123,6 @@ void scene_render(Scene *scene){
     shader_set_mat4(entity->shader, "projection", projection);
 
     // Draw model
-    model_draw(entity->model, entity->shader);
+    model_draw(entity->model);
   }
 }
