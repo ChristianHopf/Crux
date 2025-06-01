@@ -49,13 +49,13 @@ typedef struct {
 typedef struct {
   Mesh *meshes;
   unsigned int num_meshes;
-  Shader *shader;
+  //Shader *shader;
   char *directory;
 } Model;
 
 bool model_load(Model *model, const char *path);
 void model_process_mesh(Model *model, struct aiMesh *ai_mesh, const struct aiScene *scene, Mesh *dest_mesh);
-void model_draw(Model *model);
+void model_draw(Model *model, Shader *shader);
 void model_free(Model *model);
 GLuint model_load_texture(const char *path);
 char *get_texture_path(const struct aiMaterial *material, enum aiTextureType type);

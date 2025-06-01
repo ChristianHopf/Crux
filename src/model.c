@@ -80,7 +80,7 @@ void model_process_mesh(Model *model, struct aiMesh *ai_mesh, const struct aiSce
     specular_texture_id = model_load_texture(full_specular_path);
     model_add_loaded_texture(full_specular_path, specular_texture_id);
   }
-  dest_mesh->specular_textire_id = specular_texture_id;
+  dest_mesh->specular_texture_id = specular_texture_id;
   free(specular_path);
 
   // Allocate vertices and indices
@@ -159,20 +159,22 @@ void model_process_mesh(Model *model, struct aiMesh *ai_mesh, const struct aiSce
   free(indices);
 }
 
-void model_draw(Model *model){
+void model_draw(Model *model, Shader *shader){
   // For each mesh in the model
   for(unsigned int i = 0; i < model->num_meshes; i++){
-
     // Bind textures
     // Diffuse
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, mesh->diffuse_texture_id);
-    shader_set_int(model->shader, "diffuseMap", 0);
+    glBindTexture(GL_TEXTURE_2D, model->meshes[i].diffuse_texture_id);
+    printf("bound texture\n");
+    shader_set_int(shader, "diffuseMap", 0);
+    printf("Set diffuseMap uniform\n");
     
     // Specular
     glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, mesh->specular_texture_id);
-    shader_set_int(model->shader, "specularMap", 1);
+    glBindTexture(GL_TEXTURE_2D, model->meshes[i].specular_texture_id);
+    shader_set_int(shader, "specularMap", 1);
+    printf("Set specularMap uniform\n");
 
     // Bind its vertex array and draw its triangles
     glBindVertexArray(model->meshes[i].VAO);
@@ -215,7 +217,6 @@ GLuint model_load_texture(const char *path){
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
   stbi_image_free(data);
   return texture;
 }

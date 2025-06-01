@@ -63,7 +63,6 @@ Scene *scene_create(){
   scene->entities[0] = *my_entity;
   scene->num_entities = 1;
 
-
   // Make a bunch of backpacks
   //for(int i = 0; i < 5; i++){
   //  Entity *backpack = (Entity *)malloc(sizeof(Entity));
@@ -101,6 +100,7 @@ void scene_render(Scene *scene){
   camera_get_view_matrix(scene->camera, view);
   glm_perspective(glm_rad(scene->camera->fov), 800.0f / 600.0f, 0.1f, 100.0f, projection);
 
+  printf("Time to process %d entities\n", scene->num_entities);
   // For each entity in the scene
   for(int i = 0; i < scene->num_entities; i++){
     // Bind its shader
@@ -113,12 +113,15 @@ void scene_render(Scene *scene){
     // Apply transformations to model matrix
     // Translate
     glm_translate(model, entity->position);
+    printf("Translated\n");
     // Rotate
     glm_rotate_y(model, glm_rad(entity->rotation[1]), model);
     glm_rotate_x(model, glm_rad(entity->rotation[0]), model);
     glm_rotate_z(model, glm_rad(entity->rotation[2]), model);
+    printf("Rotated\n");
     // Scale
     glm_scale(model, entity->scale);
+    printf("Scaled\n");
 
     // Set its model, view, and projection matrix uniforms
     shader_set_mat4(entity->shader, "model", model);
@@ -126,6 +129,6 @@ void scene_render(Scene *scene){
     shader_set_mat4(entity->shader, "projection", projection);
 
     // Draw model
-    model_draw(entity->model);
+    model_draw(entity->model, entity->shader);
   }
 }
