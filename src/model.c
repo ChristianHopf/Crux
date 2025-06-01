@@ -1,5 +1,6 @@
 #include "model.h"
 #include "utils.h"
+#include <assimp/material.h>
 #include <cglm/vec2.h>
 #include <stdbool.h>
 #include <assimp/cimport.h>
@@ -58,18 +59,29 @@ bool model_load(Model *model, const char *path){
 void model_process_mesh(Model *model, struct aiMesh *ai_mesh, const struct aiScene *scene, Mesh *dest_mesh){
   // Get material and texture paths, joined with directory
   const struct aiMaterial *material = scene->mMaterials[ai_mesh->mMaterialIndex];
-  char *texture_path = get_diffuse_texture_path(material);
-  char full_path[512]; // used to be 1024, 512 is plenty
-  snprintf(full_path, sizeof(full_path), "%s/%s", model->directory, texture_path);
-
+  // Get diffuse and specular textures
+  char *diffuse_path = get_texture_path(material, aiTextureType_DIFFUSE);
+  char *specular_path = get_texture_path(material, aiTextureType_SPECULAR);
+  char full_diffuse_path[512]; // used to be 1024, 512 is plenty
+  char full_specular_path[512];
+  snprintf(full_diffuse_path, sizeof(full_diffuse_path), "%s/%s", model->directory, diffuse_path);
+  snprintf(full_specular_path, sizeof(full_specular_path), "%s/%s", model->directory, specular_path);
   // Check if the texture is already loaded
-  GLuint texture_id = model_check_loaded_texture(full_path);
-  if (texture_id == 0){
-    texture_id = model_load_texture(full_path);
-    model_add_loaded_texture(full_path, texture_id);
+  GLuint diffuse_texture_id = model_check_loaded_texture(full_diffuse_path);
+  if (diffuse_texture_id == 0){
+    diffuse_texture_id = model_load_texture(full_diffuse_path);
+    model_add_loaded_texture(full_diffuse_path, diffuse_texture_id);
   }
-  dest_mesh->diffuse_texture_id = texture_id;
-  free(texture_path);
+  dest_mesh->diffuse_texture_id = diffuse_texture_id;
+  free(diffuse_path);
+
+  GLuint specular_texture_id = model_check_loaded_texture(full_specular_path);
+  if (specular_texture_id == 0){
+    specular_texture_id = model_load_texture(full_specular_path);
+    model_add_loaded_texture(full_specular_path, specular_texture_id);
+  }
+  dest_mesh->specular_textire_id = specular_texture_id;
+  free(specular_path);
 
   // Allocate vertices and indices
   Vertex *vertices = (Vertex *)malloc(ai_mesh->mNumVertices * sizeof(Vertex));
@@ -162,6 +174,14 @@ void model_draw(Model *model){
 char *get_diffuse_texture_path(const struct aiMaterial *material){
   struct aiString path;
   if (aiGetMaterialTexture(material, aiTextureType_DIFFUSE, 0, &path, NULL, NULL, NULL, NULL, NULL, NULL) != AI_SUCCESS) {
+    return NULL;
+  }
+  return strdup(path.data);
+}
+
+char *get_texture_path(const struct aiMaterial *material, enum aiTextureType type){
+  struct aiString path;
+  if (aiGetMaterialTexture(material, type, 0, &path, NULL, NULL, NULL, NULL, NULL, NULL) != AI_SUCCESS) {
     return NULL;
   }
   return strdup(path.data);

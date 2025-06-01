@@ -43,6 +43,7 @@ typedef struct {
   GLuint VAO, VBO, EBO;
   unsigned int num_indices;
   GLuint diffuse_texture_id;
+  GLuint specular_texture_id;
 } Mesh;
 
 typedef struct {
