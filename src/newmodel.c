@@ -34,10 +34,6 @@ bool model_load(Model *model, const char *path){
   return true;
 }
 
-void model_draw(Model *model);
-
-void model_process_node(Model *model, struct aiNode *node, struct aiScene *scene){}
-
 void model_process_mesh(struct aiMesh *ai_mesh, Mesh *dest_mesh){
   // Allocate vertices and indices
   Vertex *vertices = (Vertex *)malloc(ai_mesh->mNumVertices, sizeof(Vertex));
@@ -97,4 +93,15 @@ void model_process_mesh(struct aiMesh *ai_mesh, Mesh *dest_mesh){
 
   free(vertices);
   free(indices);
+}
+
+void model_draw(Model *model){
+  // For each mesh in the model
+  for(unsigned int i = 0; i < model->num_meshes; i++){
+    // Bind its vertex array and draw its triangles
+    glBindVertexArray(model->meshes[i].VAO);
+    glDrawElements(GL_TRIANGLES, mesh->num_indices, GL_UNSIGNED_INT, 0);
+  }
+  // Next mesh will bind its VAO first, so this shouldn't matter. Experiment with and without
+  glBindVertexArray(0);
 }

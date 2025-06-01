@@ -40,9 +40,8 @@ typedef struct {
 } Model;
 
 bool model_load(Model *model, const char *path);
-void model_free(Model *model);
-void model_draw(Model *model);
-void model_process_node(Model *model, struct aiNode *node, struct aiScene *scene);
 void model_process_mesh(struct aiMesh *ai_mesh, Mesh *dest_mesh);
+void model_draw(Model *model);
+void model_free(Model *model);
 
 #endif
