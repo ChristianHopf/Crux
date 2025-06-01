@@ -5,6 +5,7 @@
 #include <assimp/cimport.h>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
+#include <stb_image/stb_image.h>
 
 bool model_load(Model *model, const char *path){
   const struct aiScene* scene = aiImportFile(path,
@@ -16,6 +17,21 @@ bool model_load(Model *model, const char *path){
   if (!scene || !scene->mRootNode || !scene->mMeshes || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE) {
     printf("Error: failed to get scene\n");
     return false;
+  }
+
+  // Get directory substring
+  char *slash = strrchr(path, '/');
+  if(slash){
+    size_t directory_length = slash - path;
+    model->directory = (char *)malloc(directory_length + 1);
+    if (!model->directory){
+      printf("Error: failed to allocate model directory in model_load\n");
+      return false;
+    }
+    strncpy(model->directory, path, directory_length);
+    model->directory[directory_length] = 0;
+  } else {
+    model->directory = strdup(".");
   }
 
   // Allocate memory for meshes
@@ -32,22 +48,21 @@ bool model_load(Model *model, const char *path){
  
   // Process all meshes
   for(unsigned int i = 0; i < scene->mNumMeshes; i++){
-    model_process_mesh(scene->mMeshes[i], &model->meshes[i]);
+    model_process_mesh(model, scene->mMeshes[i], scene, &model->meshes[i]);
   }
-
-  const struct aiMaterial* material = scene->mMaterials[ai_mesh->mMaterialIndex];
-  char* texture_path = get_diffuse_texture_path(material);
 
   aiReleaseImport(scene);
   return true;
 }
 
-void model_process_mesh(Model *model, struct aiMesh *ai_mesh, Mesh *dest_mesh){
+void model_process_mesh(Model *model, struct aiMesh *ai_mesh, const struct aiScene *scene, Mesh *dest_mesh){
   // Get material and texture paths, joined with directory
-  const struct aiMaterial* material = scene->mMaterials[ai_mesh->mMaterialIndex];
-  char* texture_path = get_diffuse_texture_path(material);
+  const struct aiMaterial *material = scene->mMaterials[ai_mesh->mMaterialIndex];
+  char *texture_path = get_diffuse_texture_path(material);
   char full_path[512]; // used to be 1024, 512 is plenty
-  snprintf(full_path, sizeof(full)path), "%s/%s", model->directory, texture_path);
+  snprintf(full_path, sizeof(full_path), "%s/%s", model->directory, texture_path);
+  dest_mesh->diffuse_texture_id = model_load_texture(full_path);
+  free(texture_path);
 
   // Allocate vertices and indices
   Vertex *vertices = (Vertex *)malloc(ai_mesh->mNumVertices * sizeof(Vertex));
@@ -83,6 +98,7 @@ void model_process_mesh(Model *model, struct aiMesh *ai_mesh, Mesh *dest_mesh){
     }
   }
 
+  printf("Processed vertices\n");
   // Process indices
   unsigned int index = 0;
   for(unsigned int i = 0; i < ai_mesh->mNumFaces; i++){
@@ -137,12 +153,42 @@ void model_draw(Model *model){
 }
 
 // Need more of these later, move to a model helpers file?
-char *get_diffuse_texture_path(struct aiMaterial *material){
+char *get_diffuse_texture_path(const struct aiMaterial *material){
   struct aiString path;
   if (aiGetMaterialTexture(material, aiTextureType_DIFFUSE, 0, &path, NULL, NULL, NULL, NULL, NULL, NULL) != AI_SUCCESS) {
     return NULL;
   }
   return strdup(path.data);
+}
+
+GLuint model_load_texture(const char *path){
+  int width, height, channels;
+  unsigned char* data = stbi_load(path, &width, &height, &channels, 0);
+  if (!data){
+    printf("Error: Failed to load texture at: %s\n", path);
+    return 0;
+  }
+
+  // Generate GL textures
+  GLenum format;
+  if (channels == 4)      format = GL_RGBA;
+  else if (channels == 3) format = GL_RGB;
+  else if (channels == 1) format = GL_RED;
+  //else                    format = GL_RGB; // fallback
+  GLuint texture;
+  glGenTextures(1, &texture);
+  glBindTexture(GL_TEXTURE_2D, texture);
+
+  glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+  glGenerateMipmap(GL_TEXTURE_2D);
+
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+  stbi_image_free(data);
+  return texture;
 }
 
 void model_free(Model *model){

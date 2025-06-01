@@ -33,7 +33,7 @@ typedef struct {
 typedef struct {
   GLuint VAO, VBO, EBO;
   unsigned int num_indices;
-  //GLuint texture_id;
+  GLuint diffuse_texture_id;
 } Mesh;
 
 typedef struct {
@@ -44,8 +44,10 @@ typedef struct {
 } Model;
 
 bool model_load(Model *model, const char *path);
-void model_process_mesh(Model *model, struct aiMesh *ai_mesh, Mesh *dest_mesh);
+void model_process_mesh(Model *model, struct aiMesh *ai_mesh, const struct aiScene *scene, Mesh *dest_mesh);
 void model_draw(Model *model);
 void model_free(Model *model);
+GLuint model_load_texture(const char *path);
+char *get_diffuse_texture_path(const struct aiMaterial *material);
 
 #endif
