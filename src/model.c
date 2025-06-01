@@ -61,7 +61,14 @@ void model_process_mesh(Model *model, struct aiMesh *ai_mesh, const struct aiSce
   char *texture_path = get_diffuse_texture_path(material);
   char full_path[512]; // used to be 1024, 512 is plenty
   snprintf(full_path, sizeof(full_path), "%s/%s", model->directory, texture_path);
-  dest_mesh->diffuse_texture_id = model_load_texture(full_path);
+
+  // Check if the texture is already loaded
+  GLuint texture_id = model_check_loaded_texture(full_path);
+  if (texture_id == 0){
+    texture_id = model_load_texture(full_path);
+    model_add_loaded_texture(full_path, texture_id);
+  }
+  dest_mesh->diffuse_texture_id = texture_id;
   free(texture_path);
 
   // Allocate vertices and indices
@@ -98,7 +105,6 @@ void model_process_mesh(Model *model, struct aiMesh *ai_mesh, const struct aiSce
     }
   }
 
-  printf("Processed vertices\n");
   // Process indices
   unsigned int index = 0;
   for(unsigned int i = 0; i < ai_mesh->mNumFaces; i++){
@@ -189,6 +195,26 @@ GLuint model_load_texture(const char *path){
 
   stbi_image_free(data);
   return texture;
+}
+
+GLuint model_check_loaded_texture(const char *path){
+  // Check if a TextureEntry exists with this texture's path
+  for(int i = 0; i < num_loaded_textures; i++){
+    if (strncmp(loaded_textures[i].path, path, sizeof(loaded_textures[i].path)) == 0){
+      return loaded_textures[i].texture_id;
+    }
+  }
+  return 0;
+}
+
+void model_add_loaded_texture(const char *path, GLuint texture_id){
+  if (num_loaded_textures >= MAX_TEXTURES){
+    printf("Error: texture cache full\n");
+    return;
+  }
+  strncpy(loaded_textures[num_loaded_textures].path, path, sizeof(loaded_textures[num_loaded_textures].path) - 1);
+  loaded_textures[num_loaded_textures].texture_id = texture_id;
+  num_loaded_textures++;
 }
 
 void model_free(Model *model){

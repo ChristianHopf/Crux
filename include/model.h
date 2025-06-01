@@ -9,6 +9,15 @@
 #include <assimp/cimport.h>
 #include "shader.h"
 
+typedef struct {
+  char path[512];
+  GLuint texture_id;
+} TextureEntry;
+
+#define MAX_TEXTURES 128
+static TextureEntry loaded_textures[MAX_TEXTURES];
+static int num_loaded_textures = 0;
+
 typedef enum {
   TEXTURE_TYPE_DIFFUSE,
   TEXTURE_TYPE_NORMAL,
@@ -49,5 +58,7 @@ void model_draw(Model *model);
 void model_free(Model *model);
 GLuint model_load_texture(const char *path);
 char *get_diffuse_texture_path(const struct aiMaterial *material);
+GLuint model_check_loaded_texture(const char *path);
+void model_add_loaded_texture(const char *path, GLuint texture_id);
 
 #endif
