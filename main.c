@@ -127,7 +127,7 @@ Engine *engine_create(){
 	}
 
   // Flip textures across y-axis
-  stbi_set_flip_vertically_on_load(true);
+  //stbi_set_flip_vertically_on_load(true);
 
 	// Configure global OpenGL state
 	glEnable(GL_DEPTH_TEST);
