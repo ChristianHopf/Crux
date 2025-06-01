@@ -105,3 +105,14 @@ void model_draw(Model *model){
   // Next mesh will bind its VAO first, so this shouldn't matter. Experiment with and without
   glBindVertexArray(0);
 }
+
+void model_free(Model *model){
+  // Delete vertex arrays and buffers
+  for(unsigned int i = 0; i < model->num_meshes; i++){
+    glDeleteVertexArrays(1, &model->meshes[i].VAO);
+    glDeleteBuffers(1, &model->meshes[i].VBO);
+    glDeleteBuffers(1, &model->meshes[i].EBO);
+  }
+  // Free meshes
+  free(model->meshes);
+}
