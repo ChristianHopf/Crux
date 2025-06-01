@@ -7,7 +7,7 @@
 #include <cglm/cglm.h>
 #include "camera.h"
 #include "shader.h"
-#include "newmodel.h"
+#include "model.h"
 #include "scene.h"
 
 typedef struct {
