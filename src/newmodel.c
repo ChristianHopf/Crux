@@ -12,19 +12,23 @@ bool model_load(Model *model, const char *path){
         aiProcess_JoinIdenticalVertices |
         aiProcess_ValidateDataStructure);
 
-  if (!scene || !scene->mRootNode || !scene->HasMeshes() || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE) {
+  if (!scene || !scene->mRootNode || !scene->mMeshes || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE) {
     printf("Error: failed to get scene\n");
     return false;
   }
 
   // Allocate memory for meshes
-  Mesh *meshes = (Mesh *)malloc(scene->mNumMeshes * sizeof(Mesh));
-  if (!meshes){
+  model->num_meshes = scene->mNumMeshes;
+  if (model->num_meshes == 0){
+    printf("Error: found 0 meshes in scene\n");
+    return false;
+  }
+  model->meshes = (Mesh *)malloc(scene->mNumMeshes * sizeof(Mesh));
+  if (!model->meshes){
     printf("Error: failed to allocate meshes\n");
     return false;
   }
-  model->num_meshes = scene->mNumMeshes;
-  
+ 
   // Process all meshes
   for(unsigned int i = 0; i < scene->mNumMeshes; i++){
     model_process_mesh(scene->mMeshes[i], &model->meshes[i]);
@@ -80,6 +84,7 @@ void model_process_mesh(struct aiMesh *ai_mesh, Mesh *dest_mesh){
 
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, dest_mesh->EBO);
   glBufferData(GL_ELEMENT_ARRAY_BUFFER, index * sizeof(unsigned int), indices, GL_STATIC_DRAW);
+  dest_mesh->num_indices = index;
 
   // Configure attribute pointers
   // Position

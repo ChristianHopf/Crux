@@ -50,11 +50,14 @@ Scene *scene_create(){
   glm_vec3_copy((vec3){0.0f, 0.0f, 0.0f}, my_entity->rotation);
   glm_vec3_copy((vec3){1.0f, 1.0f, 1.0f}, my_entity->scale);
   //Model *model = model_create("resources/objects/pochita/scene.gltf");
+
+  // Allocate and load model
   Model *model = (Model *)malloc(sizeof(Model));
   if (!model){
     printf("Error: failed to create Model\n");
     return NULL;
   }
+  model_load(model, "resources/objects/backpack/backpack.obj");
   my_entity->model = model;
   my_entity->shader = shader;
   scene->entities[0] = *my_entity;
