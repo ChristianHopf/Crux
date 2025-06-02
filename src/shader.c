@@ -105,3 +105,9 @@ void shader_set_mat4(const Shader *shader, const char *name, mat4 value){
 		glUniformMatrix4fv(glGetUniformLocation(shader->ID, name), 1, GL_FALSE, &value[0][0]);
 	}
 }
+
+void shader_set_vec3(const Shader *shader, const char *name, vec3 value){
+	if (shader && shader->ID) {
+		glUniform3fv(glGetUniformLocation(shader->ID, name), 1, value);
+	}
+}
