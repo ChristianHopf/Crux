@@ -6,6 +6,7 @@
 #include <assimp/cimport.h>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
+#include <assimp/texture.h>
 #include <stb_image/stb_image.h>
 
 bool model_load(Model *model, const char *path){
@@ -59,13 +60,16 @@ bool model_load(Model *model, const char *path){
 void model_process_mesh(Model *model, struct aiMesh *ai_mesh, const struct aiScene *scene, Mesh *dest_mesh){
   // Get material and texture paths, joined with directory
   const struct aiMaterial *material = scene->mMaterials[ai_mesh->mMaterialIndex];
-  // Get diffuse and specular textures
+  if (!material){
+    printf("Error: failed to get material from scene materials\n");
+  }
 
-  GLuint diffuse_texture_id = model_load_texture_type(model, material, aiTextureType_DIFFUSE);
+  // Get diffuse and specular textures
+  GLuint diffuse_texture_id = model_load_texture_type(model, material, scene, aiTextureType_DIFFUSE);
   if (diffuse_texture_id != 0){
     dest_mesh->diffuse_texture_id = diffuse_texture_id;
   }
-  GLuint specular_texture_id = model_load_texture_type(model, material, aiTextureType_SPECULAR);
+  GLuint specular_texture_id = model_load_texture_type(model, material, scene, aiTextureType_SPECULAR);
   if (specular_texture_id != 0){
     dest_mesh->specular_texture_id = specular_texture_id;
   }
@@ -180,13 +184,20 @@ void model_free(Model *model){
   free(model);
 }
 
-GLuint model_load_texture_type(Model *model, const struct aiMaterial *material, enum aiTextureType type){
-  // Get texture path (combine this into one line?)
+GLuint model_load_texture_type(Model *model, const struct aiMaterial *material, const struct aiScene *scene, enum aiTextureType type){
+  // Get texture path
   char *texture_path = get_texture_path(material, type);
-  if (!texture_path){
+    if (!texture_path){
     printf("Error: failed to get texture path of type %s\n", type == aiTextureType_DIFFUSE ? "DIFFUSE" : "SPECULAR");
     return 0;
   }
+  // Check if texture is embedded
+  if (texture_path[0] == '*'){
+    GLuint embedded_texture_id = model_load_embedded_texture(texture_path, scene);
+    printf("Successfully loaded embedded texture with id %d!\n", embedded_texture_id);
+    return embedded_texture_id;
+  }
+
   char full_texture_path[512];
   snprintf(full_texture_path, sizeof(full_texture_path), "%s/%s", model->directory, texture_path);
 
@@ -231,11 +242,44 @@ GLuint model_load_texture(const char *path){
   return texture;
 }
 
+GLuint model_load_embedded_texture(const char *path, const struct aiScene *scene){
+  // Texture paths are *0, *1, etc
+  int index = atoi(path + 1);
+  const struct aiTexture *tex = scene->mTextures[index];
+
+  // Load with aitexture pcData, mWidth, mHeight (texture.h)
+  int width, height, channels;
+  unsigned char *data = stbi_load_from_memory((char *)tex->pcData, tex->mWidth, &width, &height, &channels, 0);
+
+  // Generate GL textures
+  GLenum format;
+  if (channels == 4)      format = GL_RGBA;
+  else if (channels == 3) format = GL_RGB;
+  else if (channels == 1) format = GL_RED;
+
+  GLuint texture;
+  glGenTextures(1, &texture);
+  glBindTexture(GL_TEXTURE_2D, texture);
+
+  glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+  glGenerateMipmap(GL_TEXTURE_2D);
+
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+  stbi_image_free(data);
+  return texture;
+}
+
 char *get_texture_path(const struct aiMaterial *material, enum aiTextureType type){
   struct aiString path;
   if (aiGetMaterialTexture(material, type, 0, &path, NULL, NULL, NULL, NULL, NULL, NULL) != AI_SUCCESS) {
+    printf(":(\n");
     return NULL;
   }
+  
   return strdup(path.data);
 }
 
