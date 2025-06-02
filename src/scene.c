@@ -96,6 +96,14 @@ Scene *scene_create(){
 
 void scene_update(Scene *scene, float deltaTime){
   printf("Scene update!\n");
+  // Rotate entities
+  float rotationSpeed = 10.0f;
+  for(int i = 0; i < scene->num_entities; i++){
+    Entity *entity = &scene->entities[i];
+
+    // Update rotation vector
+    entity->rotation[1] += rotationSpeed * deltaTime;
+  }
 }
 
 void scene_render(Scene *scene){
