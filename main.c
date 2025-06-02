@@ -32,6 +32,9 @@ bool firstMouse = true;
 float lastX = 400.0f;
 float lastY = 300.0f;
 
+// Lighting
+vec3 lightPos = {1.2f, 0.5f, 2.0f};
+
 void processInput(GLFWwindow *window){
 	if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS){
 		glfwSetWindowShouldClose(window, 1);
