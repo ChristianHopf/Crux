@@ -170,6 +170,8 @@ int main(){
 		// Handle input
 		processInput(engine->window);
 
+    scene_update(engine->active_scene, engine->deltaTime);
+
     // Render scene
     scene_render(engine->active_scene);
 

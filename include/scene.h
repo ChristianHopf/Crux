@@ -14,6 +14,7 @@ typedef struct {
 
 Scene *scene_create();
 
+void scene_update(Scene *scene, float deltaTime);
 void scene_render(Scene *scene);
 
 #endif

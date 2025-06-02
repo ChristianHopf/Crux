@@ -94,6 +94,10 @@ Scene *scene_create(){
   return scene;
 }
 
+void scene_update(Scene *scene, float deltaTime){
+  printf("Scene update!\n");
+}
+
 void scene_render(Scene *scene){
   // Render (clear color and depth buffer bits)
   glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
