@@ -1,53 +1,22 @@
 #include "model.h"
-#include "shader.h"
-#include "mesh.h"
+#include "utils.h"
 #include <assimp/material.h>
-#include <assimp/mesh.h>
-#include <assimp/scene.h>
-#include <assimp/postprocess.h>
-#include <assimp/cimport.h>
-#include <assimp/types.h>
 #include <cglm/vec2.h>
 #include <stdbool.h>
-#include <string.h>
+#include <assimp/cimport.h>
+#include <assimp/scene.h>
+#include <assimp/postprocess.h>
 #include <stb_image/stb_image.h>
 
-Model *model_create(char *path){
-  Model *model = (Model *)malloc(sizeof(Model));
-  if (!model){
-    printf("Error: failed to allocate Model\n");
-    return NULL;
-  }
+bool model_load(Model *model, const char *path){
+  const struct aiScene* scene = aiImportFile(path,
+        aiProcess_Triangulate |
+        aiProcess_GenSmoothNormals |
+        aiProcess_JoinIdenticalVertices |
+        aiProcess_ValidateDataStructure);
 
-  model->meshes = NULL;
-  model->num_meshes = 0;
-  model->directory = NULL;
-  model->textures_loaded = NULL;
-  model->num_textures_loaded = 0;
-  
-  bool loaded = model_load(model, path);
-  if (loaded){
-    return model;
-  }
-  else{
-    free(model);
-    return NULL;
-  }
-}
-
-void model_draw(Model *model, Shader *shader){
-  for (unsigned int i = 0; i < model->num_meshes; i++){
-    mesh_draw(shader, &model->meshes[i]);
-  }
-}
-
-bool model_load(Model *model, char *path){
-  const struct aiScene *scene = aiImportFile(path, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace | aiProcess_JoinIdenticalVertices);
-  if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
-    printf("ERROR::ASSIMP::%s\n", aiGetErrorString());
-  }
-  if (scene == NULL){
-    printf("Error: importing scene failed\n");
+  if (!scene || !scene->mRootNode || !scene->mMeshes || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE) {
+    printf("Error: failed to get scene\n");
     return false;
   }
 
@@ -66,85 +35,75 @@ bool model_load(Model *model, char *path){
     model->directory = strdup(".");
   }
 
-  // Allocate meshes and num_meshes based on the scene's number of meshes
-  Mesh *meshes = (Mesh *)malloc(scene->mNumMeshes * sizeof(Mesh));
-  if (!meshes){
-    printf("Error: failed to allocate model meshes in model_process_node");
-    free(model->directory);
-    aiReleaseImport(scene);
+  // Allocate memory for meshes
+  model->num_meshes = scene->mNumMeshes;
+  if (model->num_meshes == 0){
+    printf("Error: found 0 meshes in scene\n");
     return false;
   }
-  model->meshes = meshes;
-  model->num_meshes = scene->mNumMeshes;
+  model->meshes = (Mesh *)malloc(scene->mNumMeshes * sizeof(Mesh));
+  if (!model->meshes){
+    printf("Error: failed to allocate meshes\n");
+    return false;
+  }
+ 
+  // Process all meshes
+  for(unsigned int i = 0; i < scene->mNumMeshes; i++){
+    model_process_mesh(model, scene->mMeshes[i], scene, &model->meshes[i]);
+  }
 
-  // Process root node
-  unsigned int model_mesh_index = 0;
-  model_process_node(model, scene->mRootNode, scene, &model_mesh_index);
   aiReleaseImport(scene);
   return true;
 }
 
-void model_process_node(Model *model, struct aiNode *node, const struct aiScene *scene, unsigned int *index){
-  // Process the node's meshes
-  for(unsigned int i = 0; i < node->mNumMeshes; i++){
-    struct aiMesh *ai_mesh = scene->mMeshes[node->mMeshes[i]];
-    Mesh *mesh = model_process_mesh(model, ai_mesh, scene);
-    if (!mesh){
-      printf("Failed to process mesh in model_process_node\n");
-    }
-    model->meshes[(*index)++] = *mesh;
-  }
-  // Process the node's children
-  for(unsigned int i = 0; i < node->mNumChildren; i++){
-    model_process_node(model, node->mChildren[i], scene, index);
-  }
-}
+void model_process_mesh(Model *model, struct aiMesh *ai_mesh, const struct aiScene *scene, Mesh *dest_mesh){
+  // Get material and texture paths, joined with directory
+  const struct aiMaterial *material = scene->mMaterials[ai_mesh->mMaterialIndex];
+  // Get diffuse and specular textures
 
-Mesh *model_process_mesh(Model *model, struct aiMesh *ai_mesh, const struct aiScene *scene){
-  Mesh *mesh = (Mesh *)malloc(sizeof(Mesh));
-  if (!mesh) {
-    printf("Error: failed to allocate Mesh in model_process_mesh\n");
-    return NULL;
+  GLuint diffuse_texture_id = model_load_texture_type(model, material, aiTextureType_DIFFUSE);
+  if (diffuse_texture_id != 0){
+    dest_mesh->diffuse_texture_id = diffuse_texture_id;
   }
-  //*model_mesh_ptr = (Mesh){0};
+  GLuint specular_texture_id = model_load_texture_type(model, material, aiTextureType_SPECULAR);
+  if (specular_texture_id != 0){
+    dest_mesh->specular_texture_id = specular_texture_id;
+  }
 
-  Vertex *vertices;
-  unsigned int num_vertices = ai_mesh->mNumVertices;
-  unsigned int *indices;
-  unsigned int num_indices = (ai_mesh->mNumFaces * 3);
-  Texture *textures;
-  unsigned int num_textures;
-
-  vertices = malloc(ai_mesh->mNumVertices * sizeof(Vertex));
+  // Allocate vertices and indices
+  Vertex *vertices = (Vertex *)malloc(ai_mesh->mNumVertices * sizeof(Vertex));
   if (!vertices){
-    printf("Error: failed to allocate model vertices in model_process_mesh\n");
+    printf("Error: failed to allocate vertices in model_process_mesh\n");
   }
-  indices = malloc(ai_mesh->mNumFaces * 3 * sizeof(unsigned int));
+  unsigned int *indices = (unsigned int *)malloc(ai_mesh->mNumFaces * 3 * sizeof(unsigned int));
   if (!indices){
-    printf("Error: failed to allocate model indices in model_process_mesh\n");
+    printf("Error: failed to allocate indices in model_process_mesh\n");
   }
 
-  // For each of the mesh's vertices,
-  // create a Vertex and push it to the Model's Vertices
-  for(unsigned int i = 0; i < ai_mesh->mNumVertices; i++){
-    Vertex vertex;
-    vec3 temp;
-    temp[0] = ai_mesh->mVertices[i].x;
-    temp[1] = ai_mesh->mVertices[i].y;
-    temp[2] = ai_mesh->mVertices[i].z;
-    glm_vec3_copy(temp, vertex.position);
-    temp[0] = ai_mesh->mNormals[i].x;
-    temp[1] = ai_mesh->mNormals[i].y;
-    temp[2] = ai_mesh->mNormals[i].z;
-    glm_vec3_copy(temp, vertex.normal);
-    if(ai_mesh->mTextureCoords[0]){
+  // Process vertices
+  for (unsigned int i = 0; i < ai_mesh->mNumVertices; i++){
+    // Copy position vertices to vertex position vector
+    memcpy(vertices[i].position, &ai_mesh->mVertices[i], sizeof(float) * 3);
+    // Normals
+    if (ai_mesh->mNormals){
+      memcpy(vertices[i].normal, &ai_mesh->mNormals[i], sizeof(float) * 3);
+    }else{
+      memset(vertices[i].normal, 0, sizeof(float) * 3);
+    }
+    // Process UVs
+    if (ai_mesh->mTextureCoords[0]){
+      //memcpy(vertices[i].tex_coord, &ai_mesh->mTextureCoords[0][i], sizeof(float) * 2);
+      // mTextureCoords may have more than 1 channel per vertex, but we only care about
+      // the first one for now. Each channel is a vec3 because it may use uvw (for cubemaps or something)
       vec2 temp;
       temp[0] = ai_mesh->mTextureCoords[0][i].x;
       temp[1] = ai_mesh->mTextureCoords[0][i].y;
-      glm_vec2_copy(temp, vertex.tex_coords);
+      glm_vec2_copy(temp, vertices[i].tex_coord);
+    } else{
+      glm_vec2_copy((vec2){0.0f, 0.0f}, vertices[i].tex_coord);
     }
-    vertices[i] = vertex;
   }
+
   // Process indices
   unsigned int index = 0;
   for(unsigned int i = 0; i < ai_mesh->mNumFaces; i++){
@@ -153,119 +112,149 @@ Mesh *model_process_mesh(Model *model, struct aiMesh *ai_mesh, const struct aiSc
       indices[index++] = face.mIndices[j];
     }
   }
-  // Process material
-  if (ai_mesh->mMaterialIndex >= 0){
-    struct aiMaterial *material = scene->mMaterials[ai_mesh->mMaterialIndex];
-    TextureArray diffuseMaps = model_load_material_textures(model, material, aiTextureType_DIFFUSE, "texture_diffuse");
-    TextureArray specularMaps = model_load_material_textures(model, material, aiTextureType_SPECULAR, "texture_specular");
+  dest_mesh->num_indices = index;
 
-    // Allocate combined textures array
-    num_textures = diffuseMaps.num_textures + specularMaps.num_textures;
-    textures = (Texture *)malloc(num_textures * sizeof(Texture));
-    if (!textures){
-      printf("Error: failed to allocate textures for mesh in model_process_load\n");
-      return NULL;
-    }
+  // Bind vertex buffers and buffer vertex data
+  glGenBuffers(1, &dest_mesh->VBO);
+  glGenBuffers(1, &dest_mesh->EBO);
+  glGenVertexArrays(1, &dest_mesh->VAO);
 
-    memcpy(textures, diffuseMaps.textures, diffuseMaps.num_textures * sizeof(Texture));
-    memcpy(textures + diffuseMaps.num_textures, specularMaps.textures, specularMaps.num_textures * sizeof(Texture));
+  // Bind vertex array
+  glBindVertexArray(dest_mesh->VAO);
 
-    // Copy diffuseMaps textures
-    //for(unsigned int i = 0; i < diffuseMaps.num_textures; i++){
-    //  textures[i] = diffuseMaps.textures[i];
-    //}
-    // Copy specularMaps textures
-    //for(unsigned int i = 0; i < specularMaps.num_textures; i++){
-    //  textures[diffuseMaps.num_textures +i] = specularMaps.textures[i];
-    //}
-  }
-  mesh = mesh_create(vertices, num_vertices, indices, num_indices, textures, num_textures);
-  return mesh;
+  // Bind element buffers and buffer indices data
+  glBindBuffer(GL_ARRAY_BUFFER, dest_mesh->VBO);
+  glBufferData(GL_ARRAY_BUFFER, ai_mesh->mNumVertices * sizeof(Vertex), vertices, GL_STATIC_DRAW);
+
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, dest_mesh->EBO);
+  glBufferData(GL_ELEMENT_ARRAY_BUFFER, index * sizeof(unsigned int), indices, GL_STATIC_DRAW);
+
+  // Configure attribute pointers
+  // Position
+  glEnableVertexAttribArray(0);
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, position));
+  // Normal
+  glEnableVertexAttribArray(1);
+  glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, normal));
+  // Tex_coord
+  glEnableVertexAttribArray(2);
+  glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, tex_coord));
+
+  glBindVertexArray(0);
+
+  free(vertices);
+  free(indices);
 }
 
-TextureArray model_load_material_textures(Model *model, struct aiMaterial *mat, enum aiTextureType type, char *type_name){
-  // Initialize and allocate TextureArray
-  TextureArray result = {NULL, 0};
-  unsigned int texture_count = aiGetMaterialTextureCount(mat, type);
-  result.textures = malloc(texture_count * sizeof(Texture));
-  if (!result.textures){
-    printf("Error: failed to allocate TextureArray for textures of type %s in model_load_material_textures\n", type_name);
-  }
-  result.num_textures = texture_count;
+void model_draw(Model *model, Shader *shader){
+  // For each mesh in the model
+  for(unsigned int i = 0; i < model->num_meshes; i++){
+    // Bind textures
+    // Diffuse
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, model->meshes[i].diffuse_texture_id);
+    shader_set_int(shader, "diffuseMap", 0);
+    
+    // Specular
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, model->meshes[i].specular_texture_id);
+    shader_set_int(shader, "specularMap", 1);
 
-  for(unsigned int i = 0; i < texture_count; i++){
-    struct aiString str;
-    if (aiGetMaterialTexture(mat, type, i, &str, NULL, NULL, NULL, NULL, NULL, NULL) != AI_SUCCESS){
-      continue;
-    }
-
-    // Check if texture has already been loaded
-    bool skip = false;
-    for(unsigned int j = 0; j < model->num_textures_loaded; j++){
-      if (strcmp(model->textures_loaded[j].path, str.data) == 0){
-        result.textures[i] = model->textures_loaded[j];
-        skip = true;
-        break;
-      }
-    }
-    // Only load the texture if it hasn't been loaded yet
-    if (!skip){
-      Texture texture;
-      texture.ID = TextureFromFile(str.data, model->directory);
-      texture.type = type_name;
-      texture.path = str.data;
-      result.textures[i] = texture;
-      // Add to loaded_textures, realloc
-      model->textures_loaded = (Texture *)realloc(model->textures_loaded, (model->num_textures_loaded + 1) * sizeof(Texture));
-      if (!model->textures_loaded){
-        printf("Error: failed to reallocate model textures_loaded in model_load_material_textures\n");
-      }
-      model->textures_loaded[model->num_textures_loaded] = texture;
-      model->num_textures_loaded++;
-    }
+    // Bind its vertex array and draw its triangles
+    glBindVertexArray(model->meshes[i].VAO);
+    glDrawElements(GL_TRIANGLES, model->meshes[i].num_indices, GL_UNSIGNED_INT, 0);
   }
-  return result;
+  // Next mesh will bind its VAO first, so this shouldn't matter. Experiment with and without
+  glBindVertexArray(0);
 }
 
-unsigned int TextureFromFile(const char *path, const char *directory)
-{
-    char filename[1024];
-    snprintf(filename, sizeof(filename), "%s/%s", directory, path);
+void model_free(Model *model){
+  // Delete vertex arrays and buffers
+  for(unsigned int i = 0; i < model->num_meshes; i++){
+    glDeleteVertexArrays(1, &model->meshes[i].VAO);
+    glDeleteBuffers(1, &model->meshes[i].VBO);
+    glDeleteBuffers(1, &model->meshes[i].EBO);
+  }
+  // Free meshes
+  free(model->meshes);
+  free(model);
+}
 
-    unsigned int textureID;
-    glGenTextures(1, &textureID);
+GLuint model_load_texture_type(Model *model, const struct aiMaterial *material, enum aiTextureType type){
+  // Get texture path (combine this into one line?)
+  char *texture_path = get_texture_path(material, type);
+  if (!texture_path){
+    printf("Error: failed to get texture path of type %s\n", type == aiTextureType_DIFFUSE ? "DIFFUSE" : "SPECULAR");
+    return 0;
+  }
+  char full_texture_path[512];
+  snprintf(full_texture_path, sizeof(full_texture_path), "%s/%s", model->directory, texture_path);
 
-    int width, height, nrComponents;
-    unsigned char *data = stbi_load(filename, &width, &height, &nrComponents, 0);
-    if (data)
-    {
-        GLenum format;
-        if (nrComponents == 1)
-            format = GL_RED;
-        else if (nrComponents == 3)
-            format = GL_RGB;
-        else if (nrComponents == 4)
-            format = GL_RGBA;
-        else
-            format = GL_RGB; // fallback
+  // Check if the texture is already loaded
+  GLuint texture_id = model_check_loaded_texture(full_texture_path);
+  if (texture_id == 0){
+    texture_id = model_load_texture(full_texture_path);
+    model_add_loaded_texture(full_texture_path, texture_id);
+  }
+  free(texture_path);
+  return texture_id;
+}
 
-        glBindTexture(GL_TEXTURE_2D, textureID);
-        glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
-        glGenerateMipmap(GL_TEXTURE_2D);
+// I could probably move this into model_load_texture_type,
+// but I might need to just load a texture from a path some time
+GLuint model_load_texture(const char *path){
+  int width, height, channels;
+  unsigned char* data = stbi_load(path, &width, &height, &channels, 0);
+  if (!data){
+    printf("Error: Failed to load texture at: %s\n", path);
+    return 0;
+  }
 
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  // Generate GL textures
+  GLenum format;
+  if (channels == 4)      format = GL_RGBA;
+  else if (channels == 3) format = GL_RGB;
+  else if (channels == 1) format = GL_RED;
+  //else                    format = GL_RGB; // fallback
+  GLuint texture;
+  glGenTextures(1, &texture);
+  glBindTexture(GL_TEXTURE_2D, texture);
 
-        stbi_image_free(data);
+  glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+  glGenerateMipmap(GL_TEXTURE_2D);
+
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  stbi_image_free(data);
+  return texture;
+}
+
+char *get_texture_path(const struct aiMaterial *material, enum aiTextureType type){
+  struct aiString path;
+  if (aiGetMaterialTexture(material, type, 0, &path, NULL, NULL, NULL, NULL, NULL, NULL) != AI_SUCCESS) {
+    return NULL;
+  }
+  return strdup(path.data);
+}
+
+GLuint model_check_loaded_texture(const char *path){
+  // Check if a TextureEntry exists with this texture's path
+  for(int i = 0; i < num_loaded_textures; i++){
+    if (strncmp(loaded_textures[i].path, path, sizeof(loaded_textures[i].path)) == 0){
+      return loaded_textures[i].texture_id;
     }
-    else
-    {
-        printf("Error: failed to load texture at path: %s\n", path);
-        printf("STB error: %s\n", stbi_failure_reason());
-        glDeleteTextures(1, &textureID);
-    }
+  }
+  return 0;
+}
 
-    return textureID;
+void model_add_loaded_texture(const char *path, GLuint texture_id){
+  if (num_loaded_textures >= MAX_TEXTURES){
+    printf("Error: failed to load texture, texture cache full\n");
+    return;
+  }
+  strncpy(loaded_textures[num_loaded_textures].path, path, sizeof(loaded_textures[num_loaded_textures].path) - 1);
+  loaded_textures[num_loaded_textures].texture_id = texture_id;
+  num_loaded_textures++;
 }

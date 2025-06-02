@@ -1,4 +1,5 @@
 #include "scene.h"
+#include <math.h>
 
 Scene *scene_create(){
   // Allocate scene
@@ -34,30 +35,56 @@ Scene *scene_create(){
 		glfwTerminate();
 		return NULL;
 	}
-  //backpack->shader = shader;
+
+  // Pochita
+  Entity *my_entity = (Entity *)malloc(sizeof(Entity));
+  if (!my_entity){
+    printf("Error: failed to allocate entity\n");
+    free(scene->entities);
+    free(scene);
+    return NULL;
+  }
+  my_entity->ID = 1;
+
+  glm_vec3_copy((vec3){0.0f, 0.0f, 0.0f}, my_entity->position);
+  glm_vec3_copy((vec3){0.0f, 0.0f, 0.0f}, my_entity->rotation);
+  glm_vec3_copy((vec3){1.0f, 1.0f, 1.0f}, my_entity->scale);
+  //Model *model = model_create("resources/objects/pochita/scene.gltf");
+
+  // Allocate and load model
+  Model *model = (Model *)malloc(sizeof(Model));
+  if (!model){
+    printf("Error: failed to create Model\n");
+    return NULL;
+  }
+  model_load(model, "resources/objects/backpack/backpack.obj");
+  my_entity->model = model;
+  my_entity->shader = shader;
+  scene->entities[0] = *my_entity;
+  scene->num_entities = 1;
 
   // Make a bunch of backpacks
-  for(int i = 0; i < 5; i++){
-    Entity *backpack = (Entity *)malloc(sizeof(Entity));
-    if (!backpack){
-      printf("Error: failed to allocate backpack entity\n");
-      free(scene->entities);
-      free(scene);
-      return NULL;
-    }
-    backpack->ID = i;
-    glm_vec3_copy((vec3){(float)(5 * i), 0.0f, 0.0f}, backpack->position);
-    glm_vec3_copy((vec3){(float)(45 * i), (float)(45 * i), (float)(45 * i)}, backpack->rotation);
-    glm_vec3_copy((vec3){(float)(i + 1), (float)(i + 1), (float)(i + 1)}, backpack->scale);
-    Model *model = model_create("resources/objects/backpack/backpack.obj");
-    if (!model){
-      printf("Error: failed to create Model\n");
-    }
-    backpack->model = model;
-    backpack->shader = shader;
-    scene->entities[i] = *backpack;
-    scene->num_entities = i + 1;
-  }
+  //for(int i = 0; i < 5; i++){
+  //  Entity *backpack = (Entity *)malloc(sizeof(Entity));
+  //  if (!backpack){
+  //    printf("Error: failed to allocate backpack entity\n");
+  //    free(scene->entities);
+  //    free(scene);
+  //    return NULL;
+  //  }
+  //  backpack->ID = i;
+  //  glm_vec3_copy((vec3){(float)(5 * i), 0.0f, 0.0f}, backpack->position);
+  //  glm_vec3_copy((vec3){(float)(45 * i), (float)(45 * i), (float)(45 * i)}, backpack->rotation);
+  //  glm_vec3_copy((vec3){(float)(i + 1), (float)(i + 1), (float)(i + 1)}, backpack->scale);
+  //  Model *model = model_create("resources/objects/backpack/backpack.obj");
+  //  if (!model){
+  //    printf("Error: failed to create Model\n");
+  //  }
+  //  backpack->model = model;
+  //  backpack->shader = shader;
+  //  scene->entities[i] = *backpack;
+  //  scene->num_entities = i + 1;
+  //}
 
   return scene;
 }

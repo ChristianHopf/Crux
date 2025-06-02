@@ -3,35 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-// Helper to read from file to string
-static char *read_file(const char *path){
-	// Open file
-	FILE *file = fopen(path, "r");
-	if (!file){
-		printf("ERROR::SHADER::FILE_NOT_FOUND: %s\n", path);
-		return NULL;
-	}
-
-	// Get file size
-	fseek(file, 0, SEEK_END);
-	long length = ftell(file);
-	fseek(file, 0, SEEK_SET);
-
-	// Allocate buffer
-	char *buffer = (char *)malloc(length + 1);
-	if (!buffer){
-		printf("ERROR::SHADER::MEMORY_ALLOCATION_FAILED\n");
-		fclose(file);
-		return NULL;
-	}
-
-	// Read file
-	size_t read_size = fread(buffer, 1, length, file);
-	buffer[read_size] = '\0';
-	fclose(file);
-	return buffer;
-}
+#include "utils.h"
 
 // Helper to compile shaders
 static unsigned int compile_shader(unsigned int type, const char *shaderCode){
@@ -62,8 +34,8 @@ Shader *shader_create(const char *vertexPath, const char *fragmentPath) {
   }
 
 	// Read in vertex shader
-	char *vertexCode = read_file(vertexPath);
-	char *fragmentCode = read_file(fragmentPath);
+	unsigned char *vertexCode = read_file(vertexPath);
+	unsigned char *fragmentCode = read_file(fragmentPath);
 	if (!vertexCode || !fragmentCode) {
 		// If at least one failed, deallocate the other, if any
 		if (vertexCode) free(vertexCode);
