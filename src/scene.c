@@ -135,8 +135,8 @@ void scene_render(Scene *scene){
 
     // Point lights
     shader_set_vec3(entity->shader, "light.position", (vec3){1.2f, 1.0f, 2.0f});
-    shader_set_vec3(entity->shader, "light.color", (vec3){1.0f});
-    shader_set_float(entity->shader, "light.constnat", 1.0f);
+    shader_set_vec3(entity->shader, "light.color", (vec3){1.0f, 1.0f, 1.0f});
+    shader_set_float(entity->shader, "light.constant", 1.0f);
     shader_set_float(entity->shader, "light.linear", 0.14f);
     shader_set_float(entity->shader, "light.quadratic", 0.07f);
 

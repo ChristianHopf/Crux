@@ -9,7 +9,7 @@ out vec4 FragColor;
 uniform sampler2D diffuseMap;
 uniform sampler2D specularMap;
 
-//uniform vec3 lightDirection;
+uniform vec3 viewPos;
 
 struct Light {
   vec3 position;
@@ -22,36 +22,32 @@ struct Light {
 
 uniform Light light;
 
-uniform vec3 viewPos;
-
 void main(){
   // Attenuation
   float distance = length(light.position - FragPos);
   float attenuation = 1.0 / (light.constant + light.linear * distance + light.quadratic * (distance * distance));
 
   float ambientStrength = 0.1;
-  float specularStrength = texture(specularMap, TexCoord).r;
+  //float specularStrength = texture(specularMap, TexCoord).r;
+  float specularStrength = 0.2;
 
   // Norm light dir
   vec3 norm = normalize(Normal);
   vec3 lightDir = normalize(light.position - norm);
-  //vec3 lightDir = normalize(-lightDirection);
 
   // Ambient
-  vec3 ambient = ambientStrength * light.color * attenuation;
+  vec3 ambient = attenuation * ambientStrength * light.color;
 
   // Diffuse
   float diff = max(dot(norm, lightDir), 0.0);
-  vec3 diffuse = diff * texture(diffuseMap, TexCoord).rgb * attenuation;
+  vec3 diffuse = attenuation * diff * texture(diffuseMap, TexCoord).rgb;
 
   // Specular
   vec3 viewDir = normalize(viewPos - FragPos);
   vec3 reflectDir = reflect(-lightDir, norm);
   float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);
-  vec3 specular = specularStrength * spec * light.color * attenuation;
+  vec3 specular = attenuation * specularStrength * spec * light.color;
 
-  vec3 result = ambient + diffuse;
-  //FragColor = vec4(result, 1.0);
-
+  vec3 result = ambient + diffuse + specular;
   FragColor = vec4(result, 1.0);
 }
