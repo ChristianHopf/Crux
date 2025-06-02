@@ -21,9 +21,6 @@ bool model_load(Model *model, const char *path){
     return false;
   }
 
-  printf("Scene has %u materials\n", scene->mNumMaterials);
-  printf("Scene has %d textures\n", scene->mNumTextures);
-
   // Get directory substring
   char *slash = strrchr(path, '/');
   if(slash){
@@ -201,8 +198,6 @@ GLuint model_load_texture_type(Model *model, const struct aiMaterial *material, 
     return embedded_texture_id;
   }
 
-  printf("Got texture path at %s\n", texture_path);
-
   char full_texture_path[512];
   snprintf(full_texture_path, sizeof(full_texture_path), "%s/%s", model->directory, texture_path);
 
@@ -250,7 +245,6 @@ GLuint model_load_texture(const char *path){
 GLuint model_load_embedded_texture(const char *path, const struct aiScene *scene){
   // Texture paths are *0, *1, etc
   int index = atoi(path + 1);
-  printf("Embedded texture index %d\n", index);
   const struct aiTexture *tex = scene->mTextures[index];
 
   // Load with aitexture pcData, mWidth, mHeight (texture.h)
@@ -274,6 +268,7 @@ GLuint model_load_embedded_texture(const char *path, const struct aiScene *scene
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
   stbi_image_free(data);
   return texture;
 }

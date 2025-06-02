@@ -41,12 +41,12 @@ Scene *scene_create(){
     printf("Error: failed to allocate oiiaiModel\n");
     return NULL;
   }
-  model_load(embTreeModel, "resources/objects/stylized_pine_tree_tree.glb");
+  model_load(embTreeModel, "resources/objects/moonlight_greatsword.glb");
   Entity embTree = {
     .ID = 1,
     .position = {0.0f, 0.0f, 0.0f},
     .rotation = {0.0f, 0.0f, 0.0f},
-    .scale = {0.005f, 0.005f, 0.005f},
+    .scale = {1.0f, 1.0f, 1.0f},
     .model = embTreeModel,
     .shader = shader
   };
@@ -130,8 +130,8 @@ void scene_render(Scene *scene){
     shader_set_mat4(entity->shader, "projection", projection);
 
     // Set lightPos and lightColor uniforms in the fragment shader
-    shader_set_vec3(entity->shader, "lightPos", (vec3){(float)(sin(glfwGetTime())*10), 0.5f, (float)(cos(glfwGetTime())*10)});
-    //shader_set_vec3(entity->shader, "lightPos", (vec3){1.2f, 0.5f, 2.0f});
+    //shader_set_vec3(entity->shader, "lightPos", (vec3){(float)(sin(glfwGetTime())*10), 0.5f, (float)(cos(glfwGetTime())*10)});
+    shader_set_vec3(entity->shader, "lightPos", (vec3){1.2f, 0.5f, 2.0f});
     shader_set_vec3(entity->shader, "lightColor", (vec3){1.0f});
 
     // Set camera position as viewPos in the fragment shader
