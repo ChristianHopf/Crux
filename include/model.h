@@ -1,6 +1,7 @@
 #ifndef NEWMODEL_H
 #define NEWMODEL_H
 
+#include <assimp/material.h>
 #include <glad/glad.h>
 #include <cglm/cglm.h>
 #include <stdbool.h>
@@ -18,26 +19,11 @@ typedef struct {
 static TextureEntry loaded_textures[MAX_TEXTURES];
 static int num_loaded_textures = 0;
 
-typedef enum {
-  TEXTURE_TYPE_DIFFUSE,
-  TEXTURE_TYPE_NORMAL,
-  TEXTURE_TYPE_METALLIC,
-  TEXTURE_TYPE_ROUGHNESS,
-  TEXTURE_TYPE_OCCLUSION,
-  TEXTURE_tYPE_EMISSIVE,
-  TEXTURE_TYPE_UNKNOWN
-} TextureType;
-
 typedef struct {
     vec3 position;
     vec3 normal;
     vec2 tex_coord;
 } Vertex;
-
-typedef struct {
-  GLuint id;
-  TextureType type;
-} Texture;
 
 typedef struct {
   GLuint VAO, VBO, EBO;
@@ -57,6 +43,7 @@ bool model_load(Model *model, const char *path);
 void model_process_mesh(Model *model, struct aiMesh *ai_mesh, const struct aiScene *scene, Mesh *dest_mesh);
 void model_draw(Model *model, Shader *shader);
 void model_free(Model *model);
+GLuint model_load_texture_type(Model *model, const struct aiMaterial *material, enum aiTextureType type);
 GLuint model_load_texture(const char *path);
 char *get_texture_path(const struct aiMaterial *material, enum aiTextureType type);
 GLuint model_check_loaded_texture(const char *path);

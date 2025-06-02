@@ -60,28 +60,15 @@ void model_process_mesh(Model *model, struct aiMesh *ai_mesh, const struct aiSce
   // Get material and texture paths, joined with directory
   const struct aiMaterial *material = scene->mMaterials[ai_mesh->mMaterialIndex];
   // Get diffuse and specular textures
-  char *diffuse_path = get_texture_path(material, aiTextureType_DIFFUSE);
-  char *specular_path = get_texture_path(material, aiTextureType_SPECULAR);
-  char full_diffuse_path[512]; // used to be 1024, 512 is plenty
-  char full_specular_path[512];
-  snprintf(full_diffuse_path, sizeof(full_diffuse_path), "%s/%s", model->directory, diffuse_path);
-  snprintf(full_specular_path, sizeof(full_specular_path), "%s/%s", model->directory, specular_path);
-  // Check if the texture is already loaded
-  GLuint diffuse_texture_id = model_check_loaded_texture(full_diffuse_path);
-  if (diffuse_texture_id == 0){
-    diffuse_texture_id = model_load_texture(full_diffuse_path);
-    model_add_loaded_texture(full_diffuse_path, diffuse_texture_id);
-  }
-  dest_mesh->diffuse_texture_id = diffuse_texture_id;
-  free(diffuse_path);
 
-  GLuint specular_texture_id = model_check_loaded_texture(full_specular_path);
-  if (specular_texture_id == 0){
-    specular_texture_id = model_load_texture(full_specular_path);
-    model_add_loaded_texture(full_specular_path, specular_texture_id);
+  GLuint diffuse_texture_id = model_load_texture_type(model, material, aiTextureType_DIFFUSE);
+  if (diffuse_texture_id != 0){
+    dest_mesh->diffuse_texture_id = diffuse_texture_id;
   }
-  dest_mesh->specular_texture_id = specular_texture_id;
-  free(specular_path);
+  GLuint specular_texture_id = model_load_texture_type(model, material, aiTextureType_SPECULAR);
+  if (specular_texture_id != 0){
+    dest_mesh->specular_texture_id = specular_texture_id;
+  }
 
   // Allocate vertices and indices
   Vertex *vertices = (Vertex *)malloc(ai_mesh->mNumVertices * sizeof(Vertex));
@@ -181,14 +168,40 @@ void model_draw(Model *model, Shader *shader){
   glBindVertexArray(0);
 }
 
-char *get_texture_path(const struct aiMaterial *material, enum aiTextureType type){
-  struct aiString path;
-  if (aiGetMaterialTexture(material, type, 0, &path, NULL, NULL, NULL, NULL, NULL, NULL) != AI_SUCCESS) {
-    return NULL;
+void model_free(Model *model){
+  // Delete vertex arrays and buffers
+  for(unsigned int i = 0; i < model->num_meshes; i++){
+    glDeleteVertexArrays(1, &model->meshes[i].VAO);
+    glDeleteBuffers(1, &model->meshes[i].VBO);
+    glDeleteBuffers(1, &model->meshes[i].EBO);
   }
-  return strdup(path.data);
+  // Free meshes
+  free(model->meshes);
+  free(model);
 }
 
+GLuint model_load_texture_type(Model *model, const struct aiMaterial *material, enum aiTextureType type){
+  // Get texture path (combine this into one line?)
+  char *texture_path = get_texture_path(material, type);
+  if (!texture_path){
+    printf("Error: failed to get texture path of type %s\n", type == aiTextureType_DIFFUSE ? "DIFFUSE" : "SPECULAR");
+    return 0;
+  }
+  char full_texture_path[512];
+  snprintf(full_texture_path, sizeof(full_texture_path), "%s/%s", model->directory, texture_path);
+
+  // Check if the texture is already loaded
+  GLuint texture_id = model_check_loaded_texture(full_texture_path);
+  if (texture_id == 0){
+    texture_id = model_load_texture(full_texture_path);
+    model_add_loaded_texture(full_texture_path, texture_id);
+  }
+  free(texture_path);
+  return texture_id;
+}
+
+// I could probably move this into model_load_texture_type,
+// but I might need to just load a texture from a path some time
 GLuint model_load_texture(const char *path){
   int width, height, channels;
   unsigned char* data = stbi_load(path, &width, &height, &channels, 0);
@@ -218,6 +231,14 @@ GLuint model_load_texture(const char *path){
   return texture;
 }
 
+char *get_texture_path(const struct aiMaterial *material, enum aiTextureType type){
+  struct aiString path;
+  if (aiGetMaterialTexture(material, type, 0, &path, NULL, NULL, NULL, NULL, NULL, NULL) != AI_SUCCESS) {
+    return NULL;
+  }
+  return strdup(path.data);
+}
+
 GLuint model_check_loaded_texture(const char *path){
   // Check if a TextureEntry exists with this texture's path
   for(int i = 0; i < num_loaded_textures; i++){
@@ -230,21 +251,10 @@ GLuint model_check_loaded_texture(const char *path){
 
 void model_add_loaded_texture(const char *path, GLuint texture_id){
   if (num_loaded_textures >= MAX_TEXTURES){
-    printf("Error: texture cache full\n");
+    printf("Error: failed to load texture, texture cache full\n");
     return;
   }
   strncpy(loaded_textures[num_loaded_textures].path, path, sizeof(loaded_textures[num_loaded_textures].path) - 1);
   loaded_textures[num_loaded_textures].texture_id = texture_id;
   num_loaded_textures++;
-}
-
-void model_free(Model *model){
-  // Delete vertex arrays and buffers
-  for(unsigned int i = 0; i < model->num_meshes; i++){
-    glDeleteVertexArrays(1, &model->meshes[i].VAO);
-    glDeleteBuffers(1, &model->meshes[i].VBO);
-    glDeleteBuffers(1, &model->meshes[i].EBO);
-  }
-  // Free meshes
-  free(model->meshes);
 }
