@@ -36,43 +36,38 @@ Scene *scene_create(){
 		return NULL;
 	}
 
-  // Backpack 1
-  Entity *my_entity = (Entity *)malloc(sizeof(Entity));
-  if (!my_entity){
-    printf("Error: failed to allocate entity\n");
-    free(scene->entities);
-    free(scene);
+  Model *embTreeModel = (Model *)malloc(sizeof(Model));
+  if (!embTreeModel){
+    printf("Error: failed to allocate oiiaiModel\n");
     return NULL;
   }
-  my_entity->ID = 1;
-
-  glm_vec3_copy((vec3){-2.0f, 0.0f, 0.0f}, my_entity->position);
-  glm_vec3_copy((vec3){0.0f, -90.0f, 0.0f}, my_entity->rotation);
-  glm_vec3_copy((vec3){1.0f, 1.0f, 1.0f}, my_entity->scale);
-
-  // Allocate and load model
-  Model *model = (Model *)malloc(sizeof(Model));
-  if (!model){
-    printf("Error: failed to create Model\n");
-    return NULL;
-  }
-  model_load(model, "resources/objects/backpack/backpack.obj");
-  my_entity->model = model;
-  my_entity->shader = shader;
-  scene->entities[0] = *my_entity;
-  scene->num_entities = 1;
-
-  // Backpack 2
-  Entity backpack2 = {
-    .ID = 2,
-    .position = {2.0f, 0.0f, 0.0f}, // Move right
-    .rotation = {0.0f, 90.0f, 0.0f}, // Yaw 90°
-    .scale = {1.0f, 1.0f, 1.0f},
-    .model = model,
+  model_load(embTreeModel, "resources/objects/stylized_pine_tree_tree.glb");
+  Entity embTree = {
+    .ID = 1,
+    .position = {0.0f, 0.0f, 0.0f},
+    .rotation = {0.0f, 0.0f, 0.0f},
+    .scale = {0.005f, 0.005f, 0.005f},
+    .model = embTreeModel,
     .shader = shader
   };
-  scene->entities[scene->num_entities++] = backpack2;
+  scene->entities[scene->num_entities++] = embTree;
 
+  //Model *oiiaiModel = (Model *)malloc(sizeof(Model));
+  //if (!oiiaiModel){
+  //  printf("Error: failed to allocate oiiaiModel\n");
+  //  return NULL;
+  //}
+  //model_load(oiiaiModel, "resources/objects/oiiai/scene.gltf");
+  //Entity oiiai = {
+  //  .ID = 1,
+  //  .position = {0.0f, 0.0f, 0.0f},
+  //  .rotation = {0.0f, 0.0f, 0.0f},
+  //  .scale = {0.5f, 0.5f, 0.5f},
+  //  .model = oiiaiModel,
+  //  .shader = shader
+  //};
+  //scene->entities[scene->num_entities++] = oiiai;
+  
   // Make a bunch of backpacks
   //for(int i = 0; i < 5; i++){
   //  Entity *backpack = (Entity *)malloc(sizeof(Entity));
@@ -136,6 +131,7 @@ void scene_render(Scene *scene){
 
     // Set lightPos and lightColor uniforms in the fragment shader
     shader_set_vec3(entity->shader, "lightPos", (vec3){(float)(sin(glfwGetTime())*10), 0.5f, (float)(cos(glfwGetTime())*10)});
+    //shader_set_vec3(entity->shader, "lightPos", (vec3){1.2f, 0.5f, 2.0f});
     shader_set_vec3(entity->shader, "lightColor", (vec3){1.0f});
 
     // Set camera position as viewPos in the fragment shader
