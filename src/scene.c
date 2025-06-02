@@ -10,7 +10,7 @@ Scene *scene_create(){
   }
 
   // Camera
-  scene->camera = camera_create((vec3){0.0f, 0.0f, 3.0f}, (vec3){0.0f, 1.0f, 0.0f}, -90.0f, 0.0f, 45.0f, 0.1f, 2.5f);
+  scene->camera = camera_create((vec3){0.0f, 1.0f, 5.0f}, (vec3){0.0f, 1.0f, 0.0f}, -90.0f, 0.0f, 45.0f, 0.1f, 2.5f);
   if (!scene->camera){
     printf("Error: failed to create camera\n");
     free(scene->entities);
@@ -41,12 +41,12 @@ Scene *scene_create(){
     printf("Error: failed to allocate oiiaiModel\n");
     return NULL;
   }
-  model_load(embTreeModel, "resources/objects/moonlight_greatsword.glb");
+  model_load(embTreeModel, "resources/objects/oiiai/scene.gltf");
   Entity embTree = {
     .ID = 1,
     .position = {0.0f, 0.0f, 0.0f},
-    .rotation = {0.0f, 0.0f, 0.0f},
-    .scale = {1.0f, 1.0f, 1.0f},
+    .rotation = {0.0f, 25.0f, 0.0f},
+    .scale = {0.05f, 0.05f, 0.05f},
     .model = embTreeModel,
     .shader = shader
   };
@@ -130,9 +130,15 @@ void scene_render(Scene *scene){
     shader_set_mat4(entity->shader, "projection", projection);
 
     // Set lightPos and lightColor uniforms in the fragment shader
-    //shader_set_vec3(entity->shader, "lightPos", (vec3){(float)(sin(glfwGetTime())*10), 0.5f, (float)(cos(glfwGetTime())*10)});
-    shader_set_vec3(entity->shader, "lightPos", (vec3){1.2f, 0.5f, 2.0f});
-    shader_set_vec3(entity->shader, "lightColor", (vec3){1.0f});
+    //shader_set_vec3(entity->shader, "lightPos", (vec3){(float)(sin(glfwGetTime())*5), 0.5f, (float)(cos(glfwGetTime())*5)});
+    //shader_set_vec3(entity->shader, "lightPos", (vec3){1.2f, 0.5f, 2.0f});
+
+    // Point lights
+    shader_set_vec3(entity->shader, "light.position", (vec3){1.2f, 1.0f, 2.0f});
+    shader_set_vec3(entity->shader, "light.color", (vec3){1.0f, 1.0f, 1.0f});
+    shader_set_float(entity->shader, "light.constant", 1.0f);
+    shader_set_float(entity->shader, "light.linear", 0.14f);
+    shader_set_float(entity->shader, "light.quadratic", 0.07f);
 
     // Set camera position as viewPos in the fragment shader
     shader_set_vec3(entity->shader, "viewPos", scene->camera->position);

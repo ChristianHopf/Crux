@@ -69,6 +69,7 @@ void model_process_mesh(Model *model, struct aiMesh *ai_mesh, const struct aiSce
   if (diffuse_texture_id != 0){
     dest_mesh->diffuse_texture_id = diffuse_texture_id;
   }
+  printf("successfully loaded embedded diffuse texture\n");
   GLuint specular_texture_id = model_load_texture_type(model, material, scene, aiTextureType_SPECULAR);
   if (specular_texture_id != 0){
     dest_mesh->specular_texture_id = specular_texture_id;
