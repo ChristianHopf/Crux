@@ -7,6 +7,7 @@ in vec3 FragPos;
 out vec4 FragColor;
 
 uniform sampler2D diffuseMap;
+uniform sampler2D specularMap;
 uniform vec3 lightPos;
 uniform vec3 lightColor;
 uniform vec3 viewPos;
@@ -15,7 +16,7 @@ void main(){
   //vec3 diffuseColor = texture(diffuseMap, TexCoord).rgb;
   //float specStrength = texture(specularMap, TexCoord).r;
   float ambientStrength = 0.1;
-  float specularStrength = 0.5;
+  float specularStrength = texture(specularMap, TexCoord).r;
 
   // Norm light dir
   vec3 norm = normalize(Normal);
