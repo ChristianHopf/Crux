@@ -133,9 +133,12 @@ void scene_render(Scene *scene){
     //shader_set_vec3(entity->shader, "lightPos", (vec3){(float)(sin(glfwGetTime())*5), 0.5f, (float)(cos(glfwGetTime())*5)});
     //shader_set_vec3(entity->shader, "lightPos", (vec3){1.2f, 0.5f, 2.0f});
 
-    //Directional lighting
-    shader_set_vec3(entity->shader, "lightDirection", (vec3){-0.2f, -1.0f, -0.3f});
-    shader_set_vec3(entity->shader, "lightColor", (vec3){1.0f});
+    // Point lights
+    shader_set_vec3(entity->shader, "light.position", (vec3){1.2f, 1.0f, 2.0f});
+    shader_set_vec3(entity->shader, "light.color", (vec3){1.0f});
+    shader_set_float(entity->shader, "light.constnat", 1.0f);
+    shader_set_float(entity->shader, "light.linear", 0.14f);
+    shader_set_float(entity->shader, "light.quadratic", 0.07f);
 
     // Set camera position as viewPos in the fragment shader
     shader_set_vec3(entity->shader, "viewPos", scene->camera->position);
