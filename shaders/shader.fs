@@ -8,7 +8,9 @@ out vec4 FragColor;
 
 uniform sampler2D diffuseMap;
 uniform sampler2D specularMap;
-uniform vec3 lightPos;
+
+//uniform vec3 lightPos;
+uniform vec3 lightDirection;
 uniform vec3 lightColor;
 uniform vec3 viewPos;
 
@@ -18,7 +20,8 @@ void main(){
 
   // Norm light dir
   vec3 norm = normalize(Normal);
-  vec3 lightDir = normalize(lightPos - norm);
+  //vec3 lightDir = normalize(lightPos - norm);
+  vec3 lightDir = normalize(-lightDirection);
 
   // Ambient
   vec3 ambient = ambientStrength * lightColor;
