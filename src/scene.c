@@ -128,6 +128,9 @@ void scene_render(Scene *scene){
     shader_set_vec3(entity->shader, "lightPos", (vec3){1.2f, 0.5f, 2.0f});
     shader_set_vec3(entity->shader, "lightColor", (vec3){1.0f});
 
+    // Set camera position as viewPos in the fragment shader
+    shader_set_vec3(entity->shader, "viewPos", scene->camera->position);
+
     // Draw model
     model_draw(entity->model, entity->shader);
   }
