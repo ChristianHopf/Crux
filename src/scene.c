@@ -46,7 +46,7 @@ Scene *scene_create(){
     .ID = 1,
     .position = {0.0f, 0.0f, 0.0f},
     .rotation = {0.0f, 25.0f, 0.0f},
-    .scale = {0.05f, 0.05f, 0.05f},
+    .scale = {0.05f, 0.3f, 0.05f},
     .model = embTreeModel,
     .shader = shader
   };
@@ -146,19 +146,30 @@ void scene_render(Scene *scene){
     // Set lightPos and lightColor uniforms in the fragment shader
     //shader_set_vec3(entity->shader, "lightPos", (vec3){(float)(sin(glfwGetTime())*5), 0.5f, (float)(cos(glfwGetTime())*5)});
     //shader_set_vec3(entity->shader, "lightPos", (vec3){1.2f, 0.5f, 2.0f});
+    
+    // Directional light uniforms
+    shader_set_vec3(entity->shader, "dirLight.direction", (vec3){-0.2f, -1.0f, -0.3f});
+    shader_set_vec3(entity->shader, "dirLight.ambient", (vec3){0.05f, 0.05f, 0.05f});
+    shader_set_vec3(entity->shader, "dirLight.diffuse", (vec3){0.4f, 0.4f, 0.4f});
+    shader_set_vec3(entity->shader, "dirLight.specular", (vec3){0.5f, 0.5f, 0.5f});
 
-    // Light position for point light
-    //shader_set_vec3(entity->shader, "light.position", (vec3){1.2f, 1.0f, 2.0f});
-    // Flashlight: light position is the camera position light direction is the camera front vector
-    shader_set_vec3(entity->shader, "light.position", scene->camera->position);
-    shader_set_vec3(entity->shader, "light.direction", scene->camera->front);
-    shader_set_float(entity->shader, "light.cutoff", (float)cos(glm_rad(12.5f)));
-    shader_set_float(entity->shader, "light.outerCutoff", (float)cos(glm_rad(17.5f)));
-    // Light color and attenuation constants
-    shader_set_vec3(entity->shader, "light.color", (vec3){1.0f, 1.0f, 1.0f});
-    shader_set_float(entity->shader, "light.constant", 1.0f);
-    shader_set_float(entity->shader, "light.linear", 0.14f);
-    shader_set_float(entity->shader, "light.quadratic", 0.07f);
+    // Point light uniforms
+    shader_set_vec3(entity->shader, "pointLight.position", (vec3){1.2f, 0.5f, 2.0f});
+    shader_set_vec3(entity->shader, "pointLight.ambient", (vec3){0.05f, 0.05f, 0.05f});
+    shader_set_vec3(entity->shader, "pointLight.diffuse", (vec3){0.8f, 0.8f, 0.8f});
+    shader_set_vec3(entity->shader, "pointLight.specular", (vec3){1.0f, 1.0f, 1.0f});
+    shader_set_float(entity->shader, "pointLight.constant", 1.0f);
+    shader_set_float(entity->shader, "pointLight.linear", 0.14f);
+    shader_set_float(entity->shader, "pointLight.quadratic", 0.07f);
+
+    // Spot light uniforms
+    shader_set_vec3(entity->shader, "spotLight.position", scene->camera->position);
+    shader_set_vec3(entity->shader, "spotLight.direction", scene->camera->front);
+    shader_set_float(entity->shader, "spotLight.cutoff", (float)cos(glm_rad(12.5f)));
+    shader_set_float(entity->shader, "spotLight.outerCutoff", (float)cos(glm_rad(17.5f)));
+    shader_set_vec3(entity->shader, "spotLight.ambient", (vec3){0.05f, 0.05f, 0.05f});
+    shader_set_vec3(entity->shader, "spotLight.diffuse", (vec3){0.4f, 0.4f, 0.4f});
+    shader_set_vec3(entity->shader, "spotLight.specular", (vec3){0.5f, 0.5f, 0.5f});
 
     // Set camera position as viewPos in the fragment shader
     shader_set_vec3(entity->shader, "viewPos", scene->camera->position);
