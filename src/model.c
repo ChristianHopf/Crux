@@ -10,11 +10,7 @@
 #include <stb_image/stb_image.h>
 
 bool model_load(Model *model, const char *path){
-  const struct aiScene* scene = aiImportFile(path,
-        aiProcess_Triangulate |
-        aiProcess_GenSmoothNormals |
-        aiProcess_JoinIdenticalVertices |
-        aiProcess_ValidateDataStructure);
+  const struct aiScene* scene = aiImportFile(path, aiProcessPreset_TargetRealtime_Fast);
 
   if (!scene || !scene->mRootNode || !scene->mMeshes || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE) {
     printf("Error: failed to get scene\n");
@@ -63,6 +59,11 @@ void model_process_mesh(Model *model, struct aiMesh *ai_mesh, const struct aiSce
   if (!material){
     printf("Error: failed to get material from scene materials\n");
   }
+
+  // TODO: use aiGetMaterialTextureCount to only load textures that exist
+  // if (aiGetMaterialTextureCount(material, aiTextureType_DIFFUSE) != 0){
+  // // GLuint diffuse_texture_id = model_load_texture_type...
+  // }
 
   // Get diffuse and specular textures
   GLuint diffuse_texture_id = model_load_texture_type(model, material, scene, aiTextureType_DIFFUSE);

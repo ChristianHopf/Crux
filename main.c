@@ -134,6 +134,7 @@ Engine *engine_create(){
 
 	// Configure global OpenGL state
 	glEnable(GL_DEPTH_TEST);
+  glDepthFunc(GL_ALWAYS);
   //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
   engine->active_scene = scene_create();
@@ -169,6 +170,8 @@ int main(){
 
 		// Handle input
 		processInput(engine->window);
+
+    scene_update(engine->active_scene, engine->deltaTime);
 
     // Render scene
     scene_render(engine->active_scene);
