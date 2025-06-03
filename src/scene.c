@@ -46,7 +46,7 @@ Scene *scene_create(){
     .ID = 1,
     .position = {0.0f, 0.0f, 0.0f},
     .rotation = {0.0f, 25.0f, 0.0f},
-    .scale = {0.05f, 0.3f, 0.05f},
+    .scale = {0.05f, 0.05f, 0.05f},
     .model = embTreeModel,
     .shader = shader
   };
@@ -154,7 +154,7 @@ void scene_render(Scene *scene){
     shader_set_vec3(entity->shader, "dirLight.specular", (vec3){0.5f, 0.5f, 0.5f});
 
     // Point light uniforms
-    shader_set_vec3(entity->shader, "pointLight.position", (vec3){1.2f, 0.5f, 2.0f});
+    shader_set_vec3(entity->shader, "pointLight.position", (vec3){-1.0f, 0.5f, 2.0f});
     shader_set_vec3(entity->shader, "pointLight.ambient", (vec3){0.05f, 0.05f, 0.05f});
     shader_set_vec3(entity->shader, "pointLight.diffuse", (vec3){0.8f, 0.8f, 0.8f});
     shader_set_vec3(entity->shader, "pointLight.specular", (vec3){1.0f, 1.0f, 1.0f});
