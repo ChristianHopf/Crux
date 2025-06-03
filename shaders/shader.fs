@@ -13,6 +13,10 @@ uniform vec3 viewPos;
 
 struct Light {
   vec3 position;
+  vec3 direction;
+  float cutoff;
+  float outerCutoff;
+
   vec3 color;
 
   float constant;
@@ -23,31 +27,43 @@ struct Light {
 uniform Light light;
 
 void main(){
-  // Attenuation
-  float distance = length(light.position - FragPos);
-  float attenuation = 1.0 / (light.constant + light.linear * distance + light.quadratic * (distance * distance));
-
-  float ambientStrength = 0.1;
-  //float specularStrength = texture(specularMap, TexCoord).r;
-  float specularStrength = 0.2;
-
   // Norm light dir
   vec3 norm = normalize(Normal);
-  vec3 lightDir = normalize(light.position - norm);
+  vec3 lightDir = normalize(light.position - FragPos);
 
-  // Ambient
-  vec3 ambient = attenuation * ambientStrength * light.color;
+  float ambientStrength = 0.1;
 
-  // Diffuse
-  float diff = max(dot(norm, lightDir), 0.0);
-  vec3 diffuse = attenuation * diff * texture(diffuseMap, TexCoord).rgb;
+  float theta = dot(lightDir, normalize(-light.direction));
+  float epsilon = light.cutoff - light.outerCutoff;
+  float intensity = clamp((theta - light.outerCutoff) / epsilon), 0.0, 1.0);dd
+  float intensity = clamp((theta - light.outerCutOff) / epsilon, 0.0, 1.0);   
+  //if (theta > light.cutoff){
+    // Attenuation
+    float distance = length(light.position - FragPos);
+    float attenuation = 1.0 / (light.constant + light.linear * distance + light.quadratic * (distance * distance));
 
-  // Specular
-  vec3 viewDir = normalize(viewPos - FragPos);
-  vec3 reflectDir = reflect(-lightDir, norm);
-  float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);
-  vec3 specular = attenuation * specularStrength * spec * light.color;
+    float ambientStrength = 0.1;
+    //float specularStrength = texture(specularMap, TexCoord).r;
+    float specularStrength = 0.2;
 
-  vec3 result = ambient + diffuse + specular;
-  FragColor = vec4(result, 1.0);
+    // Ambient
+    vec3 ambient = attenuation * ambientStrength * light.color;
+
+    // Diffuse
+    float diff = max(dot(norm, lightDir), 0.0);
+    vec3 diffuse = intensity * attenuation * diff * texture(diffuseMap, TexCoord).rgb;
+
+    // Specular
+    vec3 viewDir = normalize(viewPos - FragPos);
+    vec3 reflectDir = reflect(-lightDir, norm);
+    float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);
+    vec3 specular = intensity * attenuation * specularStrength * spec * light.color;
+
+    vec3 result = ambient + diffuse + specular;
+    FragColor = vec4(result, 1.0);
+  //}
+  //else{
+  //  vec3 ambient = ambientStrength * light.color;
+  //  FragColor = vec4(ambient * vec3(texture(diffuseMap, TexCoord)), 1.0);
+  //}
 }

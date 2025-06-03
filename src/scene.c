@@ -96,11 +96,13 @@ Scene *scene_create(){
 
 void scene_update(Scene *scene, float deltaTime){
   printf("Scene update!\n");
-  // Rotate entities
-  float rotationSpeed = 10.0f;
+  // Rotate around y axis
+  float rotationSpeed = 100.0f;
   for(int i = 0; i < scene->num_entities; i++){
     Entity *entity = &scene->entities[i];
 
+    // Update translation vector
+    entity->position[1] = (float)sin(glfwGetTime()*4) / 4;
     // Update rotation vector
     entity->rotation[1] += rotationSpeed * deltaTime;
   }
@@ -145,8 +147,14 @@ void scene_render(Scene *scene){
     //shader_set_vec3(entity->shader, "lightPos", (vec3){(float)(sin(glfwGetTime())*5), 0.5f, (float)(cos(glfwGetTime())*5)});
     //shader_set_vec3(entity->shader, "lightPos", (vec3){1.2f, 0.5f, 2.0f});
 
-    // Point lights
-    shader_set_vec3(entity->shader, "light.position", (vec3){1.2f, 1.0f, 2.0f});
+    // Light position for point light
+    //shader_set_vec3(entity->shader, "light.position", (vec3){1.2f, 1.0f, 2.0f});
+    // Flashlight: light position is the camera position light direction is the camera front vector
+    shader_set_vec3(entity->shader, "light.position", scene->camera->position);
+    shader_set_vec3(entity->shader, "light.direction", scene->camera->front);
+    shader_set_float(entity->shader, "light.cutoff", (float)cos(glm_rad(12.5f)));
+    shader_set_float(entity->shader, "light.outerCutoff", (float)cos(glm_rad(17.5f)));
+    // Light color and attenuation constants
     shader_set_vec3(entity->shader, "light.color", (vec3){1.0f, 1.0f, 1.0f});
     shader_set_float(entity->shader, "light.constant", 1.0f);
     shader_set_float(entity->shader, "light.linear", 0.14f);
