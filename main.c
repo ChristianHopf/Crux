@@ -134,6 +134,7 @@ Engine *engine_create(){
 
 	// Configure global OpenGL state
 	glEnable(GL_DEPTH_TEST);
+  glDepthFunc(GL_ALWAYS);
   //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
   engine->active_scene = scene_create();

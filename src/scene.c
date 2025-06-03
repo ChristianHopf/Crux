@@ -41,12 +41,12 @@ Scene *scene_create(){
     printf("Error: failed to allocate oiiaiModel\n");
     return NULL;
   }
-  model_load(embTreeModel, "resources/objects/dragon_slayer_berserk.glb");
+  model_load(embTreeModel, "resources/objects/crystal/scene.gltf");
   Entity embTree = {
     .ID = 1,
     .position = {0.0f, 0.0f, 0.0f},
-    .rotation = {0.0f, 0.0f, -90.0f},
-    .scale = {1.0f, 1.0f, 1.0f},
+    .rotation = {0.0f, 0.0f, 0.0f},
+    .scale = {0.2f, 0.2f, 0.2f},
     .model = embTreeModel,
     .shader = shader
   };
