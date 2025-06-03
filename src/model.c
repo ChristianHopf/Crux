@@ -64,6 +64,11 @@ void model_process_mesh(Model *model, struct aiMesh *ai_mesh, const struct aiSce
     printf("Error: failed to get material from scene materials\n");
   }
 
+  // TODO: use aiGetMaterialTextureCount to only load textures that exist
+  // if (aiGetMaterialTextureCount(material, aiTextureType_DIFFUSE) != 0){
+  // // GLuint diffuse_texture_id = model_load_texture_type...
+  // }
+
   // Get diffuse and specular textures
   GLuint diffuse_texture_id = model_load_texture_type(model, material, scene, aiTextureType_DIFFUSE);
   if (diffuse_texture_id != 0){

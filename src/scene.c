@@ -10,7 +10,7 @@ Scene *scene_create(){
   }
 
   // Camera
-  scene->camera = camera_create((vec3){0.0f, 1.0f, 5.0f}, (vec3){0.0f, 1.0f, 0.0f}, -90.0f, 0.0f, 45.0f, 0.1f, 2.5f);
+  scene->camera = camera_create((vec3){0.0f, 0.0f, 3.0f}, (vec3){0.0f, 1.0f, 0.0f}, -90.0f, 0.0f, 45.0f, 0.1f, 2.5f);
   if (!scene->camera){
     printf("Error: failed to create camera\n");
     free(scene->entities);
@@ -41,11 +41,11 @@ Scene *scene_create(){
     printf("Error: failed to allocate oiiaiModel\n");
     return NULL;
   }
-  model_load(embTreeModel, "resources/objects/3d_voxel_ninja_sword_blue.glb");
+  model_load(embTreeModel, "resources/objects/dragon_slayer_berserk.glb");
   Entity embTree = {
     .ID = 1,
     .position = {0.0f, 0.0f, 0.0f},
-    .rotation = {90.0f, 0.0f, 0.0f},
+    .rotation = {0.0f, 0.0f, -90.0f},
     .scale = {1.0f, 1.0f, 1.0f},
     .model = embTreeModel,
     .shader = shader
@@ -149,37 +149,37 @@ void scene_render(Scene *scene){
     
     // Point light uniforms
     // 1
-    shader_set_vec3(entity->shader, "pointLight[0].position", (vec3){-1.0f, 1.0f, -1.0f});
-    shader_set_vec3(entity->shader, "pointLight[0].ambient", (vec3){0.05f, 0.05f, 0.05f});
-    shader_set_vec3(entity->shader, "pointLight[0].diffuse", (vec3){0.8f, 0.8f, 0.8f});
-    shader_set_vec3(entity->shader, "pointLight[0].specular", (vec3){1.0f, 1.0f, 1.0f});
-    shader_set_float(entity->shader, "pointLight[0].constant", 1.0f);
-    shader_set_float(entity->shader, "pointLight[0].linear", 0.14f);
-    shader_set_float(entity->shader, "pointLight[0].quadratic", 0.07f);
+    shader_set_vec3(entity->shader, "pointLights[0].position", (vec3){-2.0f, 2.0f, -2.0f});
+    shader_set_vec3(entity->shader, "pointLights[0].ambient", (vec3){0.05f, 0.05f, 0.05f});
+    shader_set_vec3(entity->shader, "pointLights[0].diffuse", (vec3){0.8f, 0.8f, 0.8f});
+    shader_set_vec3(entity->shader, "pointLights[0].specular", (vec3){1.0f, 1.0f, 1.0f});
+    shader_set_float(entity->shader, "pointLights[0].constant", 1.0f);
+    shader_set_float(entity->shader, "pointLights[0].linear", 0.14f);
+    shader_set_float(entity->shader, "pointLights[0].quadratic", 0.07f);
     // 2
-    shader_set_vec3(entity->shader, "pointLight[1].position", (vec3){1.0f, 1.0f, -1.0f});
-    shader_set_vec3(entity->shader, "pointLight[1].ambient", (vec3){0.05f, 0.05f, 0.05f});
-    shader_set_vec3(entity->shader, "pointLight[1].diffuse", (vec3){0.8f, 0.8f, 0.8f});
-    shader_set_vec3(entity->shader, "pointLight[1].specular", (vec3){1.0f, 1.0f, 1.0f});
-    shader_set_float(entity->shader, "pointLight[1].constant", 1.0f);
-    shader_set_float(entity->shader, "pointLight[1].linear", 0.14f);
-    shader_set_float(entity->shader, "pointLight[1].quadratic", 0.07f);
+    shader_set_vec3(entity->shader, "pointLights[1].position", (vec3){2.0f, 2.0f, -2.0f});
+    shader_set_vec3(entity->shader, "pointLights[1].ambient", (vec3){0.05f, 0.05f, 0.05f});
+    shader_set_vec3(entity->shader, "pointLights[1].diffuse", (vec3){0.8f, 0.8f, 0.8f});
+    shader_set_vec3(entity->shader, "pointLights[1].specular", (vec3){1.0f, 1.0f, 1.0f});
+    shader_set_float(entity->shader, "pointLights[1].constant", 1.0f);
+    shader_set_float(entity->shader, "pointLights[1].linear", 0.14f);
+    shader_set_float(entity->shader, "pointLights[1].quadratic", 0.07f);
     // 3
-    shader_set_vec3(entity->shader, "pointLight[2].position", (vec3){1.0f, 1.0f, 1.0f});
-    shader_set_vec3(entity->shader, "pointLight[2].ambient", (vec3){0.05f, 0.05f, 0.05f});
-    shader_set_vec3(entity->shader, "pointLight[2].diffuse", (vec3){0.8f, 0.8f, 0.8f});
-    shader_set_vec3(entity->shader, "pointLight[2].specular", (vec3){1.0f, 1.0f, 1.0f});
-    shader_set_float(entity->shader, "pointLight[2].constant", 1.0f);
-    shader_set_float(entity->shader, "pointLight[2].linear", 0.14f);
-    shader_set_float(entity->shader, "pointLight[2].quadratic", 0.07f);
+    shader_set_vec3(entity->shader, "pointLights[2].position", (vec3){2.0f, 2.0f, 2.0f});
+    shader_set_vec3(entity->shader, "pointLights[2].ambient", (vec3){0.05f, 0.05f, 0.05f});
+    shader_set_vec3(entity->shader, "pointLights[2].diffuse", (vec3){0.8f, 0.8f, 0.8f});
+    shader_set_vec3(entity->shader, "pointLights[2].specular", (vec3){1.0f, 1.0f, 1.0f});
+    shader_set_float(entity->shader, "pointLights[2].constant", 1.0f);
+    shader_set_float(entity->shader, "pointLights[2].linear", 0.14f);
+    shader_set_float(entity->shader, "pointLights[2].quadratic", 0.07f);
     // 4
-    shader_set_vec3(entity->shader, "pointLight[3].position", (vec3){-1.0f, 1.0f, 1.0f});
-    shader_set_vec3(entity->shader, "pointLight[3].ambient", (vec3){0.05f, 0.05f, 0.05f});
-    shader_set_vec3(entity->shader, "pointLight[3].diffuse", (vec3){0.8f, 0.8f, 0.8f});
-    shader_set_vec3(entity->shader, "pointLight[3].specular", (vec3){1.0f, 1.0f, 1.0f});
-    shader_set_float(entity->shader, "pointLight[3].constant", 1.0f);
-    shader_set_float(entity->shader, "pointLight[3].linear", 0.14f);
-    shader_set_float(entity->shader, "pointLight[3].quadratic", 0.07f);
+    shader_set_vec3(entity->shader, "pointLights[3].position", (vec3){-2.0f, 2.0f, 2.0f});
+    shader_set_vec3(entity->shader, "pointLights[3].ambient", (vec3){0.05f, 0.05f, 0.05f});
+    shader_set_vec3(entity->shader, "pointLights[3].diffuse", (vec3){0.8f, 0.8f, 0.8f});
+    shader_set_vec3(entity->shader, "pointLights[3].specular", (vec3){1.0f, 1.0f, 1.0f});
+    shader_set_float(entity->shader, "pointLights[3].constant", 1.0f);
+    shader_set_float(entity->shader, "pointLights[3].linear", 0.14f);
+    shader_set_float(entity->shader, "pointLights[3].quadratic", 0.07f);
 
     // Set camera position as viewPos in the fragment shader
     shader_set_vec3(entity->shader, "viewPos", scene->camera->position);

@@ -32,7 +32,7 @@ void main(){
   vec3 viewDir = normalize(viewPos - FragPos);
 
   // Point lights
-  vec3 result;
+  vec3 result = vec3(0.0);
   for(int i = 0; i < NUM_POINT_LIGHTS; i++){
     result += calc_point_light(pointLights[i], norm, FragPos, viewDir);
   }
