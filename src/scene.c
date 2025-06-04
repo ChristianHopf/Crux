@@ -1,4 +1,6 @@
 #include "scene.h"
+#include <GL/gl.h>
+#include <iso646.h>
 #include <math.h>
 
 Scene *scene_create(){
@@ -36,36 +38,48 @@ Scene *scene_create(){
 		return NULL;
 	}
 
-  Model *embTreeModel = (Model *)malloc(sizeof(Model));
-  if (!embTreeModel){
+  Model *crystalModel = (Model *)malloc(sizeof(Model));
+  if (!crystalModel){
     printf("Error: failed to allocate oiiaiModel\n");
     return NULL;
   }
-  model_load(embTreeModel, "resources/objects/crystal/scene.gltf");
-  Entity embTree = {
+  model_load(crystalModel, "resources/objects/crystal/scene.gltf");
+  Entity crystal = {
     .ID = 1,
     .position = {0.0f, 0.0f, 0.0f},
     .rotation = {0.0f, 0.0f, 0.0f},
     .scale = {0.2f, 0.2f, 0.2f},
-    .model = embTreeModel,
+    .model = crystalModel,
     .shader = shader
   };
-  scene->entities[scene->num_entities++] = embTree;
+  scene->entities[scene->num_entities++] = crystal;
 
-  //Model *oiiaiModel = (Model *)malloc(sizeof(Model));
-  //if (!oiiaiModel){
-  //  printf("Error: failed to allocate oiiaiModel\n");
-  //  return NULL;
-  //}
+  Shader *stencilShader = shader_create("shaders/shader.vs", "shaders/stencil/shader.fs");
+
+  Entity scaledCrystal = {
+    .ID = 1,
+    .position = {0.0f, 0.0f, 0.0f},
+    .rotation = {0.0f, 0.0f, 0.0f},
+    .scale = {0.21f, 0.21f, 0.21f},
+    .model = crystalModel,
+    .shader = stencilShader
+  };
+  //scene->entities[scene->num_entities++] = scaledCrystal;
+
+  Model *oiiaiModel = (Model *)malloc(sizeof(Model));
+  if (!oiiaiModel){
+    printf("Error: failed to allocate oiiaiModel\n");
+    return NULL;
+  }
   //model_load(oiiaiModel, "resources/objects/oiiai/scene.gltf");
-  //Entity oiiai = {
-  //  .ID = 1,
-  //  .position = {0.0f, 0.0f, 0.0f},
-  //  .rotation = {0.0f, 0.0f, 0.0f},
-  //  .scale = {0.5f, 0.5f, 0.5f},
-  //  .model = oiiaiModel,
-  //  .shader = shader
-  //};
+  Entity oiiai = {
+    .ID = 1,
+    .position = {0.0f, 0.0f, -10.0f},
+    .rotation = {0.0f, 0.0f, 0.0f},
+    .scale = {0.1f, 0.1f, 0.1f},
+    .model = oiiaiModel,
+    .shader = shader
+  };
   //scene->entities[scene->num_entities++] = oiiai;
   
   // Make a bunch of backpacks

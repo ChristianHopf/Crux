@@ -43,14 +43,34 @@ bool model_load(Model *model, const char *path){
     printf("Error: failed to allocate meshes\n");
     return false;
   }
+
+  // Process the root node
+  unsigned int model_mesh_index = 0;
+  model_process_node(model, scene->mRootNode, scene, &model_mesh_index);
  
   // Process all meshes
-  for(unsigned int i = 0; i < scene->mNumMeshes; i++){
-    model_process_mesh(model, scene->mMeshes[i], scene, &model->meshes[i]);
-  }
+  //for(unsigned int i = 0; i < scene->mNumMeshes; i++){
+  //  model_process_mesh(model, scene->mMeshes[i], scene, &model->meshes[i]);
+  //}
 
   aiReleaseImport(scene);
   return true;
+}
+
+void model_process_node(Model *model, struct aiNode *node, const struct aiScene *scene, unsigned int *index){
+  // Process each of this node's meshesMore actions
+  // The scene has an array of meshes.
+  // Each node has an array of ints which are indices to its mesh in the scene's mesh array.
+  // The int at position i of this node's mMeshes is the index of its mesh in the scene's mesh array
+ for(unsigned int i = 0; i < node->mNumMeshes; i++){
+    struct aiMesh *ai_mesh = scene->mMeshes[node->mMeshes[i]];
+    model_process_mesh(model, ai_mesh, scene, &model->meshes[*(index)++]);
+  }
+
+  // Process this node's children
+  for (unsigned int i = 0; i < node->mNumChildren; i++){
+    model_process_node(model, node->mChildren[i], scene, index);
+  }
 }
 
 void model_process_mesh(Model *model, struct aiMesh *ai_mesh, const struct aiScene *scene, Mesh *dest_mesh){
@@ -70,7 +90,6 @@ void model_process_mesh(Model *model, struct aiMesh *ai_mesh, const struct aiSce
   if (diffuse_texture_id != 0){
     dest_mesh->diffuse_texture_id = diffuse_texture_id;
   }
-  printf("successfully loaded embedded diffuse texture\n");
   GLuint specular_texture_id = model_load_texture_type(model, material, scene, aiTextureType_SPECULAR);
   if (specular_texture_id != 0){
     dest_mesh->specular_texture_id = specular_texture_id;
@@ -195,13 +214,25 @@ GLuint model_load_texture_type(Model *model, const struct aiMaterial *material, 
   }
   // Check if texture is embedded
   if (texture_path[0] == '*'){
-    GLuint embedded_texture_id = model_load_embedded_texture(texture_path, scene);
-    printf("Successfully loaded embedded texture with id %d!\n", embedded_texture_id);
+    // Check if the texture is already loaded
+    GLuint embedded_texture_id = model_check_loaded_texture(texture_path);
+    if (embedded_texture_id == 0){
+      // Load texture
+      embedded_texture_id = model_load_embedded_texture(texture_path, scene);
+      model_add_loaded_texture(texture_path, embedded_texture_id);
+      printf("Successfully loaded new embedded texture at path %s with id %d\n", texture_path, embedded_texture_id);
+    }
     return embedded_texture_id;
+
+    //GLuint embedded_texture_id = model_load_embedded_texture(texture_path, scene);
+    //printf("Embedded texture path: %s\n", texture_path);
+    //return embedded_texture_id;
   }
 
   char full_texture_path[512];
   snprintf(full_texture_path, sizeof(full_texture_path), "%s/%s", model->directory, texture_path);
+  printf("Texture path: %s\n", texture_path);
+  printf("Full texture path: %s\n", full_texture_path);
 
   // Check if the texture is already loaded
   GLuint texture_id = model_check_loaded_texture(full_texture_path);
@@ -278,7 +309,6 @@ GLuint model_load_embedded_texture(const char *path, const struct aiScene *scene
 char *get_texture_path(const struct aiMaterial *material, enum aiTextureType type){
   struct aiString path;
   if (aiGetMaterialTexture(material, type, 0, &path, NULL, NULL, NULL, NULL, NULL, NULL) != AI_SUCCESS) {
-    printf(":(\n");
     return NULL;
   }
   
@@ -289,6 +319,7 @@ GLuint model_check_loaded_texture(const char *path){
   // Check if a TextureEntry exists with this texture's path
   for(int i = 0; i < num_loaded_textures; i++){
     if (strncmp(loaded_textures[i].path, path, sizeof(loaded_textures[i].path)) == 0){
+      printf("Texture path %s matches loaded texture with path %s, skipping\n", path, loaded_textures[i].path);
       return loaded_textures[i].texture_id;
     }
   }
