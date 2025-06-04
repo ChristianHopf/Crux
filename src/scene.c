@@ -12,13 +12,15 @@ Scene *scene_create(){
   }
 
   // Light
-  Light light = {
-    .direction = {-0.2f, -1.0f, -0.3f},
-    .ambient = {0.2f, 0.2f, 0.2f},
-    .diffuse = {0.8f, 0.8f, 0.8f},
-    .specular = {1.0f, 1.0f, 1.0f}
-  };
-  scene->light = &light;
+  scene->light = (Light *)malloc(sizeof(Light));
+  if (!scene->light){
+    printf("Error: failed to allocate scene light\n");
+    return NULL;
+  }
+  glm_vec3_copy({-0.2f, -1.0f, -0.3f}, scene->light->direction);
+  glm_vec3_copy({0.2f, 0.2f, 0.2f}, scene->light->ambient);
+  glm_vec3_copy({0.8f, 0.8f, 0.8f}, scene->light->diffuse);
+  glm_vec3_copy({1.0f, 1.0f, 1.0f}, scene->light->specular);
 
   // Camera
   scene->camera = camera_create((vec3){0.0f, 0.0f, 3.0f}, (vec3){0.0f, 1.0f, 0.0f}, -90.0f, 0.0f, 45.0f, 0.1f, 2.5f);
