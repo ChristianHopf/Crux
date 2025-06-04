@@ -1,4 +1,6 @@
 #include "scene.h"
+#include <GL/gl.h>
+#include <iso646.h>
 #include <math.h>
 
 Scene *scene_create(){
@@ -36,36 +38,48 @@ Scene *scene_create(){
 		return NULL;
 	}
 
-  Model *embTreeModel = (Model *)malloc(sizeof(Model));
-  if (!embTreeModel){
+  Model *crystalModel = (Model *)malloc(sizeof(Model));
+  if (!crystalModel){
     printf("Error: failed to allocate oiiaiModel\n");
     return NULL;
   }
-  model_load(embTreeModel, "resources/objects/crystal/scene.gltf");
-  Entity embTree = {
+  model_load(crystalModel, "resources/objects/crystal/scene.gltf");
+  Entity crystal = {
     .ID = 1,
     .position = {0.0f, 0.0f, 0.0f},
     .rotation = {0.0f, 0.0f, 0.0f},
     .scale = {0.2f, 0.2f, 0.2f},
-    .model = embTreeModel,
+    .model = crystalModel,
     .shader = shader
   };
-  scene->entities[scene->num_entities++] = embTree;
+  scene->entities[scene->num_entities++] = crystal;
 
-  //Model *oiiaiModel = (Model *)malloc(sizeof(Model));
-  //if (!oiiaiModel){
-  //  printf("Error: failed to allocate oiiaiModel\n");
-  //  return NULL;
-  //}
-  //model_load(oiiaiModel, "resources/objects/oiiai/scene.gltf");
-  //Entity oiiai = {
-  //  .ID = 1,
-  //  .position = {0.0f, 0.0f, 0.0f},
-  //  .rotation = {0.0f, 0.0f, 0.0f},
-  //  .scale = {0.5f, 0.5f, 0.5f},
-  //  .model = oiiaiModel,
-  //  .shader = shader
-  //};
+  Shader *stencilShader = shader_create("shaders/shader.vs", "shaders/stencil/shader.fs");
+
+  Entity scaledCrystal = {
+    .ID = 1,
+    .position = {0.0f, 0.0f, 0.0f},
+    .rotation = {0.0f, 0.0f, 0.0f},
+    .scale = {0.21f, 0.21f, 0.21f},
+    .model = crystalModel,
+    .shader = stencilShader
+  };
+  scene->entities[scene->num_entities++] = scaledCrystal;
+
+  Model *oiiaiModel = (Model *)malloc(sizeof(Model));
+  if (!oiiaiModel){
+    printf("Error: failed to allocate oiiaiModel\n");
+    return NULL;
+  }
+  model_load(oiiaiModel, "resources/objects/oiiai/scene.gltf");
+  Entity oiiai = {
+    .ID = 1,
+    .position = {0.0f, 0.0f, -10.0f},
+    .rotation = {0.0f, 0.0f, 0.0f},
+    .scale = {0.1f, 0.1f, 0.1f},
+    .model = oiiaiModel,
+    .shader = shader
+  };
   //scene->entities[scene->num_entities++] = oiiai;
   
   // Make a bunch of backpacks
@@ -110,8 +124,14 @@ void scene_update(Scene *scene, float deltaTime){
 
 void scene_render(Scene *scene){
   // Render (clear color and depth buffer bits)
+  
+  // Enable depth testing, keep what's in the stencil buffer if tests fail
+  glEnable(GL_DEPTH_TEST);
+  glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+
+  // Clear the stencil buffer
   glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
   // Get view and projection matrices
   mat4 view;
@@ -120,7 +140,7 @@ void scene_render(Scene *scene){
   glm_perspective(glm_rad(scene->camera->fov), 800.0f / 600.0f, 0.1f, 100.0f, projection);
 
   // For each entity in the scene
-  for(int i = 0; i < scene->num_entities; i++){
+  for(int i = 0; i < scene->num_entities-1; i++){
     // Bind its shader
     Entity *entity = &scene->entities[i];
     shader_use(entity->shader);
@@ -184,7 +204,35 @@ void scene_render(Scene *scene){
     // Set camera position as viewPos in the fragment shader
     shader_set_vec3(entity->shader, "viewPos", scene->camera->position);
 
+    glStencilFunc(GL_ALWAYS, 1, 0xFF);
+    glStencilMask(0xFF);
+
     // Draw model
     model_draw(entity->model, entity->shader);
+
+    glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+    glStencilMask(0x00);
+    glDisable(GL_DEPTH_TEST);
+
+    shader_use(scene->entities[i+1].shader);
+    glm_mat4_identity(model);
+    // Apply transformations to model matrix
+    // Translate
+    glm_translate(model, scene->entities[i+1].position);
+    // Rotate
+    glm_rotate_y(model, glm_rad(scene->entities[i+1].rotation[1]), model);
+    glm_rotate_x(model, glm_rad(scene->entities[i+1].rotation[0]), model);
+    glm_rotate_z(model, glm_rad(scene->entities[i+1].rotation[2]), model);
+    // Scale
+    glm_scale(model, scene->entities[i+1].scale);
+
+    // Set its model, view, and projection matrix uniforms
+    shader_set_mat4(scene->entities[i+1].shader, "model", model);
+    shader_set_mat4(scene->entities[i+1].shader, "view", view);
+    shader_set_mat4(scene->entities[i+1].shader, "projection", projection);
+    model_draw(scene->entities[i+1].model, scene->entities[i+1].shader);
+    glStencilMask(0xFF);
+    glStencilFunc(GL_ALWAYS, 1, 0xFF);
+    glEnable(GL_DEPTH_TEST);
   }
 }
