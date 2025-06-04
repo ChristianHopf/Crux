@@ -94,10 +94,15 @@ void scene_update(Scene *scene, float deltaTime){
     Entity *entity = &scene->entities[i];
 
     // Update translation vector
-    entity->position[1] = (float)sin(glfwGetTime()*4) / 4;
+    //entity->position[1] = (float)sin(glfwGetTime()*4) / 4;
     // Update rotation vector
-    entity->rotation[1] += rotationSpeed * deltaTime;
+    //entity->rotation[1] += rotationSpeed * deltaTime;
   }
+
+  // Update light
+  scene->light->direction[0] = (float)sin(glfwGetTime()*4);
+  //scene->light->direction[1] += y;
+  scene->light->direction[2] = (float)cos(glfwGetTime()*4);
 }
 
 void scene_render(Scene *scene){
