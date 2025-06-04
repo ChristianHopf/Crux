@@ -43,7 +43,7 @@ Scene *scene_create(){
     printf("Error: failed to allocate oiiaiModel\n");
     return NULL;
   }
-  model_load(crystalModel, "resources/objects/dragon_slayer_berserk.glb");
+  model_load(crystalModel, "resources/objects/crystal/scene.gltf");
   Entity crystal = {
     .ID = 1,
     .position = {0.0f, 0.0f, 0.0f},
