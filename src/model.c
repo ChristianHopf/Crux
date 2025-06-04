@@ -43,14 +43,34 @@ bool model_load(Model *model, const char *path){
     printf("Error: failed to allocate meshes\n");
     return false;
   }
+
+  // Process the root node
+  unsigned int model_mesh_index = 0;
+  model_process_node(model, scene->mRootNode, scene, &model_mesh_index);
  
   // Process all meshes
-  for(unsigned int i = 0; i < scene->mNumMeshes; i++){
-    model_process_mesh(model, scene->mMeshes[i], scene, &model->meshes[i]);
-  }
+  //for(unsigned int i = 0; i < scene->mNumMeshes; i++){
+  //  model_process_mesh(model, scene->mMeshes[i], scene, &model->meshes[i]);
+  //}
 
   aiReleaseImport(scene);
   return true;
+}
+
+void model_process_node(Model *model, struct aiNode *node, const struct aiScene *scene, unsigned int *index){
+  // Process each of this node's meshesMore actions
+  // The scene has an array of meshes.
+  // Each node has an array of ints which are indices to its mesh in the scene's mesh array.
+  // The int at position i of this node's mMeshes is the index of its mesh in the scene's mesh array
+ for(unsigned int i = 0; i < node->mNumMeshes; i++){
+    struct aiMesh *ai_mesh = scene->mMeshes[node->mMeshes[i]];
+    model_process_mesh(model, ai_mesh, scene, &model->meshes[*(index)++]);
+  }
+
+  // Process this node's children
+  for (unsigned int i = 0; i < node->mNumChildren; i++){
+    model_process_node(model, node->mChildren[i], scene, index);
+  }
 }
 
 void model_process_mesh(Model *model, struct aiMesh *ai_mesh, const struct aiScene *scene, Mesh *dest_mesh){

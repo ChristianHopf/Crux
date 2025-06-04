@@ -41,6 +41,7 @@ typedef struct {
 } Model;
 
 bool model_load(Model *model, const char *path);
+void model_process_node(Model *model, struct aiNode *node, const struct aiScene *scene, unsigned int *index);
 void model_process_mesh(Model *model, struct aiMesh *ai_mesh, const struct aiScene *scene, Mesh *dest_mesh);
 void model_draw(Model *model, Shader *shader);
 void model_free(Model *model);
