@@ -11,6 +11,15 @@ Scene *scene_create(){
     return NULL;
   }
 
+  // Light
+  Light light = {
+    .position = {-0.2f, -1.0f, -0.3f},
+    .ambient = {0.2f, 0.2f, 0.2f},
+    .diffuse = {0.8f, 0.8f, 0.8f},
+    .specular = {1.0f, 1.0f, 1.0f}
+  };
+  scene->light = light;
+
   // Camera
   scene->camera = camera_create((vec3){0.0f, 0.0f, 3.0f}, (vec3){0.0f, 1.0f, 0.0f}, -90.0f, 0.0f, 45.0f, 0.1f, 2.5f);
   if (!scene->camera){
