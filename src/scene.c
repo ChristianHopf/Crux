@@ -88,16 +88,16 @@ Scene *scene_create(){
 }
 
 void scene_update(Scene *scene, float deltaTime){
+  // Skip update if the scene is paused
+  if (scene->paused){
+    return;
+  }
+
   static float total_time = 0.0f;
   total_time += deltaTime;
   // Rotate around y axis
   float rotationSpeed = 100.0f;
   float lightSpeed = 1.0f;
-
-  // Skip update if the scene is paused
-  if (scene->paused){
-    return;
-  }
 
   // Update entities
   for(int i = 0; i < scene->num_entities; i++){
