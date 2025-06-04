@@ -54,18 +54,6 @@ Scene *scene_create(){
   };
   scene->entities[scene->num_entities++] = crystal;
 
-  Shader *stencilShader = shader_create("shaders/shader.vs", "shaders/stencil/shader.fs");
-
-  Entity scaledCrystal = {
-    .ID = 1,
-    .position = {0.0f, 0.0f, 0.0f},
-    .rotation = {0.0f, 0.0f, 0.0f},
-    .scale = {0.21f, 0.21f, 0.21f},
-    .model = crystalModel,
-    .shader = stencilShader
-  };
-  //scene->entities[scene->num_entities++] = scaledCrystal;
-
   Model *oiiaiModel = (Model *)malloc(sizeof(Model));
   if (!oiiaiModel){
     printf("Error: failed to allocate oiiaiModel\n");
@@ -81,29 +69,6 @@ Scene *scene_create(){
     .shader = shader
   };
   //scene->entities[scene->num_entities++] = oiiai;
-  
-  // Make a bunch of backpacks
-  //for(int i = 0; i < 5; i++){
-  //  Entity *backpack = (Entity *)malloc(sizeof(Entity));
-  //  if (!backpack){
-  //    printf("Error: failed to allocate backpack entity\n");
-  //    free(scene->entities);
-  //    free(scene);
-  //    return NULL;
-  //  }
-  //  backpack->ID = i;
-  //  glm_vec3_copy((vec3){(float)(5 * i), 0.0f, 0.0f}, backpack->position);
-  //  glm_vec3_copy((vec3){(float)(45 * i), (float)(45 * i), (float)(45 * i)}, backpack->rotation);
-  //  glm_vec3_copy((vec3){(float)(i + 1), (float)(i + 1), (float)(i + 1)}, backpack->scale);
-  //  Model *model = model_create("resources/objects/backpack/backpack.obj");
-  //  if (!model){
-  //    printf("Error: failed to create Model\n");
-  //  }
-  //  backpack->model = model;
-  //  backpack->shader = shader;
-  //  scene->entities[i] = *backpack;
-  //  scene->num_entities = i + 1;
-  //}
 
   return scene;
 }
@@ -112,6 +77,8 @@ void scene_update(Scene *scene, float deltaTime){
   printf("Scene update!\n");
   // Rotate around y axis
   float rotationSpeed = 100.0f;
+
+  // Update entities
   for(int i = 0; i < scene->num_entities; i++){
     Entity *entity = &scene->entities[i];
 

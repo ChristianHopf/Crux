@@ -6,10 +6,19 @@
 #include "camera.h"
 
 typedef struct {
+  vec3 direction;
+
+  vec3 ambient;
+  vec3 diffuse;
+  vec3 specular;
+} Light;
+
+typedef struct {
   Entity *entities;
   int num_entities;
   int max_entities;
   Camera *camera;
+  Light *light;
 } Scene;
 
 Scene *scene_create();
