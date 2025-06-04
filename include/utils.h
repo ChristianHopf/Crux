@@ -1,7 +1,11 @@
 #ifndef UTILS_H
 #define UTILS_H
 
-// read file thing
+#include <cglm/cglm.h>
+
+// Read data from file path
 unsigned char *read_file(const char *path);
+// Print formatted values of a glm_vec3
+void print_glm_vec3(vec3 vector, char *name);
 
 #endif

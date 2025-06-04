@@ -1,6 +1,6 @@
 #include "scene.h"
 #include <GL/gl.h>
-#include <iso646.h>
+#include "utils.h"
 #include <math.h>
 
 Scene *scene_create(){
@@ -17,10 +17,10 @@ Scene *scene_create(){
     printf("Error: failed to allocate scene light\n");
     return NULL;
   }
-  glm_vec3_copy({-0.2f, -1.0f, -0.3f}, scene->light->direction);
-  glm_vec3_copy({0.2f, 0.2f, 0.2f}, scene->light->ambient);
-  glm_vec3_copy({0.8f, 0.8f, 0.8f}, scene->light->diffuse);
-  glm_vec3_copy({1.0f, 1.0f, 1.0f}, scene->light->specular);
+  glm_vec3_copy((vec3){-0.2f, -1.0f, -0.3f}, scene->light->direction);
+  glm_vec3_copy((vec3){0.2f, 0.2f, 0.2f}, scene->light->ambient);
+  glm_vec3_copy((vec3){0.8f, 0.8f, 0.8f}, scene->light->diffuse);
+  glm_vec3_copy((vec3){1.0f, 1.0f, 1.0f}, scene->light->specular);
 
   // Camera
   scene->camera = camera_create((vec3){0.0f, 0.0f, 3.0f}, (vec3){0.0f, 1.0f, 0.0f}, -90.0f, 0.0f, 45.0f, 0.1f, 2.5f);
@@ -135,10 +135,7 @@ void scene_render(Scene *scene){
     shader_set_mat4(entity->shader, "view", view);
     shader_set_mat4(entity->shader, "projection", projection);
 
-printf("DirLight: ambient=(%f,%f,%f), diffuse=(%f,%f,%f), specular=(%f,%f,%f)\n",
-       scene->light->ambient[0], scene->light->ambient[1], scene->light->ambient[2],
-       scene->light->diffuse[0], scene->light->diffuse[1], scene->light->diffuse[2],
-       scene->light->specular[0], scene->light->specular[1], scene->light->specular[2]);
+    //print_glm_vec3(scene->light->direction, "Scene light direction");
 
     // Lighting uniforms
     shader_set_vec3(entity->shader, "dirLight.direction", scene->light->direction);
