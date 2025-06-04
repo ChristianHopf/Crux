@@ -13,12 +13,12 @@ Scene *scene_create(){
 
   // Light
   Light light = {
-    .position = {-0.2f, -1.0f, -0.3f},
+    .direction = {-0.2f, -1.0f, -0.3f},
     .ambient = {0.2f, 0.2f, 0.2f},
     .diffuse = {0.8f, 0.8f, 0.8f},
     .specular = {1.0f, 1.0f, 1.0f}
   };
-  scene->light = light;
+  scene->light = &light;
 
   // Camera
   scene->camera = camera_create((vec3){0.0f, 0.0f, 3.0f}, (vec3){0.0f, 1.0f, 0.0f}, -90.0f, 0.0f, 45.0f, 0.1f, 2.5f);
@@ -40,7 +40,7 @@ Scene *scene_create(){
   }
 
   // Model shader (for now, only use one shader)
-	Shader *shader = shader_create("shaders/shader.vs", "shaders/pointlights/shader.fs");
+	Shader *shader = shader_create("shaders/shader.vs", "shaders/dirlight/shader.fs");
 	if (!shader->ID){
 		printf("Error: failed to create shader program\n");
 		glfwTerminate();
@@ -133,43 +133,16 @@ void scene_render(Scene *scene){
     shader_set_mat4(entity->shader, "view", view);
     shader_set_mat4(entity->shader, "projection", projection);
 
-    // Set lightPos and lightColor uniforms in the fragment shader
-    //shader_set_vec3(entity->shader, "lightPos", (vec3){(float)(sin(glfwGetTime())*5), 0.5f, (float)(cos(glfwGetTime())*5)});
-    //shader_set_vec3(entity->shader, "lightPos", (vec3){1.2f, 0.5f, 2.0f});
-    
-    // Point light uniforms
-    // 1
-    shader_set_vec3(entity->shader, "pointLights[0].position", (vec3){-2.0f, 2.0f, -2.0f});
-    shader_set_vec3(entity->shader, "pointLights[0].ambient", (vec3){0.05f, 0.05f, 0.05f});
-    shader_set_vec3(entity->shader, "pointLights[0].diffuse", (vec3){0.8f, 0.8f, 0.8f});
-    shader_set_vec3(entity->shader, "pointLights[0].specular", (vec3){1.0f, 1.0f, 1.0f});
-    shader_set_float(entity->shader, "pointLights[0].constant", 1.0f);
-    shader_set_float(entity->shader, "pointLights[0].linear", 0.14f);
-    shader_set_float(entity->shader, "pointLights[0].quadratic", 0.07f);
-    // 2
-    shader_set_vec3(entity->shader, "pointLights[1].position", (vec3){2.0f, 2.0f, -2.0f});
-    shader_set_vec3(entity->shader, "pointLights[1].ambient", (vec3){0.05f, 0.05f, 0.05f});
-    shader_set_vec3(entity->shader, "pointLights[1].diffuse", (vec3){0.8f, 0.8f, 0.8f});
-    shader_set_vec3(entity->shader, "pointLights[1].specular", (vec3){1.0f, 1.0f, 1.0f});
-    shader_set_float(entity->shader, "pointLights[1].constant", 1.0f);
-    shader_set_float(entity->shader, "pointLights[1].linear", 0.14f);
-    shader_set_float(entity->shader, "pointLights[1].quadratic", 0.07f);
-    // 3
-    shader_set_vec3(entity->shader, "pointLights[2].position", (vec3){2.0f, 2.0f, 2.0f});
-    shader_set_vec3(entity->shader, "pointLights[2].ambient", (vec3){0.05f, 0.05f, 0.05f});
-    shader_set_vec3(entity->shader, "pointLights[2].diffuse", (vec3){0.8f, 0.8f, 0.8f});
-    shader_set_vec3(entity->shader, "pointLights[2].specular", (vec3){1.0f, 1.0f, 1.0f});
-    shader_set_float(entity->shader, "pointLights[2].constant", 1.0f);
-    shader_set_float(entity->shader, "pointLights[2].linear", 0.14f);
-    shader_set_float(entity->shader, "pointLights[2].quadratic", 0.07f);
-    // 4
-    shader_set_vec3(entity->shader, "pointLights[3].position", (vec3){-2.0f, 2.0f, 2.0f});
-    shader_set_vec3(entity->shader, "pointLights[3].ambient", (vec3){0.05f, 0.05f, 0.05f});
-    shader_set_vec3(entity->shader, "pointLights[3].diffuse", (vec3){0.8f, 0.8f, 0.8f});
-    shader_set_vec3(entity->shader, "pointLights[3].specular", (vec3){1.0f, 1.0f, 1.0f});
-    shader_set_float(entity->shader, "pointLights[3].constant", 1.0f);
-    shader_set_float(entity->shader, "pointLights[3].linear", 0.14f);
-    shader_set_float(entity->shader, "pointLights[3].quadratic", 0.07f);
+printf("DirLight: ambient=(%f,%f,%f), diffuse=(%f,%f,%f), specular=(%f,%f,%f)\n",
+       scene->light->ambient[0], scene->light->ambient[1], scene->light->ambient[2],
+       scene->light->diffuse[0], scene->light->diffuse[1], scene->light->diffuse[2],
+       scene->light->specular[0], scene->light->specular[1], scene->light->specular[2]);
+
+    // Lighting uniforms
+    shader_set_vec3(entity->shader, "dirLight.direction", scene->light->direction);
+    shader_set_vec3(entity->shader, "dirLight.ambient", scene->light->ambient);
+    shader_set_vec3(entity->shader, "dirLight.diffuse", scene->light->diffuse);
+    shader_set_vec3(entity->shader, "dirLight.specular", scene->light->specular);
 
     // Set camera position as viewPos in the fragment shader
     shader_set_vec3(entity->shader, "viewPos", scene->camera->position);
