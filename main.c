@@ -22,6 +22,7 @@ void framebuffer_size_callback(GLFWwindow *window, int width, int height);
 void processInput(GLFWwindow *window);
 void mouse_callback(GLFWwindow *window, double xpos, double ypos);
 void scroll_callback(GLFWwindow *window, double xoffset, double yoffset);
+void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods);
 
 // Screen settings
 const unsigned int SCREEN_WIDTH = 800;
@@ -42,6 +43,7 @@ void processInput(GLFWwindow *window){
   Engine *engine = (Engine *)glfwGetWindowUserPointer(window);
   Camera *camera = engine->active_scene->camera;
 
+  // Camera movement
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS){
     camera_process_keyboard_input(camera, CAMERA_FORWARD, engine->deltaTime);
 	}
@@ -91,6 +93,15 @@ void scroll_callback(GLFWwindow *window, double xoffset, double yoffset){
   camera_process_scroll_input(camera, yoffset);
 }
 
+void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods){
+  Scene *active_scene = ((Engine *)glfwGetWindowUserPointer(window))->active_scene;
+
+  // Pause
+  if (key == GLFW_KEY_P && action == GLFW_PRESS){
+    scene_pause(active_scene);
+  }
+}
+
 Engine *engine_create(){
   Engine *engine = (Engine *)malloc(sizeof(Engine));
   if (!engine){
@@ -117,6 +128,7 @@ Engine *engine_create(){
 	glfwSetFramebufferSizeCallback(engine->window, framebuffer_size_callback);
 	glfwSetCursorPosCallback(engine->window, mouse_callback);
 	glfwSetScrollCallback(engine->window, scroll_callback);
+  glfwSetKeyCallback(engine->window, key_callback);
   glfwSetWindowUserPointer(engine->window, engine);
 
 	// Capture mouse

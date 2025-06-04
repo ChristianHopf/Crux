@@ -4,6 +4,7 @@
 #include <glad/glad.h>
 #include "entity.h"
 #include "camera.h"
+#include <stdbool.h>
 
 typedef struct {
   vec3 direction;
@@ -19,11 +20,13 @@ typedef struct {
   int max_entities;
   Camera *camera;
   Light *light;
+  bool paused;
 } Scene;
 
 Scene *scene_create();
 
 void scene_update(Scene *scene, float deltaTime);
 void scene_render(Scene *scene);
+void scene_pause(Scene *scene);
 
 #endif

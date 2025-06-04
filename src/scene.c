@@ -11,6 +11,9 @@ Scene *scene_create(){
     return NULL;
   }
 
+  // Start unpaused
+  scene->paused = false;
+
   // Light
   scene->light = (Light *)malloc(sizeof(Light));
   if (!scene->light){
@@ -91,6 +94,11 @@ void scene_update(Scene *scene, float deltaTime){
   float rotationSpeed = 100.0f;
   float lightSpeed = 1.0f;
 
+  // Skip update if the scene is paused
+  if (scene->paused){
+    return;
+  }
+
   // Update entities
   for(int i = 0; i < scene->num_entities; i++){
     Entity *entity = &scene->entities[i];
@@ -158,4 +166,9 @@ void scene_render(Scene *scene){
     // Draw model
     model_draw(entity->model, entity->shader);
   }
+}
+
+void scene_pause(Scene *scene){
+  bool prev = scene->paused;
+  scene->paused = !prev;
 }
