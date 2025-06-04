@@ -85,9 +85,11 @@ Scene *scene_create(){
 }
 
 void scene_update(Scene *scene, float deltaTime){
-  printf("Scene update!\n");
+  static float total_time = 0.0f;
+  total_time += deltaTime;
   // Rotate around y axis
   float rotationSpeed = 100.0f;
+  float lightSpeed = 1.0f;
 
   // Update entities
   for(int i = 0; i < scene->num_entities; i++){
@@ -96,13 +98,15 @@ void scene_update(Scene *scene, float deltaTime){
     // Update translation vector
     //entity->position[1] = (float)sin(glfwGetTime()*4) / 4;
     // Update rotation vector
-    //entity->rotation[1] += rotationSpeed * deltaTime;
+    entity->rotation[1] -= rotationSpeed * deltaTime;
   }
 
   // Update light
-  scene->light->direction[0] = (float)sin(glfwGetTime()*4);
+  scene->light->direction[0] = (float)sin(lightSpeed * total_time);
   //scene->light->direction[1] += y;
-  scene->light->direction[2] = (float)cos(glfwGetTime()*4);
+  scene->light->direction[2] = (float)cos(lightSpeed * total_time);
+  // new light direction
+  print_glm_vec3(scene->light->direction, "New light direction");
 }
 
 void scene_render(Scene *scene){
