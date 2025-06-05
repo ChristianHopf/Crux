@@ -1,4 +1,5 @@
 #include "scene.h"
+#include "camera.h"
 #include <GL/gl.h>
 #include "utils.h"
 #include <math.h>
@@ -25,17 +26,8 @@ Scene *scene_create(){
   glm_vec3_copy((vec3){0.8f, 0.8f, 0.8f}, scene->light->diffuse);
   glm_vec3_copy((vec3){1.0f, 1.0f, 1.0f}, scene->light->specular);
 
-  // Camera
-  scene->camera = camera_create((vec3){0.0f, 0.0f, 3.0f}, (vec3){0.0f, 1.0f, 0.0f}, -90.0f, 0.0f, 45.0f, 0.1f, 2.5f);
-  if (!scene->camera){
-    printf("Error: failed to create camera\n");
-    free(scene->entities);
-    free(scene);
-    return NULL;
-  }
-
   // Player
-  player_init(&scene->player, scene->camera);
+  player_init(&scene->player);
 
   // Entities
   scene->num_entities = 0;
@@ -128,8 +120,8 @@ void scene_render(Scene *scene){
   // Get view and projection matrices
   mat4 view;
   mat4 projection;
-  camera_get_view_matrix(scene->camera, view);
-  glm_perspective(glm_rad(scene->camera->fov), 800.0f / 600.0f, 0.1f, 100.0f, projection);
+  camera_get_view_matrix(&scene->player.camera, view);
+  glm_perspective(glm_rad(&scene->player.camera->fov), 800.0f / 600.0f, 0.1f, 100.0f, projection);
 
   // For each entity in the scene
   for(int i = 0; i < scene->num_entities; i++){
@@ -164,7 +156,7 @@ void scene_render(Scene *scene){
     shader_set_vec3(entity->shader, "dirLight.specular", scene->light->specular);
 
     // Set camera position as viewPos in the fragment shader
-    shader_set_vec3(entity->shader, "viewPos", scene->camera->position);
+    shader_set_vec3(entity->shader, "viewPos", &scene->player.camera->position);
 
     // Draw model
     model_draw(entity->model, entity->shader);
@@ -174,7 +166,7 @@ void scene_render(Scene *scene){
 void free_scene(Scene *scene){
   if (scene){
     free(scene->entities);
-    free(scene->camera);
+    free(&scene->player.camera);
     free(scene->light);
     free(scene);
   }
