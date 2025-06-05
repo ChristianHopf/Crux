@@ -25,37 +25,37 @@ void camera_get_view_matrix(struct Camera *camera, mat4 view){
 void camera_process_keyboard_input(struct Camera *camera, CameraDirection direction, float deltaTime){
   float velocity = (float)(camera->speed * deltaTime);
 	if (direction == CAMERA_FORWARD){
-		vec3 forward;
+    vec3 forward = {camera->front[0], 0.0f, camera->front[2]};
 		glm_vec3_scale(camera->front, velocity, forward);
 		glm_vec3_add(camera->position, forward, camera->position);
 	}
 	if (direction == CAMERA_BACKWARD){
-		vec3 backward;
+    vec3 backward = {camera->front[0], 0.0f, camera->front[2]};
 		glm_vec3_scale(camera->front, velocity, backward);
 		glm_vec3_sub(camera->position, backward, camera->position);
 	}
 	if (direction == CAMERA_LEFT){
-    vec3 left;
+    vec3 left = {camera->front[0], 0.0f, camera->front[2]};
     glm_vec3_scale(camera->right, velocity, left);
     glm_vec3_sub(camera->position, left, camera->position);
 	}
 	if (direction == CAMERA_RIGHT){
-    vec3 right;
+    vec3 right = {camera->front[0], 0.0f, camera->front[2]};
     glm_vec3_scale(camera->right, velocity, right);
     glm_vec3_add(camera->position, right, camera->position);
 	}
-	if (direction == CAMERA_DOWN){
-		vec3 down;
-		glm_vec3_copy(camera->up, down);
-		glm_vec3_scale(down, velocity, down);
-		glm_vec3_sub(camera->position, down, camera->position);
-	}
-	if (direction == CAMERA_UP){
-		vec3 up;
-		glm_vec3_copy(camera->up, up);
-		glm_vec3_scale(up, velocity, up);
-		glm_vec3_add(camera->position, up, camera->position);
-	}
+	//if (direction == CAMERA_DOWN){
+	//	vec3 down;
+	//	glm_vec3_copy(camera->up, down);
+	//	glm_vec3_scale(down, velocity, down);
+	//	glm_vec3_sub(camera->position, down, camera->position);
+	//}
+	//if (direction == CAMERA_UP){
+	//	vec3 up;
+	//	glm_vec3_copy(camera->up, up);
+	//	glm_vec3_scale(up, velocity, up);
+	//	glm_vec3_add(camera->position, up, camera->position);
+	//}
 }
 
 void camera_process_mouse_input(struct Camera *camera, float xoffset, float yoffset){

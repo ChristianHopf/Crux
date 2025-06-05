@@ -34,6 +34,9 @@ Scene *scene_create(){
     return NULL;
   }
 
+  // Player
+  player_init(&scene->player, scene->camera);
+
   // Entities
   scene->num_entities = 0;
   scene->max_entities = 5;

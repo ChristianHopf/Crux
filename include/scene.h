@@ -17,7 +17,7 @@ typedef struct {
   Entity *entities;
   int num_entities;
   int max_entities;
-  //Camera *camera;
+  struct Player player;
   Light *light;
   bool paused;
 } Scene;

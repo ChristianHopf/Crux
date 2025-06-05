@@ -39,7 +39,7 @@ struct Camera {
 };
 
 // Create camera with default values
-Camera *camera_create(vec3 position, vec3 up, float yaw, float pitch, float fov, float sensitivity, float speed);
+struct Camera *camera_create(vec3 position, vec3 up, float yaw, float pitch, float fov, float sensitivity, float speed);
 
 // Get view matrix
 void camera_get_view_matrix(struct Camera *camera, mat4 view);

@@ -6,3 +6,8 @@
 struct Player {
   struct Camera *camera;
 };
+
+void player_init(struct Player *player, struct Camera *camera);
+//void update_player(struct Player *player, float delta_time);
+
+#endif
