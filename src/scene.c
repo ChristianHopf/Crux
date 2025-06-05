@@ -50,12 +50,12 @@ Scene *scene_create(){
     printf("Error: failed to allocate oiiaiModel\n");
     return NULL;
   }
-  model_load(crystalModel, "resources/objects/crystal/scene.gltf");
+  model_load(crystalModel, "resources/objects/dungeon_crossroads/scene.gltf");
   Entity crystal = {
     .ID = 1,
     .position = {0.0f, 0.0f, 0.0f},
     .rotation = {0.0f, 0.0f, 0.0f},
-    .scale = {0.2f, 0.2f, 0.2f},
+    .scale = {1.0f, 1.0f, 1.0f},
     .model = crystalModel,
     .shader = shader
   };
@@ -66,10 +66,10 @@ Scene *scene_create(){
   //   printf("Error: failed to allocate oiiaiModel\n");
   //   return NULL;
   // }
-  // //model_load(oiiaiModel, "resources/objects/oiiai/scene.gltf");
+  // model_load(oiiaiModel, "resources/objects/oiiai/scene.gltf");
   // Entity oiiai = {
   //   .ID = 1,
-  //   .position = {0.0f, 0.0f, -10.0f},
+  //   .position = {0.0f, -2.0f, -10.0f},
   //   .rotation = {0.0f, 0.0f, 0.0f},
   //   .scale = {0.1f, 0.1f, 0.1f},
   //   .model = oiiaiModel,
@@ -111,6 +111,7 @@ void scene_update(Scene *scene, float deltaTime){
 }
 
 void scene_render(Scene *scene){
+  printf("Time to render the scene!\n");
   // Render (clear color and depth buffer bits)
   glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -152,6 +153,8 @@ void scene_render(Scene *scene){
 
     // Set camera position as viewPos in the fragment shader
     shader_set_vec3(entity->shader, "viewPos", scene->player.camera->position);
+
+    printf("Uniforms set, time to draw the model!\n");
 
     // Draw model
     model_draw(entity->model, entity->shader);

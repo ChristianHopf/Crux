@@ -57,6 +57,7 @@ bool model_load(Model *model, const char *path){
     model->materials[i].shininess = 32.0f;
     model->materials[i].diffuse_texture_id = model_load_texture_type(model, mat, scene, aiTextureType_DIFFUSE);
   }
+  printf("Finished loading all textures!\n");
 
   // Process the root node
   unsigned int model_mesh_index = 0;
@@ -73,7 +74,9 @@ void model_process_node(Model *model, struct aiNode *node, const struct aiScene 
   // The int at position i of this node's mMeshes is the index of its mesh in the scene's mesh array
  for(unsigned int i = 0; i < node->mNumMeshes; i++){
     struct aiMesh *ai_mesh = scene->mMeshes[node->mMeshes[i]];
-    model_process_mesh(model, ai_mesh, scene, &model->meshes[*(index)++]);
+    model_process_mesh(model, ai_mesh, scene, &model->meshes[*index]);
+    printf("Successfully processed mesh, assigned to model->meshes[%d]\n", *index);
+    (*index)++;
   }
 
   // Process this node's children
@@ -130,6 +133,7 @@ void model_process_mesh(Model *model, struct aiMesh *ai_mesh, const struct aiSce
   }
   dest_mesh->num_indices = index;
 
+  printf("Assigning material index %d to mesh\n", ai_mesh->mMaterialIndex);
   dest_mesh->material_index = ai_mesh->mMaterialIndex;
 
   // Bind vertex buffers and buffer vertex data
@@ -166,12 +170,15 @@ void model_process_mesh(Model *model, struct aiMesh *ai_mesh, const struct aiSce
 
 void model_draw(Model *model, Shader *shader){
   // For each mesh in the model
+  printf("Number of meshes to draw: %d\n", model->num_meshes);
   for(unsigned int i = 0; i < model->num_meshes; i++){
+    printf("Drawing mesh %d with material index %d\n", i, model->meshes[i].material_index);
     // Bind textures
     // Diffuse
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, model->materials[model->meshes[i].material_index].diffuse_texture_id);
     shader_set_int(shader, "diffuseMap", 0);
+    printf("Successfully set diffuseMap uniform!\n");
     
     // Specular
     // glActiveTexture(GL_TEXTURE1);
@@ -181,6 +188,7 @@ void model_draw(Model *model, Shader *shader){
     // Bind its vertex array and draw its triangles
     glBindVertexArray(model->meshes[i].VAO);
     glDrawElements(GL_TRIANGLES, model->meshes[i].num_indices, GL_UNSIGNED_INT, 0);
+    printf("Successfully drew this mesh's triangles!\n");
   }
   // Next mesh will bind its VAO first, so this shouldn't matter. Experiment with and without
   glBindVertexArray(0);

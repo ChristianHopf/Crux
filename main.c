@@ -194,11 +194,11 @@ int main(){
 		engine->deltaTime = currentFrame - engine->lastFrame;
 		engine->lastFrame = currentFrame;
 
-    printf("FPS: %f\n", 1.0 / engine->deltaTime);
+		printf("FPS: %f\n", 1.0 / engine->deltaTime);
 
-    // Handle input, update, render
+		// Handle input, update, render
 		processInput(engine->window);
-    scene_update(engine->active_scene, engine->deltaTime);
+		// scene_update(engine->active_scene, engine->deltaTime);
     scene_render(engine->active_scene);
 
 		// Check and call events, swap buffers
