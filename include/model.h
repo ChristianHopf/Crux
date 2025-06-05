@@ -1,5 +1,5 @@
-#ifndef NEWMODEL_H
-#define NEWMODEL_H
+#ifndef MODEL_H
+#define MODEL_H
 
 #include <glad/glad.h>
 #include <cglm/cglm.h>
@@ -10,6 +10,7 @@
 #include <assimp/texture.h>
 #include <assimp/material.h>
 #include "shader.h"
+#include "material.h"
 
 typedef struct {
   char path[512];
@@ -31,15 +32,6 @@ typedef struct {
   unsigned int num_indices;
   unsigned int material_index;
 } Mesh;
-
-struct Material {
-  vec3 ambient;
-  vec3 diffuse;
-  vec4 specular;
-  float shininess;
-  unsigned int diffuse_texture_id;
-  unsigned int specular_texture_id;
-};
 
 typedef struct {
   Mesh *meshes;

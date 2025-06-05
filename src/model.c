@@ -1,5 +1,3 @@
-#include "model.h"
-#include "utils.h"
 #include <cglm/vec2.h>
 #include <stb_image/stb_image.h>
 #include <stdbool.h>
@@ -10,6 +8,7 @@
 #include <assimp/material.h>
 #include "model.h"
 #include "utils.h"
+#include "material.h"
 
 bool model_load(Model *model, const char *path){
   const struct aiScene* scene = aiImportFile(path, aiProcessPreset_TargetRealtime_Fast);
@@ -56,9 +55,13 @@ bool model_load(Model *model, const char *path){
     glm_vec3_copy(model->materials[i].diffuse, (vec3){0.8f, 0.8f, 0.8f});
     glm_vec3_copy(model->materials[i].specular, (vec3){1.0f, 1.0f, 1.0f});
     model->materials[i].shininess = 32.0f;
-    model->materials[i].diffuse_texture_id = model_load_texture_type(model, mat, scene, aiTextureType_DIFFUSE);
-    model->materials[i].specular_texture_id = model_load_texture_type(model, mat, scene, aiTextureType_SPECULAR);
+    material_load_textures(model, mat, scene);
+    // model->materials[i].diffuse_texture_id = model_load_texture_type(model, mat, scene, aiTextureType_DIFFUSE);
+    // model->materials[i].specular_texture_id = model_load_texture_type(model, mat, scene, aiTextureType_SPECULAR);
   }
+
+  // Debugging, just make it stop here for now
+  return false;
 
   // Process the root node
   unsigned int model_mesh_index = 0;
