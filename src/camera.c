@@ -2,7 +2,7 @@
 #include <GLFW/glfw3.h>
 
 struct Camera *camera_create(vec3 position, vec3 up, float yaw, float pitch, float fov, float sensitivity, float speed){
-  struct Camera *camera = (Camera *)malloc(sizeof(Camera));
+  struct Camera *camera = (struct Camera *)malloc(sizeof(struct Camera));
   if (!camera){
     printf("Error: failed to allocate camera\n");
     return NULL;

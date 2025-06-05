@@ -1,8 +1,6 @@
 #include "scene.h"
-#include "camera.h"
-#include <GL/gl.h>
+#include "player.h"
 #include "utils.h"
-#include <math.h>
 
 Scene *scene_create(){
   // Allocate scene
@@ -120,8 +118,8 @@ void scene_render(Scene *scene){
   // Get view and projection matrices
   mat4 view;
   mat4 projection;
-  camera_get_view_matrix(&scene->player.camera, view);
-  glm_perspective(glm_rad(&scene->player.camera->fov), 800.0f / 600.0f, 0.1f, 100.0f, projection);
+  camera_get_view_matrix(scene->player.camera, view);
+  glm_perspective(glm_rad(scene->player.camera->fov), 800.0f / 600.0f, 0.1f, 100.0f, projection);
 
   // For each entity in the scene
   for(int i = 0; i < scene->num_entities; i++){
@@ -156,7 +154,7 @@ void scene_render(Scene *scene){
     shader_set_vec3(entity->shader, "dirLight.specular", scene->light->specular);
 
     // Set camera position as viewPos in the fragment shader
-    shader_set_vec3(entity->shader, "viewPos", &scene->player.camera->position);
+    shader_set_vec3(entity->shader, "viewPos", scene->player.camera->position);
 
     // Draw model
     model_draw(entity->model, entity->shader);
@@ -166,7 +164,7 @@ void scene_render(Scene *scene){
 void free_scene(Scene *scene){
   if (scene){
     free(scene->entities);
-    free(&scene->player.camera);
+    free(scene->player.camera);
     free(scene->light);
     free(scene);
   }

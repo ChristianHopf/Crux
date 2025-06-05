@@ -41,7 +41,7 @@ void processInput(GLFWwindow *window){
 		glfwSetWindowShouldClose(window, 1);
 	}
   Engine *engine = (Engine *)glfwGetWindowUserPointer(window);
-  struct Camera *camera = engine->active_scene->camera;
+  struct Camera *camera = engine->active_scene->player.camera;
 
   // Don't process input (other than the Escape key) if the game is paused
   if (engine->active_scene->paused){
@@ -84,7 +84,7 @@ void mouse_callback(GLFWwindow *window, double xpos, double ypos){
     return;
   }
 
-  struct Camera *camera = engine->active_scene->camera;
+  struct Camera *camera = engine->active_scene->player.camera;
 
 	if (firstMouse){
 		lastX = (float)xpos;
@@ -103,7 +103,7 @@ void mouse_callback(GLFWwindow *window, double xpos, double ypos){
 
 void scroll_callback(GLFWwindow *window, double xoffset, double yoffset){
   Engine *engine = (Engine *)glfwGetWindowUserPointer(window);
-  struct Camera *camera = engine->active_scene->camera;
+  struct Camera *camera = engine->active_scene->player.camera;
   camera_process_scroll_input(camera, yoffset);
 }
 

@@ -2,8 +2,9 @@
 #define SCENE_H
 
 #include <glad/glad.h>
-#include "entity.h"
 #include <stdbool.h>
+#include "entity.h"
+#include "player.h"
 
 typedef struct {
   vec3 direction;
