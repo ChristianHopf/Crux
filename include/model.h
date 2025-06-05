@@ -29,14 +29,22 @@ typedef struct {
 typedef struct {
   GLuint VAO, VBO, EBO;
   unsigned int num_indices;
-  GLuint diffuse_texture_id;
-  GLuint specular_texture_id;
+  unsigned int material_index;
 } Mesh;
+
+struct Material {
+  vec3 ambient;
+  vec3 diffuse;
+  vec4 specular;
+  float shininess;
+  unsigned int diffuse_texture_id;
+};
 
 typedef struct {
   Mesh *meshes;
   unsigned int num_meshes;
-  //Shader *shader;
+  Material *materials;
+  unsigned int num_materials;
   char *directory;
 } Model;
 

@@ -13,7 +13,7 @@ bool model_load(Model *model, const char *path){
   const struct aiScene* scene = aiImportFile(path, aiProcessPreset_TargetRealtime_Fast);
 
   if (!scene || !scene->mRootNode || !scene->mMeshes || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE) {
-    printf("Error: failed to get scene\n");
+    printf("ERROR::ASSIMP:: %s\n", aiGetErrorString());
     return false;
   }
 
