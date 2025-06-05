@@ -156,7 +156,7 @@ Engine *engine_create(){
 	}
 
   // Flip textures across y-axis
-  stbi_set_flip_vertically_on_load(true);
+  //stbi_set_flip_vertically_on_load(true);
 
 	// Configure global OpenGL state
 	glEnable(GL_DEPTH_TEST);
@@ -198,7 +198,7 @@ int main(){
 
 		// Handle input, update, render
 		processInput(engine->window);
-		// scene_update(engine->active_scene, engine->deltaTime);
+		scene_update(engine->active_scene, engine->deltaTime);
     scene_render(engine->active_scene);
 
 		// Check and call events, swap buffers

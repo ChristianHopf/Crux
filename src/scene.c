@@ -50,7 +50,7 @@ Scene *scene_create(){
     printf("Error: failed to allocate oiiaiModel\n");
     return NULL;
   }
-  model_load(crystalModel, "resources/objects/dungeon_crossroads/scene.gltf");
+  model_load(crystalModel, "resources/objects/backpack/backpack.obj");
   Entity crystal = {
     .ID = 1,
     .position = {0.0f, 0.0f, 0.0f},
@@ -111,7 +111,6 @@ void scene_update(Scene *scene, float deltaTime){
 }
 
 void scene_render(Scene *scene){
-  printf("Time to render the scene!\n");
   // Render (clear color and depth buffer bits)
   glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -153,8 +152,6 @@ void scene_render(Scene *scene){
 
     // Set camera position as viewPos in the fragment shader
     shader_set_vec3(entity->shader, "viewPos", scene->player.camera->position);
-
-    printf("Uniforms set, time to draw the model!\n");
 
     // Draw model
     model_draw(entity->model, entity->shader);

@@ -34,6 +34,7 @@ bool model_load(Model *model, const char *path){
     model->directory = strdup(".");
   }
 
+  printf("Model has %d meshes\n", scene->mNumMeshes);
   // Allocate memory for meshes
   model->num_meshes = scene->mNumMeshes;
   if (model->num_meshes == 0){
@@ -56,8 +57,8 @@ bool model_load(Model *model, const char *path){
     glm_vec3_copy(model->materials[i].specular, (vec3){1.0f, 1.0f, 1.0f});
     model->materials[i].shininess = 32.0f;
     model->materials[i].diffuse_texture_id = model_load_texture_type(model, mat, scene, aiTextureType_DIFFUSE);
+    model->materials[i].specular_texture_id = model_load_texture_type(model, mat, scene, aiTextureType_SPECULAR);
   }
-  printf("Finished loading all textures!\n");
 
   // Process the root node
   unsigned int model_mesh_index = 0;
@@ -75,7 +76,6 @@ void model_process_node(Model *model, struct aiNode *node, const struct aiScene 
  for(unsigned int i = 0; i < node->mNumMeshes; i++){
     struct aiMesh *ai_mesh = scene->mMeshes[node->mMeshes[i]];
     model_process_mesh(model, ai_mesh, scene, &model->meshes[*index]);
-    printf("Successfully processed mesh, assigned to model->meshes[%d]\n", *index);
     (*index)++;
   }
 
@@ -133,7 +133,6 @@ void model_process_mesh(Model *model, struct aiMesh *ai_mesh, const struct aiSce
   }
   dest_mesh->num_indices = index;
 
-  printf("Assigning material index %d to mesh\n", ai_mesh->mMaterialIndex);
   dest_mesh->material_index = ai_mesh->mMaterialIndex;
 
   // Bind vertex buffers and buffer vertex data
@@ -170,26 +169,27 @@ void model_process_mesh(Model *model, struct aiMesh *ai_mesh, const struct aiSce
 
 void model_draw(Model *model, Shader *shader){
   // For each mesh in the model
-  printf("Number of meshes to draw: %d\n", model->num_meshes);
   for(unsigned int i = 0; i < model->num_meshes; i++){
-    printf("Drawing mesh %d with material index %d\n", i, model->meshes[i].material_index);
-    // Bind textures
-    // Diffuse
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, model->materials[model->meshes[i].material_index].diffuse_texture_id);
-    shader_set_int(shader, "diffuseMap", 0);
-    printf("Successfully set diffuseMap uniform!\n");
-    
-    // Specular
-    // glActiveTexture(GL_TEXTURE1);
-    // glBindTexture(GL_TEXTURE_2D, model->meshes[i].specular_texture_id);
-    // shader_set_int(shader, "specularMap", 1);
+    // Only bind textures if this mesh *has* a material.
+    // If it doesn't, model->meshes[i].material_index will be negative.
+    if (model->meshes[i].material_index >= 0){
+      // Bind textures
+      // Diffuse
+      glActiveTexture(GL_TEXTURE0);
+      glBindTexture(GL_TEXTURE_2D, model->materials[model->meshes[i].material_index].diffuse_texture_id);
+      shader_set_int(shader, "diffuseMap", 0);
+
+      // Specular
+      glActiveTexture(GL_TEXTURE1);
+      glBindTexture(GL_TEXTURE_2D, model->materials[model->meshes[i].material_index].specular_texture_id);
+      shader_set_int(shader, "specularMap", 1);
+    }
 
     // Bind its vertex array and draw its triangles
     glBindVertexArray(model->meshes[i].VAO);
     glDrawElements(GL_TRIANGLES, model->meshes[i].num_indices, GL_UNSIGNED_INT, 0);
-    printf("Successfully drew this mesh's triangles!\n");
   }
+
   // Next mesh will bind its VAO first, so this shouldn't matter. Experiment with and without
   glBindVertexArray(0);
 }
@@ -229,8 +229,6 @@ GLuint model_load_texture_type(Model *model, const struct aiMaterial *material, 
   // If texture isn't embedded, the path is different
   char full_texture_path[512];
   snprintf(full_texture_path, sizeof(full_texture_path), "%s/%s", model->directory, texture_path);
-  printf("Texture path: %s\n", texture_path);
-  printf("Full texture path: %s\n", full_texture_path);
 
   // Check if the texture is already loaded
   GLuint texture_id = model_check_loaded_texture(full_texture_path);

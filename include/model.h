@@ -38,6 +38,7 @@ struct Material {
   vec4 specular;
   float shininess;
   unsigned int diffuse_texture_id;
+  unsigned int specular_texture_id;
 };
 
 typedef struct {
