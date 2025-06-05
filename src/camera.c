@@ -26,22 +26,24 @@ void camera_process_keyboard_input(struct Camera *camera, CameraDirection direct
   float velocity = (float)(camera->speed * deltaTime);
 	if (direction == CAMERA_FORWARD){
     vec3 forward = {camera->front[0], 0.0f, camera->front[2]};
-		glm_vec3_scale(camera->front, velocity, forward);
+		glm_vec3_scale(forward, velocity, forward);
 		glm_vec3_add(camera->position, forward, camera->position);
 	}
 	if (direction == CAMERA_BACKWARD){
     vec3 backward = {camera->front[0], 0.0f, camera->front[2]};
-		glm_vec3_scale(camera->front, velocity, backward);
+		glm_vec3_scale(backward, velocity, backward);
 		glm_vec3_sub(camera->position, backward, camera->position);
 	}
 	if (direction == CAMERA_LEFT){
-    vec3 left = {camera->front[0], 0.0f, camera->front[2]};
-    glm_vec3_scale(camera->right, velocity, left);
+    // I could just leave these since left and right don't affect pitch,
+    // but I might want to implement leaning in the future
+    vec3 left = {camera->right[0], 0.0f, camera->right[2]};
+    glm_vec3_scale(left, velocity, left);
     glm_vec3_sub(camera->position, left, camera->position);
 	}
 	if (direction == CAMERA_RIGHT){
-    vec3 right = {camera->front[0], 0.0f, camera->front[2]};
-    glm_vec3_scale(camera->right, velocity, right);
+    vec3 right = {camera->right[0], 0.0f, camera->right[2]};
+    glm_vec3_scale(right, velocity, right);
     glm_vec3_add(camera->position, right, camera->position);
 	}
 	//if (direction == CAMERA_DOWN){
