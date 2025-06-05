@@ -3,7 +3,6 @@
 
 #include <glad/glad.h>
 #include "entity.h"
-#include "camera.h"
 #include <stdbool.h>
 
 typedef struct {
@@ -18,7 +17,7 @@ typedef struct {
   Entity *entities;
   int num_entities;
   int max_entities;
-  Camera *camera;
+  //Camera *camera;
   Light *light;
   bool paused;
 } Scene;

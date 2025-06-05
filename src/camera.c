@@ -1,7 +1,7 @@
 #include "camera.h"
 #include <GLFW/glfw3.h>
 
-Camera *camera_create(vec3 position, vec3 up, float yaw, float pitch, float fov, float sensitivity, float speed){
+struct Camera *camera_create(vec3 position, vec3 up, float yaw, float pitch, float fov, float sensitivity, float speed){
   Camera *camera = (Camera *)malloc(sizeof(Camera));
   if (!camera){
     printf("Error: failed to allocate camera\n");
@@ -18,11 +18,11 @@ Camera *camera_create(vec3 position, vec3 up, float yaw, float pitch, float fov,
   return camera;
 }
 
-void camera_get_view_matrix(Camera *camera, mat4 view){
+void camera_get_view_matrix(struct Camera *camera, mat4 view){
 	glm_lookat(camera->position, (vec3){camera->position[0] + camera->front[0], camera->position[1] + camera->front[1], camera->position[2] + camera->front[2]}, camera->up, view);
 }
 
-void camera_process_keyboard_input(Camera *camera, CameraDirection direction, float deltaTime){
+void camera_process_keyboard_input(struct Camera *camera, CameraDirection direction, float deltaTime){
   float velocity = (float)(camera->speed * deltaTime);
 	if (direction == CAMERA_FORWARD){
 		vec3 forward;
@@ -58,7 +58,7 @@ void camera_process_keyboard_input(Camera *camera, CameraDirection direction, fl
 	}
 }
 
-void camera_process_mouse_input(Camera *camera, float xoffset, float yoffset){
+void camera_process_mouse_input(struct Camera *camera, float xoffset, float yoffset){
   // Multiply offset by sensitivity
 	xoffset *= camera->sensitivity;
 	yoffset *= camera->sensitivity;
@@ -83,13 +83,13 @@ void camera_process_mouse_input(Camera *camera, float xoffset, float yoffset){
   camera_update_vectors(camera);
 }
 
-void camera_process_scroll_input(Camera *camera, double yoffset){
+void camera_process_scroll_input(struct Camera *camera, double yoffset){
 	camera->fov -= (float)yoffset;
 	if (camera->fov <= 1.0f) camera->fov = 1.0f;
 	if (camera->fov >= 45.0f) camera->fov = 45.0f;
 }
 
-void camera_update_vectors(Camera *camera){
+void camera_update_vectors(struct Camera *camera){
   // Calculate new cameraFront vector
   vec3 direction;
 	direction[0] = cos(glm_rad(camera->yaw)) * cos(glm_rad(camera->pitch));
