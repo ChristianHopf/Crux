@@ -43,6 +43,11 @@ void processInput(GLFWwindow *window){
   Engine *engine = (Engine *)glfwGetWindowUserPointer(window);
   Camera *camera = engine->active_scene->camera;
 
+  // Don't process input (other than the Escape key) if the game is paused
+  if (engine->active_scene->paused){
+    return;
+  }
+
   // Camera movement
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS){
     camera_process_keyboard_input(camera, CAMERA_FORWARD, engine->deltaTime);

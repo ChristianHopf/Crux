@@ -168,6 +168,15 @@ void scene_render(Scene *scene){
   }
 }
 
+void free_scene(Scene *scene){
+  if (scene){
+    free(scene->entities);
+    free(scene->camera);
+    free(scene->light);
+    free(scene);
+  }
+}
+
 void scene_pause(Scene *scene){
   bool prev = scene->paused;
   scene->paused = !prev;
