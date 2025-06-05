@@ -9,7 +9,9 @@
 #include <assimp/postprocess.h>
 #include <assimp/cimport.h>
 #include <assimp/texture.h>
+#include <assimp/material.h>
 #include "shader.h"
+#include "material.h"
 
 typedef struct {
   char path[512];
@@ -42,8 +44,8 @@ struct Material {
 
 typedef struct {
   Mesh *meshes;
+  struct Material *materials;
   unsigned int num_meshes;
-  Material *materials;
   unsigned int num_materials;
   char *directory;
 } Model;

@@ -44,6 +44,18 @@ bool model_load(Model *model, const char *path){
     return false;
   }
 
+  // Materials
+  model->materials = (Material *)malloc(scene->mNumMaterials, sizeof(Material));
+  for (unsigned int i = 0; i < scene->mNumMaterials; i++){
+    struct aiMaterial *mat = scene->mMaterials[i];
+
+    glm_vec3_copy(model->materials[i].ambient, (vec3){0.2f, 0.2f, 0.2f});
+    glm_vec3_copy(model->materials[i].diffuse, (vec3){0.8f, 0.8f, 0.8f});
+    glm_vec3_copy(model->materials[i].specular, (vec3){1.0f, 1.0f, 1.0f});
+    model->materials[i].shininess = 32.0f;
+    model->materials[i].diffuse_texture_id = model_load_texture_type(model, mat, scene, aiTextureType_DIFFUSE);
+  }
+
   // Process the root node
   unsigned int model_mesh_index = 0;
   model_process_node(model, scene->mRootNode, scene, &model_mesh_index);
@@ -74,59 +86,43 @@ void model_process_node(Model *model, struct aiNode *node, const struct aiScene 
 }
 
 void model_process_mesh(Model *model, struct aiMesh *ai_mesh, const struct aiScene *scene, Mesh *dest_mesh){
-  // Get material and texture paths, joined with directory
-  const struct aiMaterial *material = scene->mMaterials[ai_mesh->mMaterialIndex];
-  if (!material){
-    printf("Error: failed to get material from scene materials\n");
-  }
-
-  // TODO: use aiGetMaterialTextureCount to only load textures that exist
-  // if (aiGetMaterialTextureCount(material, aiTextureType_DIFFUSE) != 0){
-  // // GLuint diffuse_texture_id = model_load_texture_type...
-  // }
-
-  // Get diffuse and specular textures
-  GLuint diffuse_texture_id = model_load_texture_type(model, material, scene, aiTextureType_DIFFUSE);
-  if (diffuse_texture_id != 0){
-    dest_mesh->diffuse_texture_id = diffuse_texture_id;
-  }
-  GLuint specular_texture_id = model_load_texture_type(model, material, scene, aiTextureType_SPECULAR);
-  if (specular_texture_id != 0){
-    dest_mesh->specular_texture_id = specular_texture_id;
-  }
-
-  // Allocate vertices and indices
+  // Allocate memory for vertices
   Vertex *vertices = (Vertex *)malloc(ai_mesh->mNumVertices * sizeof(Vertex));
   if (!vertices){
     printf("Error: failed to allocate vertices in model_process_mesh\n");
   }
-  unsigned int *indices = (unsigned int *)malloc(ai_mesh->mNumFaces * 3 * sizeof(unsigned int));
-  if (!indices){
-    printf("Error: failed to allocate indices in model_process_mesh\n");
-  }
 
   // Process vertices
   for (unsigned int i = 0; i < ai_mesh->mNumVertices; i++){
-    // Copy position vertices to vertex position vector
+    // Position
     memcpy(vertices[i].position, &ai_mesh->mVertices[i], sizeof(float) * 3);
-    // Normals
+
+    // Normal
     if (ai_mesh->mNormals){
       memcpy(vertices[i].normal, &ai_mesh->mNormals[i], sizeof(float) * 3);
     }else{
       memset(vertices[i].normal, 0, sizeof(float) * 3);
     }
-    // Process UVs
+
+    // Tex_Coord
     if (ai_mesh->mTextureCoords[0]){
-      //memcpy(vertices[i].tex_coord, &ai_mesh->mTextureCoords[0][i], sizeof(float) * 2);
       // mTextureCoords may have more than 1 channel per vertex, but we only care about
       // the first one for now. Each channel is a vec3 because it may use uvw (for cubemaps or something)
-      vec2 temp;
-      temp[0] = ai_mesh->mTextureCoords[0][i].x;
-      temp[1] = ai_mesh->mTextureCoords[0][i].y;
-      glm_vec2_copy(temp, vertices[i].tex_coord);
+      vertices[i].tex_coord[0] = ai_mesh->mTextureCoords[0][i].x;
+      vertices[i].tex_coord[0] = ai_mesh->mTextureCoords[0][i].x;
+      //vec2 temp;
+      //temp[0] = ai_mesh->mTextureCoords[0][i].x;
+      //temp[1] = ai_mesh->mTextureCoords[0][i].y;
+      //glm_vec2_copy(temp, vertices[i].tex_coord);
     } else{
       glm_vec2_copy((vec2){0.0f, 0.0f}, vertices[i].tex_coord);
     }
+  }
+
+  // Allocate memory for indices
+  unsigned int *indices = (unsigned int *)malloc(ai_mesh->mNumFaces * 3 * sizeof(unsigned int));
+  if (!indices){
+    printf("Error: failed to allocate indices in model_process_mesh\n");
   }
 
   // Process indices
@@ -138,6 +134,8 @@ void model_process_mesh(Model *model, struct aiMesh *ai_mesh, const struct aiSce
     }
   }
   dest_mesh->num_indices = index;
+
+  dest_mesh->material_index = ai_mesh->mMaterialIndex;
 
   // Bind vertex buffers and buffer vertex data
   glGenBuffers(1, &dest_mesh->VBO);
@@ -223,12 +221,9 @@ GLuint model_load_texture_type(Model *model, const struct aiMaterial *material, 
       printf("Successfully loaded new embedded texture at path %s with id %d\n", texture_path, embedded_texture_id);
     }
     return embedded_texture_id;
-
-    //GLuint embedded_texture_id = model_load_embedded_texture(texture_path, scene);
-    //printf("Embedded texture path: %s\n", texture_path);
-    //return embedded_texture_id;
   }
 
+  // If texture isn't embedded, the path is different
   char full_texture_path[512];
   snprintf(full_texture_path, sizeof(full_texture_path), "%s/%s", model->directory, texture_path);
   printf("Texture path: %s\n", texture_path);

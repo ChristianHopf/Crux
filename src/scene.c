@@ -130,7 +130,6 @@ void scene_render(Scene *scene){
     // Get its model matrix
     mat4 model;
     glm_mat4_identity(model);
-    // Apply transformations to model matrix
     // Translate
     glm_translate(model, entity->position);
     // Rotate
@@ -144,8 +143,6 @@ void scene_render(Scene *scene){
     shader_set_mat4(entity->shader, "model", model);
     shader_set_mat4(entity->shader, "view", view);
     shader_set_mat4(entity->shader, "projection", projection);
-
-    //print_glm_vec3(scene->light->direction, "Scene light direction");
 
     // Lighting uniforms
     shader_set_vec3(entity->shader, "dirLight.direction", scene->light->direction);
