@@ -75,6 +75,15 @@ void framebuffer_size_callback(GLFWwindow *window, int width, int height){
 
 void mouse_callback(GLFWwindow *window, double xpos, double ypos){
   Engine *engine = (Engine *)glfwGetWindowUserPointer(window);
+
+  // Don't process input (other than the Escape key) if the game is paused
+  if (engine->active_scene->paused){
+    // A better way to handle this: on pause, set firstMouse to true.
+    // Would have to move it from a main.c global var
+    //firstMouse = true;
+    return;
+  }
+
   Camera *camera = engine->active_scene->camera;
 
 	if (firstMouse){
