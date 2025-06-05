@@ -61,21 +61,21 @@ Scene *scene_create(){
   };
   scene->entities[scene->num_entities++] = crystal;
 
-  Model *oiiaiModel = (Model *)malloc(sizeof(Model));
-  if (!oiiaiModel){
-    printf("Error: failed to allocate oiiaiModel\n");
-    return NULL;
-  }
-  //model_load(oiiaiModel, "resources/objects/oiiai/scene.gltf");
-  Entity oiiai = {
-    .ID = 1,
-    .position = {0.0f, 0.0f, -10.0f},
-    .rotation = {0.0f, 0.0f, 0.0f},
-    .scale = {0.1f, 0.1f, 0.1f},
-    .model = oiiaiModel,
-    .shader = shader
-  };
-  //scene->entities[scene->num_entities++] = oiiai;
+  // Model *oiiaiModel = (Model *)malloc(sizeof(Model));
+  // if (!oiiaiModel){
+  //   printf("Error: failed to allocate oiiaiModel\n");
+  //   return NULL;
+  // }
+  // //model_load(oiiaiModel, "resources/objects/oiiai/scene.gltf");
+  // Entity oiiai = {
+  //   .ID = 1,
+  //   .position = {0.0f, 0.0f, -10.0f},
+  //   .rotation = {0.0f, 0.0f, 0.0f},
+  //   .scale = {0.1f, 0.1f, 0.1f},
+  //   .model = oiiaiModel,
+  //   .shader = shader
+  // };
+  // scene->entities[scene->num_entities++] = oiiai;
 
   return scene;
 }

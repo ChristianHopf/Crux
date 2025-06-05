@@ -1,13 +1,15 @@
 #include "model.h"
 #include "utils.h"
-#include <assimp/material.h>
 #include <cglm/vec2.h>
+#include <stb_image/stb_image.h>
 #include <stdbool.h>
 #include <assimp/cimport.h>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 #include <assimp/texture.h>
-#include <stb_image/stb_image.h>
+#include <assimp/material.h>
+#include "model.h"
+#include "utils.h"
 
 bool model_load(Model *model, const char *path){
   const struct aiScene* scene = aiImportFile(path, aiProcessPreset_TargetRealtime_Fast);
@@ -45,7 +47,7 @@ bool model_load(Model *model, const char *path){
   }
 
   // Materials
-  model->materials = (Material *)malloc(scene->mNumMaterials, sizeof(Material));
+  model->materials = (struct Material *)malloc(scene->mNumMaterials * sizeof(struct Material));
   for (unsigned int i = 0; i < scene->mNumMaterials; i++){
     struct aiMaterial *mat = scene->mMaterials[i];
 
@@ -59,11 +61,6 @@ bool model_load(Model *model, const char *path){
   // Process the root node
   unsigned int model_mesh_index = 0;
   model_process_node(model, scene->mRootNode, scene, &model_mesh_index);
- 
-  // Process all meshes
-  //for(unsigned int i = 0; i < scene->mNumMeshes; i++){
-  //  model_process_mesh(model, scene->mMeshes[i], scene, &model->meshes[i]);
-  //}
 
   aiReleaseImport(scene);
   return true;
@@ -108,12 +105,10 @@ void model_process_mesh(Model *model, struct aiMesh *ai_mesh, const struct aiSce
     if (ai_mesh->mTextureCoords[0]){
       // mTextureCoords may have more than 1 channel per vertex, but we only care about
       // the first one for now. Each channel is a vec3 because it may use uvw (for cubemaps or something)
-      vertices[i].tex_coord[0] = ai_mesh->mTextureCoords[0][i].x;
-      vertices[i].tex_coord[0] = ai_mesh->mTextureCoords[0][i].x;
-      //vec2 temp;
-      //temp[0] = ai_mesh->mTextureCoords[0][i].x;
-      //temp[1] = ai_mesh->mTextureCoords[0][i].y;
-      //glm_vec2_copy(temp, vertices[i].tex_coord);
+      vec2 temp;
+      temp[0] = ai_mesh->mTextureCoords[0][i].x;
+      temp[1] = ai_mesh->mTextureCoords[0][i].y;
+      glm_vec2_copy(temp, vertices[i].tex_coord);
     } else{
       glm_vec2_copy((vec2){0.0f, 0.0f}, vertices[i].tex_coord);
     }
@@ -175,13 +170,13 @@ void model_draw(Model *model, Shader *shader){
     // Bind textures
     // Diffuse
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, model->meshes[i].diffuse_texture_id);
+    glBindTexture(GL_TEXTURE_2D, model->materials[model->meshes[i].material_index].diffuse_texture_id);
     shader_set_int(shader, "diffuseMap", 0);
     
     // Specular
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, model->meshes[i].specular_texture_id);
-    shader_set_int(shader, "specularMap", 1);
+    // glActiveTexture(GL_TEXTURE1);
+    // glBindTexture(GL_TEXTURE_2D, model->meshes[i].specular_texture_id);
+    // shader_set_int(shader, "specularMap", 1);
 
     // Bind its vertex array and draw its triangles
     glBindVertexArray(model->meshes[i].VAO);

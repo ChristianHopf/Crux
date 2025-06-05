@@ -1,7 +1,6 @@
 #ifndef NEWMODEL_H
 #define NEWMODEL_H
 
-#include <assimp/material.h>
 #include <glad/glad.h>
 #include <cglm/cglm.h>
 #include <stdbool.h>
@@ -11,7 +10,6 @@
 #include <assimp/texture.h>
 #include <assimp/material.h>
 #include "shader.h"
-#include "material.h"
 
 typedef struct {
   char path[512];
