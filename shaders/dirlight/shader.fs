@@ -20,7 +20,7 @@ struct DirLight {
 };
 uniform DirLight dirLight;
 
-void calc_dir_light(DirLight light, vec3 norm, vec3 viewDir);
+vec3 calc_dir_light(DirLight light, vec3 norm, vec3 viewDir);
 
 void main(){
   vec3 norm = normalize(Normal);

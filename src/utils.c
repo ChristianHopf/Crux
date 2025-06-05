@@ -30,3 +30,7 @@ unsigned char *read_file(const char *path){
 	fclose(file);
 	return buffer;
 }
+
+void print_glm_vec3(float *vector, char *name){
+  printf("%s: [%f, %f, %f]\n", name, vector[0], vector[1], vector[2]);
+}

@@ -22,6 +22,7 @@ void framebuffer_size_callback(GLFWwindow *window, int width, int height);
 void processInput(GLFWwindow *window);
 void mouse_callback(GLFWwindow *window, double xpos, double ypos);
 void scroll_callback(GLFWwindow *window, double xoffset, double yoffset);
+void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods);
 
 // Screen settings
 const unsigned int SCREEN_WIDTH = 800;
@@ -42,6 +43,12 @@ void processInput(GLFWwindow *window){
   Engine *engine = (Engine *)glfwGetWindowUserPointer(window);
   Camera *camera = engine->active_scene->camera;
 
+  // Don't process input (other than the Escape key) if the game is paused
+  if (engine->active_scene->paused){
+    return;
+  }
+
+  // Camera movement
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS){
     camera_process_keyboard_input(camera, CAMERA_FORWARD, engine->deltaTime);
 	}
@@ -68,6 +75,15 @@ void framebuffer_size_callback(GLFWwindow *window, int width, int height){
 
 void mouse_callback(GLFWwindow *window, double xpos, double ypos){
   Engine *engine = (Engine *)glfwGetWindowUserPointer(window);
+
+  // Don't process input (other than the Escape key) if the game is paused
+  if (engine->active_scene->paused){
+    // A better way to handle this: on pause, set firstMouse to true.
+    // Would have to move it from a main.c global var
+    //firstMouse = true;
+    return;
+  }
+
   Camera *camera = engine->active_scene->camera;
 
 	if (firstMouse){
@@ -89,6 +105,15 @@ void scroll_callback(GLFWwindow *window, double xoffset, double yoffset){
   Engine *engine = (Engine *)glfwGetWindowUserPointer(window);
   Camera *camera = engine->active_scene->camera;
   camera_process_scroll_input(camera, yoffset);
+}
+
+void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods){
+  Scene *active_scene = ((Engine *)glfwGetWindowUserPointer(window))->active_scene;
+
+  // Pause
+  if (key == GLFW_KEY_P && action == GLFW_PRESS){
+    scene_pause(active_scene);
+  }
 }
 
 Engine *engine_create(){
@@ -117,6 +142,7 @@ Engine *engine_create(){
 	glfwSetFramebufferSizeCallback(engine->window, framebuffer_size_callback);
 	glfwSetCursorPosCallback(engine->window, mouse_callback);
 	glfwSetScrollCallback(engine->window, scroll_callback);
+  glfwSetKeyCallback(engine->window, key_callback);
   glfwSetWindowUserPointer(engine->window, engine);
 
 	// Capture mouse
@@ -170,12 +196,9 @@ int main(){
 
     printf("FPS: %f\n", 1.0 / engine->deltaTime);
 
-		// Handle input
+    // Handle input, update, render
 		processInput(engine->window);
-
     scene_update(engine->active_scene, engine->deltaTime);
-
-    // Render scene
     scene_render(engine->active_scene);
 
 		// Check and call events, swap buffers
