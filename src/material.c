@@ -8,13 +8,14 @@
 
 void material_load_textures(struct Material *mat, struct aiMaterial *ai_mat, const struct aiScene *scene, const char *directory){
   // Get number of texture properties to allocate this material's struct Textures
-  unsigned int mat_texture_properties = 0;
+  unsigned int num_texture_properties = 0;
   for (unsigned int i = 0; i < ai_mat->mNumProperties; i++){
     struct aiMaterialProperty *property = ai_mat->mProperties[i];
     if (property->mSemantic > 0){
       num_texture_properties++;
     }
   }
+  printf("This material has %d properties, with %d texture properties\n", ai_mat->mNumProperties, num_texture_properties);
 
   // Allocate struct Textures
   mat->textures = (struct Texture *)malloc(num_texture_properties * sizeof(struct Texture));
@@ -41,36 +42,49 @@ void material_load_textures(struct Material *mat, struct aiMaterial *ai_mat, con
       struct aiString *path = (struct aiString *)property->mData;
 
       // Load texture, embedded
-      if (texture_path[0] == '*'){
-        GLuint embedded_texture_id = model_check_loaded_texture(texture_path);
+      if (path->data[0] == '*'){
+        GLuint embedded_texture_id = check_loaded_texture(path->data);
         if (embedded_texture_id == 0){
-          embedded_texture_id = model_load_embedded_texture(texture_path, scene);
-          model_add_loaded_texture(texture_path, embedded_texture_id);
-          printf("Successfully loaded new embedded texture of type %d at path %s with id %d\n", type, texture_path, embedded_texture_id);
+          embedded_texture_id = material_load_embedded_texture(path->data, scene);
+          add_loaded_texture(path->data, embedded_texture_id);
+          printf("Successfully loaded new embedded texture of type %d at path %s with id %d\n", type, path->data, embedded_texture_id);
         }
 
         // Add texture to material
-        mat->textures[i]->texture_id = embedded_texture_id;
-        mat->textures[i]->texture_type = aiTextureTypeToString(type);
-        printf("texture type string: %s\n", mat->textures[i]->texture_type);
+        mat->textures[i].texture_id = embedded_texture_id;
+        mat->textures[i].texture_type = aiTextureTypeToString(type);
         mat->num_textures++;
+
+        free(path);
         continue;
       }
 
       // Load texture, not embedded
-      char full_texture_path[512];
-      snprintf(full_texture_path, sizeof(full_texture_path), "%s/%s", directory, texture_path);
+      if (aiGetMaterialTexture(ai_mat, type, 0, path, NULL, NULL, NULL, NULL, NULL, NULL) != AI_SUCCESS) {
+        printf("Error: failed to get texture path in material_load_textures\n");
+        return;
+      }
+      size_t len = strlen(directory) + 1 + strlen(path->data) + 1;
+      char *full_texture_path = malloc(len);
+      if (!full_texture_path){
+        printf("Error: failed to allocate full_texture_path in material_load_textures\n");
+        return;
+      }
+      snprintf(full_texture_path, len, "%s/%s", directory, path->data);
 
       // Check if the texture is already loaded
-      GLuint texture_id = model_check_loaded_texture(full_texture_path);
+      GLuint texture_id = check_loaded_texture(full_texture_path);
       if (texture_id == 0){
-        texture_id = model_load_texture(full_texture_path);
-        model_add_loaded_texture(full_texture_path, texture_id);
+        texture_id = material_load_texture(full_texture_path);
+        add_loaded_texture(full_texture_path, texture_id);
+        printf("Successfully loaded new texture of type %d at path %s with id %d\n", type, path->data, texture_id);
       }
 
+      free(full_texture_path);
+
       // Add texture to material
-      mat->textures[i]->texture_id = embedded_texture_id;
-      mat->textures[i]->texture_type = aiTextureTypeToString(type);
+      mat->textures[i].texture_id = texture_id;
+      mat->textures[i].texture_type = aiTextureTypeToString(type);
     }
   }
 }
@@ -139,6 +153,7 @@ GLuint check_loaded_texture(const char *path){
   // Check if a TextureEntry exists with this texture's path
   for(int i = 0; i < num_loaded_textures; i++){
     if (strncmp(loaded_textures[i].path, path, sizeof(loaded_textures[i].path)) == 0){
+      printf("This texture has already been loaded. Returning texture id %d\n", loaded_textures[i].texture_id);
       return loaded_textures[i].texture_id;
     }
   }

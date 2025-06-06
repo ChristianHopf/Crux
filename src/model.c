@@ -47,6 +47,7 @@ bool model_load(Model *model, const char *path){
   }
 
   // Materials
+  printf("Time to process %d materials!\n", scene->mNumMaterials);
   model->materials = (struct Material *)malloc(scene->mNumMaterials * sizeof(struct Material));
   for (unsigned int i = 0; i < scene->mNumMaterials; i++){
     struct aiMaterial *mat = scene->mMaterials[i];
@@ -56,6 +57,7 @@ bool model_load(Model *model, const char *path){
     glm_vec3_copy(model->materials[i].specular, (vec3){1.0f, 1.0f, 1.0f});
     model->materials[i].shininess = 32.0f;
     material_load_textures(&model->materials[i], mat, scene, model->directory);
+    printf("Successfully loaded textures of material %d\n", i);
   }
 
   // Debugging, just make it stop here for now
@@ -174,12 +176,12 @@ void model_draw(Model *model, Shader *shader){
     // Only bind textures if this mesh *has* a material.
     // If it doesn't, model->meshes[i].material_index will be negative.
     if (model->meshes[i].material_index >= 0){
-      struct Material *mat = model->materials[model->meshes[i].material_index];
+      struct Material *mat = &model->materials[model->meshes[i].material_index];
 
       // Bind textures
       for(unsigned int j = 0; j < mat->num_textures; i++){
         glActiveTexture(GL_TEXTURE + i);
-        glBindTexture(GL_TEXTURE_2D, material->textures[i]);
+        glBindTexture(GL_TEXTURE_2D, mat->textures[i].texture_id);
         
         // Build uniform string
       }
@@ -213,13 +215,10 @@ void model_free(Model *model){
   }
   // Free meshes
   free(model->meshes);
-  for(unsigned int i = 0; i < model->num_materials){
-    for(unsigned int j = 0; j < model->materials[i].textures[j]; j++){
-      free(model->materials[i].textures[j].texture_type);
-    }
+  for(unsigned int i = 0; i < model->num_materials; i++){
     free(model->materials[i].textures);
-    free(model->materials[i]);
   }
+  free(model->materials);
   free(model);
 }
 

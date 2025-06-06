@@ -13,15 +13,6 @@
 #include "material.h"
 
 typedef struct {
-  char path[512];
-  GLuint texture_id;
-} TextureEntry;
-
-#define MAX_TEXTURES 128
-static TextureEntry loaded_textures[MAX_TEXTURES];
-static int num_loaded_textures = 0;
-
-typedef struct {
     vec3 position;
     vec3 normal;
     vec2 tex_coord;
