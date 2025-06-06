@@ -82,6 +82,7 @@ void material_load_textures(struct Material *mat, struct aiMaterial *ai_mat, con
       if (texture_id == 0){
         texture_id = material_load_texture(full_texture_path, type);
         add_loaded_texture(full_texture_path, texture_id);
+        printf("Loaded texture of type %s\n", aiTextureTypeToString(type));
       }
 
       free(full_texture_path);

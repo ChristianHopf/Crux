@@ -81,6 +81,7 @@ bool model_load(Model *model, const char *path){
 }
 
 void model_process_node(Model *model, struct aiNode *node, const struct aiScene *scene, unsigned int *index){
+  print_aiMatrix4x4(&node->mTransformation);
   // Process each of this node's meshesMore actions
   // The scene has an array of meshes.
   // Each node has an array of ints which are indices to its mesh in the scene's mesh array.
@@ -199,7 +200,7 @@ void model_draw(Model *model, Shader *shader){
         char texture_uniform[32];
         if (strcmp(mat->textures[j].texture_type, "diffuse") == 0){
           snprintf(texture_uniform, sizeof(texture_uniform), "material.%s%u", mat->textures[j].texture_type, diffuse_num);
-
+          
           glActiveTexture(GL_TEXTURE0 + j);
           glBindTexture(GL_TEXTURE_2D, mat->textures[j].texture_id);
           shader_set_int(shader, texture_uniform, j);

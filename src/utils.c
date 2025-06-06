@@ -51,3 +51,16 @@ char *get_texture_type_string(enum aiTextureType type){
       return "unknown";
   }
 }
+
+void print_aiMatrix4x4(struct aiMatrix4x4 *mat) {
+    if (!mat) {
+        printf("Matrix is NULL\n");
+        return;
+    }
+
+    printf("aiMatrix4x4:\n");
+    printf("[ % .4f % .4f % .4f % .4f ]\n", mat->a1, mat->a2, mat->a3, mat->a4);
+    printf("[ % .4f % .4f % .4f % .4f ]\n", mat->b1, mat->b2, mat->b3, mat->b4);
+    printf("[ % .4f % .4f % .4f % .4f ]\n", mat->c1, mat->c2, mat->c3, mat->c4);
+    printf("[ % .4f % .4f % .4f % .4f ]\n", mat->d1, mat->d2, mat->d3, mat->d4);
+}

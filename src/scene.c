@@ -50,11 +50,11 @@ Scene *scene_create(){
     printf("Error: failed to allocate oiiaiModel\n");
     return NULL;
   }
-  model_load(crystalModel, "resources/objects/crystal/scene.gltf");
+  model_load(crystalModel, "resources/objects/dungeon_crossroads/scene.gltf");
   Entity crystal = {
     .ID = 1,
     .position = {0.0f, 0.0f, 0.0f},
-    .rotation = {0.2f, 0.2f, 0.2f},
+    .rotation = {0.0f, 0.0f, 0.0f},
     .scale = {1.0f, 1.0f, 1.0f},
     .model = crystalModel,
     .shader = shader
