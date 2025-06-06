@@ -55,7 +55,7 @@ bool model_load(Model *model, const char *path){
     glm_vec3_copy(model->materials[i].diffuse, (vec3){0.8f, 0.8f, 0.8f});
     glm_vec3_copy(model->materials[i].specular, (vec3){1.0f, 1.0f, 1.0f});
     model->materials[i].shininess = 32.0f;
-    material_load_textures(model, mat, scene);
+    material_load_textures(&model->materials[i], mat, scene);
     // model->materials[i].diffuse_texture_id = model_load_texture_type(model, mat, scene, aiTextureType_DIFFUSE);
     // model->materials[i].specular_texture_id = model_load_texture_type(model, mat, scene, aiTextureType_SPECULAR);
   }
@@ -179,12 +179,12 @@ void model_draw(Model *model, Shader *shader){
       // Bind textures
       // Diffuse
       glActiveTexture(GL_TEXTURE0);
-      glBindTexture(GL_TEXTURE_2D, model->materials[model->meshes[i].material_index].diffuse_texture_id);
+      glBindTexture(GL_TEXTURE_2D, model->materials[model->meshes[i].material_index].textures[0].texture_id);
       shader_set_int(shader, "diffuseMap", 0);
 
       // Specular
       glActiveTexture(GL_TEXTURE1);
-      glBindTexture(GL_TEXTURE_2D, model->materials[model->meshes[i].material_index].specular_texture_id);
+      glBindTexture(GL_TEXTURE_2D, model->materials[model->meshes[i].material_index].textures[1].texture_id);
       shader_set_int(shader, "specularMap", 1);
     }
 

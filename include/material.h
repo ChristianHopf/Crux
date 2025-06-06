@@ -20,7 +20,7 @@ struct Material {
 };
 
 // Probably need the scene pointer for loading embedded textures
-void material_load_textures(Material *mat, struct aiMaterial *ai_mat, const struct aiScene *scene);
+void material_load_textures(struct Material *mat, struct aiMaterial *ai_mat, const struct aiScene *scene);
 GLuint check_loaded_texture(const char *path);
 
 #endif
