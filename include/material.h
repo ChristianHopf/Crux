@@ -19,8 +19,8 @@ struct Material {
   float shininess;
 };
 
-// Probably need the scene pointer for loading embedded textures
-void material_load_textures(struct Material *mat, struct aiMaterial *ai_mat, const struct aiScene *scene);
+// Load all textures in a model's material
+void material_load_textures(struct Material *mat, struct aiMaterial *ai_mat, const struct aiScene *scene, const char *directory);
 GLuint material_load_embedded_texture(const char *path, const struct aiScene *scene);
 GLuint material_load_texture(const char *path);
 GLuint check_loaded_texture(const char *path);
