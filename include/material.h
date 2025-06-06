@@ -33,5 +33,6 @@ void material_load_textures(struct Material *mat, struct aiMaterial *ai_mat, con
 GLuint material_load_embedded_texture(const char *path, const struct aiScene *scene);
 GLuint material_load_texture(const char *path);
 GLuint check_loaded_texture(const char *path);
+void add_loaded_texture(const char *path, GLuint texture_id);
 
 #endif

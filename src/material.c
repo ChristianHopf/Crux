@@ -33,7 +33,7 @@ void material_load_textures(struct Material *mat, struct aiMaterial *ai_mat, con
       enum aiTextureType type = (enum aiTextureType)property->mSemantic;
       unsigned int texture_index = property->mIndex;
 
-      // Texture properties have mType aiPTI_String,
+// Texture properties have mType aiPTI_String,
       // which means the bytes in mData are a struct aiString.
       // (probably no need to check mType)
       struct aiString *path = (struct aiString *)property->mData;
@@ -83,4 +83,14 @@ GLuint check_loaded_texture(const char *path){
     }
   }
   return 0;
+}
+
+void add_loaded_texture(const char *path, GLuint texture_id){
+  if (num_loaded_textures >= MAX_TEXTURES){
+    printf("Error: failed to load texture, texture cache full\n");
+    return;
+  }
+  strncpy(loaded_textures[num_loaded_textures].path, path, sizeof(loaded_textures[num_loaded_textures].path) - 1);
+  loaded_textures[num_loaded_textures].texture_id = texture_id;
+  num_loaded_textures++;
 }
