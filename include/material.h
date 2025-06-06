@@ -18,7 +18,7 @@ static int num_loaded_textures = 0;
 
 struct Texture {
   GLuint texture_id;
-  const char *texture_type; // Assigned while loading textures (diffuse, specular, etc)
+  char *texture_type; // Assigned while loading textures (diffuse, specular, etc)
 };
 
 struct Material {

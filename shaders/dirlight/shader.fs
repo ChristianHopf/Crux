@@ -6,9 +6,6 @@ in vec3 FragPos;
 
 out vec4 FragColor;
 
-uniform sampler2D diffuseMap;
-uniform sampler2D specularMap;
-
 uniform vec3 viewPos;
 
 struct DirLight {
@@ -19,6 +16,18 @@ struct DirLight {
   vec3 specular;
 };
 uniform DirLight dirLight;
+
+struct Material {
+  sampler2D diffuse1;
+  sampler2D diffuse2;
+  sampler2D diffuse3;
+
+  sampler2D specular1;
+  sampler2D specular2;
+
+  sampler2D normal;
+};
+uniform Material material;
 
 vec3 calc_dir_light(DirLight light, vec3 norm, vec3 viewDir);
 
@@ -36,13 +45,13 @@ vec3 calc_dir_light(DirLight light, vec3 norm, vec3 viewDir){
   // Directional lightDir
   vec3 lightDir = normalize(-light.direction);
   // Ambient
-  vec3 ambient = light.ambient * vec3(texture(diffuseMap, TexCoord));
+  vec3 ambient = light.ambient * vec3(texture(material.diffuse1, TexCoord));
   // Diffuse
   float diff = max(dot(norm, lightDir), 0.0);
-  vec3 diffuse = light.diffuse * diff * vec3(texture(diffuseMap, TexCoord));
+  vec3 diffuse = light.diffuse * diff * vec3(texture(material.diffuse1, TexCoord));
   // Specular
   vec3 reflectDir = reflect(-lightDir, norm);
   float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);
-  vec3 specular = light.specular * spec * vec3(texture(specularMap, TexCoord));
+  vec3 specular = light.specular * spec * vec3(texture(material.specular1, TexCoord));
   return (ambient + diffuse + specular);
 }

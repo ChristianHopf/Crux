@@ -37,20 +37,19 @@ void print_glm_vec3(float *vector, char *name){
 }
 
 char *get_texture_type_string(enum aiTextureType type){
+  printf("Given texture type: %d\n", type);
   switch (type) {
     case aiTextureType_DIFFUSE:
-      return "diffuse";
-      break;
+      char *type = "diffuse";
+      return type;
     case aiTextureType_SPECULAR:
-      return "diffuse";
-      break;
+      return "specular";
+    case aiTextureType_HEIGHT:
     case aiTextureType_NORMALS:
-      return "diffuse";
-      break;
+      return "normal";
     case aiTextureType_EMISSIVE:
-      break;
+      return "emissive";
     default:
-      // Figure out what to do here
-      break;
+      return "unknown";
   }
 }

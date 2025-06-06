@@ -15,6 +15,11 @@ void material_load_textures(struct Material *mat, struct aiMaterial *ai_mat, con
       num_texture_properties++;
     }
   }
+  
+  if (num_texture_properties == 0){
+    return;
+  }
+
   printf("This material has %d properties, with %d texture file properties\n", ai_mat->mNumProperties, num_texture_properties);
 
   // Allocate struct Textures
@@ -23,9 +28,9 @@ void material_load_textures(struct Material *mat, struct aiMaterial *ai_mat, con
     printf("Error: failed to allocate Textures in material_load_textures\n");
     return;
   }
-  mat->num_textures = num_texture_properties;
 
   // Process material properties
+  unsigned int texture_index = 0;
   for (unsigned int i = 0; i < ai_mat->mNumProperties; i++){
     struct aiMaterialProperty *property = ai_mat->mProperties[i];
 
@@ -34,7 +39,9 @@ void material_load_textures(struct Material *mat, struct aiMaterial *ai_mat, con
 
       // Get texture type and index (used for diffuse1, diffuse2, ...)
       enum aiTextureType type = (enum aiTextureType)property->mSemantic;
-      unsigned int texture_index = property->mIndex;
+      printf("AITEXTURETYPE: %d\n", type);
+      // Don't think I need this
+      //unsigned int texture_index = property->mIndex;
 
       // Texture properties have mType aiPTI_String,
       // which means the bytes in mData are a struct aiString.
@@ -51,9 +58,10 @@ void material_load_textures(struct Material *mat, struct aiMaterial *ai_mat, con
         }
 
         // Add texture to material
-        mat->textures[i].texture_id = embedded_texture_id;
-        mat->textures[i].texture_type = get_texture_type_string(type);
+        mat->textures[texture_index].texture_id = embedded_texture_id;
+        mat->textures[texture_index].texture_type = get_texture_type_string(type);
         mat->num_textures++;
+        texture_index++;
 
         free(path);
         continue;
@@ -83,9 +91,11 @@ void material_load_textures(struct Material *mat, struct aiMaterial *ai_mat, con
       free(full_texture_path);
 
       // Add texture to material
-      mat->textures[i].texture_id = texture_id;
-      mat->textures[i].texture_type = get_texture_type_string(type);
-      printf("assigned texture type: %s\n", mat->textures[i].texture_type);
+      mat->textures[texture_index].texture_id = texture_id;
+      mat->textures[texture_index].texture_type = get_texture_type_string(type);
+      mat->num_textures++;
+      printf("assigned texture type: %s to texture with id %d\n", mat->textures[texture_index].texture_type, mat->textures[texture_index].texture_id);
+      texture_index++;
     }
   }
 }

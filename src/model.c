@@ -58,6 +58,15 @@ bool model_load(Model *model, const char *path){
     model->materials[i].shininess = 32.0f;
     material_load_textures(&model->materials[i], mat, scene, model->directory);
     printf("Successfully loaded textures of material %d\n", i);
+    printf("Let's look at the texture info I just loaded:\n");
+    printf("Number of textures loaded: %d\n", model->materials[i].num_textures);
+    for (size_t j = 0; j < model->materials[i].num_textures; ++j) {
+        struct Texture *tex = &model->materials[i].textures[j];
+        printf("  Texture %zu:\n", j);
+        printf("    ID:   %u\n", tex->texture_id);
+        printf("    Type: %s\n", tex->texture_type);
+    }
+
   }
 
   // Process the root node
