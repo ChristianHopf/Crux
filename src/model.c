@@ -100,7 +100,7 @@ void model_process_node(Model *model, struct aiNode *node, const struct aiScene 
     struct aiMesh *ai_mesh = scene->mMeshes[node->mMeshes[i]];
     // printf("Passing final mesh transformation matrix:\n");
     // print_aiMatrix4x4(&current_transform);
-    model_process_mesh(model, ai_mesh, scene, current_transform, &model->meshes[*index]);
+    model_process_mesh(ai_mesh, scene, current_transform, &model->meshes[*index]);
     (*index)++;
   }
 
@@ -110,7 +110,7 @@ void model_process_node(Model *model, struct aiNode *node, const struct aiScene 
   }
 }
 
-void model_process_mesh(Model *model, struct aiMesh *ai_mesh, const struct aiScene *scene, struct aiMatrix4x4 mesh_transform, Mesh *dest_mesh){
+void model_process_mesh(struct aiMesh *ai_mesh, const struct aiScene *scene, struct aiMatrix4x4 mesh_transform, Mesh *dest_mesh){
 
   // printf("This mesh has the final transform matrix:\n");
   // print_aiMatrix4x4(&mesh_transform);
