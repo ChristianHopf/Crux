@@ -74,31 +74,43 @@ bool model_load(Model *model, const char *path){
 
   // Process the root node
   unsigned int model_mesh_index = 0;
-  model_process_node(model, scene->mRootNode, scene, &model_mesh_index);
+  struct aiMatrix4x4 parent_transform;
+  aiIdentityMatrix4(&parent_transform);
+  model_process_node(model, scene->mRootNode, scene, parent_transform, &model_mesh_index);
 
   aiReleaseImport(scene);
   return true;
 }
 
-void model_process_node(Model *model, struct aiNode *node, const struct aiScene *scene, unsigned int *index){
-  print_aiMatrix4x4(&node->mTransformation);
+void model_process_node(Model *model, struct aiNode *node, const struct aiScene *scene, struct aiMatrix4x4 parent_transform, unsigned int *index){
+  // Apply parent node's transformation to this node,
+  // then pass that transformation to this node's children
+  struct aiMatrix4x4 current_transform;
+  aiMultiplyMatrix4(&current_transform, &parent_transform);
+
   // Process each of this node's meshesMore actions
   // The scene has an array of meshes.
   // Each node has an array of ints which are indices to its mesh in the scene's mesh array.
   // The int at position i of this node's mMeshes is the index of its mesh in the scene's mesh array
  for(unsigned int i = 0; i < node->mNumMeshes; i++){
     struct aiMesh *ai_mesh = scene->mMeshes[node->mMeshes[i]];
-    model_process_mesh(model, ai_mesh, scene, &model->meshes[*index]);
+    printf("Passing final mesh transformation matrix:\n");
+    print_aiMatrix4x4(&current_transform);
+    model_process_mesh(model, ai_mesh, scene, current_transform, &model->meshes[*index]);
     (*index)++;
   }
 
   // Process this node's children
   for (unsigned int i = 0; i < node->mNumChildren; i++){
-    model_process_node(model, node->mChildren[i], scene, index);
+    model_process_node(model, node->mChildren[i], scene, &current_transform, index);
   }
 }
 
-void model_process_mesh(Model *model, struct aiMesh *ai_mesh, const struct aiScene *scene, Mesh *dest_mesh){
+void model_process_mesh(Model *model, struct aiMesh *ai_mesh, const struct aiScene *scene, struct aiMatrix4x4 mesh_transform, Mesh *dest_mesh){
+
+  printf("This mesh has the final transform matrix:\n");
+  print_aiMatrix4x4(&mesh_transform);
+
   // Allocate memory for vertices
   Vertex *vertices = (Vertex *)malloc(ai_mesh->mNumVertices * sizeof(Vertex));
   if (!vertices){
