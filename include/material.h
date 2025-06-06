@@ -32,7 +32,7 @@ struct Material {
 
 // Load all textures in a model's material
 void material_load_textures(struct Material *mat, struct aiMaterial *ai_mat, const struct aiScene *scene, const char *directory);
-GLuint material_load_texture(const char *path);
+GLuint material_load_texture(const char *path, enum aiTextureType type);
 GLuint material_load_embedded_texture(const char *path, const struct aiScene *scene);
 GLuint check_loaded_texture(const char *path);
 void add_loaded_texture(const char *path, GLuint texture_id);

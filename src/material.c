@@ -80,7 +80,7 @@ void material_load_textures(struct Material *mat, struct aiMaterial *ai_mat, con
       // Check if the texture is already loaded
       GLuint texture_id = check_loaded_texture(full_texture_path);
       if (texture_id == 0){
-        texture_id = material_load_texture(full_texture_path);
+        texture_id = material_load_texture(full_texture_path, type);
         add_loaded_texture(full_texture_path, texture_id);
       }
 
@@ -96,7 +96,7 @@ void material_load_textures(struct Material *mat, struct aiMaterial *ai_mat, con
   }
 }
 
-GLuint material_load_texture(const char *path){
+GLuint material_load_texture(const char *path, enum aiTextureType type){
   int width, height, channels;
   unsigned char* data = stbi_load(path, &width, &height, &channels, 0);
   if (!data){
@@ -105,16 +105,35 @@ GLuint material_load_texture(const char *path){
   }
 
   // Generate GL textures
-  GLenum format;
-  if (channels == 4)      format = GL_RGBA;
-  else if (channels == 3) format = GL_RGB;
-  else if (channels == 1) format = GL_RED;
+  // 
+  // Since diffuse textures are typically made in sRGB space,
+  // enabling gamma correction means we need to specify GL_SRGB
+  // as their internalformat arguments.
+  GLenum internal_format, pixel_format;
+  if (channels == 4){
+    internal_format = GL_RGBA;
+    pixel_format = GL_RGBA;
+  }
+  else if (channels == 3){
+    if (type == aiTextureType_DIFFUSE){
+      internal_format = GL_SRGB;
+      pixel_format = GL_RGB;
+    }
+    else{
+      internal_format = GL_RGB;
+      pixel_format = GL_RGB;
+    }
+  }
+  else if (channels == 1){
+    internal_format = GL_RED;
+    pixel_format = GL_RED;
+  }
 
   GLuint texture;
   glGenTextures(1, &texture);
   glBindTexture(GL_TEXTURE_2D, texture);
 
-  glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+  glTexImage2D(GL_TEXTURE_2D, 0, internal_format, width, height, 0, pixel_format, GL_UNSIGNED_BYTE, data);
   glGenerateMipmap(GL_TEXTURE_2D);
 
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
