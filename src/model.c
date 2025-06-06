@@ -196,23 +196,23 @@ void model_draw(Model *model, Shader *shader){
         // Build uniform string of the form:
         // material.<type><index>
         char texture_uniform[32];
-        printf("Texture type to set in uniform: %s\n", mat->textures[i].texture_type);
-        if (strcmp(mat->textures[i].texture_type, "diffuse") == 0){
-          snprintf(texture_uniform, sizeof(texture_uniform), "material.%s%u", mat->textures[i].texture_type, diffuse_num);
+        printf("Texture type to set in uniform: %s\n", mat->textures[j].texture_type);
+        if (strcmp(mat->textures[j].texture_type, "diffuse") == 0){
+          snprintf(texture_uniform, sizeof(texture_uniform), "material.%s%u", mat->textures[j].texture_type, diffuse_num);
           printf("Setting shader texture uniform %s\n", texture_uniform);
 
           glActiveTexture(GL_TEXTURE + j);
-          glBindTexture(GL_TEXTURE_2D, mat->textures[i].texture_id);
+          glBindTexture(GL_TEXTURE_2D, mat->textures[j].texture_id);
           shader_set_int(shader, texture_uniform, j);
 
           diffuse_num++;
         }
-        else if (strcmp(mat->textures[i].texture_type, "specular") == 0){
-          snprintf(texture_uniform, sizeof(texture_uniform), "material.%s%u", mat->textures[i].texture_type, specular_num);
+        else if (strcmp(mat->textures[j].texture_type, "specular") == 0){
+          snprintf(texture_uniform, sizeof(texture_uniform), "material.%s%u", mat->textures[j].texture_type, specular_num);
           printf("Setting shader texture uniform %s\n", texture_uniform);
 
           glActiveTexture(GL_TEXTURE + j);
-          glBindTexture(GL_TEXTURE_2D, mat->textures[i].texture_id);
+          glBindTexture(GL_TEXTURE_2D, mat->textures[j].texture_id);
           shader_set_int(shader, texture_uniform, j);
 
           specular_num++;
