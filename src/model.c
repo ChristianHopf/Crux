@@ -1,3 +1,4 @@
+#include <cglm/io.h>
 #include <cglm/vec2.h>
 #include <stb_image/stb_image.h>
 #include <stdbool.h>
@@ -76,8 +77,6 @@ bool model_load(Model *model, const char *path){
   unsigned int model_mesh_index = 0;
   struct aiMatrix4x4 parent_transform;
   aiIdentityMatrix4(&parent_transform);
-  printf("Passing identity matrix to root node:\n");
-  print_aiMatrix4x4(&parent_transform);
   model_process_node(model, scene->mRootNode, scene, parent_transform, &model_mesh_index);
 
   aiReleaseImport(scene);
@@ -90,8 +89,8 @@ void model_process_node(Model *model, struct aiNode *node, const struct aiScene 
   struct aiMatrix4x4 current_transform = parent_transform;
   aiMultiplyMatrix4(&current_transform, &node->mTransformation);
 
-  printf("This node's transformation matrix:\n");
-  print_aiMatrix4x4(&current_transform);
+  // printf("This node's transformation matrix:\n");
+  // print_aiMatrix4x4(&current_transform);
 
   // Process each of this node's meshesMore actions
   // The scene has an array of meshes.
@@ -102,8 +101,8 @@ void model_process_node(Model *model, struct aiNode *node, const struct aiScene 
     // printf("Passing final mesh transformation matrix:\n");
     // print_aiMatrix4x4(&current_transform);
     
-    aiMatrix4x4_to_mat4(current_transform, model->meshes[*index]->node_transform);
-    model_process_mesh(ai_mesh, scene, current_transform, &model->meshes[*index]);
+    aiMatrix4x4_to_mat4(&current_transform, model->meshes[*index].node_transform);
+    model_process_mesh(ai_mesh, scene, &model->meshes[*index]);
     (*index)++;
   }
 
@@ -203,6 +202,19 @@ void model_process_mesh(struct aiMesh *ai_mesh, const struct aiScene *scene, Mes
 void model_draw(Model *model, Shader *shader){
   // For each mesh in the model
   for(unsigned int i = 0; i < model->num_meshes; i++){
+
+    // Bind the transform matrix from this mesh's parent node
+    shader_set_mat4(shader, "node_transform", model->meshes[i].node_transform);
+
+    // printf("This mesh has the node transformation matrix:\n");
+    // for (int row = 0; row < 4; row++) {
+    //     printf("  [ ");
+    //     for (int col = 0; col < 4; col++) {
+    //         printf("% .4f ", model->meshes[i].node_transform[col][row]);
+    //     }
+    //     printf("]\n");
+    // }
+
     // Only bind textures if this mesh *has* a material.
     // If it doesn't, model->meshes[i].material_index will be negative.
     if (model->meshes[i].material_index >= 0){
