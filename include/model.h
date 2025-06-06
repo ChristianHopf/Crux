@@ -22,6 +22,7 @@ typedef struct {
   GLuint VAO, VBO, EBO;
   unsigned int num_indices;
   unsigned int material_index;
+  mat4 node_transform;
 } Mesh;
 
 typedef struct {
@@ -33,8 +34,8 @@ typedef struct {
 } Model;
 
 bool model_load(Model *model, const char *path);
-void model_process_node(Model *model, struct aiNode *node, const struct aiScene *scene, struct aiMatrix4x4 parent_transform, unsigned int *index);
-void model_process_mesh(struct aiMesh *ai_mesh, const struct aiScene *scene, struct aiMatrix4x4 mesh_transform, Mesh *dest_mesh);
+void model_process_node(Model *model, struct aiNode *node, const struct aiScene *scene, aiMatrix4x4 parent_transform, unsigned int *index);
+void model_process_mesh(struct aiMesh *ai_mesh, const struct aiScene *scene, aiMatrix4x4 node_transform, Mesh *dest_mesh);
 void model_draw(Model *model, Shader *shader);
 void model_free(Model *model);
 GLuint model_load_texture_type(Model *model, const struct aiMaterial *material, const struct aiScene *scene, enum aiTextureType type);

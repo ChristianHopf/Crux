@@ -16,6 +16,6 @@ void print_glm_vec3(vec3 vector, char *name);
 // Assimp helpers
 char *get_texture_type_string(enum aiTextureType type);
 void print_aiMatrix4x4(struct aiMatrix4x4 *mat);
-//mat4 mat4_from_aiMatrix4x4(struct aiMatrix4x4 *mat);
+void aiMatrix4x4_to_mat4(struct aiMatrix4x4 *src, mat4 dest);
 
 #endif

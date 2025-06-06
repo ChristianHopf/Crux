@@ -1,7 +1,8 @@
-#include "utils.h"
+#include <cglm/cglm.h>
 #include <assimp/material.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include "utils.h"
 
 // Helper to read from file to string
 unsigned char *read_file(const char *path){
@@ -63,4 +64,11 @@ void print_aiMatrix4x4(struct aiMatrix4x4 *mat) {
     printf("[ % .4f % .4f % .4f % .4f ]\n", mat->b1, mat->b2, mat->b3, mat->b4);
     printf("[ % .4f % .4f % .4f % .4f ]\n", mat->c1, mat->c2, mat->c3, mat->c4);
     printf("[ % .4f % .4f % .4f % .4f ]\n", mat->d1, mat->d2, mat->d3, mat->d4);
+}
+
+void aiMatrix4x4_to_mat4(struct aiMatrix4x4 *src, mat4 dest) {
+    dest[0][0] = src->a1; dest[0][1] = src->a2; dest[0][2] = src->a3; dest[0][3] = src->a4;
+    dest[1][0] = src->b1; dest[1][1] = src->b2; dest[1][2] = src->b3; dest[1][3] = src->b4;
+    dest[2][0] = src->c1; dest[2][1] = src->c2; dest[2][2] = src->c3; dest[2][3] = src->c4;
+    dest[3][0] = src->d1; dest[3][1] = src->d2; dest[3][2] = src->d3; dest[3][3] = src->d4;
 }
