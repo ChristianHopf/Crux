@@ -51,6 +51,8 @@ Scene *scene_create(){
     return NULL;
   }
   model_load(crystalModel, "resources/objects/backpack/backpack.obj");
+  printf("hi\n");
+  printf("Successfully loaded backpack model\n");
   Entity crystal = {
     .ID = 1,
     .position = {0.0f, 0.0f, 0.0f},

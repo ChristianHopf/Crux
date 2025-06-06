@@ -63,12 +63,14 @@ bool model_load(Model *model, const char *path){
   // Process the root node
   unsigned int model_mesh_index = 0;
   model_process_node(model, scene->mRootNode, scene, &model_mesh_index);
+  printf("Successfully processed meshes, returning from model_load\n");
 
   aiReleaseImport(scene);
   return true;
 }
 
 void model_process_node(Model *model, struct aiNode *node, const struct aiScene *scene, unsigned int *index){
+  printf("processing node\n");
   // Process each of this node's meshesMore actions
   // The scene has an array of meshes.
   // Each node has an array of ints which are indices to its mesh in the scene's mesh array.
@@ -168,6 +170,7 @@ void model_process_mesh(Model *model, struct aiMesh *ai_mesh, const struct aiSce
 }
 
 void model_draw(Model *model, Shader *shader){
+  printf("Segfault time!\n");
   // For each mesh in the model
   for(unsigned int i = 0; i < model->num_meshes; i++){
     // Only bind textures if this mesh *has* a material.
@@ -180,18 +183,24 @@ void model_draw(Model *model, Shader *shader){
         glActiveTexture(GL_TEXTURE + i);
         glBindTexture(GL_TEXTURE_2D, mat->textures[i].texture_id);
         
-        // Build uniform string
+        // Build uniform string of the form:
+        // material.<type><index>
+        char texture_uniform[32];
+        printf("Texture type to set in uniform: %s\n", mat->textures[i].texture_type);
+        snprintf(texture_uniform, sizeof(texture_uniform), "material.%s%u", mat->textures[i].texture_type, j);
+        printf("Setting shader texture uniform %s\n", texture_uniform);
+        shader_set_int(shader, texture_uniform, j);
       }
 
-      // Diffuse
-      glActiveTexture(GL_TEXTURE0);
-      glBindTexture(GL_TEXTURE_2D, model->materials[model->meshes[i].material_index].textures[0].texture_id);
-      shader_set_int(shader, "diffuseMap", 0);
-
-      // Specular
-      glActiveTexture(GL_TEXTURE1);
-      glBindTexture(GL_TEXTURE_2D, model->materials[model->meshes[i].material_index].textures[1].texture_id);
-      shader_set_int(shader, "specularMap", 1);
+      // // Diffuse
+      // glActiveTexture(GL_TEXTURE0);
+      // glBindTexture(GL_TEXTURE_2D, model->materials[model->meshes[i].material_index].textures[0].texture_id);
+      // shader_set_int(shader, "diffuseMap", 0);
+      //
+      // // Specular
+      // glActiveTexture(GL_TEXTURE1);
+      // glBindTexture(GL_TEXTURE_2D, model->materials[model->meshes[i].material_index].textures[1].texture_id);
+      // shader_set_int(shader, "specularMap", 1);
     }
 
     // Bind its vertex array and draw its triangles

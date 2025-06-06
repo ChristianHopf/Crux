@@ -1,4 +1,5 @@
 #include "utils.h"
+#include <assimp/material.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -33,4 +34,23 @@ unsigned char *read_file(const char *path){
 
 void print_glm_vec3(float *vector, char *name){
   printf("%s: [%f, %f, %f]\n", name, vector[0], vector[1], vector[2]);
+}
+
+char *get_texture_type_string(enum aiTextureType type){
+  switch (type) {
+    case aiTextureType_DIFFUSE:
+      return "diffuse";
+      break;
+    case aiTextureType_SPECULAR:
+      return "diffuse";
+      break;
+    case aiTextureType_NORMALS:
+      return "diffuse";
+      break;
+    case aiTextureType_EMISSIVE:
+      break;
+    default:
+      // Figure out what to do here
+      break;
+  }
 }

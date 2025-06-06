@@ -1,6 +1,7 @@
 #ifndef UTILS_H
 #define UTILS_H
 
+#include <assimp/material.h>
 #include <cglm/cglm.h>
 
 // C helpers (strings, etc)
@@ -10,5 +11,8 @@ unsigned char *read_file(const char *path);
 // CGLM helpers
 // Print formatted values of a glm_vec3
 void print_glm_vec3(vec3 vector, char *name);
+
+// Assimp helpers
+char *get_texture_type_string(enum aiTextureType type);
 
 #endif

@@ -52,7 +52,7 @@ void material_load_textures(struct Material *mat, struct aiMaterial *ai_mat, con
 
         // Add texture to material
         mat->textures[i].texture_id = embedded_texture_id;
-        mat->textures[i].texture_type = aiTextureTypeToString(type);
+        mat->textures[i].texture_type = get_texture_type_string(type);
         mat->num_textures++;
 
         free(path);
@@ -84,7 +84,8 @@ void material_load_textures(struct Material *mat, struct aiMaterial *ai_mat, con
 
       // Add texture to material
       mat->textures[i].texture_id = texture_id;
-      mat->textures[i].texture_type = aiTextureTypeToString(type);
+      mat->textures[i].texture_type = get_texture_type_string(type);
+      printf("assigned texture type: %s\n", mat->textures[i].texture_type);
     }
   }
 }
