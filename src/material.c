@@ -11,11 +11,11 @@ void material_load_textures(struct Material *mat, struct aiMaterial *ai_mat, con
   unsigned int num_texture_properties = 0;
   for (unsigned int i = 0; i < ai_mat->mNumProperties; i++){
     struct aiMaterialProperty *property = ai_mat->mProperties[i];
-    if (property->mSemantic > 0){
+    if (strcmp(property->mKey.data, "$tex.file") == 0){
       num_texture_properties++;
     }
   }
-  printf("This material has %d properties, with %d texture properties\n", ai_mat->mNumProperties, num_texture_properties);
+  printf("This material has %d properties, with %d texture file properties\n", ai_mat->mNumProperties, num_texture_properties);
 
   // Allocate struct Textures
   mat->textures = (struct Texture *)malloc(num_texture_properties * sizeof(struct Texture));
@@ -29,14 +29,14 @@ void material_load_textures(struct Material *mat, struct aiMaterial *ai_mat, con
   for (unsigned int i = 0; i < ai_mat->mNumProperties; i++){
     struct aiMaterialProperty *property = ai_mat->mProperties[i];
 
-    // A property with mSemantic > 0 is a texture
-    if (property->mSemantic > 0){
+    // A property with mKey.data $tex.file is a texture file property
+    if (strcmp(property->mKey.data, "$tex.file") == 0){
 
       // Get texture type and index (used for diffuse1, diffuse2, ...)
       enum aiTextureType type = (enum aiTextureType)property->mSemantic;
       unsigned int texture_index = property->mIndex;
 
-// Texture properties have mType aiPTI_String,
+      // Texture properties have mType aiPTI_String,
       // which means the bytes in mData are a struct aiString.
       // (probably no need to check mType)
       struct aiString *path = (struct aiString *)property->mData;
@@ -77,7 +77,7 @@ void material_load_textures(struct Material *mat, struct aiMaterial *ai_mat, con
       if (texture_id == 0){
         texture_id = material_load_texture(full_texture_path);
         add_loaded_texture(full_texture_path, texture_id);
-        printf("Successfully loaded new texture of type %d at path %s with id %d\n", type, path->data, texture_id);
+        printf("Successfully loaded new texture of type %d at path %s with id %d\n", type, full_texture_path, texture_id);
       }
 
       free(full_texture_path);

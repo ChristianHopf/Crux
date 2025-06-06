@@ -60,9 +60,6 @@ bool model_load(Model *model, const char *path){
     printf("Successfully loaded textures of material %d\n", i);
   }
 
-  // Debugging, just make it stop here for now
-  return false;
-
   // Process the root node
   unsigned int model_mesh_index = 0;
   model_process_node(model, scene->mRootNode, scene, &model_mesh_index);
