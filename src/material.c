@@ -17,6 +17,7 @@ void material_load_textures(struct Material *mat, struct aiMaterial *ai_mat, con
   }
   
   if (num_texture_properties == 0){
+    printf("THIS MATERIAL HAS NO TEXTURE FILE PROPERTIES\n");
     return;
   }
 
@@ -39,7 +40,6 @@ void material_load_textures(struct Material *mat, struct aiMaterial *ai_mat, con
 
       // Get texture type and index (used for diffuse1, diffuse2, ...)
       enum aiTextureType type = (enum aiTextureType)property->mSemantic;
-      printf("AITEXTURETYPE: %d\n", type);
       // Don't think I need this
       //unsigned int texture_index = property->mIndex;
 
@@ -81,8 +81,10 @@ void material_load_textures(struct Material *mat, struct aiMaterial *ai_mat, con
       snprintf(full_texture_path, len, "%s/%s", directory, path->data);
 
       // Check if the texture is already loaded
+      printf("Checking for loaded texture of type %d with path %s\n", type, full_texture_path);
       GLuint texture_id = check_loaded_texture(full_texture_path);
       if (texture_id == 0){
+        printf("Loading texture with path %s\n", full_texture_path);
         texture_id = material_load_texture(full_texture_path);
         add_loaded_texture(full_texture_path, texture_id);
         printf("Successfully loaded new texture of type %d at path %s with id %d\n", type, full_texture_path, texture_id);
@@ -94,7 +96,7 @@ void material_load_textures(struct Material *mat, struct aiMaterial *ai_mat, con
       mat->textures[texture_index].texture_id = texture_id;
       mat->textures[texture_index].texture_type = get_texture_type_string(type);
       mat->num_textures++;
-      printf("assigned texture type: %s to texture with id %d\n", mat->textures[texture_index].texture_type, mat->textures[texture_index].texture_id);
+      // printf("assigned texture type: %s to texture with id %d\n", mat->textures[texture_index].texture_type, mat->textures[texture_index].texture_id);
       texture_index++;
     }
   }
@@ -177,6 +179,7 @@ void add_loaded_texture(const char *path, GLuint texture_id){
     return;
   }
   strncpy(loaded_textures[num_loaded_textures].path, path, sizeof(loaded_textures[num_loaded_textures].path) - 1);
+  printf("Cached texture path: %s\n", loaded_textures[num_loaded_textures].path);
   loaded_textures[num_loaded_textures].texture_id = texture_id;
   num_loaded_textures++;
 }

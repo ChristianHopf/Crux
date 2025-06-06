@@ -47,39 +47,39 @@ bool model_load(Model *model, const char *path){
   }
 
   // Materials
-  printf("Time to process %d materials!\n", scene->mNumMaterials);
   model->materials = (struct Material *)malloc(scene->mNumMaterials * sizeof(struct Material));
   for (unsigned int i = 0; i < scene->mNumMaterials; i++){
+    memset(&model->materials[i], 0, sizeof(struct Material));
     struct aiMaterial *mat = scene->mMaterials[i];
 
     glm_vec3_copy(model->materials[i].ambient, (vec3){0.2f, 0.2f, 0.2f});
     glm_vec3_copy(model->materials[i].diffuse, (vec3){0.8f, 0.8f, 0.8f});
     glm_vec3_copy(model->materials[i].specular, (vec3){1.0f, 1.0f, 1.0f});
     model->materials[i].shininess = 32.0f;
+    //model->materials[i].num_textures = 0;
+
     material_load_textures(&model->materials[i], mat, scene, model->directory);
-    printf("Successfully loaded textures of material %d\n", i);
-    printf("Let's look at the texture info I just loaded:\n");
-    printf("Number of textures loaded: %d\n", model->materials[i].num_textures);
-    for (size_t j = 0; j < model->materials[i].num_textures; ++j) {
+    if(model->materials[i].num_textures > 0){
+      printf("Let's look at the texture info I just loaded:\n");
+      printf("Number of textures loaded: %d\n", model->materials[i].num_textures);
+      for (size_t j = 0; j < model->materials[i].num_textures; ++j) {
         struct Texture *tex = &model->materials[i].textures[j];
         printf("  Texture %zu:\n", j);
         printf("    ID:   %u\n", tex->texture_id);
         printf("    Type: %s\n", tex->texture_type);
+      }
     }
-
   }
 
   // Process the root node
   unsigned int model_mesh_index = 0;
   model_process_node(model, scene->mRootNode, scene, &model_mesh_index);
-  printf("Successfully processed meshes, returning from model_load\n");
 
   aiReleaseImport(scene);
   return true;
 }
 
 void model_process_node(Model *model, struct aiNode *node, const struct aiScene *scene, unsigned int *index){
-  printf("processing node\n");
   // Process each of this node's meshesMore actions
   // The scene has an array of meshes.
   // Each node has an array of ints which are indices to its mesh in the scene's mesh array.
@@ -139,7 +139,8 @@ void model_process_mesh(Model *model, struct aiMesh *ai_mesh, const struct aiSce
   for(unsigned int i = 0; i < ai_mesh->mNumFaces; i++){
     struct aiFace face = ai_mesh->mFaces[i];
     for(unsigned int j = 0; j < face.mNumIndices; j++){
-      indices[index++] = face.mIndices[j];
+      indices[index] = face.mIndices[j];
+      index++;
     }
   }
   dest_mesh->num_indices = index;
@@ -179,13 +180,14 @@ void model_process_mesh(Model *model, struct aiMesh *ai_mesh, const struct aiSce
 }
 
 void model_draw(Model *model, Shader *shader){
-  printf("Segfault time!\n");
   // For each mesh in the model
   for(unsigned int i = 0; i < model->num_meshes; i++){
     // Only bind textures if this mesh *has* a material.
     // If it doesn't, model->meshes[i].material_index will be negative.
     if (model->meshes[i].material_index >= 0){
       struct Material *mat = &model->materials[model->meshes[i].material_index];
+
+      printf("model_draw: this mesh's material has %d textures\n", mat->num_textures);
 
       unsigned int diffuse_num = 1;
       unsigned int specular_num = 1;
@@ -196,12 +198,15 @@ void model_draw(Model *model, Shader *shader){
         // Build uniform string of the form:
         // material.<type><index>
         char texture_uniform[32];
-        printf("Texture type to set in uniform: %s\n", mat->textures[j].texture_type);
         if (strcmp(mat->textures[j].texture_type, "diffuse") == 0){
           snprintf(texture_uniform, sizeof(texture_uniform), "material.%s%u", mat->textures[j].texture_type, diffuse_num);
-          printf("Setting shader texture uniform %s\n", texture_uniform);
+          // printf("Setting shader texture uniform %s\n", texture_uniform);
 
-          glActiveTexture(GL_TEXTURE + j);
+          // if (strcmp(texture_uniform, "material.diffuse1") == 0) {
+          //   printf("Diffuse1 is being bound to texture unit %d, ID %u\n", j, mat->textures[j].texture_id);
+          // }
+
+          glActiveTexture(GL_TEXTURE0 + j);
           glBindTexture(GL_TEXTURE_2D, mat->textures[j].texture_id);
           shader_set_int(shader, texture_uniform, j);
 
@@ -209,9 +214,9 @@ void model_draw(Model *model, Shader *shader){
         }
         else if (strcmp(mat->textures[j].texture_type, "specular") == 0){
           snprintf(texture_uniform, sizeof(texture_uniform), "material.%s%u", mat->textures[j].texture_type, specular_num);
-          printf("Setting shader texture uniform %s\n", texture_uniform);
+          // printf("Setting shader texture uniform %s\n", texture_uniform);
 
-          glActiveTexture(GL_TEXTURE + j);
+          glActiveTexture(GL_TEXTURE0 + j);
           glBindTexture(GL_TEXTURE_2D, mat->textures[j].texture_id);
           shader_set_int(shader, texture_uniform, j);
 

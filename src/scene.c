@@ -50,7 +50,7 @@ Scene *scene_create(){
     printf("Error: failed to allocate oiiaiModel\n");
     return NULL;
   }
-  model_load(crystalModel, "resources/objects/backpack/backpack.obj");
+  model_load(crystalModel, "resources/objects/crystal/scene.gltf");
   printf("hi\n");
   printf("Successfully loaded backpack model\n");
   Entity crystal = {
