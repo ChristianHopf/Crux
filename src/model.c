@@ -43,7 +43,7 @@ bool model_load(Model *model, const char *path){
   model->meshes = (Mesh *)malloc(scene->mNumMeshes * sizeof(Mesh));
   if (!model->meshes){
     printf("Error: failed to allocate meshes\n");
-    return false;
+  return false;
   }
 
   // Materials
