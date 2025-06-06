@@ -21,6 +21,7 @@ void material_load_textures(struct Material *mat, struct aiMaterial *ai_mat, con
     printf("Error: failed to allocate Textures in material_load_textures\n");
     return;
   }
+  mat->num_textures = num_texture_properties;
 
   // Process material properties
   for (unsigned int i = 0; i < ai_mat->mNumProperties; i++){
@@ -50,6 +51,7 @@ void material_load_textures(struct Material *mat, struct aiMaterial *ai_mat, con
         // Add texture to material
         mat->textures[i]->texture_id = embedded_texture_id;
         mat->textures[i]->texture_type = type;
+        mat->num_textures++;
         continue;
       }
 
@@ -71,8 +73,64 @@ void material_load_textures(struct Material *mat, struct aiMaterial *ai_mat, con
   }
 }
 
-void material_load_embedded_texture(const char *path, const struct aiScene *scene){
-  
+GLuint model_load_texture(const char *path){
+  int width, height, channels;
+  unsigned char* data = stbi_load(path, &width, &height, &channels, 0);
+  if (!data){
+    printf("Error: Failed to load texture at: %s\n", path);
+    return 0;
+  }
+
+  // Generate GL textures
+  GLenum format;
+  if (channels == 4)      format = GL_RGBA;
+  else if (channels == 3) format = GL_RGB;
+  else if (channels == 1) format = GL_RED;
+  //else                    format = GL_RGB; // fallback
+  GLuint texture;
+  glGenTextures(1, &texture);
+  glBindTexture(GL_TEXTURE_2D, texture);
+
+  glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+  glGenerateMipmap(GL_TEXTURE_2D);
+
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  stbi_image_free(data);
+  return texture;
+}
+
+GLuint model_load_embedded_texture(const char *path, const struct aiScene *scene){
+  // Texture paths are *0, *1, etc
+  int index = atoi(path + 1);
+  const struct aiTexture *tex = scene->mTextures[index];
+
+  // Load with aitexture pcData, mWidth, mHeight (texture.h)
+  int width, height, channels;
+  unsigned char *data = stbi_load_from_memory((char *)tex->pcData, tex->mWidth, &width, &height, &channels, 0);
+
+  // Generate GL textures
+  GLenum format;
+  if (channels == 4)      format = GL_RGBA;
+  else if (channels == 3) format = GL_RGB;
+  else if (channels == 1) format = GL_RED;
+
+  GLuint texture;
+  glGenTextures(1, &texture);
+  glBindTexture(GL_TEXTURE_2D, texture);
+
+  glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+  glGenerateMipmap(GL_TEXTURE_2D);
+
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+  stbi_image_free(data);
+  return texture;
 }
 
 GLuint check_loaded_texture(const char *path){

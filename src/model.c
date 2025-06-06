@@ -56,8 +56,6 @@ bool model_load(Model *model, const char *path){
     glm_vec3_copy(model->materials[i].specular, (vec3){1.0f, 1.0f, 1.0f});
     model->materials[i].shininess = 32.0f;
     material_load_textures(&model->materials[i], mat, scene, model->directory);
-    // model->materials[i].diffuse_texture_id = model_load_texture_type(model, mat, scene, aiTextureType_DIFFUSE);
-    // model->materials[i].specular_texture_id = model_load_texture_type(model, mat, scene, aiTextureType_SPECULAR);
   }
 
   // Debugging, just make it stop here for now

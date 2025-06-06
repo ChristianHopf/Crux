@@ -22,6 +22,7 @@ struct Texture {
 
 struct Material {
   struct Texture *textures;
+  unsigned int num_textures;
   vec3 ambient;
   vec3 diffuse;
   vec4 specular;
