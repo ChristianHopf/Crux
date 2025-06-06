@@ -6,6 +6,15 @@
 #include <assimp/texture.h>
 #include <assimp/material.h>
 
+typedef struct {
+  char path[512];
+  GLuint texture_id;
+} TextureEntry;
+
+#define MAX_TEXTURES 128
+static TextureEntry loaded_textures[MAX_TEXTURES];
+static int num_loaded_textures = 0;
+
 struct Texture {
   GLuint texture_id;
   enum aiTextureType texture_type;

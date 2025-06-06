@@ -76,5 +76,11 @@ void material_load_embedded_texture(const char *path, const struct aiScene *scen
 }
 
 GLuint check_loaded_texture(const char *path){
-  
+  // Check if a TextureEntry exists with this texture's path
+  for(int i = 0; i < num_loaded_textures; i++){
+    if (strncmp(loaded_textures[i].path, path, sizeof(loaded_textures[i].path)) == 0){
+      return loaded_textures[i].texture_id;
+    }
+  }
+  return 0;
 }
