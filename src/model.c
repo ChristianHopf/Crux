@@ -213,131 +213,138 @@ void model_free(Model *model){
   }
   // Free meshes
   free(model->meshes);
+  for(unsigned int i = 0; i < model->num_materials){
+    for(unsigned int j = 0; j < model->materials[i].textures[j]; j++){
+      free(model->materials[i].textures[j].texture_type);
+    }
+    free(model->materials[i].textures);
+    free(model->materials[i]);
+  }
   free(model);
 }
 
-GLuint model_load_texture_type(Model *model, const struct aiMaterial *material, const struct aiScene *scene, enum aiTextureType type){
-  // Get texture path
-  char *texture_path = get_texture_path(material, type);
-    if (!texture_path){
-    printf("Error: failed to get texture path of type %s\n", type == aiTextureType_DIFFUSE ? "DIFFUSE" : "SPECULAR");
-    return 0;
-  }
-  // Check if texture is embedded
-  if (texture_path[0] == '*'){
-    // Check if the texture is already loaded
-    GLuint embedded_texture_id = model_check_loaded_texture(texture_path);
-    if (embedded_texture_id == 0){
-      // Load texture
-      embedded_texture_id = model_load_embedded_texture(texture_path, scene);
-      model_add_loaded_texture(texture_path, embedded_texture_id);
-      printf("Successfully loaded new embedded texture at path %s with id %d\n", texture_path, embedded_texture_id);
-    }
-    return embedded_texture_id;
-  }
-
-  // If texture isn't embedded, the path is different
-  char full_texture_path[512];
-  snprintf(full_texture_path, sizeof(full_texture_path), "%s/%s", model->directory, texture_path);
-
-  // Check if the texture is already loaded
-  GLuint texture_id = model_check_loaded_texture(full_texture_path);
-  if (texture_id == 0){
-    texture_id = model_load_texture(full_texture_path);
-    model_add_loaded_texture(full_texture_path, texture_id);
-  }
-  free(texture_path);
-  return texture_id;
-}
+// GLuint model_load_texture_type(Model *model, const struct aiMaterial *material, const struct aiScene *scene, enum aiTextureType type){
+//   // Get texture path
+//   char *texture_path = get_texture_path(material, type);
+//     if (!texture_path){
+//     printf("Error: failed to get texture path of type %s\n", type == aiTextureType_DIFFUSE ? "DIFFUSE" : "SPECULAR");
+//     return 0;
+//   }
+//   // Check if texture is embedded
+//   if (texture_path[0] == '*'){
+//     // Check if the texture is already loaded
+//     GLuint embedded_texture_id = model_check_loaded_texture(texture_path);
+//     if (embedded_texture_id == 0){
+//       // Load texture
+//       embedded_texture_id = model_load_embedded_texture(texture_path, scene);
+//       model_add_loaded_texture(texture_path, embedded_texture_id);
+//       printf("Successfully loaded new embedded texture at path %s with id %d\n", texture_path, embedded_texture_id);
+//     }
+//     return embedded_texture_id;
+//   }
+//
+//   // If texture isn't embedded, the path is different
+//   char full_texture_path[512];
+//   snprintf(full_texture_path, sizeof(full_texture_path), "%s/%s", model->directory, texture_path);
+//
+//   // Check if the texture is already loaded
+//   GLuint texture_id = model_check_loaded_texture(full_texture_path);
+//   if (texture_id == 0){
+//     texture_id = model_load_texture(full_texture_path);
+//     model_add_loaded_texture(full_texture_path, texture_id);
+//   }
+//   free(texture_path);
+//   return texture_id;
+// }
 
 // I could probably move this into model_load_texture_type,
 // but I might need to just load a texture from a path some time
-GLuint model_load_texture(const char *path){
-  int width, height, channels;
-  unsigned char* data = stbi_load(path, &width, &height, &channels, 0);
-  if (!data){
-    printf("Error: Failed to load texture at: %s\n", path);
-    return 0;
-  }
-
-  // Generate GL textures
-  GLenum format;
-  if (channels == 4)      format = GL_RGBA;
-  else if (channels == 3) format = GL_RGB;
-  else if (channels == 1) format = GL_RED;
-  //else                    format = GL_RGB; // fallback
-  GLuint texture;
-  glGenTextures(1, &texture);
-  glBindTexture(GL_TEXTURE_2D, texture);
-
-  glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
-  glGenerateMipmap(GL_TEXTURE_2D);
-
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-  stbi_image_free(data);
-  return texture;
-}
-
-GLuint model_load_embedded_texture(const char *path, const struct aiScene *scene){
-  // Texture paths are *0, *1, etc
-  int index = atoi(path + 1);
-  const struct aiTexture *tex = scene->mTextures[index];
-
-  // Load with aitexture pcData, mWidth, mHeight (texture.h)
-  int width, height, channels;
-  unsigned char *data = stbi_load_from_memory((char *)tex->pcData, tex->mWidth, &width, &height, &channels, 0);
-
-  // Generate GL textures
-  GLenum format;
-  if (channels == 4)      format = GL_RGBA;
-  else if (channels == 3) format = GL_RGB;
-  else if (channels == 1) format = GL_RED;
-
-  GLuint texture;
-  glGenTextures(1, &texture);
-  glBindTexture(GL_TEXTURE_2D, texture);
-
-  glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
-  glGenerateMipmap(GL_TEXTURE_2D);
-
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-  stbi_image_free(data);
-  return texture;
-}
-
-char *get_texture_path(const struct aiMaterial *material, enum aiTextureType type){
-  struct aiString path;
-  if (aiGetMaterialTexture(material, type, 0, &path, NULL, NULL, NULL, NULL, NULL, NULL) != AI_SUCCESS) {
-    return NULL;
-  }
-  
-  return strdup(path.data);
-}
-
-GLuint model_check_loaded_texture(const char *path){
-  // Check if a TextureEntry exists with this texture's path
-  for(int i = 0; i < num_loaded_textures; i++){
-    if (strncmp(loaded_textures[i].path, path, sizeof(loaded_textures[i].path)) == 0){
-      printf("Texture path %s matches loaded texture with path %s, skipping\n", path, loaded_textures[i].path);
-      return loaded_textures[i].texture_id;
-    }
-  }
-  return 0;
-}
-
-void model_add_loaded_texture(const char *path, GLuint texture_id){
-  if (num_loaded_textures >= MAX_TEXTURES){
-    printf("Error: failed to load texture, texture cache full\n");
-    return;
-  }
-  strncpy(loaded_textures[num_loaded_textures].path, path, sizeof(loaded_textures[num_loaded_textures].path) - 1);
-  loaded_textures[num_loaded_textures].texture_id = texture_id;
-  num_loaded_textures++;
-}
+// GLuint model_load_texture(const char *path){
+//   int width, height, channels;
+//   unsigned char* data = stbi_load(path, &width, &height, &channels, 0);
+//   if (!data){
+//     printf("Error: Failed to load texture at: %s\n", path);
+//     return 0;
+//   }
+//
+//   // Generate GL textures
+//   GLenum format;
+//   if (channels == 4)      format = GL_RGBA;
+//   else if (channels == 3) format = GL_RGB;
+//   else if (channels == 1) format = GL_RED;
+//   //else                    format = GL_RGB; // fallback
+//   GLuint texture;
+//   glGenTextures(1, &texture);
+//   glBindTexture(GL_TEXTURE_2D, texture);
+//
+//   glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+//   glGenerateMipmap(GL_TEXTURE_2D);
+//
+//   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+//   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+//   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+//   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+//   stbi_image_free(data);
+//   return texture;
+// }
+//
+// GLuint model_load_embedded_texture(const char *path, const struct aiScene *scene){
+//   // Texture paths are *0, *1, etc
+//   int index = atoi(path + 1);
+//   const struct aiTexture *tex = scene->mTextures[index];
+//
+//   // Load with aitexture pcData, mWidth, mHeight (texture.h)
+//   int width, height, channels;
+//   unsigned char *data = stbi_load_from_memory((char *)tex->pcData, tex->mWidth, &width, &height, &channels, 0);
+//
+//   // Generate GL textures
+//   GLenum format;
+//   if (channels == 4)      format = GL_RGBA;
+//   else if (channels == 3) format = GL_RGB;
+//   else if (channels == 1) format = GL_RED;
+//
+//   GLuint texture;
+//   glGenTextures(1, &texture);
+//   glBindTexture(GL_TEXTURE_2D, texture);
+//
+//   glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+//   glGenerateMipmap(GL_TEXTURE_2D);
+//
+//   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+//   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+//   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+//   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+//
+//   stbi_image_free(data);
+//   return texture;
+// }
+//
+// char *get_texture_path(const struct aiMaterial *material, enum aiTextureType type){
+//   struct aiString path;
+//   if (aiGetMaterialTexture(material, type, 0, &path, NULL, NULL, NULL, NULL, NULL, NULL) != AI_SUCCESS) {
+//     return NULL;
+//   }
+//
+//   return strdup(path.data);
+// }
+//
+// GLuint model_check_loaded_texture(const char *path){
+//   // Check if a TextureEntry exists with this texture's path
+//   for(int i = 0; i < num_loaded_textures; i++){
+//     if (strncmp(loaded_textures[i].path, path, sizeof(loaded_textures[i].path)) == 0){
+//       printf("Texture path %s matches loaded texture with path %s, skipping\n", path, loaded_textures[i].path);
+//       return loaded_textures[i].texture_id;
+//     }
+//   }
+//   return 0;
+// }
+//
+// void model_add_loaded_texture(const char *path, GLuint texture_id){
+//   if (num_loaded_textures >= MAX_TEXTURES){
+//     printf("Error: failed to load texture, texture cache full\n");
+//     return;
+//   }
+//   strncpy(loaded_textures[num_loaded_textures].path, path, sizeof(loaded_textures[num_loaded_textures].path) - 1);
+//   loaded_textures[num_loaded_textures].texture_id = texture_id;
+//   num_loaded_textures++;
+// }

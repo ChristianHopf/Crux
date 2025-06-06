@@ -3,6 +3,7 @@
 #include <assimp/texture.h>
 #include <assimp/material.h>
 #include <assimp/types.h>
+#include <stb_image/stb_image.h>
 #include "material.h"
 
 void material_load_textures(struct Material *mat, struct aiMaterial *ai_mat, const struct aiScene *scene, const char *directory){
@@ -50,7 +51,8 @@ void material_load_textures(struct Material *mat, struct aiMaterial *ai_mat, con
 
         // Add texture to material
         mat->textures[i]->texture_id = embedded_texture_id;
-        mat->textures[i]->texture_type = type;
+        mat->textures[i]->texture_type = aiTextureTypeToString(type);
+        printf("texture type string: %s\n", mat->textures[i]->texture_type);
         mat->num_textures++;
         continue;
       }
@@ -68,12 +70,12 @@ void material_load_textures(struct Material *mat, struct aiMaterial *ai_mat, con
 
       // Add texture to material
       mat->textures[i]->texture_id = embedded_texture_id;
-      mat->textures[i]->texture_type = type;
+      mat->textures[i]->texture_type = aiTextureTypeToString(type);
     }
   }
 }
 
-GLuint model_load_texture(const char *path){
+GLuint material_load_texture(const char *path){
   int width, height, channels;
   unsigned char* data = stbi_load(path, &width, &height, &channels, 0);
   if (!data){
@@ -86,7 +88,7 @@ GLuint model_load_texture(const char *path){
   if (channels == 4)      format = GL_RGBA;
   else if (channels == 3) format = GL_RGB;
   else if (channels == 1) format = GL_RED;
-  //else                    format = GL_RGB; // fallback
+
   GLuint texture;
   glGenTextures(1, &texture);
   glBindTexture(GL_TEXTURE_2D, texture);
@@ -102,7 +104,7 @@ GLuint model_load_texture(const char *path){
   return texture;
 }
 
-GLuint model_load_embedded_texture(const char *path, const struct aiScene *scene){
+GLuint material_load_embedded_texture(const char *path, const struct aiScene *scene){
   // Texture paths are *0, *1, etc
   int index = atoi(path + 1);
   const struct aiTexture *tex = scene->mTextures[index];

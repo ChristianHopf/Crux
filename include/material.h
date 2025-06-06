@@ -5,6 +5,7 @@
 #include <cglm/cglm.h>
 #include <assimp/texture.h>
 #include <assimp/material.h>
+#include "utils.h"
 
 typedef struct {
   char path[512];
@@ -17,7 +18,7 @@ static int num_loaded_textures = 0;
 
 struct Texture {
   GLuint texture_id;
-  char *texture_type; // Assigned while loading textures (diffuse, specular, etc)
+  const char *texture_type; // Assigned while loading textures (diffuse, specular, etc)
 };
 
 struct Material {
@@ -31,8 +32,8 @@ struct Material {
 
 // Load all textures in a model's material
 void material_load_textures(struct Material *mat, struct aiMaterial *ai_mat, const struct aiScene *scene, const char *directory);
-GLuint material_load_embedded_texture(const char *path, const struct aiScene *scene);
 GLuint material_load_texture(const char *path);
+GLuint material_load_embedded_texture(const char *path, const struct aiScene *scene);
 GLuint check_loaded_texture(const char *path);
 void add_loaded_texture(const char *path, GLuint texture_id);
 
