@@ -42,7 +42,7 @@ void main(){
 }
 
 vec3 calc_dir_light(DirLight light, vec3 norm, vec3 viewDir){
-  // Directional lightDir
+  // Light direction
   vec3 lightDir = normalize(-light.direction);
 
   // Ambient
@@ -53,8 +53,9 @@ vec3 calc_dir_light(DirLight light, vec3 norm, vec3 viewDir){
   vec3 diffuse = light.diffuse * diff * vec3(texture(material.diffuse1, TexCoord));
 
   // Specular
-  vec3 reflectDir = reflect(-lightDir, norm);
-  float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);
+  //vec3 reflectDir = reflect(-lightDir, norm);
+  vec3 halfwayDir = normalize(lightDir + viewDir);
+  float spec = pow(max(dot(viewDir, halfwayDir), 0.0), 32);
   vec3 specular = light.specular * spec * vec3(texture(material.specular1, TexCoord));
 
   return (ambient + diffuse + specular);

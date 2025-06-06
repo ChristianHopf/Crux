@@ -51,12 +51,10 @@ Scene *scene_create(){
     return NULL;
   }
   model_load(crystalModel, "resources/objects/crystal/scene.gltf");
-  printf("hi\n");
-  printf("Successfully loaded backpack model\n");
   Entity crystal = {
     .ID = 1,
     .position = {0.0f, 0.0f, 0.0f},
-    .rotation = {0.0f, 0.0f, 0.0f},
+    .rotation = {0.2f, 0.2f, 0.2f},
     .scale = {1.0f, 1.0f, 1.0f},
     .model = crystalModel,
     .shader = shader
