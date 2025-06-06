@@ -17,7 +17,7 @@ static int num_loaded_textures = 0;
 
 struct Texture {
   GLuint texture_id;
-  enum aiTextureType texture_type;
+  char *texture_type; // Assigned while loading textures (diffuse, specular, etc)
 };
 
 struct Material {

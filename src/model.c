@@ -174,7 +174,16 @@ void model_draw(Model *model, Shader *shader){
     // Only bind textures if this mesh *has* a material.
     // If it doesn't, model->meshes[i].material_index will be negative.
     if (model->meshes[i].material_index >= 0){
+      struct Material *mat = model->materials[model->meshes[i].material_index];
+
       // Bind textures
+      for(unsigned int j = 0; j < mat->num_textures; i++){
+        glActiveTexture(GL_TEXTURE + i);
+        glBindTexture(GL_TEXTURE_2D, material->textures[i]);
+        
+        // Build uniform string
+      }
+
       // Diffuse
       glActiveTexture(GL_TEXTURE0);
       glBindTexture(GL_TEXTURE_2D, model->materials[model->meshes[i].material_index].textures[0].texture_id);
