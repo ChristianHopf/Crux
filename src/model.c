@@ -187,29 +187,37 @@ void model_draw(Model *model, Shader *shader){
     if (model->meshes[i].material_index >= 0){
       struct Material *mat = &model->materials[model->meshes[i].material_index];
 
+      unsigned int diffuse_num = 1;
+      unsigned int specular_num = 1;
+
       // Bind textures
-      for(unsigned int j = 0; j < mat->num_textures; i++){
-        glActiveTexture(GL_TEXTURE + i);
-        glBindTexture(GL_TEXTURE_2D, mat->textures[i].texture_id);
-        
+      for(unsigned int j = 0; j < mat->num_textures; j++){
+                
         // Build uniform string of the form:
         // material.<type><index>
         char texture_uniform[32];
         printf("Texture type to set in uniform: %s\n", mat->textures[i].texture_type);
-        snprintf(texture_uniform, sizeof(texture_uniform), "material.%s%u", mat->textures[i].texture_type, j);
-        printf("Setting shader texture uniform %s\n", texture_uniform);
-        shader_set_int(shader, texture_uniform, j);
-      }
+        if (strcmp(mat->textures[i].texture_type, "diffuse") == 0){
+          snprintf(texture_uniform, sizeof(texture_uniform), "material.%s%u", mat->textures[i].texture_type, diffuse_num);
+          printf("Setting shader texture uniform %s\n", texture_uniform);
 
-      // // Diffuse
-      // glActiveTexture(GL_TEXTURE0);
-      // glBindTexture(GL_TEXTURE_2D, model->materials[model->meshes[i].material_index].textures[0].texture_id);
-      // shader_set_int(shader, "diffuseMap", 0);
-      //
-      // // Specular
-      // glActiveTexture(GL_TEXTURE1);
-      // glBindTexture(GL_TEXTURE_2D, model->materials[model->meshes[i].material_index].textures[1].texture_id);
-      // shader_set_int(shader, "specularMap", 1);
+          glActiveTexture(GL_TEXTURE + j);
+          glBindTexture(GL_TEXTURE_2D, mat->textures[i].texture_id);
+          shader_set_int(shader, texture_uniform, j);
+
+          diffuse_num++;
+        }
+        else if (strcmp(mat->textures[i].texture_type, "specular") == 0){
+          snprintf(texture_uniform, sizeof(texture_uniform), "material.%s%u", mat->textures[i].texture_type, specular_num);
+          printf("Setting shader texture uniform %s\n", texture_uniform);
+
+          glActiveTexture(GL_TEXTURE + j);
+          glBindTexture(GL_TEXTURE_2D, mat->textures[i].texture_id);
+          shader_set_int(shader, texture_uniform, j);
+
+          specular_num++;
+        }
+      }
     }
 
     // Bind its vertex array and draw its triangles
