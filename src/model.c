@@ -47,16 +47,18 @@ bool model_load(Model *model, const char *path){
   }
 
   // Materials
-  model->materials = (struct Material *)malloc(scene->mNumMaterials * sizeof(struct Material));
+  model->materials = (struct Material *)calloc(scene->mNumMaterials, sizeof(struct Material));
+  if (!model->materials){
+    printf("Error: failed to allocate struct Materials in model_load\n");
+    return false;
+  }
   for (unsigned int i = 0; i < scene->mNumMaterials; i++){
-    memset(&model->materials[i], 0, sizeof(struct Material));
     struct aiMaterial *mat = scene->mMaterials[i];
 
     glm_vec3_copy(model->materials[i].ambient, (vec3){0.2f, 0.2f, 0.2f});
     glm_vec3_copy(model->materials[i].diffuse, (vec3){0.8f, 0.8f, 0.8f});
     glm_vec3_copy(model->materials[i].specular, (vec3){1.0f, 1.0f, 1.0f});
     model->materials[i].shininess = 32.0f;
-    //model->materials[i].num_textures = 0;
 
     material_load_textures(&model->materials[i], mat, scene, model->directory);
     if(model->materials[i].num_textures > 0){
