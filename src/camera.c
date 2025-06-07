@@ -46,17 +46,17 @@ void camera_process_keyboard_input(struct Camera *camera, CameraDirection direct
     glm_vec3_scale(right, velocity, right);
     glm_vec3_add(camera->position, right, camera->position);
 	}
-	//if (direction == CAMERA_DOWN){
-	//	vec3 down;
-	//	glm_vec3_copy(camera->up, down);
-	//	glm_vec3_scale(down, velocity, down);
-	//	glm_vec3_sub(camera->position, down, camera->position);
-	//}
-	//if (direction == CAMERA_UP){
-	//	vec3 up;
-	//	glm_vec3_copy(camera->up, up);
-	//	glm_vec3_scale(up, velocity, up);
-	//	glm_vec3_add(camera->position, up, camera->position);
+	// if (direction == CAMERA_DOWN){
+	// 	vec3 down;
+	// 	glm_vec3_copy(camera->up, down);
+	// 	glm_vec3_scale(down, velocity, down);
+	// 	glm_vec3_sub(camera->position, down, camera->position);
+	// }
+	// if (direction == CAMERA_UP){
+	// 	vec3 up;
+	// 	glm_vec3_copy(camera->up, up);
+	// 	glm_vec3_scale(up, velocity, up);
+	// 	glm_vec3_add(camera->position, up, camera->position);
 	//}
 }
 

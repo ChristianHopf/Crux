@@ -45,7 +45,7 @@ void main(){
   //vec3 emissive = emissive_vec4.rgb * emissive_vec4.a;
   vec3 emissive = texture(material.emissive, TexCoord).rgb;
 
-  FragColor = vec4(emissive + result.rgb, result.a);
+  FragColor = vec4(result.rgb + emissive, result.a);
 }
 
 vec4 calc_dir_light(DirLight light, vec3 norm, vec3 viewDir){
