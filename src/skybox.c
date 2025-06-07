@@ -63,3 +63,7 @@ struct Skybox skybox_create(){
   };
   return skybox;
 }
+
+void skybox_draw(struct Skybox *skybox){
+
+}

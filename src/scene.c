@@ -3,6 +3,7 @@
 #include <cglm/mat3.h>
 #include "scene.h"
 #include "player.h"
+#include "skybox.h"
 #include "utils.h"
 
 Scene *scene_create(){
@@ -63,6 +64,12 @@ Scene *scene_create(){
     .shader = shader
   };
   scene->entities[scene->num_entities++] = crystal;
+
+  // Skybox
+  scene->skybox = skybox_create();
+  if (!scene->skybox){
+    printf("Error: failed to create skybox in scene_create\n");
+  }
 
   // Model *oiiaiModel = (Model *)malloc(sizeof(Model));
   // if (!oiiaiModel){
@@ -209,6 +216,9 @@ void scene_render(Scene *scene){
     // Draw model
     model_draw(entity->model, entity->shader);
   }
+
+  // Draw skybox
+  
 }
 
 void scene_pause(Scene *scene){
