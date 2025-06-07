@@ -141,12 +141,7 @@ void model_process_mesh(struct aiMesh *ai_mesh, const struct aiScene *scene, str
 
     // Tex_Coord
     if (ai_mesh->mTextureCoords[0]){
-      // mTextureCoords may have more than 1 channel per vertex, but we only care about
-      // the first one for now. Each channel is a vec3 because it may use uvw (for cubemaps or something)
-      vec2 temp;
-      temp[0] = ai_mesh->mTextureCoords[0][i].x;
-      temp[1] = ai_mesh->mTextureCoords[0][i].y;
-      glm_vec2_copy(temp, vertices[i].tex_coord);
+      glm_vec2_copy((vec2){ai_mesh->mTextureCoords[0][i].x, ai_mesh->mTextureCoords[0][i].y}, vertices[i].tex_coord);
     } else{
       glm_vec2_copy((vec2){0.0f, 0.0f}, vertices[i].tex_coord);
     }
