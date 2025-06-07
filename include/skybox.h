@@ -10,7 +10,7 @@ struct Skybox {
 
 // A cubemap skybox doesn't need a Model, or meshes,
 // just the vertices of a unit cube
-static float skyboxVertices[] = {
+static float cubemapVertices[] = {
     // positions          
     -1.0f,  1.0f, -1.0f,
     -1.0f, -1.0f, -1.0f,
@@ -54,6 +54,15 @@ static float skyboxVertices[] = {
     -1.0f, -1.0f,  1.0f,
      1.0f, -1.0f,  1.0f
   };
+
+static char *cubemapFaces[] = {
+  "right.jpg",
+  "left.jpg",
+  "top.jpg",
+  "bottom.jpg",
+  "front.jpg",
+  "back.jpg"
+};
 
 
 // Generate VBO, VAO, and texture IDs for a cubemap, return as a struct Skybox
