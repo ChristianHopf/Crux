@@ -52,7 +52,7 @@ Scene *scene_create(){
     printf("Error: failed to allocate oiiaiModel\n");
     return NULL;
   }
-  model_load(crystalModel, "resources/objects/dungeon_crossroads.glb");
+  model_load(crystalModel, "resources/objects/dungeon_crossroads/scene.gltf");
   Entity crystal = {
     .ID = 1,
     .position = {0.0f, 0.0f, 0.0f},
