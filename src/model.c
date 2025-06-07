@@ -210,8 +210,6 @@ void model_draw(Model *model, Shader *shader){
       unsigned int diffuse_num = 1;
       unsigned int specular_num = 1;
 
-      printf("This mesh uses the material at index %d\n", model->meshes[i].material_index);
-
       // Could simplify binding textures by using an unsigned int array like this,
       // where the nth int corresponds the the number of textures with aiTextureType n
       // - example: texture_counts[aiTextureType_DIFFUSE] = 1

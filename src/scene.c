@@ -1,3 +1,4 @@
+#include <glad/glad.h>
 #include <cglm/cglm.h>
 #include <cglm/mat3.h>
 #include "scene.h"
@@ -21,7 +22,7 @@ Scene *scene_create(){
     printf("Error: failed to allocate scene light\n");
     return NULL;
   }
-  glm_vec3_copy((vec3){-0.2f, -1.0f, -0.3f}, scene->light->direction);
+  glm_vec3_copy((vec3){-0.2f, 0.0f, -0.3f}, scene->light->direction);
   glm_vec3_copy((vec3){0.2f, 0.2f, 0.2f}, scene->light->ambient);
   glm_vec3_copy((vec3){0.8f, 0.8f, 0.8f}, scene->light->diffuse);
   glm_vec3_copy((vec3){1.0f, 1.0f, 1.0f}, scene->light->specular);
@@ -78,6 +79,8 @@ Scene *scene_create(){
   //   .shader = shader
   // };
   // scene->entities[scene->num_entities++] = oiiai;
+  
+  
 
   return scene;
 }
@@ -121,6 +124,9 @@ void scene_render(Scene *scene){
   camera_get_view_matrix(scene->player.camera, view);
   glm_perspective(glm_rad(scene->player.camera->fov), 800.0f / 600.0f, 0.1f, 100.0f, projection);
 
+  // Cubemap (move this later, probably to a (optional?) scene property)
+  
+
   // For each entity in the scene
   for(int i = 0; i < scene->num_entities; i++){
     // Bind its shader
@@ -163,6 +169,101 @@ void scene_render(Scene *scene){
     // Draw model
     model_draw(entity->model, entity->shader);
   }
+
+  float skyboxVertices[] = {
+    // positions          
+    -1.0f,  1.0f, -1.0f,
+    -1.0f, -1.0f, -1.0f,
+     1.0f, -1.0f, -1.0f,
+     1.0f, -1.0f, -1.0f,
+     1.0f,  1.0f, -1.0f,
+    -1.0f,  1.0f, -1.0f,
+
+    -1.0f, -1.0f,  1.0f,
+    -1.0f, -1.0f, -1.0f,
+    -1.0f,  1.0f, -1.0f,
+    -1.0f,  1.0f, -1.0f,
+    -1.0f,  1.0f,  1.0f,
+    -1.0f, -1.0f,  1.0f,
+
+     1.0f, -1.0f, -1.0f,
+     1.0f, -1.0f,  1.0f,
+     1.0f,  1.0f,  1.0f,
+     1.0f,  1.0f,  1.0f,
+     1.0f,  1.0f, -1.0f,
+     1.0f, -1.0f, -1.0f,
+
+    -1.0f, -1.0f,  1.0f,
+    -1.0f,  1.0f,  1.0f,
+     1.0f,  1.0f,  1.0f,
+     1.0f,  1.0f,  1.0f,
+     1.0f, -1.0f,  1.0f,
+    -1.0f, -1.0f,  1.0f,
+
+    -1.0f,  1.0f, -1.0f,
+     1.0f,  1.0f, -1.0f,
+     1.0f,  1.0f,  1.0f,
+     1.0f,  1.0f,  1.0f,
+    -1.0f,  1.0f,  1.0f,
+    -1.0f,  1.0f, -1.0f,
+
+    -1.0f, -1.0f, -1.0f,
+    -1.0f, -1.0f,  1.0f,
+     1.0f, -1.0f, -1.0f,
+     1.0f, -1.0f, -1.0f,
+    -1.0f, -1.0f,  1.0f,
+     1.0f, -1.0f,  1.0f
+  };
+
+  char **faces = malloc(6 * sizeof(char *));
+  char *faces[0] = "right.jpg";
+  char *faces[1] = "left.jpg";
+  char *faces[2] = "top.jpg";
+  char *faces[3] = "bottom.jpg";
+  char *faces[4] = "front.jpg";
+  char *faces[5] = "back.jpg";
+
+  unsigned int skyboxVAO, skyboxVBO;
+  glGenVertexArrays(1, &skyboxVAO);
+  glGenBuffers(1, &skyboxVBO);
+  glBindVertexArray(skyboxVAO);
+  glBindBuffer(GL_ARRAY_BUFFER, skyboxVBO);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), &skyboxVertices, GL_STATIC_DRAW);
+  glEnableVertexAttribArray(0);
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+
+  GLuint cubemap_ID;
+  glGenTextures(1, &cubemap_ID);
+  glBindTexture(GL_TEXTURE_CUBE_MAP, cubemap_id);
+
+  int width, height, channels;
+  for (unsigned int i = 0; i < 6; i++){
+    unsigned char *data = stbi_load(faces[i]), &width, &height, &channels, 0);
+    if (!data){
+      printf("Error: failed to load cubemap face %s\n", faces[i]);
+      return 0;
+    }
+    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+    stbi_image_free(data);
+  }
+  glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+  glDepthFunc(GL_LEQUAL);  // change depth function so depth test passes when values are equal to depth buffer's content
+  skyboxShader.use();
+  view = glm::mat4(glm::mat3(camera.GetViewMatrix())); // remove translation from the view matrix
+  skyboxShader.setMat4("view", view);
+  skyboxShader.setMat4("projection", projection);
+  // skybox cube
+  glBindVertexArray(skyboxVAO);
+  glActiveTexture(GL_TEXTURE0);
+  glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
+  glDrawArrays(GL_TRIANGLES, 0, 36);
+  glBindVertexArray(0);
+  glDepthFunc(GL_LESS); // set depth function back to default
 }
 
 void scene_pause(Scene *scene){
