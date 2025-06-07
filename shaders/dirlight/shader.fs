@@ -25,6 +25,8 @@ struct Material {
   sampler2D specular1;
   sampler2D specular2;
 
+  sampler2D emissive;
+
   sampler2D normal;
 };
 uniform Material material;
@@ -38,7 +40,12 @@ void main(){
   // Directional light
   vec4 result = calc_dir_light(dirLight, norm, viewDir);
 
-  FragColor = vec4(result);
+  // Emissive light
+  //vec4 emissive_vec4 = vec4(texture(material.emissive, TexCoord).rgb, 1.0);
+  //vec3 emissive = emissive_vec4.rgb * emissive_vec4.a;
+  vec3 emissive = texture(material.emissive, TexCoord).rgb;
+
+  FragColor = vec4(emissive + result.rgb, result.a);
 }
 
 vec4 calc_dir_light(DirLight light, vec3 norm, vec3 viewDir){

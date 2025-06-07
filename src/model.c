@@ -210,6 +210,13 @@ void model_draw(Model *model, Shader *shader){
       unsigned int diffuse_num = 1;
       unsigned int specular_num = 1;
 
+      // Could simplify binding textures by using an unsigned int array like this,
+      // where the nth int corresponds the the number of textures with aiTextureType n
+      // - example: texture_counts[aiTextureType_DIFFUSE] = 1
+      // Maybe worry about this later.
+      // unsigned int *texture_counts = calloc(mat->num_textures * sizeof(unsigned int));
+      // texture_counts[mat->textures[j].texture_type_enum]++;
+
       // Bind textures
       for(unsigned int j = 0; j < mat->num_textures; j++){
                 
@@ -233,6 +240,11 @@ void model_draw(Model *model, Shader *shader){
           shader_set_int(shader, texture_uniform, j);
 
           specular_num++;
+        }
+        else if (strcmp(mat->textures[j].texture_type, "emissive") == 0){
+          glActiveTexture(GL_TEXTURE0 + j);
+          glBindTexture(GL_TEXTURE_2D, mat->textures[j].texture_id);
+          shader_set_int(shader, "material.emissive", j);
         }
       }
     }
