@@ -1,4 +1,6 @@
+#include <cglm/cglm.h>
 #include <cglm/io.h>
+#include <cglm/mat4.h>
 #include <cglm/vec2.h>
 #include <stb_image/stb_image.h>
 #include <stdbool.h>
@@ -101,8 +103,8 @@ void model_process_node(Model *model, struct aiNode *node, const struct aiScene 
     // printf("Passing final mesh transformation matrix:\n");
     // print_aiMatrix4x4(&current_transform);
     
-    aiMatrix4x4_to_mat4(&current_transform, model->meshes[*index].node_transform);
-    model_process_mesh(ai_mesh, scene, &model->meshes[*index]);
+    
+    model_process_mesh(ai_mesh, scene, current_transform, &model->meshes[*index]);
     (*index)++;
   }
 
@@ -112,10 +114,7 @@ void model_process_node(Model *model, struct aiNode *node, const struct aiScene 
   }
 }
 
-void model_process_mesh(struct aiMesh *ai_mesh, const struct aiScene *scene, Mesh *dest_mesh){
-
-  // printf("This mesh has the final transform matrix:\n");
-  // print_aiMatrix4x4(&mesh_transform);
+void model_process_mesh(struct aiMesh *ai_mesh, const struct aiScene *scene, struct aiMatrix4x4 node_transform, Mesh *dest_mesh){
 
   // Allocate memory for vertices
   Vertex *vertices = (Vertex *)malloc(ai_mesh->mNumVertices * sizeof(Vertex));
@@ -123,14 +122,29 @@ void model_process_mesh(struct aiMesh *ai_mesh, const struct aiScene *scene, Mes
     printf("Error: failed to allocate vertices in model_process_mesh\n");
   }
 
+  // Vertices allocated, get mat4 for transforming vertices
+  mat4 node_transform_mat4;
+  aiMatrix4x4_to_mat4(&node_transform, node_transform_mat4);
+  // aiMatrix4x4_to_mat4(&current_transform, model->meshes[*index].node_transform);
+
   // Process vertices
   for (unsigned int i = 0; i < ai_mesh->mNumVertices; i++){
     // Position
-    memcpy(vertices[i].position, &ai_mesh->mVertices[i], sizeof(float) * 3);
+    
+    // printf("Mesh vertex x, y, z comps: %f %f %f\n", ai_mesh->mVertices[i].x, ai_mesh->mVertices[i].y, ai_mesh->mVertices[i].z);
+    vec4 pos = {ai_mesh->mVertices[i].x, ai_mesh->mVertices[i].y, ai_mesh->mVertices[i].z, 1.0};
+    vec4 transformed_pos;
+    glm_mat4_mulv(node_transform_mat4, pos, transformed_pos);
+    memcpy(vertices[i].position, transformed_pos, sizeof(float) * 3);
+
+    // memcpy(vertices[i].position, &ai_mesh->mVertices[i], sizeof(float) * 3);
 
     // Normal
     if (ai_mesh->mNormals){
-      memcpy(vertices[i].normal, &ai_mesh->mNormals[i], sizeof(float) * 3);
+      vec4 normal = {ai_mesh->mNormals[i].x, ai_mesh->mNormals[i].y, ai_mesh->mNormals[i].z, 1.0};
+      vec4 transformed_normal;
+      glm_mat4_mulv(node_transform_mat4, normal, transformed_normal);
+      memcpy(vertices[i].normal, transformed_normal, sizeof(float) * 3);
     }else{
       memset(vertices[i].normal, 0, sizeof(float) * 3);
     }
@@ -204,7 +218,7 @@ void model_draw(Model *model, Shader *shader){
   for(unsigned int i = 0; i < model->num_meshes; i++){
 
     // Bind the transform matrix from this mesh's parent node
-    shader_set_mat4(shader, "node_transform", model->meshes[i].node_transform);
+    // shader_set_mat4(shader, "node_transform", model->meshes[i].node_transform);
 
     // printf("This mesh has the node transformation matrix:\n");
     // for (int row = 0; row < 4; row++) {

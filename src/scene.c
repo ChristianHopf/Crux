@@ -106,8 +106,6 @@ void scene_update(Scene *scene, float deltaTime){
   scene->light->direction[0] = (float)sin(lightSpeed * total_time);
   //scene->light->direction[1] += y;
   scene->light->direction[2] = (float)cos(lightSpeed * total_time);
-  // new light direction
-  print_glm_vec3(scene->light->direction, "New light direction");
 }
 
 void scene_render(Scene *scene){
