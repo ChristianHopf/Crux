@@ -50,7 +50,7 @@ Scene *scene_create(){
     printf("Error: failed to allocate oiiaiModel\n");
     return NULL;
   }
-  model_load(crystalModel, "resources/objects/dungeon_crossroads/scene.gltf");
+  model_load(crystalModel, "resources/objects/dungeon_crossroads.glb");
   Entity crystal = {
     .ID = 1,
     .position = {0.0f, 0.0f, 0.0f},
@@ -69,9 +69,9 @@ Scene *scene_create(){
   // model_load(oiiaiModel, "resources/objects/oiiai/scene.gltf");
   // Entity oiiai = {
   //   .ID = 1,
-  //   .position = {0.0f, -2.0f, -10.0f},
+  //   .position = {0.0f, 0.0f, 0.0f},
   //   .rotation = {0.0f, 0.0f, 0.0f},
-  //   .scale = {0.1f, 0.1f, 0.1f},
+  //   .scale = {3.0f, 3.0f, 3.0f},
   //   .model = oiiaiModel,
   //   .shader = shader
   // };
@@ -88,7 +88,7 @@ void scene_update(Scene *scene, float deltaTime){
 
   static float total_time = 0.0f;
   total_time += deltaTime;
-  // Rotate around y axis
+
   float rotationSpeed = 100.0f;
   float lightSpeed = 1.0f;
 
@@ -97,9 +97,9 @@ void scene_update(Scene *scene, float deltaTime){
     Entity *entity = &scene->entities[i];
 
     // Update translation vector
-    //entity->position[1] = (float)sin(glfwGetTime()*4) / 4;
+    // entity->position[1] = (float)sin(glfwGetTime()*4) / 4;
     // Update rotation vector
-    entity->rotation[1] -= rotationSpeed * deltaTime;
+    // entity->rotation[1] -= rotationSpeed * deltaTime;
   }
 
   // Update light
@@ -158,6 +158,11 @@ void scene_render(Scene *scene){
   }
 }
 
+void scene_pause(Scene *scene){
+  bool prev = scene->paused;
+  scene->paused = !prev;
+}
+
 void free_scene(Scene *scene){
   if (scene){
     free(scene->entities);
@@ -165,9 +170,4 @@ void free_scene(Scene *scene){
     free(scene->light);
     free(scene);
   }
-}
-
-void scene_pause(Scene *scene){
-  bool prev = scene->paused;
-  scene->paused = !prev;
 }

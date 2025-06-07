@@ -39,6 +39,7 @@ void print_glm_vec3(float *vector, char *name){
 
 char *get_texture_type_string(enum aiTextureType type){
   switch (type) {
+    case aiTextureType_BASE_COLOR:
     case aiTextureType_DIFFUSE:
       return "diffuse";
     case aiTextureType_SPECULAR:

@@ -25,8 +25,8 @@ void scroll_callback(GLFWwindow *window, double xoffset, double yoffset);
 void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods);
 
 // Screen settings
-const unsigned int SCREEN_WIDTH = 800;
-const unsigned int SCREEN_HEIGHT = 600;
+const unsigned int SCREEN_WIDTH = 1024;
+const unsigned int SCREEN_HEIGHT = 768;
 
 // Mouse
 bool firstMouse = true;
@@ -196,11 +196,11 @@ int main(){
 		engine->deltaTime = currentFrame - engine->lastFrame;
 		engine->lastFrame = currentFrame;
 
-		printf("FPS: %f\n", 1.0 / engine->deltaTime);
+		//printf("FPS: %f\n", 1.0 / engine->deltaTime);
 
 		// Handle input, update, render
 		processInput(engine->window);
-		//scene_update(engine->active_scene, engine->deltaTime);
+		scene_update(engine->active_scene, engine->deltaTime);
     scene_render(engine->active_scene);
 
 		// Check and call events, swap buffers

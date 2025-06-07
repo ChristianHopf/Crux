@@ -45,11 +45,14 @@ void material_load_textures(struct Material *mat, struct aiMaterial *ai_mat, con
       // which means the bytes in mData are a struct aiString.
       // (probably no need to check mType)
       struct aiString *path = (struct aiString *)property->mData;
+      printf("Path data I might not want to free: %s\n", path->data);
 
       // Load texture, embedded
       if (path->data[0] == '*'){
+        printf("Found embedded texture property\n");
         GLuint embedded_texture_id = check_loaded_texture(path->data);
         if (embedded_texture_id == 0){
+          printf("Already loaded this texture\n");
           embedded_texture_id = material_load_embedded_texture(path->data, scene);
           add_loaded_texture(path->data, embedded_texture_id);
         }
@@ -60,7 +63,7 @@ void material_load_textures(struct Material *mat, struct aiMaterial *ai_mat, con
         mat->num_textures++;
         texture_index++;
 
-        free(path);
+        // free(path);
         continue;
       }
 
@@ -98,6 +101,8 @@ void material_load_textures(struct Material *mat, struct aiMaterial *ai_mat, con
 }
 
 GLuint material_load_texture(const char *path, enum aiTextureType type){
+  printf("Loading texture of type %s\n", aiTextureTypeToString(type));
+
   int width, height, channels;
   unsigned char* data = stbi_load(path, &width, &height, &channels, 0);
   if (!data){

@@ -1,5 +1,5 @@
-#include "camera.h"
 #include <GLFW/glfw3.h>
+#include "camera.h"
 
 struct Camera *camera_create(vec3 position, vec3 up, float yaw, float pitch, float fov, float sensitivity, float speed){
   struct Camera *camera = (struct Camera *)malloc(sizeof(struct Camera));
@@ -72,14 +72,6 @@ void camera_process_mouse_input(struct Camera *camera, float xoffset, float yoff
 	// Disallow lookat flip by looking parallel to y axis
 	if (camera->pitch > 89.0f) camera->pitch = 89.0f;
 	if (camera->pitch < -89.0f) camera->pitch = -89.0f;
-
-	// Calculate direction vector
-	//vec3 direction;
-	//direction[0] = cos(glm_rad(camera->yaw)) * cos(glm_rad(camera->pitch));
-	//direction[1] = sin(glm_rad(camera->pitch));
-	//direction[2] = sin(glm_rad(camera->yaw)) * cos(glm_rad(camera->pitch));
-	//glm_vec3_normalize(direction);
-	//glm_vec3_copy(direction, camera->front);
 
   // Update cameraFront and cameraRight
   camera_update_vectors(camera);

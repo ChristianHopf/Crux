@@ -28,5 +28,6 @@ Scene *scene_create();
 void scene_update(Scene *scene, float deltaTime);
 void scene_render(Scene *scene);
 void scene_pause(Scene *scene);
+void scene_free(Scene *scene);
 
 #endif
