@@ -7,8 +7,6 @@ out vec3 Normal;
 out vec2 TexCoord;
 out vec3 FragPos;
 
-# uniform mat4 node_transform;
-
 uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;

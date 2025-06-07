@@ -22,7 +22,6 @@ typedef struct {
   GLuint VAO, VBO, EBO;
   unsigned int num_indices;
   unsigned int material_index;
-  mat4 node_transform;
 } Mesh;
 
 typedef struct {
