@@ -31,25 +31,25 @@ struct Material {
 };
 uniform Material material;
 
-vec4 calc_dir_light(DirLight light, vec3 norm, vec3 viewDir);
+vec3 calc_dir_light(DirLight light, vec3 norm, vec3 viewDir);
 
 void main(){
   vec3 norm = normalize(Normal);
   vec3 viewDir = normalize(viewPos - FragPos);
 
   // Directional light
-  vec4 lighting = calc_dir_light(dirLight, norm, viewDir);
+  vec3 lighting = calc_dir_light(dirLight, norm, viewDir);
 
   // Emissive light
-  vec4 emissive = texture(material.emissive, TexCoord);
+  //vec4 emissive = texture(material.emissive, TexCoord);
 
-  vec3 resultColor = lighting.rgb + emissive.rgb * emissive.a;
-  float resultAlpha = lighting.a;
+  //vec3 resultColor = lighting.rgb + emissive.rgb * 0.1;
+  //float resultAlpha = lighting.a;
 
-  FragColor = vec4(resultColor.rgb + emissive.rgb, emissive.a);
+  FragColor = vec4(lighting, 1.0);
 }
 
-vec4 calc_dir_light(DirLight light, vec3 norm, vec3 viewDir){
+vec3 calc_dir_light(DirLight light, vec3 norm, vec3 viewDir){
   // Light direction
   vec3 lightDir = normalize(-light.direction);
 
@@ -62,7 +62,6 @@ vec4 calc_dir_light(DirLight light, vec3 norm, vec3 viewDir){
   float alpha = texture(material.diffuse1, TexCoord).a;
   //if (alpha < 0.1)
   //  discard;
-  //vec3 diffuse = light.diffuse * diff * vec3(texture(material.diffuse1, TexCoord));
 
   // Specular
   //vec3 reflectDir = reflect(-lightDir, norm);
@@ -70,5 +69,5 @@ vec4 calc_dir_light(DirLight light, vec3 norm, vec3 viewDir){
   float spec = pow(max(dot(viewDir, halfwayDir), 0.0), 32);
   vec3 specular = light.specular * spec * vec3(texture(material.specular1, TexCoord));
 
-  return vec4(ambient + diffuse + specular, alpha);
+  return ambient + diffuse + specular;
 }

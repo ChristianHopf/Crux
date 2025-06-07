@@ -116,6 +116,10 @@ GLuint material_load_texture(const char *path, enum aiTextureType type){
   // enabling gamma correction means we need to specify GL_SRGB
   // as their internalformat arguments.
   GLenum internal_format, pixel_format;
+
+  printf("Time to set texture formats, texture type: %d\n", type);
+  printf("Diffuse texture type: %d\n", aiTextureType_DIFFUSE);
+
   if (channels == 4){
     if (type == aiTextureType_DIFFUSE | type == aiTextureType_BASE_COLOR){
       internal_format = GL_SRGB_ALPHA;
@@ -129,7 +133,9 @@ GLuint material_load_texture(const char *path, enum aiTextureType type){
     if (type == aiTextureType_DIFFUSE | type == aiTextureType_BASE_COLOR){
       internal_format = GL_SRGB;
     }
-    internal_format = GL_RGB;
+    else{
+      internal_format = GL_RGB;
+    }
     pixel_format = GL_RGB;
   }
   else if (channels == 1){

@@ -164,6 +164,7 @@ Engine *engine_create(){
 
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  //glBlendFunc(GL_ONE, GL_ONE); // additive blending
 
   //glDepthFunc(GL_ALWAYS);
   //glEnable(GL_STENCIL_TEST);
