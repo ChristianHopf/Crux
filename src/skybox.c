@@ -31,6 +31,7 @@ struct Skybox *skybox_create(){
   glBindTexture(GL_TEXTURE_CUBE_MAP, cubemap_texture_id);
 
   // Load cubemap texture by each face
+  stbi_set_flip_vertically_on_load(false);
   int width, height, channels;
   for (unsigned int i = 0; i < 6; i++){
 
@@ -47,6 +48,7 @@ struct Skybox *skybox_create(){
     glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
     stbi_image_free(data);
   }
+  stbi_set_flip_vertically_on_load(false);
 
   // Set cubemap texture parameters
   glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
