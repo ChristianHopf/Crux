@@ -38,14 +38,15 @@ void main(){
   vec3 viewDir = normalize(viewPos - FragPos);
 
   // Directional light
-  vec4 result = calc_dir_light(dirLight, norm, viewDir);
+  vec4 lighting = calc_dir_light(dirLight, norm, viewDir);
 
   // Emissive light
-  //vec4 emissive_vec4 = vec4(texture(material.emissive, TexCoord).rgb, 1.0);
-  //vec3 emissive = emissive_vec4.rgb * emissive_vec4.a;
-  vec3 emissive = texture(material.emissive, TexCoord).rgb;
+  vec4 emissive = texture(material.emissive, TexCoord);
 
-  FragColor = vec4(result.rgb + emissive, result.a);
+  vec3 resultColor = lighting.rgb + emissive.rgb * emissive.a;
+  float resultAlpha = lighting.a;
+
+  FragColor = vec4(resultColor.rgb + emissive.rgb, emissive.a);
 }
 
 vec4 calc_dir_light(DirLight light, vec3 norm, vec3 viewDir){
@@ -59,8 +60,8 @@ vec4 calc_dir_light(DirLight light, vec3 norm, vec3 viewDir){
   float diff = max(dot(norm, lightDir), 0.0);
   vec3 diffuse = light.diffuse * diff * texture(material.diffuse1, TexCoord).rgb;
   float alpha = texture(material.diffuse1, TexCoord).a;
-  if (alpha < 0.1)
-    discard;
+  //if (alpha < 0.1)
+  //  discard;
   //vec3 diffuse = light.diffuse * diff * vec3(texture(material.diffuse1, TexCoord));
 
   // Specular
