@@ -1,3 +1,5 @@
+#include <cglm/cglm.h>
+#include <cglm/mat3.h>
 #include "scene.h"
 #include "player.h"
 #include "utils.h"
@@ -136,6 +138,13 @@ void scene_render(Scene *scene){
     glm_rotate_z(model, glm_rad(entity->rotation[2]), model);
     // Scale
     glm_scale(model, entity->scale);
+
+    // Set normal matrix uniform
+    mat3 transposed_mat3;
+    mat3 normal;
+    glm_mat4_pick3t(model, transposed_mat3);
+    glm_mat3_inv(transposed_mat3, normal);
+    shader_set_mat3(entity->shader, "normal", normal);
 
     // Set its model, view, and projection matrix uniforms
     shader_set_mat4(entity->shader, "model", model);
