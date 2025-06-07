@@ -3,6 +3,7 @@
 
 #include <glad/glad.h>
 #include <stdbool.h>
+#include "skybox.h"
 #include "entity.h"
 #include "player.h"
 
@@ -18,6 +19,7 @@ typedef struct {
   Entity *entities;
   int num_entities;
   int max_entities;
+  struct Skybox skybox;
   struct Player player;
   Light *light;
   bool paused;

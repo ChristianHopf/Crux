@@ -80,6 +80,8 @@ Scene *scene_create(){
   // };
   // scene->entities[scene->num_entities++] = oiiai;
   
+  // Load cubemap for skybox
+
   
 
   return scene;
@@ -125,51 +127,6 @@ void scene_render(Scene *scene){
   glm_perspective(glm_rad(scene->player.camera->fov), 800.0f / 600.0f, 0.1f, 100.0f, projection);
 
   // Cubemap (move this later, probably to a (optional?) scene property)
-  
-
-  // For each entity in the scene
-  for(int i = 0; i < scene->num_entities; i++){
-    // Bind its shader
-    Entity *entity = &scene->entities[i];
-    shader_use(entity->shader);
-
-    // Get its model matrix
-    mat4 model;
-    glm_mat4_identity(model);
-    // Translate
-    glm_translate(model, entity->position);
-    // Rotate
-    glm_rotate_y(model, glm_rad(entity->rotation[1]), model);
-    glm_rotate_x(model, glm_rad(entity->rotation[0]), model);
-    glm_rotate_z(model, glm_rad(entity->rotation[2]), model);
-    // Scale
-    glm_scale(model, entity->scale);
-
-    // Set normal matrix uniform
-    mat3 transposed_mat3;
-    mat3 normal;
-    glm_mat4_pick3t(model, transposed_mat3);
-    glm_mat3_inv(transposed_mat3, normal);
-    shader_set_mat3(entity->shader, "normal", normal);
-
-    // Set its model, view, and projection matrix uniforms
-    shader_set_mat4(entity->shader, "model", model);
-    shader_set_mat4(entity->shader, "view", view);
-    shader_set_mat4(entity->shader, "projection", projection);
-
-    // Lighting uniforms
-    shader_set_vec3(entity->shader, "dirLight.direction", scene->light->direction);
-    shader_set_vec3(entity->shader, "dirLight.ambient", scene->light->ambient);
-    shader_set_vec3(entity->shader, "dirLight.diffuse", scene->light->diffuse);
-    shader_set_vec3(entity->shader, "dirLight.specular", scene->light->specular);
-
-    // Set camera position as viewPos in the fragment shader
-    shader_set_vec3(entity->shader, "viewPos", scene->player.camera->position);
-
-    // Draw model
-    model_draw(entity->model, entity->shader);
-  }
-
   float skyboxVertices[] = {
     // positions          
     -1.0f,  1.0f, -1.0f,
@@ -223,47 +180,87 @@ void scene_render(Scene *scene){
   char *faces[4] = "front.jpg";
   char *faces[5] = "back.jpg";
 
-  unsigned int skyboxVAO, skyboxVBO;
-  glGenVertexArrays(1, &skyboxVAO);
-  glGenBuffers(1, &skyboxVBO);
-  glBindVertexArray(skyboxVAO);
-  glBindBuffer(GL_ARRAY_BUFFER, skyboxVBO);
-  glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), &skyboxVertices, GL_STATIC_DRAW);
-  glEnableVertexAttribArray(0);
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+  // unsigned int skyboxVAO, skyboxVBO;
+  // glGenVertexArrays(1, &skyboxVAO);
+  // glGenBuffers(1, &skyboxVBO);
+  // glBindVertexArray(skyboxVAO);
+  // glBindBuffer(GL_ARRAY_BUFFER, skyboxVBO);
+  // glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), &skyboxVertices, GL_STATIC_DRAW);
+  // glEnableVertexAttribArray(0);
+  // glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+  //
+  // GLuint cubemap_ID;
+  // glGenTextures(1, &cubemap_ID);
+  // glBindTexture(GL_TEXTURE_CUBE_MAP, cubemap_id);
+  //
+  // int width, height, channels;
+  // for (unsigned int i = 0; i < 6; i++){
+  //   unsigned char *data = stbi_load(faces[i]), &width, &height, &channels, 0);
+  //   if (!data){
+  //     printf("Error: failed to load cubemap face %s\n", faces[i]);
+  //     return 0;
+  //   }
+  //   glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+  //   stbi_image_free(data);
+  // }
+  // glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  // glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  // glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+  // glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+  // glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+  //
+  // // cubemap shader
+  // Shader *cubemapShader = shader_create();
+  //
+  // glDepthMask(GL_FALSE);
+  // shader_use(cubemapShader);
+  // shader_set_mat4(cubemapShader, "view", view);
+  // glBindVertexArray(skyboxVAO);
+  // glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
+  // glDrawArrays(GL_TRIANGLES
 
-  GLuint cubemap_ID;
-  glGenTextures(1, &cubemap_ID);
-  glBindTexture(GL_TEXTURE_CUBE_MAP, cubemap_id);
+  // For each entity in the scene
+  for(int i = 0; i < scene->num_entities; i++){
+    // Bind its shader
+    Entity *entity = &scene->entities[i];
+    shader_use(entity->shader);
 
-  int width, height, channels;
-  for (unsigned int i = 0; i < 6; i++){
-    unsigned char *data = stbi_load(faces[i]), &width, &height, &channels, 0);
-    if (!data){
-      printf("Error: failed to load cubemap face %s\n", faces[i]);
-      return 0;
-    }
-    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-    stbi_image_free(data);
+    // Get its model matrix
+    mat4 model;
+    glm_mat4_identity(model);
+    // Translate
+    glm_translate(model, entity->position);
+    // Rotate
+    glm_rotate_y(model, glm_rad(entity->rotation[1]), model);
+    glm_rotate_x(model, glm_rad(entity->rotation[0]), model);
+    glm_rotate_z(model, glm_rad(entity->rotation[2]), model);
+    // Scale
+    glm_scale(model, entity->scale);
+
+    // Set normal matrix uniform
+    mat3 transposed_mat3;
+    mat3 normal;
+    glm_mat4_pick3t(model, transposed_mat3);
+    glm_mat3_inv(transposed_mat3, normal);
+    shader_set_mat3(entity->shader, "normal", normal);
+
+    // Set its model, view, and projection matrix uniforms
+    shader_set_mat4(entity->shader, "model", model);
+    shader_set_mat4(entity->shader, "view", view);
+    shader_set_mat4(entity->shader, "projection", projection);
+
+    // Lighting uniforms
+    shader_set_vec3(entity->shader, "dirLight.direction", scene->light->direction);
+    shader_set_vec3(entity->shader, "dirLight.ambient", scene->light->ambient);
+    shader_set_vec3(entity->shader, "dirLight.diffuse", scene->light->diffuse);
+    shader_set_vec3(entity->shader, "dirLight.specular", scene->light->specular);
+
+    // Set camera position as viewPos in the fragment shader
+    shader_set_vec3(entity->shader, "viewPos", scene->player.camera->position);
+
+    // Draw model
+    model_draw(entity->model, entity->shader);
   }
-  glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-  glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-  glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-  glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-  glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-
-  glDepthFunc(GL_LEQUAL);  // change depth function so depth test passes when values are equal to depth buffer's content
-  skyboxShader.use();
-  view = glm::mat4(glm::mat3(camera.GetViewMatrix())); // remove translation from the view matrix
-  skyboxShader.setMat4("view", view);
-  skyboxShader.setMat4("projection", projection);
-  // skybox cube
-  glBindVertexArray(skyboxVAO);
-  glActiveTexture(GL_TEXTURE0);
-  glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
-  glDrawArrays(GL_TRIANGLES, 0, 36);
-  glBindVertexArray(0);
-  glDepthFunc(GL_LESS); // set depth function back to default
 }
 
 void scene_pause(Scene *scene){
