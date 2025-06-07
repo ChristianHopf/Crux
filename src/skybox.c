@@ -1,14 +1,21 @@
-#include <stbi_image/stbi_image.h>
 #include "skybox.h"
 
-struct Skybox skybox_create(){
+struct Skybox *skybox_create(){
+
+  // Allocate struct Skybox
+  struct Skybox *skybox = (struct Skybox *)malloc(sizeof(struct Skybox));
+  if (!skybox){
+    printf("Error: failed to allocate skybox in skybox_create\n");
+    return NULL;
+  }
+
   // Generate VAO, VBO
   GLuint cubemapVAO, cubemapVBO;
   glGenVertexArrays(1, &cubemapVAO);
   glGenBuffers(1, &cubemapVBO);
 
   // Bind to VAO
-  glBindVertexArray(skyboxVAO);
+  glBindVertexArray(cubemapVAO);
 
   // Buffer cubemap vertices
   glBindBuffer(GL_ARRAY_BUFFER, cubemapVBO);
@@ -33,7 +40,7 @@ struct Skybox skybox_create(){
 
     unsigned char *data = stbi_load(facePath, &width, &height, &channels, 0);
     if (!data){
-      printf("Error: failed to load cubemap face %s\n", faces[i]);
+      printf("Error: failed to load cubemap face %s\n", cubemapFaces[i]);
       return NULL;
     }
 
@@ -55,11 +62,10 @@ struct Skybox skybox_create(){
     return NULL;
   }
 
-  struct Skybox skybox = {
-    .cubemap_texture_id = cubemap_texture_id,
-    .cubemapVAO = cubemapVAO,
-    .cubemapVBO = cubemapVBO,
-    .shader = skyboxShader
-  };
+  skybox->cubemap_texture_id = cubemap_texture_id;
+  skybox->cubemapVAO = cubemapVAO;
+  skybox->cubemapVBO = cubemapVBO;
+  skybox->shader = skyboxShader;
+  
   return skybox;
 }

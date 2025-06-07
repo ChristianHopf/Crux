@@ -87,10 +87,6 @@ Scene *scene_create(){
   //   .shader = shader
   // };
   // scene->entities[scene->num_entities++] = oiiai;
-  
-  // Load cubemap for skybox
-
-  
 
   return scene;
 }
@@ -179,22 +175,22 @@ void scene_render(Scene *scene){
 
   // Skybox
   glDepthFunc(GL_LEQUAL);
-  shader_use(scene->skybox.shader);
+  shader_use(scene->skybox->shader);
 
   // Set view and projection matrix uniforms
   mat3 view_skybox_mat3;
   mat4 view_skybox;
   glm_mat4_pick3(view, view_skybox_mat3);
   glm_mat4_ins3(view_skybox_mat3, view_skybox);
-  shader_set_mat4(scene->skybox.shader, "view", view_skybox);
-  shader_set_mat4(scene->skybox.shader, "projection", projection);
+  shader_set_mat4(scene->skybox->shader, "view", view_skybox);
+  shader_set_mat4(scene->skybox->shader, "projection", projection);
 
-  // bind vertex array
-  glBindVertexArray(scene->skybox.cubemapVAO);
-  // bind textures
+  // Bind vertex array
+  glBindVertexArray(scene->skybox->cubemapVAO);
+  // Bind texture
   glActiveTexture(GL_TEXTURE0);
-  glBindTexture(GL_TEXTURE_CUBE_MAP, scene->skybox.cubemap_texture_id);
-  // draw triangles
+  glBindTexture(GL_TEXTURE_CUBE_MAP, scene->skybox->cubemap_texture_id);
+  // Draw triangles
   glDrawArrays(GL_TRIANGLES, 0, 36);
   
   glBindVertexArray(0);
@@ -208,9 +204,12 @@ void scene_pause(Scene *scene){
 
 void free_scene(Scene *scene){
   if (scene){
+    // Rewrite this to actually free everything
     free(scene->entities);
     free(scene->player.camera);
     free(scene->light);
+    free(scene->skybox->shader);
+    free(scene->skybox);
     free(scene);
   }
 }

@@ -19,7 +19,7 @@ typedef struct {
   Entity *entities;
   int num_entities;
   int max_entities;
-  struct Skybox skybox;
+  struct Skybox *skybox;
   struct Player player;
   Light *light;
   bool paused;
