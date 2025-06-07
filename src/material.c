@@ -117,18 +117,20 @@ GLuint material_load_texture(const char *path, enum aiTextureType type){
   // as their internalformat arguments.
   GLenum internal_format, pixel_format;
   if (channels == 4){
-    internal_format = GL_RGBA;
+    if (type == aiTextureType_DIFFUSE | type == aiTextureType_BASE_COLOR){
+      internal_format = GL_SRGB_ALPHA;
+    }
+    else{
+      internal_format = GL_RGBA;
+    }
     pixel_format = GL_RGBA;
   }
   else if (channels == 3){
-    if (type == aiTextureType_DIFFUSE){
+    if (type == aiTextureType_DIFFUSE | type == aiTextureType_BASE_COLOR){
       internal_format = GL_SRGB;
-      pixel_format = GL_RGB;
     }
-    else{
-      internal_format = GL_RGB;
-      pixel_format = GL_RGB;
-    }
+    internal_format = GL_RGB;
+    pixel_format = GL_RGB;
   }
   else if (channels == 1){
     internal_format = GL_RED;
