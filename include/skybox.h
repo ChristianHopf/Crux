@@ -68,6 +68,5 @@ static char *cubemapFaces[] = {
 // Generate VBO, VAO, and texture IDs for a cubemap, return as a struct Skybox
 // (Could later take parameters for specific cubemap textures. For now, hardcode everything)
 struct Skybox skybox_create();
-void skybox_draw(struct Skybox *skybox);
 
 #endif

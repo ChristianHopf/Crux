@@ -1,3 +1,4 @@
+#include <cglm/mat4.h>
 #include <glad/glad.h>
 #include <cglm/cglm.h>
 #include <cglm/mat3.h>
@@ -133,47 +134,6 @@ void scene_render(Scene *scene){
   camera_get_view_matrix(scene->player.camera, view);
   glm_perspective(glm_rad(scene->player.camera->fov), 800.0f / 600.0f, 0.1f, 100.0f, projection);
 
-  // Cubemap (move this later, probably to a (optional?) scene property)
-  
-  unsigned int skyboxVAO, skyboxVBO;
-  glGenVertexArrays(1, &skyboxVAO);
-  glGenBuffers(1, &skyboxVBO);
-  glBindVertexArray(skyboxVAO);
-  glBindBuffer(GL_ARRAY_BUFFER, skyboxVBO);
-  glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), &skyboxVertices, GL_STATIC_DRAW);
-  glEnableVertexAttribArray(0);
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-
-  GLuint cubemap_ID;
-  glGenTextures(1, &cubemap_ID);
-  glBindTexture(GL_TEXTURE_CUBE_MAP, cubemap_id);
-
-  int width, height, channels;
-  for (unsigned int i = 0; i < 6; i++){
-    unsigned char *data = stbi_load(faces[i]), &width, &height, &channels, 0);
-    if (!data){
-      printf("Error: failed to load cubemap face %s\n", faces[i]);
-      return 0;
-    }
-    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-    stbi_image_free(data);
-  }
-  glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-  glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-  glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-  glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-  glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-
-  // cubemap shader
-  Shader *cubemapShader = shader_create();
-
-  glDepthMask(GL_FALSE);
-  shader_use(cubemapShader);
-  shader_set_mat4(cubemapShader, "view", view);
-  glBindVertexArray(skyboxVAO);
-  glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
-  glDrawArrays(GL_TRIANGLES
-
   // For each entity in the scene
   for(int i = 0; i < scene->num_entities; i++){
     // Bind its shader
@@ -217,8 +177,28 @@ void scene_render(Scene *scene){
     model_draw(entity->model, entity->shader);
   }
 
-  // Draw skybox
+  // Skybox
+  glDepthFunc(GL_LEQUAL);
+  shader_use(scene->skybox.shader);
+
+  // Set view and projection matrix uniforms
+  mat3 view_skybox_mat3;
+  mat4 view_skybox;
+  glm_mat4_pick3(view, view_skybox_mat3);
+  glm_mat4_ins3(view_skybox_mat3, view_skybox);
+  shader_set_mat4(scene->skybox.shader, "view", view_skybox);
+  shader_set_mat4(scene->skybox.shader, "projection", projection);
+
+  // bind vertex array
+  glBindVertexArray(scene->skybox.cubemapVAO);
+  // bind textures
+  glActiveTexture(GL_TEXTURE0);
+  glBindTexture(GL_TEXTURE_CUBE_MAP, scene->skybox.cubemap_texture_id);
+  // draw triangles
+  glDrawArrays(GL_TRIANGLES, 0, 36);
   
+  glBindVertexArray(0);
+  glDepthFunc(GL_LESS);
 }
 
 void scene_pause(Scene *scene){
