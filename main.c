@@ -192,6 +192,9 @@ int main(){
     return -1;
   }
 
+  // Floor for basic physics development
+  
+
 	// Render loop
 	while (!glfwWindowShouldClose(engine->window)){
 		// Per-frame timing logic
@@ -203,7 +206,7 @@ int main(){
 
 		// Handle input, update, render
 		processInput(engine->window);
-		//scene_update(engine->active_scene, engine->deltaTime);
+		scene_update(engine->active_scene, engine->deltaTime);
     scene_render(engine->active_scene);
 
 		// Check and call events, swap buffers

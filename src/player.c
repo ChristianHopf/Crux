@@ -1,4 +1,5 @@
 #include "player.h"
+#include <cglm/vec3.h>
 
 void player_init(struct Player *player){
   vec3 cameraPos = {0.0f, 0.0f, 3.0f};
@@ -16,4 +17,17 @@ void player_init(struct Player *player){
   }
 
   player->camera = camera;
+}
+
+void player_jump(struct Player *player){
+  // Basic jump: add a constant value to the player's y axis velocity
+  glm_vec3_add(player->velocity, (vec3){0.0f, 3.0f, 0.0f}, player->velocity);
+}
+
+void player_update(struct Player *player, float delta_time){
+  // Update the camera position according to the player's velocity and delta_time
+  vec3 update;
+  glm_vec3_copy(player->velocity, update);
+  glm_vec3_scale(update, delta_time, update);
+  glm_vec3_add(update, player->camera.position, player->camera.position);
 }

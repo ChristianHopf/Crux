@@ -42,51 +42,57 @@ Scene *scene_create(){
     return NULL;
   }
 
-  // Model shader (for now, only use one shader)
-	Shader *shader = shader_create("shaders/normal/shader.vs", "shaders/normal/shader.fs");
-	if (!shader->ID){
-		printf("Error: failed to create shader program\n");
-		glfwTerminate();
-		return NULL;
-	}
+  // Shader and entities for physics dev
+  Shader *shader = shader_create("shaders/shader.vs", "shaders/dirlight/shader.fs");
+  if (!shader){
+    printf("Error: failed to create shader program\n");
+    glfwTerminate();
+    return NULL;
+  }
+  // Shader *planeShader = shader_create("shaders/basic/plane.vs", "shaders/dirlight/shader.fs");
+  // if (!planeShader){
+  //   printf("Error: failed to create plane shader program\n");
+  //   glfwTerminate();
+  //   return NULL;
+  // }
 
-  Model *crystalModel = (Model *)malloc(sizeof(Model));
-  if (!crystalModel){
+  Model *oiiaiModel = (Model *)malloc(sizeof(Model));
+  if (!oiiaiModel){
     printf("Error: failed to allocate oiiaiModel\n");
     return NULL;
   }
-  model_load(crystalModel, "resources/objects/crystal/scene.gltf");
-  Entity crystal = {
+  model_load(oiiaiModel, "resources/objects/oiiai/scene.gltf");
+  Entity oiiai = {
     .ID = 1,
     .position = {0.0f, 0.0f, 0.0f},
     .rotation = {0.0f, 0.0f, 0.0f},
-    .scale = {10.0f, 10.0f, 10.0f},
-    .model = crystalModel,
+    .scale = {3.0f, 3.0f, 3.0f},
+    .model = oiiaiModel,
     .shader = shader
   };
-  scene->entities[scene->num_entities++] = crystal;
+  scene->entities[scene->num_entities++] = oiiai;
+
+  Model *planeModel = (Model *)malloc(sizeof(Model));
+  if (!planeModel){
+    printf("Error: failed to allocate oiiaiModel\n");
+    return NULL;
+  }
+  model_load(planeModel, "resources/basic/plane/scene.gltf");
+  Entity plane = {
+    .ID = 1,
+    .position = {0.0f, -1.0f, 0.0f},
+    .rotation = {0.0f, 0.0f, 0.0f},
+    .scale = {3.0f, 3.0f, 3.0f},
+    .model = planeModel,
+    .shader = shader
+  };
+  scene->entities[scene->num_entities++] = plane;
 
   // Skybox
   scene->skybox = skybox_create();
   if (!scene->skybox){
     printf("Error: failed to create skybox in scene_create\n");
   }
-
-  // Model *oiiaiModel = (Model *)malloc(sizeof(Model));
-  // if (!oiiaiModel){
-  //   printf("Error: failed to allocate oiiaiModel\n");
-  //   return NULL;
-  // }
-  // model_load(oiiaiModel, "resources/objects/oiiai/scene.gltf");
-  // Entity oiiai = {
-  //   .ID = 1,
-  //   .position = {0.0f, 0.0f, 0.0f},
-  //   .rotation = {0.0f, 0.0f, 0.0f},
-  //   .scale = {3.0f, 3.0f, 3.0f},
-  //   .model = oiiaiModel,
-  //   .shader = shader
-  // };
-  // scene->entities[scene->num_entities++] = oiiai;
 
   return scene;
 }

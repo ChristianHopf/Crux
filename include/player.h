@@ -5,9 +5,11 @@
 
 struct Player {
   struct Camera *camera;
+  vec3 velocity;
 };
 
 void player_init(struct Player *player);
-//void update_player(struct Player *player, float delta_time);
+void player_jump(struct Player *player);
+void player_update(struct Player *player, float delta_time);
 
 #endif
