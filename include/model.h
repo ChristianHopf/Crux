@@ -16,6 +16,8 @@ typedef struct {
     vec3 position;
     vec3 normal;
     vec2 tex_coord;
+    vec3 tangent;
+    vec3 bitangent;
 } Vertex;
 
 typedef struct {

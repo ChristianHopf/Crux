@@ -16,7 +16,7 @@
 bool model_load(Model *model, const char *path){
   const struct aiScene* scene = aiImportFile(path, aiProcessPreset_TargetRealtime_Fast);
 
-  if (!scene || !scene->mRootNode || !scene->mMeshes || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE) {
+  if(!scene || !scene->mRootNode || !scene->mMeshes || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE) {
     printf("ERROR::ASSIMP:: %s\n", aiGetErrorString());
     return false;
   }
@@ -145,6 +145,10 @@ void model_process_mesh(struct aiMesh *ai_mesh, const struct aiScene *scene, str
     } else{
       glm_vec2_copy((vec2){0.0f, 0.0f}, vertices[i].tex_coord);
     }
+
+    // Tangent, Bitangent
+    memcpy(vertices[i].tangent, &ai_mesh->mTangents[i], sizeof(float * 3));
+    memcpy(vertices[i].bitangent, &ai_mesh->mBitangents[i], sizeof(float * 3));
   }
 
   // Allocate memory for indices
@@ -240,6 +244,16 @@ void model_draw(Model *model, Shader *shader){
           shader_set_int(shader, texture_uniform, j);
 
           specular_num++;
+        }
+        else if (strcmp(mat->textures[j].texture_type, "normal") == 0){
+
+          glActiveTexture(GL_TEXTURE0 + j);
+          glBindTexture(GL_TEXTURE_2D, mat->textures[j].texture_id);
+          shader_set_int(shader, "material.normal", j);
+
+          // Set tangent and bitangent uniforms
+          vec3 tangent;
+          tangent[0] = model->meshes[i]->m
         }
         else if (strcmp(mat->textures[j].texture_type, "emissive") == 0){
 
