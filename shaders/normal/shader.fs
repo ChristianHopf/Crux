@@ -2,7 +2,7 @@
 
 in VS_OUT {
   vec2 TexCoord;
-  vec3 TangentLightPos;
+  //vec3 TangentLightPos;
   vec3 TangentViewPos;
   vec3 TangentFragPos;
 } fs_in;

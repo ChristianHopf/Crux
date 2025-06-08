@@ -7,7 +7,7 @@ layout (location = 4) in vec3 aBitangent;
 
 out VS_OUT {
   vec2 TexCoord;
-  vec3 TangentLightPos;
+  //vec3 TangentLightPos;
   vec3 TangentViewPos;
   vec3 TangentFragPos;
 } vs_out;
@@ -28,7 +28,7 @@ void main(){
   mat3 TBN = mat3(T, B, N);
 
   vs_out.TexCoord = aTexCoord;
-  vs_out.TangentLightPos = TBN * lightPos;
+  //vs_out.TangentLightPos = TBN * lightPos;
   vs_out.TangentViewPos = TBN * viewPos;
   vs_out.TangentFragPos = TBN * FragPos;
 

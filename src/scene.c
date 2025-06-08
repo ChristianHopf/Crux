@@ -43,7 +43,7 @@ Scene *scene_create(){
   }
 
   // Model shader (for now, only use one shader)
-	Shader *shader = shader_create("shaders/shader.vs", "shaders/dirlight/shader.fs");
+	Shader *shader = shader_create("shaders/normal/shader.vs", "shaders/normal/shader.fs");
 	if (!shader->ID){
 		printf("Error: failed to create shader program\n");
 		glfwTerminate();

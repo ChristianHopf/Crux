@@ -147,8 +147,8 @@ void model_process_mesh(struct aiMesh *ai_mesh, const struct aiScene *scene, str
     }
 
     // Tangent, Bitangent
-    memcpy(vertices[i].tangent, &ai_mesh->mTangents[i], sizeof(float * 3));
-    memcpy(vertices[i].bitangent, &ai_mesh->mBitangents[i], sizeof(float * 3));
+    memcpy(vertices[i].tangent, &ai_mesh->mTangents[i], sizeof(float) * 3);
+    memcpy(vertices[i].bitangent, &ai_mesh->mBitangents[i], sizeof(float) * 3);
   }
 
   // Allocate memory for indices
@@ -195,6 +195,12 @@ void model_process_mesh(struct aiMesh *ai_mesh, const struct aiScene *scene, str
   // Tex_coord
   glEnableVertexAttribArray(2);
   glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, tex_coord));
+  // Tangent
+  glEnableVertexAttribArray(3);
+  glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, tangent));
+  // Bitangent
+  glEnableVertexAttribArray(4);
+  glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, bitangent));
 
   glBindVertexArray(0);
 
@@ -250,10 +256,6 @@ void model_draw(Model *model, Shader *shader){
           glActiveTexture(GL_TEXTURE0 + j);
           glBindTexture(GL_TEXTURE_2D, mat->textures[j].texture_id);
           shader_set_int(shader, "material.normal", j);
-
-          // Set tangent and bitangent uniforms
-          vec3 tangent;
-          tangent[0] = model->meshes[i]->m
         }
         else if (strcmp(mat->textures[j].texture_type, "emissive") == 0){
 
