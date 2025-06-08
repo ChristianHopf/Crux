@@ -8,6 +8,7 @@
 #include "shader.h"
 #include "model.h"
 #include "scene.h"
+#include "player.h"
 
 typedef struct {
   GLFWwindow *window;
@@ -35,6 +36,7 @@ float lastY = 300.0f;
 // Lighting
 vec3 lightPos = {1.2f, 0.5f, 2.0f};
 
+static int last_space_state = GLFW_RELEASE;
 void processInput(GLFWwindow *window){
 	if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS){
 		glfwSetWindowShouldClose(window, 1);
@@ -63,9 +65,15 @@ void processInput(GLFWwindow *window){
 	if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS){
     camera_process_keyboard_input(camera, CAMERA_DOWN, engine->deltaTime);
   }
-	if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS){
-    camera_process_keyboard_input(camera, CAMERA_UP, engine->deltaTime);
+
+  // Only process these inputs a single time per press
+  int space_state = glfwGetKey(window, GLFW_KEY_SPACE);
+	if (space_state == GLFW_PRESS && last_space_state == GLFW_RELEASE){
+    printf("hi\n");
+    player_jump(&engine->active_scene->player);
+    //camera_process_keyboard_input(camera, CAMERA_UP, engine->deltaTime);
   }
+  last_space_state = space_state;
 }
 
 void framebuffer_size_callback(GLFWwindow *window, int width, int height){

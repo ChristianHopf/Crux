@@ -103,11 +103,15 @@ void scene_update(Scene *scene, float deltaTime){
     return;
   }
 
+  // Timing
   static float total_time = 0.0f;
   total_time += deltaTime;
 
   float rotationSpeed = 100.0f;
   float lightSpeed = 1.0f;
+
+  // Update player
+  player_update(&scene->player, deltaTime);
 
   // Update entities
   for(int i = 0; i < scene->num_entities; i++){
