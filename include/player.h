@@ -1,11 +1,13 @@
 #ifndef PLAYER_H
 #define PLAYER_H
 
+#include <stdbool.h>
 #include "camera.h"
 
 struct Player {
   struct Camera *camera;
   vec3 velocity;
+  bool is_grounded;
 };
 
 void player_init(struct Player *player);
