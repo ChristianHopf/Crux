@@ -39,7 +39,7 @@ vec4 calc_dir_light(DirLight light, vec3 norm, vec3 viewDir);
 void main(){
 
   // Sample normal map
-  vec3 normal = texture(normalMap, fs_in.TexCoord).rgb;
+  vec3 normal = texture(material.normal, fs_in.TexCoord).rgb;
   normal = normalize(normal * 2.0 - 1.0);
 
   // View direction
@@ -62,7 +62,7 @@ vec4 calc_dir_light(DirLight light, vec3 norm, vec3 viewDir){
   vec3 lightDir = normalize(-light.direction);
 
   // Ambient
-  vec3 ambient = light.ambient * vec3(texture(material.diffuse1, TexCoord));
+  vec3 ambient = light.ambient * vec3(texture(material.diffuse1, fs_in.TexCoord));
 
   // Diffuse
   float diff = max(dot(norm, lightDir), 0.0);

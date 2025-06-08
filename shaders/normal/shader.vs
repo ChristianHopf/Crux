@@ -12,7 +12,8 @@ out VS_OUT {
   vec3 TangentFragPos;
 } vs_out;
 
-uniform mat3 normal;
+uniform vec3 viewPos;
+//uniform mat3 normal;
 
 uniform mat4 model;
 uniform mat4 view;
