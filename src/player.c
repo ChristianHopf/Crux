@@ -26,7 +26,11 @@ void player_jump(struct Player *player){
 }
 
 void player_update(struct Player *player, float delta_time){
-  // Update the camera position according to the player's velocity and delta_time
+  // First apply gravity to the player's velocity
+  float gravity = 9.8 * delta_time;
+  glm_vec3_add(player->velocity, (vec3){0.0f, gravity, 0.0f}, player->velocity);
+
+  // Add player's velocity to the camera position, scaled by delta_time
   vec3 update;
   glm_vec3_copy(player->velocity, update);
   glm_vec3_scale(update, delta_time, update);
