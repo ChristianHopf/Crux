@@ -192,7 +192,7 @@ struct AABB model_process_mesh(struct aiMesh *ai_mesh, const struct aiScene *sce
   for(unsigned int i = 0; i < ai_mesh->mNumFaces; i++){
     struct aiFace face = ai_mesh->mFaces[i];
     for(unsigned int j = 0; j < face.mNumIndices; j++){
-      indices[index] = face.mIndices[j];
+      indices[num_indices] = face.mIndices[j];
       num_indices++;
     }
   }

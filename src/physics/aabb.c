@@ -13,9 +13,9 @@ void AABB_merge(struct AABB *a, struct AABB *b){
   a->min[1] = fminf(a->min[1], b->min[1]);
   a->min[2] = fminf(a->min[2], b->min[2]);
 
-  a->max[0] = fminf(a->max[0], b->max[0]);
-  a->max[1] = fminf(a->max[1], b->max[1]);
-  a->max[2] = fminf(a->max[2], b->max[2]);
+  a->max[0] = fmaxf(a->max[0], b->max[0]);
+  a->max[1] = fmaxf(a->max[1], b->max[1]);
+  a->max[2] = fmaxf(a->max[2], b->max[2]);
 }
 
 // Figure out an optimal algorithm for this later.
@@ -28,21 +28,22 @@ void AABB_update_by_vertex(struct AABB *aabb, vec3 vertex){
   aabb->min[2] = fminf(aabb->min[2], vertex[2]);
 
   // Maximum
-  aabb->max[0] = fminf(aabb->max[0], vertex[0]);
-  aabb->max[1] = fminf(aabb->max[1], vertex[1]);
-  aabb->max[2] = fminf(aabb->max[2], vertex[2]);
+  aabb->max[0] = fmaxf(aabb->max[0], vertex[0]);
+  aabb->max[1] = fmaxf(aabb->max[1], vertex[1]);
+  aabb->max[2] = fmaxf(aabb->max[2], vertex[2]);
 }
 
-// For now, assume the user has created the shader program.
+// For now, assume the user has created the shader program and set its uniforms
 // Performance will be very bad because I'm generating new buffers
 // to buffer data that might not change on every frame.
 // Could make a solution with static buffer IDs and glBufferSubData later.
 void AABB_render(struct AABB *aabb){
-  // Use shader program and set uniforms
-  shader_use(aabbShader);
-
+  printf("AABB {\n");
+  printf("  min: (%.2f, %.2f, %.2f)\n", aabb->min[0], aabb->min[1], aabb->min[2]);
+  printf("  max: (%.2f, %.2f, %.2f)\n", aabb->max[0], aabb->max[1], aabb->max[2]);
+  printf("}\n");
   // Define vertices and indices for the box, based on min and max
-  float vertices[8] = {
+  float vertices[24] = {
     aabb->max[0], aabb->max[1], aabb->max[2],
     aabb->max[0], aabb->max[1], aabb->min[2],
     aabb->max[0], aabb->min[1], aabb->min[2],
@@ -82,7 +83,7 @@ void AABB_render(struct AABB *aabb){
   glBufferData(GL_ARRAY_BUFFER, 24 * sizeof(float), vertices, GL_STATIC_DRAW);
 
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-  glBufferData(GL_ELEMENT_ARRAY_BUFFER, index * sizeof(unsigned int), indices, GL_STATIC_DRAW);
+  glBufferData(GL_ELEMENT_ARRAY_BUFFER, 24 * sizeof(unsigned int), indices, GL_STATIC_DRAW);
 
   // Config attrib pointer
   glEnableVertexAttribArray(0);

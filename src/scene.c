@@ -1,4 +1,4 @@
-#include <GLFW/glfw3.h>
+//#include <GLFW/glfw3.h>
 #include <cglm/mat4.h>
 #include <glad/glad.h>
 #include <cglm/cglm.h>
@@ -53,7 +53,7 @@ Scene *scene_create(){
     return NULL;
   }
   Shader *aabbShader = shader_create("shaders/physics/aabb.vs", "shaders/physics/aabb.fs");
-  if (!aabbshader){
+  if (!aabbShader){
     printf("Error: failed to create AABB shader\n");
     glfwTerminate();
     return NULL;
@@ -192,7 +192,11 @@ void scene_render(Scene *scene){
     model_draw(entity->model, entity->shader);
 
     // Render the model's AABB
-    AABB_render(&model->aabb);
+    shader_use(aabbShader);
+    shader_set_mat4(aabbShader, "model", model);
+    shader_set_mat4(aabbShader, "view", view);
+    shader_set_mat4(aabbShader, "projection", projection);
+    AABB_render(&entity->model->aabb);
   }
 
   // Skybox
