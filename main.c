@@ -1,8 +1,6 @@
-#include <cglm/cam.h>
+#include <cglm/mat4.h>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
-#include <ft2build.h>
-#include FT_FREETYPE_H
 #include <stdio.h>
 #include <stdbool.h>
 #include "stb_image/stb_image.h"
@@ -11,8 +9,6 @@
 #include "shader.h"
 #include "model.h"
 #include "scene.h"
-#include "player.h"
-#include "text.h"
 
 typedef struct {
   GLFWwindow *window;
@@ -29,8 +25,8 @@ void scroll_callback(GLFWwindow *window, double xoffset, double yoffset);
 void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods);
 
 // Screen settings
-const unsigned int SCREEN_WIDTH = 1024;
-const unsigned int SCREEN_HEIGHT = 768;
+const unsigned int SCREEN_WIDTH = 800;
+const unsigned int SCREEN_HEIGHT = 600;
 
 // Mouse
 bool firstMouse = true;
@@ -40,13 +36,12 @@ float lastY = 300.0f;
 // Lighting
 vec3 lightPos = {1.2f, 0.5f, 2.0f};
 
-static int last_space_state = GLFW_RELEASE;
 void processInput(GLFWwindow *window){
 	if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS){
 		glfwSetWindowShouldClose(window, 1);
 	}
   Engine *engine = (Engine *)glfwGetWindowUserPointer(window);
-  struct Camera *camera = engine->active_scene->player.camera;
+  Camera *camera = engine->active_scene->camera;
 
   // Don't process input (other than the Escape key) if the game is paused
   if (engine->active_scene->paused){
@@ -69,14 +64,9 @@ void processInput(GLFWwindow *window){
 	if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS){
     camera_process_keyboard_input(camera, CAMERA_DOWN, engine->deltaTime);
   }
-
-  // Only process these inputs a single time per press
-  int space_state = glfwGetKey(window, GLFW_KEY_SPACE);
-	if (space_state == GLFW_PRESS && last_space_state == GLFW_RELEASE){
-    player_jump(&engine->active_scene->player);
-    //camera_process_keyboard_input(camera, CAMERA_UP, engine->deltaTime);
+	if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS){
+    camera_process_keyboard_input(camera, CAMERA_UP, engine->deltaTime);
   }
-  last_space_state = space_state;
 }
 
 void framebuffer_size_callback(GLFWwindow *window, int width, int height){
@@ -94,7 +84,7 @@ void mouse_callback(GLFWwindow *window, double xpos, double ypos){
     return;
   }
 
-  struct Camera *camera = engine->active_scene->player.camera;
+  Camera *camera = engine->active_scene->camera;
 
 	if (firstMouse){
 		lastX = (float)xpos;
@@ -113,7 +103,7 @@ void mouse_callback(GLFWwindow *window, double xpos, double ypos){
 
 void scroll_callback(GLFWwindow *window, double xoffset, double yoffset){
   Engine *engine = (Engine *)glfwGetWindowUserPointer(window);
-  struct Camera *camera = engine->active_scene->player.camera;
+  Camera *camera = engine->active_scene->camera;
   camera_process_scroll_input(camera, yoffset);
 }
 
@@ -171,12 +161,6 @@ Engine *engine_create(){
 	// Configure global OpenGL state
 	glEnable(GL_DEPTH_TEST);
   glEnable(GL_CULL_FACE);
-  // glEnable(GL_FRAMEBUFFER_SRGB);
-
-  glEnable(GL_BLEND);
-  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-  //glBlendFunc(GL_ONE, GL_ONE); // additive blending
-
   //glDepthFunc(GL_ALWAYS);
   //glEnable(GL_STENCIL_TEST);
   //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -203,8 +187,6 @@ int main(){
     return -1;
   }
 
-  load_font_face();
-
 	// Render loop
 	while (!glfwWindowShouldClose(engine->window)){
 		// Per-frame timing logic
@@ -212,11 +194,11 @@ int main(){
 		engine->deltaTime = currentFrame - engine->lastFrame;
 		engine->lastFrame = currentFrame;
 
-		printf("FPS: %f\n", 1.0 / engine->deltaTime);
+    printf("FPS: %f\n", 1.0 / engine->deltaTime);
 
-		// Handle input, update, render
+    // Handle input, update, render
 		processInput(engine->window);
-		scene_update(engine->active_scene, engine->deltaTime);
+    scene_update(engine->active_scene, engine->deltaTime);
     scene_render(engine->active_scene);
 
 		// Check and call events, swap buffers
