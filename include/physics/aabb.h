@@ -16,4 +16,6 @@ bool AABB_intersect(struct AABB *a, struct AABB *b){
     (a->min[2] <= b->max[2] && a->max[2] >= b->min[2]);
 }
 
+void AABB_merge(struct AABB *a, struct AABB *b);
+
 #endif

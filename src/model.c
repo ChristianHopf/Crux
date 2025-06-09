@@ -75,21 +75,31 @@ bool model_load(struct Model *model, const char *path){
     // }
   }
 
+  // Initialize model AABB
+  vec3 min = {FLT_MAX, FLT_MAX, FLT_MAX};
+  vec2 max = {FLT_MIN, FLT_MIN, FLT_MIN};
+  model->AABB = {min, max};
+
   // Process the root node
   unsigned int model_mesh_index = 0;
   struct aiMatrix4x4 parent_transform;
   aiIdentityMatrix4(&parent_transform);
-  model_process_node(model, scene->mRootNode, scene, parent_transform, &model_mesh_index);
+  model->AABB = model_process_node(model, scene->mRootNode, scene, parent_transform, &model_mesh_index);
 
   aiReleaseImport(scene);
   return true;
 }
 
-void model_process_node(struct Model *model, struct aiNode *node, const struct aiScene *scene, struct aiMatrix4x4 parent_transform, unsigned int *index){
+struct AABB model_process_node(struct Model *model, struct aiNode *node, const struct aiScene *scene, struct aiMatrix4x4 parent_transform, unsigned int *index){
   // Apply parent node's transformation to this node,
   // then pass that transformation to this node's children
   struct aiMatrix4x4 current_transform = parent_transform;
   aiMultiplyMatrix4(&current_transform, &node->mTransformation);
+
+  struct AABB node_AABB = {
+    .min = {FLT_MAX, FLT_MAX, FLT_MAX},
+    .max = {FLT_MIN, FLT_MIN, FLT_MIN}
+  };
 
   // printf("This node's transformation matrix:\n");
   // print_aiMatrix4x4(&current_transform);
@@ -102,17 +112,23 @@ void model_process_node(struct Model *model, struct aiNode *node, const struct a
     struct aiMesh *ai_mesh = scene->mMeshes[node->mMeshes[i]];
     // printf("Passing final mesh transformation matrix:\n");
     // print_aiMatrix4x4(&current_transform);
-    model_process_mesh(ai_mesh, scene, current_transform, &model->meshes[*index]);
+    
+    // Process this mesh and update this node's AABB by the mesh's AABB
+    struct AABB mesh_AABB = model_process_mesh(ai_mesh, scene, current_transform, &model->meshes[*index]);
     (*index)++;
+    AABB_merge(&node_AABB, &mesh_AABB);
   }
 
   // Process this node's children
   for (unsigned int i = 0; i < node->mNumChildren; i++){
-    model_process_node(model, node->mChildren[i], scene, current_transform, index);
+    struct AABB child_node_AABB = model_process_node(model, node->mChildren[i], scene, current_transform, index);
   }
+
+  // Once we finish processing this node's meshes and building its AABB, return it to the parent node
+  return node_AABB;
 }
 
-void model_process_mesh(struct aiMesh *ai_mesh, const struct aiScene *scene, struct aiMatrix4x4 node_transform, Mesh *dest_mesh){
+struct AABB model_process_mesh(struct aiMesh *ai_mesh, const struct aiScene *scene, struct aiMatrix4x4 node_transform, Mesh *dest_mesh){
 
   // Allocate memory for vertices
   Vertex *vertices = (Vertex *)malloc(ai_mesh->mNumVertices * sizeof(Vertex));
@@ -124,6 +140,12 @@ void model_process_mesh(struct aiMesh *ai_mesh, const struct aiScene *scene, str
   mat4 node_transform_mat4;
   aiMatrix4x4_to_mat4(&node_transform, node_transform_mat4);
 
+  // Create this mesh's AABB
+  struct AABB mesh_AABB = {
+    .min = {FLT_MAX, FLT_MAX, FLT_MAX},
+    .max = {FLT_MIN, FLT_MIN, FLT_MIN}
+  };
+
   // Process vertices
   for (unsigned int i = 0; i < ai_mesh->mNumVertices; i++){
     // Position (transformed to model space)
@@ -131,6 +153,8 @@ void model_process_mesh(struct aiMesh *ai_mesh, const struct aiScene *scene, str
     vec4 transformed_pos;
     glm_mat4_mulv(node_transform_mat4, pos, transformed_pos);
     memcpy(vertices[i].position, transformed_pos, sizeof(float) * 3);
+
+    // Update this mesh's AABB
 
     // Normal
     if (ai_mesh->mNormals){
@@ -206,6 +230,8 @@ void model_process_mesh(struct aiMesh *ai_mesh, const struct aiScene *scene, str
 
   free(vertices);
   free(indices);
+
+  return mesh_AABB;
 }
 
 void model_draw(struct Model *model, Shader *shader){
