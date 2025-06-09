@@ -1,7 +1,14 @@
+//#include <GLFW/glfw3.h>
+#include <cglm/mat4.h>
+#include <glad/glad.h>
+#include <cglm/cglm.h>
+#include <cglm/mat3.h>
 #include "scene.h"
-#include <GL/gl.h>
+#include "player.h"
+#include "skybox.h"
+#include "text.h"
+#include "physics/aabb.h"
 #include "utils.h"
-#include <math.h>
 
 Scene *scene_create(){
   // Allocate scene
@@ -20,19 +27,13 @@ Scene *scene_create(){
     printf("Error: failed to allocate scene light\n");
     return NULL;
   }
-  glm_vec3_copy((vec3){-0.2f, -1.0f, -0.3f}, scene->light->direction);
+  glm_vec3_copy((vec3){-0.2f, 0.0f, -0.3f}, scene->light->direction);
   glm_vec3_copy((vec3){0.2f, 0.2f, 0.2f}, scene->light->ambient);
   glm_vec3_copy((vec3){0.8f, 0.8f, 0.8f}, scene->light->diffuse);
   glm_vec3_copy((vec3){1.0f, 1.0f, 1.0f}, scene->light->specular);
 
-  // Camera
-  scene->camera = camera_create((vec3){0.0f, 0.0f, 3.0f}, (vec3){0.0f, 1.0f, 0.0f}, -90.0f, 0.0f, 45.0f, 0.1f, 2.5f);
-  if (!scene->camera){
-    printf("Error: failed to create camera\n");
-    free(scene->entities);
-    free(scene);
-    return NULL;
-  }
+  // Player
+  player_init(&scene->player);
 
   // Entities
   scene->num_entities = 0;
@@ -44,45 +45,63 @@ Scene *scene_create(){
     return NULL;
   }
 
-  // Model shader (for now, only use one shader)
-	Shader *shader = shader_create("shaders/shader.vs", "shaders/dirlight/shader.fs");
-	if (!shader->ID){
-		printf("Error: failed to create shader program\n");
-		glfwTerminate();
-		return NULL;
-	}
-
-  Model *crystalModel = (Model *)malloc(sizeof(Model));
-  if (!crystalModel){
-    printf("Error: failed to allocate oiiaiModel\n");
+  // Shaders and entities for physics dev
+  Shader *shader = shader_create("shaders/shader.vs", "shaders/dirlight/shader.fs");
+  if (!shader){
+    printf("Error: failed to create shader program\n");
+    glfwTerminate();
     return NULL;
   }
-  model_load(crystalModel, "resources/objects/crystal/scene.gltf");
-  Entity crystal = {
-    .ID = 1,
-    .position = {0.0f, 0.0f, 0.0f},
-    .rotation = {0.0f, 0.0f, 0.0f},
-    .scale = {0.2f, 0.2f, 0.2f},
-    .model = crystalModel,
-    .shader = shader
-  };
-  scene->entities[scene->num_entities++] = crystal;
+  Shader *aabbShader = shader_create("shaders/physics/aabb.vs", "shaders/physics/aabb.fs");
+  if (!aabbShader){
+    printf("Error: failed to create AABB shader\n");
+    glfwTerminate();
+    return NULL;
+  }
+  // Shader *planeShader = shader_create("shaders/basic/plane.vs", "shaders/dirlight/shader.fs");
+  // if (!planeShader){
+  //   printf("Error: failed to create plane shader program\n");
+  //   glfwTerminate();
+  //   return NULL;
+  // }
 
-  Model *oiiaiModel = (Model *)malloc(sizeof(Model));
+  struct Model *oiiaiModel = (struct Model *)malloc(sizeof(struct Model));
   if (!oiiaiModel){
     printf("Error: failed to allocate oiiaiModel\n");
     return NULL;
   }
-  //model_load(oiiaiModel, "resources/objects/oiiai/scene.gltf");
+  model_load(oiiaiModel, "resources/objects/oiiai/scene.gltf");
   Entity oiiai = {
     .ID = 1,
-    .position = {0.0f, 0.0f, -10.0f},
+    .position = {0.0f, 0.0f, 0.0f},
     .rotation = {0.0f, 0.0f, 0.0f},
-    .scale = {0.1f, 0.1f, 0.1f},
+    .scale = {3.0f, 3.0f, 3.0f},
     .model = oiiaiModel,
     .shader = shader
   };
-  //scene->entities[scene->num_entities++] = oiiai;
+  scene->entities[scene->num_entities++] = oiiai;
+
+  struct Model *planeModel = (struct Model *)malloc(sizeof(struct Model));
+  if (!planeModel){
+    printf("Error: failed to allocate oiiaiModel\n");
+    return NULL;
+  }
+  model_load(planeModel, "resources/basic/grass_plane/grass_plane.gltf");
+  Entity plane = {
+    .ID = 1,
+    .position = {0.0f, -1.0f, 0.0f},
+    .rotation = {0.0f, 0.0f, 0.0f},
+    .scale = {3.0f, 3.0f, 3.0f},
+    .model = planeModel,
+    .shader = shader
+  };
+  scene->entities[scene->num_entities++] = plane;
+
+  // Skybox
+  scene->skybox = skybox_create();
+  if (!scene->skybox){
+    printf("Error: failed to create skybox in scene_create\n");
+  }
 
   return scene;
 }
@@ -93,28 +112,30 @@ void scene_update(Scene *scene, float deltaTime){
     return;
   }
 
+  // Timing
   static float total_time = 0.0f;
   total_time += deltaTime;
-  // Rotate around y axis
+
   float rotationSpeed = 100.0f;
   float lightSpeed = 1.0f;
+
+  // Update player
+  player_update(&scene->player, deltaTime);
 
   // Update entities
   for(int i = 0; i < scene->num_entities; i++){
     Entity *entity = &scene->entities[i];
 
     // Update translation vector
-    //entity->position[1] = (float)sin(glfwGetTime()*4) / 4;
+    // entity->position[1] = (float)sin(glfwGetTime()*4) / 4;
     // Update rotation vector
-    entity->rotation[1] -= rotationSpeed * deltaTime;
+    // entity->rotation[1] -= rotationSpeed * deltaTime;
   }
 
   // Update light
   scene->light->direction[0] = (float)sin(lightSpeed * total_time);
   //scene->light->direction[1] += y;
   scene->light->direction[2] = (float)cos(lightSpeed * total_time);
-  // new light direction
-  print_glm_vec3(scene->light->direction, "New light direction");
 }
 
 void scene_render(Scene *scene){
@@ -125,8 +146,8 @@ void scene_render(Scene *scene){
   // Get view and projection matrices
   mat4 view;
   mat4 projection;
-  camera_get_view_matrix(scene->camera, view);
-  glm_perspective(glm_rad(scene->camera->fov), 800.0f / 600.0f, 0.1f, 100.0f, projection);
+  camera_get_view_matrix(scene->player.camera, view);
+  glm_perspective(glm_rad(scene->player.camera->fov), 800.0f / 600.0f, 0.1f, 100.0f, projection);
 
   // For each entity in the scene
   for(int i = 0; i < scene->num_entities; i++){
@@ -137,7 +158,6 @@ void scene_render(Scene *scene){
     // Get its model matrix
     mat4 model;
     glm_mat4_identity(model);
-    // Apply transformations to model matrix
     // Translate
     glm_translate(model, entity->position);
     // Rotate
@@ -147,12 +167,17 @@ void scene_render(Scene *scene){
     // Scale
     glm_scale(model, entity->scale);
 
+    // Set normal matrix uniform
+    mat3 transposed_mat3;
+    mat3 normal;
+    glm_mat4_pick3t(model, transposed_mat3);
+    glm_mat3_inv(transposed_mat3, normal);
+    shader_set_mat3(entity->shader, "normal", normal);
+
     // Set its model, view, and projection matrix uniforms
     shader_set_mat4(entity->shader, "model", model);
     shader_set_mat4(entity->shader, "view", view);
     shader_set_mat4(entity->shader, "projection", projection);
-
-    //print_glm_vec3(scene->light->direction, "Scene light direction");
 
     // Lighting uniforms
     shader_set_vec3(entity->shader, "dirLight.direction", scene->light->direction);
@@ -161,23 +186,59 @@ void scene_render(Scene *scene){
     shader_set_vec3(entity->shader, "dirLight.specular", scene->light->specular);
 
     // Set camera position as viewPos in the fragment shader
-    shader_set_vec3(entity->shader, "viewPos", scene->camera->position);
+    shader_set_vec3(entity->shader, "viewPos", scene->player.camera->position);
 
     // Draw model
     model_draw(entity->model, entity->shader);
-  }
-}
 
-void free_scene(Scene *scene){
-  if (scene){
-    free(scene->entities);
-    free(scene->camera);
-    free(scene->light);
-    free(scene);
+    // Render the model's AABB
+    shader_use(aabbShader);
+    shader_set_mat4(aabbShader, "model", model);
+    shader_set_mat4(aabbShader, "view", view);
+    shader_set_mat4(aabbShader, "projection", projection);
+    AABB_render(&entity->model->aabb);
   }
+
+  // Skybox
+  glDepthFunc(GL_LEQUAL);
+  shader_use(scene->skybox->shader);
+
+  // Set view and projection matrix uniforms
+  mat3 view_skybox_mat3;
+  mat4 view_skybox;
+  glm_mat4_pick3(view, view_skybox_mat3);
+  glm_mat4_ins3(view_skybox_mat3, view_skybox);
+  shader_set_mat4(scene->skybox->shader, "view", view_skybox);
+  shader_set_mat4(scene->skybox->shader, "projection", projection);
+
+  // Bind vertex array
+  glBindVertexArray(scene->skybox->cubemapVAO);
+  // Bind texture
+  glActiveTexture(GL_TEXTURE0);
+  glBindTexture(GL_TEXTURE_CUBE_MAP, scene->skybox->cubemap_texture_id);
+  // Draw triangles
+  glDrawArrays(GL_TRIANGLES, 0, 36);
+  
+  glBindVertexArray(0);
+  glDepthFunc(GL_LESS);
+
+  // Render text
+  text_render("Crux Engine 0.1", 4.0f, 744.0f, 1.0f, (vec3){1.0f, 1.0f, 1.0f});
 }
 
 void scene_pause(Scene *scene){
   bool prev = scene->paused;
   scene->paused = !prev;
+}
+
+void free_scene(Scene *scene){
+  if (scene){
+    // Rewrite this to actually free everything
+    free(scene->entities);
+    free(scene->player.camera);
+    free(scene->light);
+    free(scene->skybox->shader);
+    free(scene->skybox);
+    free(scene);
+  }
 }

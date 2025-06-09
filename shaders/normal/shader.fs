@@ -1,12 +1,13 @@
 #version 330 core
 
-in vec2 TexCoord;
-in vec3 Normal;
-in vec3 FragPos;
+in VS_OUT {
+  vec2 TexCoord;
+  //vec3 TangentLightPos;
+  vec3 TangentViewPos;
+  vec3 TangentFragPos;
+} fs_in;
 
 out vec4 FragColor;
-
-uniform vec3 viewPos;
 
 struct DirLight {
   vec3 direction;
@@ -31,17 +32,24 @@ struct Material {
 };
 uniform Material material;
 
+
 vec4 calc_dir_light(DirLight light, vec3 norm, vec3 viewDir);
 
+
 void main(){
-  vec3 norm = normalize(Normal);
-  vec3 viewDir = normalize(viewPos - FragPos);
+
+  // Sample normal map
+  vec3 normal = texture(material.normal, fs_in.TexCoord).rgb;
+  normal = normalize(normal * 2.0 - 1.0);
+
+  // View direction
+  vec3 viewDir = normalize(fs_in.TangentViewPos - fs_in.TangentFragPos);
 
   // Directional light
-  vec4 lighting = calc_dir_light(dirLight, norm, viewDir);
+  vec4 lighting = calc_dir_light(dirLight, normal, viewDir);
 
   // Emissive light
-  vec4 emissive = texture(material.emissive, TexCoord);
+  vec4 emissive = texture(material.emissive, fs_in.TexCoord);
 
   vec3 resultColor = lighting.rgb + emissive.rgb;
   float resultAlpha = lighting.a;
@@ -54,12 +62,12 @@ vec4 calc_dir_light(DirLight light, vec3 norm, vec3 viewDir){
   vec3 lightDir = normalize(-light.direction);
 
   // Ambient
-  vec3 ambient = light.ambient * vec3(texture(material.diffuse1, TexCoord));
+  vec3 ambient = light.ambient * vec3(texture(material.diffuse1, fs_in.TexCoord));
 
   // Diffuse
   float diff = max(dot(norm, lightDir), 0.0);
-  vec3 diffuse = light.diffuse * diff * texture(material.diffuse1, TexCoord).rgb;
-  float alpha = texture(material.diffuse1, TexCoord).a;
+  vec3 diffuse = light.diffuse * diff * texture(material.diffuse1, fs_in.TexCoord).rgb;
+  float alpha = texture(material.diffuse1, fs_in.TexCoord).a;
   //if (alpha < 0.1)
   //  discard;
 
@@ -67,7 +75,7 @@ vec4 calc_dir_light(DirLight light, vec3 norm, vec3 viewDir){
   //vec3 reflectDir = reflect(-lightDir, norm);
   vec3 halfwayDir = normalize(lightDir + viewDir);
   float spec = pow(max(dot(viewDir, halfwayDir), 0.0), 32);
-  vec3 specular = light.specular * spec * vec3(texture(material.specular1, TexCoord));
+  vec3 specular = light.specular * spec * vec3(texture(material.specular1, fs_in.TexCoord));
 
   return vec4(ambient + diffuse + specular, alpha);
 }

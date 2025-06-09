@@ -2,9 +2,10 @@
 #define SCENE_H
 
 #include <glad/glad.h>
-#include "entity.h"
-#include "camera.h"
 #include <stdbool.h>
+#include "skybox.h"
+#include "entity.h"
+#include "player.h"
 
 typedef struct {
   vec3 direction;
@@ -18,7 +19,8 @@ typedef struct {
   Entity *entities;
   int num_entities;
   int max_entities;
-  Camera *camera;
+  struct Skybox *skybox;
+  struct Player player;
   Light *light;
   bool paused;
 } Scene;
@@ -28,5 +30,6 @@ Scene *scene_create();
 void scene_update(Scene *scene, float deltaTime);
 void scene_render(Scene *scene);
 void scene_pause(Scene *scene);
+void scene_free(Scene *scene);
 
 #endif
