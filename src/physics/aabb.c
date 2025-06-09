@@ -18,6 +18,21 @@ void AABB_merge(struct AABB *a, struct AABB *b){
   a->max[2] = fminf(a->max[2], b->max[2]);
 }
 
+// Figure out an optimal algorithm for this later.
+// If you update the minimum x component, for example,
+// you certainly don't have to update the maximum x component.
 void AABB_update_by_vertex(struct AABB *aabb, vec3 vertex){
+  // Minimum
+  aabb->min[0] = fminf(aabb->min[0], vertex[0]);
+  aabb->min[1] = fminf(aabb->min[1], vertex[1]);
+  aabb->min[2] = fminf(aabb->min[2], vertex[2]);
+
+  // Maximum
+  aabb->max[0] = fminf(aabb->max[0], vertex[0]);
+  aabb->max[1] = fminf(aabb->max[1], vertex[1]);
+  aabb->max[2] = fminf(aabb->max[2], vertex[2]);
+}
+
+void AABB_render(struct AABB *aabb){
 
 }
