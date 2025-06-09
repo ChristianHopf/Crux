@@ -21,7 +21,7 @@ void load_font_face(){
   }
 
   // Set font size
-  FT_Set_Pixel_Sizes(face, 0, 48);
+  FT_Set_Pixel_Sizes(face, 0, 24);
 
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
@@ -69,8 +69,9 @@ void load_font_face(){
     return;
   }
   textShader = shader;
+  shader_use(textShader);
   mat4 orthographic;
-  glm_ortho(0, 1024, 0, 768, 0.1f, 100.0f, orthographic);
+  glm_ortho(0, 1024, 0, 768, -1.0f, 1.0f, orthographic);
   shader_set_mat4(shader, "projection", orthographic);
 
   // VAO and VBO
@@ -85,14 +86,15 @@ void load_font_face(){
   glBindVertexArray(0);
 }
 
-void text_render(Shader *shader, char *text, float x, float y, float scale, vec3 color){
+void text_render(char *text, float x, float y, float scale, vec3 color){
   // Use shader, set uniform, bind to texture and VAO
-  shader_use(shader);
-  shader_set_vec3(shader, "textColor", color);
+  shader_use(textShader);
+  shader_set_vec3(textShader, "textColor", color);
   glActiveTexture(GL_TEXTURE);
   glBindVertexArray(VAO);
 
   // Draw each character in text
+  glDisable(GL_DEPTH_TEST);
   for(int i = 0; i < strlen(text); i++){
     // Get its Character struct, x, y, w, and h
     struct Character text_char = characters[(int)text[i]];
@@ -126,4 +128,5 @@ void text_render(Shader *shader, char *text, float x, float y, float scale, vec3
   }
   glBindVertexArray(0);
   glBindTexture(GL_TEXTURE_2D, 0);
+  glEnable(GL_DEPTH_TEST);
 }

@@ -10,5 +10,5 @@ void main(){
   // Transparent text background
   vec4 textSample = vec4(1.0, 1.0, 1.0, texture(text, TexCoords).r);
 
-  color = vec4(textcolor, 1.0) * textSample;
+  color = vec4(textColor, 1.0) * textSample;
 }

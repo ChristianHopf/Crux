@@ -17,7 +17,8 @@ void player_init(struct Player *player){
   }
 
   player->camera = camera;
-  glm_vec3_copy(player->velocity, (vec3){0.0f, 0.0f, 0.0f});
+  glm_vec3_copy((vec3){0.0f, 0.0f, 0.0f}, player->velocity);
+  player->is_grounded = true;
 }
 
 void player_jump(struct Player *player){
@@ -32,6 +33,8 @@ void player_update(struct Player *player, float delta_time){
   // First apply gravity to the player's velocity
   float gravity = 9.8 * delta_time;
   glm_vec3_sub(player->velocity, (vec3){0.0f, gravity, 0.0f}, player->velocity);
+
+  printf("Player velocity: [%f %f %f]\n", player->velocity[0], player->velocity[1], player->velocity[2]);
 
   // Add player's velocity to the camera position, scaled by delta_time
   vec3 update;

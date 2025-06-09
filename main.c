@@ -12,14 +12,7 @@
 #include "model.h"
 #include "scene.h"
 #include "player.h"
-
-struct Character {
-  unsigned int texture_id;
-  vec2 size;
-  vec2 bearing;
-  unsigned int advance;
-};
-struct Character characters[128];
+#include "text.h"
 
 typedef struct {
   GLFWwindow *window;
@@ -209,6 +202,8 @@ int main(){
     printf("Error: failed to create Engine\n");
     return -1;
   }
+
+  load_font_face();
 
 	// Render loop
 	while (!glfwWindowShouldClose(engine->window)){

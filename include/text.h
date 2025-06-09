@@ -17,6 +17,6 @@ static unsigned int VAO, VBO;
 static Shader *textShader;
 
 void load_font_face();
-void text_render(Shader *shader, char *text, float x, float y, float scale, vec3 color);
+void text_render(char *text, float x, float y, float scale, vec3 color);
 
 #endif

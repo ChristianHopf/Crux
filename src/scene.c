@@ -184,9 +184,6 @@ void scene_render(Scene *scene){
     model_draw(entity->model, entity->shader);
   }
 
-  // Render text
-  text_render(textShader, "Sample Text", 25.0f, 25.0f, 1.0f, (vec3){1.0f, 1.0f, 1.0f});
-
   // Skybox
   glDepthFunc(GL_LEQUAL);
   shader_use(scene->skybox->shader);
@@ -211,7 +208,7 @@ void scene_render(Scene *scene){
   glDepthFunc(GL_LESS);
 
   // Render text
-  text_render(textShader, "Sample Text", 25.0f, 25.0f, 1.0f, (vec3){1.0f, 1.0f, 1.0f});
+  text_render("Crux Engine 0.1", 4.0f, 744.0f, 1.0f, (vec3){1.0f, 1.0f, 1.0f});
 }
 
 void scene_pause(Scene *scene){
