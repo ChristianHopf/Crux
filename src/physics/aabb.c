@@ -60,10 +60,10 @@ void AABB_render(struct AABB *aabb){
     2, 3,
     3, 0,
 
-    0, 4,
-    1, 5,
-    2, 6,
-    3, 7,
+    0, 6,
+    1, 7,
+    2, 4,
+    3, 5,
 
     4, 5,
     5, 6,
@@ -90,7 +90,8 @@ void AABB_render(struct AABB *aabb){
   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 
   // Draw lines
-  glDrawElements(GL_LINES, 12, GL_UNSIGNED_INT, 0);
+  glLineWidth(2.0f);
+  glDrawElements(GL_LINES, 24, GL_UNSIGNED_INT, 0);
 
   // Cleanup
   glBindVertexArray(0);

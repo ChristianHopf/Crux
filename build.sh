@@ -1,6 +1,6 @@
 #!/bin/bash
 
-OUT=executables/aabb1
+OUT=executables/aabb2
 SRC_DIR=src
 PHYSICS_DIR=$SRC_DIR/physics
 

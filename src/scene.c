@@ -52,12 +52,13 @@ Scene *scene_create(){
     glfwTerminate();
     return NULL;
   }
-  Shader *aabbShader = shader_create("shaders/physics/aabb.vs", "shaders/physics/aabb.fs");
-  if (!aabbShader){
+  Shader *aabbShaderPtr = shader_create("shaders/physics/aabb.vs", "shaders/physics/aabb.fs");
+  if (!aabbShaderPtr){
     printf("Error: failed to create AABB shader\n");
     glfwTerminate();
     return NULL;
   }
+  aabbShader = aabbShaderPtr;
   // Shader *planeShader = shader_create("shaders/basic/plane.vs", "shaders/dirlight/shader.fs");
   // if (!planeShader){
   //   printf("Error: failed to create plane shader program\n");
