@@ -1,5 +1,6 @@
-#include <cstdlib>
+#include <cglm/cam.h>
 #include <glad/glad.h>
+#include <iso646.h>
 #include "text.h"
 
 void load_font_face(){
@@ -55,6 +56,22 @@ void load_font_face(){
   }
   FT_Done_Face(face);
   FT_Done_FreeType(library);
+
+  // Enable blending
+  glEnable(GL_CULL_FACE);
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+  // Create text shader program, use orthographic projection
+  Shader *shader = shader_create("shaders/glyph/shader.vs", "shaders/glyph/shader.fs");
+  if (!shader){
+    printf("Error: failed to create text shader in load_font_face\n");
+    return;
+  }
+  textShader = shader;
+  mat4 orthographic;
+  glm_ortho(0, 1024, 0, 768, 0.1f, 100.0f, orthographic);
+  shader_set_mat4(shader, "projection", orthographic);
 
   // VAO and VBO
   glGenVertexArrays(1, &VAO);

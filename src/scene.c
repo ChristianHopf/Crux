@@ -5,6 +5,7 @@
 #include "scene.h"
 #include "player.h"
 #include "skybox.h"
+#include "text.h"
 #include "utils.h"
 
 Scene *scene_create(){
@@ -184,6 +185,7 @@ void scene_render(Scene *scene){
   }
 
   // Render text
+  text_render(textShader, "Sample Text", 25.0f, 25.0f, 1.0f, (vec3){1.0f, 1.0f, 1.0f});
 
   // Skybox
   glDepthFunc(GL_LEQUAL);
@@ -207,6 +209,9 @@ void scene_render(Scene *scene){
   
   glBindVertexArray(0);
   glDepthFunc(GL_LESS);
+
+  // Render text
+  text_render(textShader, "Sample Text", 25.0f, 25.0f, 1.0f, (vec3){1.0f, 1.0f, 1.0f});
 }
 
 void scene_pause(Scene *scene){
