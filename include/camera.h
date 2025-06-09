@@ -25,7 +25,7 @@ typedef enum {
 //const float SENSITIVITY =  0.1f;
 //const float SPEED       =  2.5f;
 
-struct Camera {
+typedef struct {
   vec3 position;
   vec3 front;
   vec3 up;
@@ -36,18 +36,18 @@ struct Camera {
   float fov;
   float sensitivity;
   float speed;
-};
+} Camera;
 
 // Create camera with default values
-struct Camera *camera_create(vec3 position, vec3 up, float yaw, float pitch, float fov, float sensitivity, float speed);
+Camera *camera_create(vec3 position, vec3 up, float yaw, float pitch, float fov, float sensitivity, float speed);
 
 // Get view matrix
-void camera_get_view_matrix(struct Camera *camera, mat4 view);
+void camera_get_view_matrix(Camera *camera, mat4 view);
 
 // Handle device input
-void camera_process_keyboard_input(struct Camera *camera, CameraDirection direction, float deltaTime); 
-void camera_process_mouse_input(struct Camera *camera, float xoffset, float yoffset);
-void camera_process_scroll_input(struct Camera *camera, double yoffset);
-void camera_update_vectors(struct Camera *camera);
+void camera_process_keyboard_input(Camera *camera, CameraDirection direction, float deltaTime); 
+void camera_process_mouse_input(Camera *camera, float xoffset, float yoffset);
+void camera_process_scroll_input(Camera *camera, double yoffset);
+void camera_update_vectors(Camera *camera);
 
 #endif
