@@ -33,7 +33,7 @@ struct Model {
   unsigned int num_meshes;
   unsigned int num_materials;
   char *directory;
-  struct AABB *aabb;
+  struct AABB aabb;
 };
 
 bool model_load(struct Model *model, const char *path);

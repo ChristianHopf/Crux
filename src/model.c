@@ -78,14 +78,15 @@ bool model_load(struct Model *model, const char *path){
 
   // Initialize model AABB
   vec3 min = {FLT_MAX, FLT_MAX, FLT_MAX};
-  vec2 max = {FLT_MIN, FLT_MIN, FLT_MIN};
-  model->AABB = {min, max};
+  vec3 max = {FLT_MIN, FLT_MIN, FLT_MIN};
+  glm_vec3_copy(min, model->aabb.min);
+  glm_vec3_copy(max, model->aabb.max);
 
   // Process the root node
   unsigned int model_mesh_index = 0;
   struct aiMatrix4x4 parent_transform;
   aiIdentityMatrix4(&parent_transform);
-  model->AABB = model_process_node(model, scene->mRootNode, scene, parent_transform, &model_mesh_index);
+  model->aabb = model_process_node(model, scene->mRootNode, scene, parent_transform, &model_mesh_index);
 
   aiReleaseImport(scene);
   return true;
