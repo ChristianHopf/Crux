@@ -1,5 +1,5 @@
-#ifndef AABB_H
-#define AABB_H
+#ifndef PHYSICS_AABB_H
+#define PHYSICS_AABB_H
 
 #include <cglm/cglm.h>
 #include <stdbool.h>

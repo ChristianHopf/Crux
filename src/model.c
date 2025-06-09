@@ -157,7 +157,7 @@ struct AABB model_process_mesh(struct aiMesh *ai_mesh, const struct aiScene *sce
     memcpy(vertices[i].position, transformed_pos, sizeof(float) * 3);
 
     // Update this mesh's AABB
-
+    AABB_update_by_vertex(&mesh_AABB, vertices[i].position);
 
     // Normal
     if (ai_mesh->mNormals){
