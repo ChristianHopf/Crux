@@ -186,15 +186,15 @@ struct AABB model_process_mesh(struct aiMesh *ai_mesh, const struct aiScene *sce
   }
 
   // Process indices
-  unsigned int index = 0;
+  unsigned int num_indices = 0;
   for(unsigned int i = 0; i < ai_mesh->mNumFaces; i++){
     struct aiFace face = ai_mesh->mFaces[i];
     for(unsigned int j = 0; j < face.mNumIndices; j++){
       indices[index] = face.mIndices[j];
-      index++;
+      num_indices++;
     }
   }
-  dest_mesh->num_indices = index;
+  dest_mesh->num_indices = num_indices;
   dest_mesh->material_index = ai_mesh->mMaterialIndex;
   
 
@@ -211,7 +211,7 @@ struct AABB model_process_mesh(struct aiMesh *ai_mesh, const struct aiScene *sce
   glBufferData(GL_ARRAY_BUFFER, ai_mesh->mNumVertices * sizeof(Vertex), vertices, GL_STATIC_DRAW);
 
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, dest_mesh->EBO);
-  glBufferData(GL_ELEMENT_ARRAY_BUFFER, index * sizeof(unsigned int), indices, GL_STATIC_DRAW);
+  glBufferData(GL_ELEMENT_ARRAY_BUFFER, num_indices * sizeof(unsigned int), indices, GL_STATIC_DRAW);
 
   // Configure attribute pointers
   // Position

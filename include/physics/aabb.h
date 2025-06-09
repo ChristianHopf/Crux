@@ -3,6 +3,7 @@
 
 #include <cglm/cglm.h>
 #include <stdbool.h>
+#include "shader.h"
 
 struct AABB {
   vec3 min;
