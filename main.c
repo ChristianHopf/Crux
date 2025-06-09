@@ -1,5 +1,7 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+#include <ft2build.h>
+#include FT_FREETYPE_H
 #include <stdio.h>
 #include <stdbool.h>
 #include "stb_image/stb_image.h"
@@ -9,6 +11,14 @@
 #include "model.h"
 #include "scene.h"
 #include "player.h"
+
+struct Character {
+  unsigned int texture_id;
+  vec2 size;
+  vec2 bearing;
+  unsigned int advance;
+};
+struct Character characters[128];
 
 typedef struct {
   GLFWwindow *window;
@@ -69,7 +79,6 @@ void processInput(GLFWwindow *window){
   // Only process these inputs a single time per press
   int space_state = glfwGetKey(window, GLFW_KEY_SPACE);
 	if (space_state == GLFW_PRESS && last_space_state == GLFW_RELEASE){
-    printf("hi\n");
     player_jump(&engine->active_scene->player);
     //camera_process_keyboard_input(camera, CAMERA_UP, engine->deltaTime);
   }
@@ -194,14 +203,66 @@ Engine *engine_create(){
 }
 
 int main(){
+
+  // FreeType
+  FT_Library  library;
+  FT_Face     face;
+
+  int error = (FT_Init_FreeType(&library));
+  if (error){
+    printf("Error: failed to initialize FreeType library\n");
+  }
+  error = FT_New_Face(library, "resources/fonts/HackNerdFontMono-Regular.ttf", 0, &face);
+  if (error == FT_Err_Unknown_File_Format){
+    printf("Error: failed to read font file: format unsupported\n");
+  }
+  else if(error){
+    printf("Error: failed to read font file\n");
+  }
+
+  FT_Set_Pixel_Sizes(face, 0, 48);
+
+  glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+
+  for (unsigned char c = 0; c < 128; c++){
+    printf("hi\n");
+    error = FT_Load_Char(face, c, FT_LOAD_RENDER);
+    if (error){
+      printf("ERROR::FREETYPE: Failed to load glyph for char %c\n", c);
+      continue;
+    }
+
+    // Generate texture for each character
+    unsigned int texture_id;
+    glGenTextures(1, &texture_id);
+    glBindTexture(GL_TEXTURE_2D, texture_id);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, face->glyph->bitmap.width, face->glyph->bitmap.rows, 0, GL_RED, GL_UNSIGNED_BYTE, face->glyph->bitmap.buffer);
+
+    // Set texture parameters
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    // Store in characters
+    struct Character character = {
+      .texture_id = texture_id,
+      .size = {face->glyph->bitmap.width, face->glyph->bitmap.rows},
+      .bearing = {face->glyph->bitmap_left, face->glyph->bitmap_top},
+      .advance = face->glyph->advance.x
+    };
+    characters[(int)c] = character;
+  }
+  FT_Done_Face(face);
+  FT_Done_FreeType(library);
+  
+
   Engine *engine = engine_create();
   if (!engine){
     printf("Error: failed to create Engine\n");
     return -1;
   }
-
-  // Floor for basic physics development
-  
+// Floor for basic physics development
 
 	// Render loop
 	while (!glfwWindowShouldClose(engine->window)){

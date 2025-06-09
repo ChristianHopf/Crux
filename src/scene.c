@@ -77,7 +77,7 @@ Scene *scene_create(){
     printf("Error: failed to allocate oiiaiModel\n");
     return NULL;
   }
-  model_load(planeModel, "resources/basic/plane/scene.gltf");
+  model_load(planeModel, "resources/basic/grass_plane/grass_plane.gltf");
   Entity plane = {
     .ID = 1,
     .position = {0.0f, -1.0f, 0.0f},
