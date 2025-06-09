@@ -1,3 +1,4 @@
+#include <cstdlib>
 #include <glad/glad.h>
 #include "text.h"
 
@@ -56,4 +57,56 @@ void load_font_face(){
   FT_Done_FreeType(library);
 
   // VAO and VBO
+  glGenVertexArrays(1, &VAO);
+  glGenBuffers(1, &VBO);
+  glBindVertexArray(VAO);
+  glBindBuffer(GL_ARRAY_BUFFER, VBO);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 6 * 4, NULL, GL_DYNAMIC_DRAW);
+  glEnableVertexAttribArray(0);
+  glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
+  glBindBuffer(GL_ARRAY_BUFFER, 0);
+  glBindVertexArray(0);
+}
+
+void text_render(Shader *shader, char *text, float x, float y, float scale, vec3 color){
+  // Use shader, set uniform, bind to texture and VAO
+  shader_use(shader);
+  shader_set_vec3(shader, "textColor", color);
+  glActiveTexture(GL_TEXTURE);
+  glBindVertexArray(VAO);
+
+  // Draw each character in text
+  for(int i = 0; i < strlen(text); i++){
+    // Get its Character struct, x, y, w, and h
+    struct Character text_char = characters[(int)text[i]];
+
+    float xpos = x + text_char.bearing[0] * scale;
+    float ypos = y - (text_char.size[1] - text_char.bearing[1]) * scale;
+
+    float w = text_char.size[0] * scale;
+    float h = text_char.size[1] * scale;
+
+    // New vertices to buffer to VBO
+    float vertices[6][4] = {
+      { xpos,     ypos + h,   0.0f, 0.0f },            
+      { xpos,     ypos,       0.0f, 1.0f },
+      { xpos + w, ypos,       1.0f, 1.0f },
+
+      { xpos,     ypos + h,   0.0f, 0.0f },
+      { xpos + w, ypos,       1.0f, 1.0f },
+      { xpos + w, ypos + h,   1.0f, 0.0f }           
+    };
+
+    // Render glyph texture over character quad
+    glBindTexture(GL_TEXTURE_2D, text_char.texture_id);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+
+    // Move cursor to the next character's position
+    x += (text_char.advance >> 6) * scale;
+  }
+  glBindVertexArray(0);
+  glBindTexture(GL_TEXTURE_2D, 0);
 }

@@ -3,6 +3,7 @@
 
 #include <ft2build.h>
 #include FT_FREETYPE_H
+#include <cglm/cglm.h>
 #include "shader.h"
 
 struct Character {
@@ -12,6 +13,8 @@ struct Character {
   unsigned int advance;
 };
 static struct Character characters[128];
+
+static unsigned int VAO, VBO;
 
 void load_font_face();
 void text_render(Shader *shader, char *text, float x, float y, float scale, vec3 color);

@@ -183,6 +183,8 @@ void scene_render(Scene *scene){
     model_draw(entity->model, entity->shader);
   }
 
+  // Render text
+
   // Skybox
   glDepthFunc(GL_LEQUAL);
   shader_use(scene->skybox->shader);
