@@ -1,3 +1,4 @@
+#include <GLFW/glfw3.h>
 #include <cglm/mat4.h>
 #include <glad/glad.h>
 #include <cglm/cglm.h>
@@ -6,6 +7,7 @@
 #include "player.h"
 #include "skybox.h"
 #include "text.h"
+#include "physics/aabb.h"
 #include "utils.h"
 
 Scene *scene_create(){
@@ -43,10 +45,16 @@ Scene *scene_create(){
     return NULL;
   }
 
-  // Shader and entities for physics dev
+  // Shaders and entities for physics dev
   Shader *shader = shader_create("shaders/shader.vs", "shaders/dirlight/shader.fs");
   if (!shader){
     printf("Error: failed to create shader program\n");
+    glfwTerminate();
+    return NULL;
+  }
+  Shader *aabbShader = shader_create("shaders/physics/aabb.vs", "shaders/physics/aabb.fs");
+  if (!aabbshader){
+    printf("Error: failed to create AABB shader\n");
     glfwTerminate();
     return NULL;
   }
@@ -182,6 +190,9 @@ void scene_render(Scene *scene){
 
     // Draw model
     model_draw(entity->model, entity->shader);
+
+    // Render the model's AABB
+    AABB_render(&model->aabb);
   }
 
   // Skybox
