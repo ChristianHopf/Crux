@@ -10,6 +10,7 @@
 #include <assimp/texture.h>
 #include <assimp/material.h>
 #include "model.h"
+#include "physics/aabb.h"
 #include "utils.h"
 #include "material.h"
 
@@ -122,9 +123,10 @@ struct AABB model_process_node(struct Model *model, struct aiNode *node, const s
   // Process this node's children
   for (unsigned int i = 0; i < node->mNumChildren; i++){
     struct AABB child_node_AABB = model_process_node(model, node->mChildren[i], scene, current_transform, index);
+    AABB_merge(&node_AABB, &child_node_AABB);
   }
 
-  // Once we finish processing this node's meshes and building its AABB, return it to the parent node
+  // Once we finish processing this node and building its AABB, return it to the parent node
   return node_AABB;
 }
 
@@ -155,6 +157,7 @@ struct AABB model_process_mesh(struct aiMesh *ai_mesh, const struct aiScene *sce
     memcpy(vertices[i].position, transformed_pos, sizeof(float) * 3);
 
     // Update this mesh's AABB
+
 
     // Normal
     if (ai_mesh->mNormals){
