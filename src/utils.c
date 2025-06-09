@@ -73,3 +73,10 @@ void aiMatrix4x4_to_mat4(struct aiMatrix4x4 *src, mat4 dest) {
     dest[0][2] = src->c1; dest[1][2] = src->c2; dest[2][2] = src->c3; dest[3][2] = src->c4;
     dest[0][3] = src->d1; dest[1][3] = src->d2; dest[2][3] = src->d3; dest[3][3] = src->d4;
 }
+
+void print_AABB(struct AABB *aabb){
+  printf("AABB {\n");
+  printf("  min: (%.2f, %.2f, %.2f)\n", aabb->min[0], aabb->min[1], aabb->min[2]);
+  printf("  max: (%.2f, %.2f, %.2f)\n", aabb->max[0], aabb->max[1], aabb->max[2]);
+  printf("}\n");
+}

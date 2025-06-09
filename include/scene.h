@@ -23,6 +23,7 @@ typedef struct {
   struct Player player;
   Light *light;
   bool paused;
+  bool physics_view_mode;
 } Scene;
 
 Scene *scene_create();

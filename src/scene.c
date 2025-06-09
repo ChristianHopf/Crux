@@ -10,13 +10,16 @@
 #include "physics/aabb.h"
 #include "utils.h"
 
-Scene *scene_create(){
+Scene *scene_create(bool physics_view_mode){
   // Allocate scene
   Scene *scene = (Scene *)malloc(sizeof(Scene));
   if (!scene){
     printf("Error: failed to allocate scene\n");
     return NULL;
   }
+
+  // Physics view mode (render AABBs)
+  scene->physics_view_mode = physics_view_mode;
 
   // Start unpaused
   scene->paused = false;
@@ -193,11 +196,13 @@ void scene_render(Scene *scene){
     model_draw(entity->model, entity->shader);
 
     // Render the model's AABB
-    shader_use(aabbShader);
-    shader_set_mat4(aabbShader, "model", model);
-    shader_set_mat4(aabbShader, "view", view);
-    shader_set_mat4(aabbShader, "projection", projection);
-    AABB_render(&entity->model->aabb);
+    if (scene->physics_view_mode){
+      shader_use(aabbShader);
+      shader_set_mat4(aabbShader, "model", model);
+      shader_set_mat4(aabbShader, "view", view);
+      shader_set_mat4(aabbShader, "projection", projection);
+      AABB_render(&entity->model->aabb);
+    }
   }
 
   // Skybox
