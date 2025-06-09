@@ -44,13 +44,27 @@ Scene *scene_create(){
     return NULL;
   }
 
-  // Model shader (for now, only use one shader)
-	Shader *shader = shader_create("shaders/shader.vs", "shaders/dirlight/shader.fs");
-	if (!shader->ID){
-		printf("Error: failed to create shader program\n");
-		glfwTerminate();
-		return NULL;
-	}
+  // Shaders and entities for physics dev
+  Shader *shader = shader_create("shaders/shader.vs", "shaders/dirlight/shader.fs");
+  if (!shader){
+    printf("Error: failed to create shader program\n");
+    glfwTerminate();
+    return NULL;
+  }
+  Shader *aabbShaderPtr = shader_create("shaders/physics/aabb.vs", "shaders/physics/aabb.fs");
+  if (!aabbShaderPtr){
+    printf("Error: failed to create AABB shader\n");
+    glfwTerminate();
+    return NULL;
+  }
+  aabbShader = aabbShaderPtr;
+
+  // Shader *planeShader = shader_create("shaders/basic/plane.vs", "shaders/dirlight/shader.fs");
+  // if (!planeShader){
+  //   printf("Error: failed to create plane shader program\n");
+  //   glfwTerminate();
+  //   return NULL;
+  // }
 
   Model *crystalModel = (Model *)malloc(sizeof(Model));
   if (!crystalModel){

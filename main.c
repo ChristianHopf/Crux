@@ -130,7 +130,7 @@ Engine *engine_create(){
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
   // Create window
-	GLFWwindow *window = glfwCreateWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "LearnOpenGL", NULL, NULL);
+	GLFWwindow *window = glfwCreateWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Crux Engine 0.1", NULL, NULL);
 	if (window == NULL){
 		printf("Failed to create GLFW window\n");
     free(engine);
