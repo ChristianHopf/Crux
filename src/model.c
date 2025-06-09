@@ -13,7 +13,7 @@
 #include "utils.h"
 #include "material.h"
 
-bool model_load(Model *model, const char *path){
+bool model_load(struct Model *model, const char *path){
   const struct aiScene* scene = aiImportFile(path, aiProcessPreset_TargetRealtime_Fast);
 
   if(!scene || !scene->mRootNode || !scene->mMeshes || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE) {
@@ -85,7 +85,7 @@ bool model_load(Model *model, const char *path){
   return true;
 }
 
-void model_process_node(Model *model, struct aiNode *node, const struct aiScene *scene, struct aiMatrix4x4 parent_transform, unsigned int *index){
+void model_process_node(struct Model *model, struct aiNode *node, const struct aiScene *scene, struct aiMatrix4x4 parent_transform, unsigned int *index){
   // Apply parent node's transformation to this node,
   // then pass that transformation to this node's children
   struct aiMatrix4x4 current_transform = parent_transform;
@@ -208,7 +208,7 @@ void model_process_mesh(struct aiMesh *ai_mesh, const struct aiScene *scene, str
   free(indices);
 }
 
-void model_draw(Model *model, Shader *shader){
+void model_draw(struct Model *model, Shader *shader){
   // For each mesh in the model
   for(unsigned int i = 0; i < model->num_meshes; i++){
 
@@ -275,7 +275,7 @@ void model_draw(Model *model, Shader *shader){
   glBindVertexArray(0);
 }
 
-void model_free(Model *model){
+void model_free(struct Model *model){
   // Delete vertex arrays and buffers
   for(unsigned int i = 0; i < model->num_meshes; i++){
     glDeleteVertexArrays(1, &model->meshes[i].VAO);

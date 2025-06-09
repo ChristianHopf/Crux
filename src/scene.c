@@ -57,7 +57,7 @@ Scene *scene_create(){
   //   return NULL;
   // }
 
-  Model *oiiaiModel = (Model *)malloc(sizeof(Model));
+  struct Model *oiiaiModel = (struct Model *)malloc(sizeof(struct Model));
   if (!oiiaiModel){
     printf("Error: failed to allocate oiiaiModel\n");
     return NULL;
@@ -73,7 +73,7 @@ Scene *scene_create(){
   };
   scene->entities[scene->num_entities++] = oiiai;
 
-  Model *planeModel = (Model *)malloc(sizeof(Model));
+  struct Model *planeModel = (struct Model *)malloc(sizeof(struct Model));
   if (!planeModel){
     printf("Error: failed to allocate oiiaiModel\n");
     return NULL;

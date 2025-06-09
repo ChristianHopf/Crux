@@ -26,24 +26,25 @@ typedef struct {
   unsigned int material_index;
 } Mesh;
 
-typedef struct {
+struct Model {
   Mesh *meshes;
   struct Material *materials;
   unsigned int num_meshes;
   unsigned int num_materials;
   char *directory;
-} Model;
+  struct AABB *aabb;
+};
 
-bool model_load(Model *model, const char *path);
-void model_process_node(Model *model, struct aiNode *node, const struct aiScene *scene, struct aiMatrix4x4 parent_transform, unsigned int *index);
+bool model_load(struct Model *model, const char *path);
+void model_process_node(struct Model *model, struct aiNode *node, const struct aiScene *scene, struct aiMatrix4x4 parent_transform, unsigned int *index);
 void model_process_mesh(struct aiMesh *ai_mesh, const struct aiScene *scene, struct aiMatrix4x4 node_transform, Mesh *dest_mesh);
-void model_draw(Model *model, Shader *shader);
-void model_free(Model *model);
-GLuint model_load_texture_type(Model *model, const struct aiMaterial *material, const struct aiScene *scene, enum aiTextureType type);
-GLuint model_load_texture(const char *path);
-GLuint model_load_embedded_texture(const char *path, const struct aiScene *scene);
-char *get_texture_path(const struct aiMaterial *material, enum aiTextureType type);
-GLuint model_check_loaded_texture(const char *path);
-void model_add_loaded_texture(const char *path, GLuint texture_id);
+void model_draw(struct Model *model, Shader *shader);
+void model_free(struct Model *model);
+GLuint model_load_texture_type(struct Model *model, const struct aiMaterial *material, const struct aiScene *scene, enum aiTextureType type);
+// GLuint model_load_texture(const char *path);
+// GLuint model_load_embedded_texture(const char *path, const struct aiScene *scene);
+// char *get_texture_path(const struct aiMaterial *material, enum aiTextureType type);
+// GLuint model_check_loaded_texture(const char *path);
+// void model_add_loaded_texture(const char *path, GLuint texture_id);
 
 #endif
