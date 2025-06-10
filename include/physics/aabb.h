@@ -18,7 +18,7 @@ static Shader *aabbShader;
 
 bool AABB_intersect(struct AABB *a, struct AABB *b);
 void AABB_merge(struct AABB *a, struct AABB *b);
-void AABB_update(struct AABB *src, mat3 rotation, vec3 translation, struct AABB *dest)
+void AABB_update(struct AABB *src, mat3 rotation, vec3 translation, struct AABB *dest);
 void AABB_update_by_vertex(struct AABB *aabb, vec3 vertex);
 
 void AABB_init(struct AABB *aabb);

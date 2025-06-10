@@ -29,8 +29,8 @@ void AABB_update(struct AABB *src, mat3 rotation, vec3 translation, struct AABB 
       float e = rotation[i][j] * src->min[j];
       float f = rotation[i][j] * src->max[j];
       if (e < f){
-        dest.min[i] += e;
-        dest.max[i] += f;
+        dest->min[i] += e;
+        dest->max[i] += f;
       } else{
         dest->min[i] += f;
         dest->max[i] += e;

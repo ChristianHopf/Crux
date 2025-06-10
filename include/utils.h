@@ -19,7 +19,4 @@ char *get_texture_type_string(enum aiTextureType type);
 void print_aiMatrix4x4(struct aiMatrix4x4 *mat);
 void aiMatrix4x4_to_mat4(struct aiMatrix4x4 *src, mat4 dest);
 
-// Physics helpers
-void print_AABB(struct AABB *aabb);
-
 #endif

@@ -1,4 +1,5 @@
 //#include <GLFW/glfw3.h>
+#include <cglm/euler.h>
 #include <cglm/mat4.h>
 #include <glad/glad.h>
 #include <cglm/cglm.h>
@@ -136,41 +137,35 @@ void scene_update(Scene *scene, float deltaTime){
     // a single broad-phase check of every possible pair
     for(int i = 0; i < scene->num_entities; i++){
       // Get matrix and vector to update AABB A
+      mat4 eulerA;
       mat3 aabbUpdateMatA;
-      vec3 aabbUpdateVecA = {0.0f, 0.0f, 0.0f};
-      glm_mat3_identity(modelA);
-      // Translate
-      glm_translate(aabbUpdateVecA, scene->entities[i].position);
-      // Rotate
-      glm_rotate_y(aabbUpdateMatA, glm_rad(scene->entities[i].rotation[1]), aabbUpdateMatA);
-      glm_rotate_x(aabUpdateMatA, glm_rad(scene->entities[i].rotation[0]), aabbUpdateMatA);
-      glm_rotate_z(aabbUpdateMatA, glm_rad(scene->entities[i].rotation[2]), aabbUpdateMatA);
-      // Scale
-      glm_scale(aabbUpdateMatA, scene->entities[i]->scale);
+      glm_euler_xyz(scene->entities[i].rotation, eulerA);
+      glm_mat4_pick3(eulerA, aabbUpdateMatA);
+      
+      vec3 aabbUpdateVecA;
+      glm_vec3_copy(scene->entities[i].position, aabbUpdateVecA);
+      
+      struct AABB worldAABB_A;
+      AABB_update(&scene->entities[i].model->aabb, aabbUpdateMatA, aabbUpdateVecA, &worldAABB_A);
 
       for(int j = i+1; j < scene->num_entities; j++){
-        // Get matrix and vector to update AABB B
+        // Get matrix and vector to update AABB A
+        mat4 eulerB;
         mat3 aabbUpdateMatB;
-        vec3 aabbUpdateVecB = {0.0f, 0.0f, 0.0f};
-        glm_mat3_identity(aabbUpdateMatB);
-        // Translate
-        glm_translate(aabbUpdateVecB, scene->entities[j].position);
-        // Rotate
-        glm_rotate_y(aabbUpdateMatB, glm_rad(scene->entities[j].rotation[1]), aabbUpdateMatB);
-        glm_rotate_x(aabbUpdateMatB, glm_rad(scene->entities[j].rotation[0]), aabbUpdateMatB);
-        glm_rotate_z(aabbUpdateMatB, glm_rad(scene->entities[j].rotation[2]), aabbUpdateMatB);
-        // Scale
-        glm_scale(aabbUpdateMatB, scene->entities[j]->scale);
-
-        // Update AABB of both entities using their model matrices to transform them to world space
-        AABB_update(&scene->entities[i].model->aabb, mat3, vec3, &scene->entities[i].model->aabb);
-        AABB_update(&scene->entities[j].model->aabb, mat3, vec3, &scene->entities[j].model->aabb);
+        glm_euler_xyz(scene->entities[j].rotation, eulerB);
+        glm_mat4_pick3(eulerB, aabbUpdateMatB);
+      
+        vec3 aabbUpdateVecB;
+        glm_vec3_copy(scene->entities[j].position, aabbUpdateVecB);
+      
+        struct AABB worldAABB_B;
+        AABB_update(&scene->entities[j].model->aabb, aabbUpdateMatB, aabbUpdateVecB, &worldAABB_B);
 
         // Perform collision check
-        if (AABB_intersect(&scene->entities[i].model->aabb, &scene->entities[j].model->aabb)){
+        if (AABB_intersect(&worldAABB_A, &worldAABB_B)){
           printf("COLLISION DETECTED between the following AABBs:\n");
-          print_aabb(&scene->entities[i].model->aabb);
-          print_aabb(&scene->entities[j].model->aabb);
+          print_aabb(&worldAABB_A);
+          print_aabb(&worldAABB_B);
         }
         else{
           printf("NO COLLISION DETECTED\n");

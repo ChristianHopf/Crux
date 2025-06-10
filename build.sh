@@ -1,6 +1,6 @@
 #!/bin/bash
 
-OUT=executables/collision1
+OUT=executables/collision2
 SRC_DIR=src
 PHYSICS_DIR=$SRC_DIR/physics
 
