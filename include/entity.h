@@ -9,6 +9,7 @@ typedef struct {
   vec3 position;
   vec3 rotation;
   vec3 scale;
+  vec3 velocity;
   struct Model *model;
   Shader *shader;
 } Entity;

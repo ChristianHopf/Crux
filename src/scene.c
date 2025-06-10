@@ -8,6 +8,7 @@
 #include "skybox.h"
 #include "text.h"
 #include "physics/aabb.h"
+#include "physics/utils.h"
 #include "utils.h"
 
 Scene *scene_create(bool physics_view_mode){
@@ -73,6 +74,7 @@ Scene *scene_create(bool physics_view_mode){
     .position = {0.0f, 0.0f, 0.0f},
     .rotation = {0.0f, 0.0f, 0.0f},
     .scale = {3.0f, 3.0f, 3.0f},
+    .velocity = {0.0f, -0.1f, 0.0f},
     .model = oiiaiModel,
     .shader = shader
   };
@@ -89,6 +91,7 @@ Scene *scene_create(bool physics_view_mode){
     .position = {0.0f, -1.0f, 0.0f},
     .rotation = {0.0f, 0.0f, 0.0f},
     .scale = {3.0f, 3.0f, 3.0f},
+    .velocity = {0.0f, 0.0f, 0.0f},
     .model = planeModel,
     .shader = shader
   };
@@ -123,10 +126,62 @@ void scene_update(Scene *scene, float deltaTime){
   for(int i = 0; i < scene->num_entities-1; i++){
     Entity *entity = &scene->entities[i];
 
+    // Sequential method: move this entity by its velocity
+    vec3 update;
+    glm_vec3_copy(entity->velocity, update);
+    glm_vec3_scale(update, deltaTime, update);
+    glm_vec3_add(entity->position, update, entity->position);
+
+    // Perform primitive collision detection:
+    // a single broad-phase check of every possible pair
+    for(int i = 0; i < scene->num_entities; i++){
+      // Get matrix and vector to update AABB A
+      mat3 aabbUpdateMatA;
+      vec3 aabbUpdateVecA = {0.0f, 0.0f, 0.0f};
+      glm_mat3_identity(modelA);
+      // Translate
+      glm_translate(aabbUpdateVecA, scene->entities[i].position);
+      // Rotate
+      glm_rotate_y(aabbUpdateMatA, glm_rad(scene->entities[i].rotation[1]), aabbUpdateMatA);
+      glm_rotate_x(aabUpdateMatA, glm_rad(scene->entities[i].rotation[0]), aabbUpdateMatA);
+      glm_rotate_z(aabbUpdateMatA, glm_rad(scene->entities[i].rotation[2]), aabbUpdateMatA);
+      // Scale
+      glm_scale(aabbUpdateMatA, scene->entities[i]->scale);
+
+      for(int j = i+1; j < scene->num_entities; j++){
+        // Get matrix and vector to update AABB B
+        mat3 aabbUpdateMatB;
+        vec3 aabbUpdateVecB = {0.0f, 0.0f, 0.0f};
+        glm_mat3_identity(aabbUpdateMatB);
+        // Translate
+        glm_translate(aabbUpdateVecB, scene->entities[j].position);
+        // Rotate
+        glm_rotate_y(aabbUpdateMatB, glm_rad(scene->entities[j].rotation[1]), aabbUpdateMatB);
+        glm_rotate_x(aabbUpdateMatB, glm_rad(scene->entities[j].rotation[0]), aabbUpdateMatB);
+        glm_rotate_z(aabbUpdateMatB, glm_rad(scene->entities[j].rotation[2]), aabbUpdateMatB);
+        // Scale
+        glm_scale(aabbUpdateMatB, scene->entities[j]->scale);
+
+        // Update AABB of both entities using their model matrices to transform them to world space
+        AABB_update(&scene->entities[i].model->aabb, mat3, vec3, &scene->entities[i].model->aabb);
+        AABB_update(&scene->entities[j].model->aabb, mat3, vec3, &scene->entities[j].model->aabb);
+
+        // Perform collision check
+        if (AABB_intersect(&scene->entities[i].model->aabb, &scene->entities[j].model->aabb)){
+          printf("COLLISION DETECTED between the following AABBs:\n");
+          print_aabb(&scene->entities[i].model->aabb);
+          print_aabb(&scene->entities[j].model->aabb);
+        }
+        else{
+          printf("NO COLLISION DETECTED\n");
+        }
+      }
+    }
+
     // Update translation vector
-    entity->position[1] = (float)sin(glfwGetTime()*4) / 4;
+    // entity->position[1] = (float)sin(glfwGetTime()*4) / 4;
     // Update rotation vector
-    entity->rotation[1] -= rotationSpeed * deltaTime;
+    // entity->rotation[1] -= rotationSpeed * deltaTime;
   }
 
   // Update light
