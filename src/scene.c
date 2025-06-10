@@ -55,13 +55,6 @@ Scene *scene_create(bool physics_view_mode){
     glfwTerminate();
     return NULL;
   }
-  Shader *aabbShaderPtr = shader_create("shaders/physics/aabb.vs", "shaders/physics/aabb.fs");
-  if (!aabbShaderPtr){
-    printf("Error: failed to create AABB shader\n");
-    glfwTerminate();
-    return NULL;
-  }
-  aabbShader = aabbShaderPtr;
   // Shader *planeShader = shader_create("shaders/basic/plane.vs", "shaders/dirlight/shader.fs");
   // if (!planeShader){
   //   printf("Error: failed to create plane shader program\n");
@@ -127,13 +120,13 @@ void scene_update(Scene *scene, float deltaTime){
   player_update(&scene->player, deltaTime);
 
   // Update entities
-  for(int i = 0; i < scene->num_entities; i++){
+  for(int i = 0; i < scene->num_entities-1; i++){
     Entity *entity = &scene->entities[i];
 
     // Update translation vector
-    // entity->position[1] = (float)sin(glfwGetTime()*4) / 4;
+    entity->position[1] = (float)sin(glfwGetTime()*4) / 4;
     // Update rotation vector
-    // entity->rotation[1] -= rotationSpeed * deltaTime;
+    entity->rotation[1] -= rotationSpeed * deltaTime;
   }
 
   // Update light
@@ -197,11 +190,7 @@ void scene_render(Scene *scene){
 
     // Render the model's AABB
     if (scene->physics_view_mode){
-      shader_use(aabbShader);
-      shader_set_mat4(aabbShader, "model", model);
-      shader_set_mat4(aabbShader, "view", view);
-      shader_set_mat4(aabbShader, "projection", projection);
-      AABB_render(&entity->model->aabb);
+      AABB_render(&entity->model->aabb, model, view, projection);
     }
   }
 

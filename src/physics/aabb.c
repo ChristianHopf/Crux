@@ -36,13 +36,15 @@ void AABB_update_by_vertex(struct AABB *aabb, vec3 vertex){
 // Assumes a model's AABB will never change
 void AABB_init(struct AABB *aabb){
   // Create the AABB shader
-  Shader *aabbShaderPtr = shader_create("shaders/physics/aabb.vs", "shaders/physics/aabb.fs");
-  if (!aabbShaderPtr){
-    printf("Error: failed to create AABB shader\n");
-    glfwTerminate();
-    return NULL;
+  if (!aabbShader){
+    Shader *aabbShaderPtr = shader_create("shaders/physics/aabb.vs", "shaders/physics/aabb.fs");
+    if (!aabbShaderPtr){
+      printf("Error: failed to create AABB shader\n");
+      return;
+    }
+    aabbShader = aabbShaderPtr;
+    printf("Successfully created AABB shader and assigned its poiner to static aabbShader\n");
   }
-  aabbShader = aabbShaderPtr;
 
   // Define vertices and indices for the box, based on min and max
   float vertices[24] = {
@@ -74,29 +76,25 @@ void AABB_init(struct AABB *aabb){
   };
 
   // Gen VAO, VBO, EBO
-  GLuint VAO, VBO, EBO;
-  glGenVertexArrays(1, &VAO);
-  glBindVertexArray(VAO);
-  glGenBuffers(1, &VBO);
-  glGenBuffers(1, &EBO);
+  glGenVertexArrays(1, &aabb->VAO);
+  glGenBuffers(1, &aabb->VBO);
+  glGenBuffers(1, &aabb->EBO);
+  glBindVertexArray(aabb->VAO);
 
-  glBindBuffer(GL_ARRAY_BUFFER, VBO);
-  glBufferData(GL_ARRAY_BUFFER, 24 * sizeof(float), vertices, GL_STATIC_DRAW);
+  glBindBuffer(GL_ARRAY_BUFFER, aabb->VBO);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-  glBufferData(GL_ELEMENT_ARRAY_BUFFER, 24 * sizeof(unsigned int), indices, GL_STATIC_DRAW);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, aabb->EBO);
+  glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
   // Configure attribute pointer, unbind
   glEnableVertexAttribArray(0);
   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 
   // Assign ints to the AABB struct
-  aabb->VAO = VAO;
-  aabb->VBO = VBO;
-  aabb->EBO = EBO;
+  printf("Assigned VAO, VBO, and EBO to AABB: %d %d %d\n", aabb->VAO, aabb->VBO, aabb->EBO);
 
   // Unbind
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
   glBindVertexArray(0);
 }
 
@@ -104,7 +102,7 @@ void AABB_init(struct AABB *aabb){
 // Performance will be very bad because I'm generating new buffers
 // to buffer data that might not change on every frame.
 // Could make a solution with static buffer IDs and glBufferSubData later.
-void AABB_render(struct AABB *aabb){
+void AABB_render(struct AABB *aabb, mat4 model, mat4 view, mat4 projection){
   printf("AABB {\n");
   printf("  min: (%.2f, %.2f, %.2f)\n", aabb->min[0], aabb->min[1], aabb->min[2]);
   printf("  max: (%.2f, %.2f, %.2f)\n", aabb->max[0], aabb->max[1], aabb->max[2]);
@@ -157,9 +155,19 @@ void AABB_render(struct AABB *aabb){
   // glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 
   // Draw lines
+  shader_use(aabbShader);
+  printf("using aabbshader with id: %d\n", aabbShader->ID);
+  shader_set_mat4(aabbShader, "model", model);
+  shader_set_mat4(aabbShader, "view", view);
+  shader_set_mat4(aabbShader, "projection", projection);
+
   glLineWidth(2.0f);
+  printf("Time to draw AABB lines\n");
   glBindVertexArray(aabb->VAO);
+  printf("Successfully bound AABB VAO\n");
   glDrawElements(GL_LINES, 24, GL_UNSIGNED_INT, 0);
+
+  glBindVertexArray(0);
 
   // Cleanup
   // glBindVertexArray(0);

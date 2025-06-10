@@ -21,6 +21,6 @@ void AABB_merge(struct AABB *a, struct AABB *b);
 void AABB_update_by_vertex(struct AABB *aabb, vec3 vertex);
 
 void AABB_init(struct AABB *aabb);
-void AABB_render(struct AABB *aabb);
+void AABB_render(struct AABB *aabb, mat4 model, mat4 view, mat4 projection);
 
 #endif
