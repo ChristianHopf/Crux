@@ -2,9 +2,9 @@
 
 OUT=executables/collision2
 SRC_DIR=src
-PHYSICS_DIR=$SRC_DIR/physics
 
-SRC_FILES="main.c $SRC_DIR/*.c $PHYSICS_DIR/*.c"
+SRC_FILES="main.c $SRC_DIR/*.c"
+SRC_FILES="main.c $(find $SRC_DIR -type f -name "*.c")"
 
 CC=gcc
 CFLAGS="-Iinclude $(pkg-config --cflags freetype2)"

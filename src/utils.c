@@ -2,7 +2,7 @@
 #include <assimp/material.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "physics/utils.c"
+#include "physics/utils.h"
 #include "utils.h"
 
 // Helper to read from file to string
