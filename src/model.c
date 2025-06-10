@@ -82,13 +82,18 @@ bool model_load(struct Model *model, const char *path){
   glm_vec3_copy(min, model->aabb.min);
   glm_vec3_copy(max, model->aabb.max);
 
-  // Process the root node
+  // Process the root node's meshes, build AABB
   unsigned int model_mesh_index = 0;
   struct aiMatrix4x4 parent_transform;
   aiIdentityMatrix4(&parent_transform);
   struct AABB root_AABB = model_process_node(model, scene->mRootNode, scene, parent_transform, &model_mesh_index);
+
+  // Copy root_AABB to model
   glm_vec3_copy(root_AABB.min, model->aabb.min);
   glm_vec3_copy(root_AABB.max, model->aabb.max);
+
+  // Create buffers for rendering this model's AABB
+  AABB_init(&model->aabb);
 
   aiReleaseImport(scene);
   return true;

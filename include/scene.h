@@ -26,7 +26,7 @@ typedef struct {
   bool physics_view_mode;
 } Scene;
 
-Scene *scene_create();
+Scene *scene_create(bool physics_view_mode);
 
 void scene_update(Scene *scene, float deltaTime);
 void scene_render(Scene *scene);

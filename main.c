@@ -181,7 +181,7 @@ Engine *engine_create(){
   //glEnable(GL_STENCIL_TEST);
   //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
-  engine->active_scene = scene_create();
+  engine->active_scene = scene_create(true);
   if (!engine->active_scene){
     printf("Error: failed to create scene\n");
     free(engine);

@@ -4,6 +4,7 @@
 #include <assimp/material.h>
 #include <assimp/matrix4x4.h>
 #include <cglm/cglm.h>
+#include "physics/aabb.h"
 
 // C helpers (strings, etc)
 // Read data from file path
