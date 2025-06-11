@@ -25,17 +25,17 @@ void level_render(struct Level *level, struct RenderContext *context){
 
   // Set its model, view, and projection matrix uniforms
   shader_set_mat4(level->shader, "model", model);
-  shader_set_mat4(level->shader, "view", context->view);
-  shader_set_mat4(level->shader, "projection", context->projection);
+  shader_set_mat4(level->shader, "view", context->view_ptr);
+  shader_set_mat4(level->shader, "projection", context->projection_ptr);
 
   // Lighting uniforms
-  shader_set_vec3(level->shader, "dirLight.direction", context->light->direction);
-  shader_set_vec3(level->shader, "dirLight.ambient", context->light->ambient);
-  shader_set_vec3(level->shader, "dirLight.diffuse", context->light->diffuse);
-  shader_set_vec3(level->shader, "dirLight.specular", context->light->specular);
+  shader_set_vec3(level->shader, "dirLight.direction", context->light_ptr->direction);
+  shader_set_vec3(level->shader, "dirLight.ambient", context->light_ptr->ambient);
+  shader_set_vec3(level->shader, "dirLight.diffuse", context->light_ptr->diffuse);
+  shader_set_vec3(level->shader, "dirLight.specular", context->light_ptr->specular);
 
   // Set camera position as viewPos in the fragment shader
-  shader_set_vec3(level->shader, "viewPos", context->camera_position);
+  shader_set_vec3(level->shader, "viewPos", context->camera_position_ptr);
 
   // Draw model
   model_draw(level->model, level->shader);
@@ -65,23 +65,51 @@ void entity_render(struct Entity *entity, struct RenderContext *context){
 
   // Set its model, view, and projection matrix uniforms
   shader_set_mat4(entity->shader, "model", model);
-  shader_set_mat4(entity->shader, "view", context->view);
-  shader_set_mat4(entity->shader, "projection", context->projection);
+  shader_set_mat4(entity->shader, "view", context->view_ptr);
+  shader_set_mat4(entity->shader, "projection", context->projection_ptr);
 
   // Lighting uniforms
-  shader_set_vec3(entity->shader, "dirLight.direction", context->light->direction);
-  shader_set_vec3(entity->shader, "dirLight.ambient", context->light->ambient);
-  shader_set_vec3(entity->shader, "dirLight.diffuse", context->light->diffuse);
-  shader_set_vec3(entity->shader, "dirLight.specular", context->light->specular);
+  shader_set_vec3(entity->shader, "dirLight.direction", context->light_ptr->direction);
+  shader_set_vec3(entity->shader, "dirLight.ambient", context->light_ptr->ambient);
+  shader_set_vec3(entity->shader, "dirLight.diffuse", context->light_ptr->diffuse);
+  shader_set_vec3(entity->shader, "dirLight.specular", context->light_ptr->specular);
 
   // Set camera position as viewPos in the fragment shader
-  shader_set_vec3(entity->shader, "viewPos", context->camera_position);
+  shader_set_vec3(entity->shader, "viewPos", context->camera_position_ptr);
 
   // Draw model
   model_draw(entity->model, entity->shader);
 
   // Render the model's AABB
   if (context->physics_view_mode){
-    AABB_render(&entity->model->aabb, model, context->view, context->projection);
+    AABB_render(&entity->model->aabb, model, context->view_ptr, context->projection_ptr);
   }
+}
+
+void skybox_render(struct Skybox *skybox, struct RenderContext *context){
+  // Modify depth test to render skybox "at the edge"
+  glDepthFunc(GL_LEQUAL);
+  shader_use(skybox->shader);
+
+  // Build skybox view matrix, ignoring translation
+  mat3 view_skybox_mat3;
+  mat4 view_skybox;
+  glm_mat4_identity(view_skybox);
+  glm_mat4_pick3(context->view_ptr, view_skybox_mat3);
+  glm_mat4_ins3(view_skybox_mat3, view_skybox);
+
+  shader_set_mat4(skybox->shader, "view", view_skybox);
+  shader_set_mat4(skybox->shader, "projection", context->projection_ptr);
+
+  // Bind vertex array
+  glBindVertexArray(skybox->cubemapVAO);
+  // Bind texture
+  glActiveTexture(GL_TEXTURE0);
+  glBindTexture(GL_TEXTURE_CUBE_MAP, skybox->cubemap_texture_id);
+  // Draw triangles
+  glDrawArrays(GL_TRIANGLES, 0, 36);
+
+  // Reset depth test function
+  glBindVertexArray(0);
+  glDepthFunc(GL_LESS);
 }

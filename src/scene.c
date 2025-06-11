@@ -48,12 +48,6 @@ Scene *scene_create(bool physics_view_mode){
     glfwTerminate();
     return NULL;
   }
-  // Shader *planeShader = shader_create("shaders/basic/plane.vs", "shaders/dirlight/shader.fs");
-  // if (!planeShader){
-  //   printf("Error: failed to create plane shader program\n");
-  //   glfwTerminate();
-  //   return NULL;
-  // }
   
   // Level
   struct Model *planeModel = (struct Model *)malloc(sizeof(struct Model));
@@ -97,23 +91,6 @@ Scene *scene_create(bool physics_view_mode){
     .shader = shader
   };
   scene->entities[scene->num_entities++] = oiiai;
-
-  // struct Model *planeModel = (struct Model *)malloc(sizeof(struct Model));
-  // if (!planeModel){
-  //   printf("Error: failed to allocate oiiaiModel\n");
-  //   return NULL;
-  // }
-  // model_load(planeModel, "resources/basic/grass_plane/grass_plane.gltf");
-  // struct Entity plane = {
-  //   .ID = 1,
-  //   .position = {0.0f, -1.0f, 0.0f},
-  //   .rotation = {0.0f, 0.0f, 0.0f},
-  //   .scale = {3.0f, 3.0f, 3.0f},
-  //   .velocity = {0.0f, 0.0f, 0.0f},
-  //   .model = planeModel,
-  //   .shader = shader
-  // };
-  // scene->entities[scene->num_entities++] = plane;
 
   //Create a PhysicsWorld and populate it with PhysicsBodies
   scene->physics_world = physics_world_create();
@@ -184,11 +161,17 @@ void scene_render(Scene *scene){
   // a collection of parameters for rendering the Level and Entities
   struct RenderContext context = {
     .light = scene->light,
+    .view = view,
+    .projection = projection,
+    .camera_position = scene->player.camera->position,
+    .physics_view_mode = scene->physics_view_mode
   };
-  glm_mat4_copy(view, context.view);
-  glm_mat4_copy(projection, context.projection);
-  glm_vec3_copy(scene->player.camera->position, context.camera_position);
-  context.physics_view_mode = scene->physics_view_mode;
+  // context.light = scene->light;
+  // context.view = view;
+  // glm_mat4_copy(view, context.view);
+  // glm_mat4_copy(projection, context.projection);
+  // glm_vec3_copy(scene->player.camera->position, context.camera_position);
+  // context.physics_view_mode = scene->physics_view_mode;
 
   // Draw level
   level_render(&scene->level, &context);
@@ -198,30 +181,8 @@ void scene_render(Scene *scene){
     entity_render(&scene->entities[i], &context);
   }
 
-  // Skybox
-  glDepthFunc(GL_LEQUAL);
-  shader_use(scene->skybox->shader);
-
-  // Build skybox view matrix, ignoring translation
-  mat3 view_skybox_mat3;
-  mat4 view_skybox;
-  glm_mat4_identity(view_skybox);
-  glm_mat4_pick3(view, view_skybox_mat3);
-  glm_mat4_ins3(view_skybox_mat3, view_skybox);
-
-  shader_set_mat4(scene->skybox->shader, "view", view_skybox);
-  shader_set_mat4(scene->skybox->shader, "projection", projection);
-
-  // Bind vertex array
-  glBindVertexArray(scene->skybox->cubemapVAO);
-  // Bind texture
-  glActiveTexture(GL_TEXTURE0);
-  glBindTexture(GL_TEXTURE_CUBE_MAP, scene->skybox->cubemap_texture_id);
-  // Draw triangles
-  glDrawArrays(GL_TRIANGLES, 0, 36);
-
-  glBindVertexArray(0);
-  glDepthFunc(GL_LESS);
+  // Draw skybox
+  skybox_render(scene->skybox, &context);
 
   // Render text
   text_render("Crux Engine 0.1", 4.0f, 744.0f, 1.0f, (vec3){1.0f, 1.0f, 1.0f});

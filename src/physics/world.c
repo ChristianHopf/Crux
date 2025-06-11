@@ -9,7 +9,6 @@ struct PhysicsWorld *physics_world_create(){
     return NULL;
   }
   world->bodies = (struct PhysicsBody *)calloc(MAX_PHYSICS_BODIES, sizeof(struct PhysicsBody));
-  printf("Created physics world\n");
 
   // Might want some kind of default field population later.
   // calloc should be fine for now, though.
@@ -30,13 +29,9 @@ void physics_add_body(struct PhysicsWorld *physics_world, struct Entity *entity)
   glm_vec3_copy(entity->rotation, body.rotation);
   glm_vec3_copy(entity->velocity, body.velocity);
 
-  printf("Successfully created physics body with AABB:\n");
   print_aabb(&body.aabb);
 
   physics_world->bodies[physics_world->num_bodies++] = body;
-  printf("Allocated physics body, physics world now has %d bodies\n", physics_world->num_bodies);
-  // physics_world->bodies[physics_world->num_bodies].aabb = aabb;
-  // printf("Successfully added body to physics_world\n");
 }
 
 void physics_step(struct PhysicsWorld *physics_world, float delta_time){
@@ -67,7 +62,7 @@ void physics_step(struct PhysicsWorld *physics_world, float delta_time){
     AABB_update(&bodyA->aabb, rotationA, translationA, &worldAABB_A);
 
     // Check for collision with every other entity
-    for(int j = i+1; j < physics_world->num_bodies; j++){
+    for(unsigned int j = i+1; j < physics_world->num_bodies; j++){
       struct PhysicsBody *bodyB = &physics_world->bodies[j];
       // Get matrix and vector to update AABB A
       mat4 eulerB;
