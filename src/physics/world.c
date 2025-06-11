@@ -19,17 +19,13 @@ struct PhysicsWorld *physics_world_create(){
 void physics_add_body(struct PhysicsWorld *physics_world, Entity *entity){
   printf("Physics world has %d bodies\n", physics_world->num_bodies);
   // Create body
-  // struct PhysicsBody *body = (struct PhysicsBody *)malloc(sizeof(struct PhysicsBody));
-  // body->aabb = *aabb;
-  // printf("Created body with AABB:\n");
-  // print_aabb(&body->aabb);
-
-  // Add body to physics_world
-  // physics_world->bodies[physics_world->num_bodies++] = *body;
-
   struct PhysicsBody body = {
     .aabb = entity->model->aabb,
   };
+  // Assume uniform scaling
+  glm_vec3_scale(body.aabb.min, entity->scale[0], body.aabb.min);
+  glm_vec3_scale(body.aabb.max, entity->scale[1], body.aabb.max);
+  // Copy the Entity's position, rotation, and velocity
   glm_vec3_copy(entity->position, body.position);
   glm_vec3_copy(entity->rotation, body.rotation);
   glm_vec3_copy(entity->velocity, body.velocity);
@@ -44,6 +40,15 @@ void physics_add_body(struct PhysicsWorld *physics_world, Entity *entity){
 }
 
 void physics_step(struct PhysicsWorld *physics_world, float delta_time){
+  // Update each body in the physics world
+  for(unsigned int i = 0; i < physics_world->num_bodies; i++){
+    struct PhysicsBody *body = &physics_world->bodies[i];
+    vec3 update;
+    glm_vec3_copy(body->velocity, update);
+    glm_vec3_scale(update, delta_time, update);
+    glm_vec3_add(body->position, update, body->position);
+  }
+
   // Perform primitive collision detection:
   // a single broad-phase check of every possible pair
   for(unsigned int i = 0; i < physics_world->num_bodies-1; i++){
@@ -77,14 +82,19 @@ void physics_step(struct PhysicsWorld *physics_world, float delta_time){
       AABB_update(&bodyB->aabb, rotationB, translationB, &worldAABB_B);
 
       // Perform collision check
+      printf("Time to check collision between the following AABBs:\n");
+      printf("Model space AABBs:\n");
+      print_aabb(&bodyA->aabb);
+      print_aabb(&bodyB->aabb);
+      printf("World space AABBS:\n");
+      print_aabb(&worldAABB_A);
+      print_aabb(&worldAABB_B);
       if (AABB_intersect(&worldAABB_A, &worldAABB_B)){
-        // printf("1\n");
-        printf("Collision detected between the following aabbs:\n");
-        print_aabb(&worldAABB_A);
-        print_aabb(&worldAABB_B);
+        printf("Collision detected\n");
+        
       }
       else{
-        // printf("2\n");
+        printf("No collision detected\n");
         // printf("No collision detected between the following aabbs:\n");
         // print_aabb(&worldAABB_A);
         // print_aabb(&worldAABB_B);

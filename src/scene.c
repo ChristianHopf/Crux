@@ -76,7 +76,7 @@ Scene *scene_create(bool physics_view_mode){
     .position = {0.0f, 0.0f, 0.0f},
     .rotation = {0.0f, 0.0f, 0.0f},
     .scale = {3.0f, 3.0f, 3.0f},
-    .velocity = {0.0f, -0.1f, 0.0f},
+    .velocity = {0.0f, -0.2f, 0.0f},
     .model = oiiaiModel,
     .shader = shader
   };
@@ -100,12 +100,12 @@ Scene *scene_create(bool physics_view_mode){
   scene->entities[scene->num_entities++] = plane;
 
   // Create a PhysicsWorld and populate it with PhysicsBodies
-  // scene->physics_world = physics_world_create();
-  // printf("Scene has %d entities\n", scene->num_entities);
-  // for(int i = 0; i < scene->num_entities; i++){
-  //   printf("Time to add physics body for entity %d\n", i);
-  //   physics_add_body(scene->physics_world, &scene->entities[i]);
-  // }
+  scene->physics_world = physics_world_create();
+  printf("Scene has %d entities\n", scene->num_entities);
+  for(int i = 0; i < scene->num_entities; i++){
+    printf("Time to add physics body for entity %d\n", i);
+    physics_add_body(scene->physics_world, &scene->entities[i]);
+  }
 
   // Skybox
   scene->skybox = skybox_create();
@@ -116,7 +116,7 @@ Scene *scene_create(bool physics_view_mode){
   return scene;
 }
 
-void scene_update(Scene *scene, float deltaTime){
+void scene_update(Scene *scene, float delta_time){
   // Skip update if the scene is paused
   if (scene->paused){
     return;
@@ -124,25 +124,25 @@ void scene_update(Scene *scene, float deltaTime){
 
   // Timing
   static float total_time = 0.0f;
-  total_time += deltaTime;
+  total_time += delta_time;
 
   float rotationSpeed = 100.0f;
   float lightSpeed = 1.0f;
 
   // Update player
-  player_update(&scene->player, deltaTime);
+  player_update(&scene->player, delta_time);
 
   // Sequential method: move entity, then check collisions
-  for(int i = 0; i < scene->num_entities-1; i++){
+  for(int i = 0; i < scene->num_entities; i++){
     Entity *entity = &scene->entities[i];
     vec3 update;
     glm_vec3_copy(entity->velocity, update);
-    glm_vec3_scale(update, deltaTime, update);
+    glm_vec3_scale(update, delta_time, update);
     glm_vec3_add(entity->position, update, entity->position);
   }
 
   // Perform collision detection
-  // physics_step(scene->physics_world, deltaTime);
+  physics_step(scene->physics_world, delta_time);
 
   // Update translation vector
   // entity->position[1] = (float)sin(glfwGetTime()*4) / 4;
