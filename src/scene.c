@@ -163,12 +163,14 @@ void scene_update(Scene *scene, float deltaTime){
 
         // Perform collision check
         if (AABB_intersect(&worldAABB_A, &worldAABB_B)){
-          printf("COLLISION DETECTED between the following AABBs:\n");
+          printf("Collision detected between the following aabbs:\n");
           print_aabb(&worldAABB_A);
           print_aabb(&worldAABB_B);
         }
         else{
-          printf("NO COLLISION DETECTED\n");
+          printf("No collision detected between the following aabbs:\n");
+          print_aabb(&worldAABB_A);
+          print_aabb(&worldAABB_B);
         }
       }
     }

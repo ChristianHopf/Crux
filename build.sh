@@ -1,15 +1,19 @@
 #!/bin/bash
 
-OUT=executables/collision2
+MAIN_OUT=executables/collision2
 SRC_DIR=src
-
-SRC_FILES="main.c $SRC_DIR/*.c"
 SRC_FILES="main.c $(find $SRC_DIR -type f -name "*.c")"
 
+TEST_OUT=executables/testing
+TEST_DIR=tests
+TEST_SRC_FILES="$(find $TESTS_DIR -type f -name "test_*.c")"
+
 CC=gcc
-CFLAGS="-Iinclude $(pkg-config --cflags freetype2)"
+CFLAGS="-Iinclude $(pkg-config --cflags freetype2) -Ithird_party/unity"
 LDFLAGS="-L/usr/lib $(pkg-config --libs freetype2) -lglfw -lGL -lcglm -lm -ldl -lassimp"
 
+# Compile main binary
 $CC -o $OUT $SRC_FILES $CFLAGS $LDFLAGS
 
-# gcc -o executables/aabb1 main.c src/shader.c src/camera.c src/model.c src/material.c src/scene.c src/player.c src/skybox.c src/text.c src/physics/aabb.c src/utils.c src/stb_image.c src/glad.c -L/usr/lib -Iinclude $(pkg-config --cflags freetype2) $(pkg-config --libs freetype2) -lglfw -lGL -lcglm -lm -ldl -lassimp
+# Compile test binary
+$CC -o $TEST_OUT $TEST_SRC_FILES $CFLAGS $LDFLAGS
