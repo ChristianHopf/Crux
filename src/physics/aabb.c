@@ -1,4 +1,5 @@
 #include "physics/aabb.h"
+#include "physics/utils.h"
 
 // Shader program for rendering AABB wireframes
 static Shader *aabbShader;
@@ -6,7 +7,7 @@ static Shader *aabbShader;
 bool AABB_intersect(struct AABB *a, struct AABB *b){
   if (a->max[0] < b->min[0] || a->min[0] > b->max[0]) return false;
   if (a->max[2] < b->min[2] || a->min[2] > b->max[2]) return false;
-  if (a->max[1] > b->min[1] || a->min[1] > b->max[1]) return false;
+  if (a->max[1] < b->min[1] || a->min[1] > b->max[1]) return false;
   return true;
 }
 
@@ -22,6 +23,9 @@ void AABB_merge(struct AABB *a, struct AABB *b){
 }
 
 void AABB_update(struct AABB *src, mat3 rotation, vec3 translation, struct AABB *dest){
+  printf("Time to update AABB src and store in dest. Current values of src and dest:\n");
+  print_aabb(src);
+  print_aabb(dest);
   // For all three axes:
   for (int i = 0; i < 3; i++){
     // Add translation
