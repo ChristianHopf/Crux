@@ -43,7 +43,7 @@ void test_aabb_update(void){
     .max = {0.0f, 0.0f, 0.0f}
   };
 
-  mat4 rotation;
+  mat3 rotation;
   vec3 translation = {5.0f, 0.0f, 0.0f};
 
   mat4 rotation_mat4;
