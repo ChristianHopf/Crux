@@ -30,9 +30,9 @@ void physics_add_body(struct PhysicsWorld *physics_world, Entity *entity){
   struct PhysicsBody body = {
     .aabb = entity->model->aabb,
   };
-  glm_vec3_copy(body.position, entity->position);
-  glm_vec3_copy(body.rotation, entity->rotation);
-  glm_vec3_copy(body.velocity, entity->velocity);
+  glm_vec3_copy(entity->position, body.position);
+  glm_vec3_copy(entity->rotation, body.rotation);
+  glm_vec3_copy(entity->velocity, body.velocity);
 
   printf("Successfully created physics body with AABB:\n");
   print_aabb(&body.aabb);
