@@ -3,6 +3,7 @@
 
 #include <cglm/cglm.h>
 #include "physics/aabb.h"
+#include "entity.h"
 
 struct PhysicsBody {
   struct AABB aabb;

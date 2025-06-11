@@ -100,12 +100,12 @@ Scene *scene_create(bool physics_view_mode){
   scene->entities[scene->num_entities++] = plane;
 
   // Create a PhysicsWorld and populate it with PhysicsBodies
-  scene->physics_world = physics_world_create();
-  printf("Scene has %d entities\n", scene->num_entities);
-  for(int i = 0; i < scene->num_entities; i++){
-    printf("Time to add physics body for entity %d\n", i);
-    physics_add_body(scene->physics_world, &scene->entities[i]);
-  }
+  // scene->physics_world = physics_world_create();
+  // printf("Scene has %d entities\n", scene->num_entities);
+  // for(int i = 0; i < scene->num_entities; i++){
+  //   printf("Time to add physics body for entity %d\n", i);
+  //   physics_add_body(scene->physics_world, &scene->entities[i]);
+  // }
 
   // Skybox
   scene->skybox = skybox_create();
@@ -142,7 +142,7 @@ void scene_update(Scene *scene, float deltaTime){
   }
 
   // Perform collision detection
-  physics_step(scene->physics_world, deltaTime);
+  // physics_step(scene->physics_world, deltaTime);
 
   // Update translation vector
   // entity->position[1] = (float)sin(glfwGetTime()*4) / 4;

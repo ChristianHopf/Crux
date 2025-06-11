@@ -28,12 +28,14 @@ void physics_add_body(struct PhysicsWorld *physics_world, Entity *entity){
   // physics_world->bodies[physics_world->num_bodies++] = *body;
 
   struct PhysicsBody body = {
-    .aabb = aabb,
-    .position = entity->position,
-    .rotation = entity->rotation,
-    .velocity = entity->velocity
+    .aabb = entity->model->aabb,
   };
-  printf("Successfully created physics body\n");
+  glm_vec3_copy(body.position, entity->position);
+  glm_vec3_copy(body.rotation, entity->rotation);
+  glm_vec3_copy(body.velocity, entity->velocity);
+
+  printf("Successfully created physics body with AABB:\n");
+  print_aabb(&body.aabb);
 
   physics_world->bodies[physics_world->num_bodies++] = body;
   printf("Allocated physics body, physics world now has %d bodies\n", physics_world->num_bodies);
@@ -44,35 +46,35 @@ void physics_add_body(struct PhysicsWorld *physics_world, Entity *entity){
 void physics_step(struct PhysicsWorld *physics_world, float delta_time){
   // Perform primitive collision detection:
   // a single broad-phase check of every possible pair
-  for(int i = 0; i < physics_world->num_bodies-1; i++){
-    // Entity *entity = &scene->entities[i];
-    PhysicsBody *body = &physics_world->bodies[i];
+  for(unsigned int i = 0; i < physics_world->num_bodies-1; i++){
+    struct PhysicsBody *bodyA = &physics_world->bodies[i];
 
     // Get matrix and vector to update current AABB into world space
     mat4 eulerA;
     mat3 rotationA;
-    glm_euler_xyz(body->rotation, eulerA);
+    glm_euler_xyz(bodyA->rotation, eulerA);
     glm_mat4_pick3(eulerA, rotationA);
       
     vec3 translationA;
-    glm_vec3_copy(body->position, translationA);
+    glm_vec3_copy(bodyA->position, translationA);
       
     struct AABB worldAABB_A = {0};
-    AABB_update(&body->aabb, rotationA, translationA, &worldAABB_A);
+    AABB_update(&bodyA->aabb, rotationA, translationA, &worldAABB_A);
 
     // Check for collision with every other entity
-    for(int j = i+1; j < scene->num_entities; j++){
+    for(int j = i+1; j < physics_world->num_bodies; j++){
+      struct PhysicsBody *bodyB = &physics_world->bodies[j];
       // Get matrix and vector to update AABB A
       mat4 eulerB;
       mat3 rotationB;
-      glm_euler_xyz(body->rotation, eulerB);
+      glm_euler_xyz(bodyB->rotation, eulerB);
       glm_mat4_pick3(eulerB, rotationB);
       
       vec3 translationB;
-      glm_vec3_copy(body->position, translationB);
+      glm_vec3_copy(bodyB->position, translationB);
       
       struct AABB worldAABB_B = {0};
-      AABB_update(&body->aabb, rotationB, translationB, &worldAABB_B);
+      AABB_update(&bodyB->aabb, rotationB, translationB, &worldAABB_B);
 
       // Perform collision check
       if (AABB_intersect(&worldAABB_A, &worldAABB_B)){
