@@ -29,7 +29,7 @@ void AABB_update(struct AABB *src, mat3 rotation, vec3 translation, struct AABB 
   // For all three axes:
   for (int i = 0; i < 3; i++){
     // Add translation
-    dest->min[i] = dest->max[i] + translation[i];
+    dest->min[i] = dest->max[i] = translation[i];
 
     // Form the min and max extents of this axis by summing smaller and larger terms
     for (int j = 0; j < 3; j++){

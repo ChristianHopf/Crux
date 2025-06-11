@@ -43,11 +43,13 @@ void test_aabb_update(void){
     .max = {0.0f, 0.0f, 0.0f}
   };
 
-  mat3 rotation;
+  mat4 rotation;
   vec3 translation = {5.0f, 0.0f, 0.0f};
 
-  glm_mat3_identity(rotation);
-  glm_rotate_y(rotation, glm_rad(90.0f), rotation);
+  mat4 rotation_mat4;
+  glm_mat4_identity(rotation_mat4);
+  glm_rotate_y(rotation_mat4, glm_rad(90.0f), rotation_mat4);
+  glm_mat4_pick3(rotation_mat4, rotation);
 
   AABB_update(&src, rotation, translation, &dest);
 
