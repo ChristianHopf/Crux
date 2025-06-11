@@ -15,7 +15,7 @@ struct PhysicsWorld {
 
 // World, bodies
 struct PhysicsWorld *physics_world_create();
-struct PhysicsBody  *physics_add_body();
+void physics_add_body(struct PhysicsWorld *physics_world, struct AABB aabb);
 
 void physics_step(struct PhysicsWorld *physics_world, float delta_time);
 
