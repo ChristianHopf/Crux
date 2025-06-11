@@ -179,10 +179,16 @@ void scene_render(Scene *scene){
   camera_get_view_matrix(scene->player.camera, view);
   glm_perspective(glm_rad(scene->player.camera->fov), 800.0f / 600.0f, 0.1f, 100.0f, projection);
 
+  // Create a RenderContext, which is simply
+  // a collection of parameters for rendering the Level and Entities
+
   // Draw level
-  
+  //level_render(scene->level, context);
 
   // For each entity in the scene
+  // for(int i = 0; i < scene->num_entities; i++){
+  //   entity_render(&scene->entities[i], context);
+  // }
   for(int i = 0; i < scene->num_entities; i++){
     // Bind its shader
     struct Entity *entity = &scene->entities[i];

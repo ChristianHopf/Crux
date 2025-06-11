@@ -1,5 +1,4 @@
-#ifndef SCENE_H
-#define SCENE_H
+#pragma once
 
 #include <glad/glad.h>
 #include <stdbool.h>
@@ -36,5 +35,3 @@ void scene_update(Scene *scene, float deltaTime);
 void scene_render(Scene *scene);
 void scene_pause(Scene *scene);
 void scene_free(Scene *scene);
-
-#endif
