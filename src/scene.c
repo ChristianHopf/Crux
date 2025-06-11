@@ -168,10 +168,10 @@ void scene_update(Scene *scene, float deltaTime){
         print_aabb(&worldAABB_B);
       }
       else{
-          // printf("2\n");
-          printf("No collision detected between the following aabbs:\n");
-          print_aabb(&worldAABB_A);
-          print_aabb(&worldAABB_B);
+        // printf("2\n");
+        // printf("No collision detected between the following aabbs:\n");
+        // print_aabb(&worldAABB_A);
+        // print_aabb(&worldAABB_B);
       }
     }
 

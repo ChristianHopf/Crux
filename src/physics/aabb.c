@@ -23,9 +23,9 @@ void AABB_merge(struct AABB *a, struct AABB *b){
 }
 
 void AABB_update(struct AABB *src, mat3 rotation, vec3 translation, struct AABB *dest){
-  printf("Time to update AABB src and store in dest. Current values of src and dest:\n");
-  print_aabb(src);
-  print_aabb(dest);
+  // printf("Time to update AABB src and store in dest. Current values of src and dest:\n");
+  // print_aabb(src);
+  // print_aabb(dest);
   // For all three axes:
   for (int i = 0; i < 3; i++){
     // Add translation
