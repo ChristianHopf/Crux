@@ -11,7 +11,6 @@
 #include "text.h"
 #include "physics/world.h"
 #include "physics/aabb.h"
-#include "physics/utils.h"
 #include "utils.h"
 
 Scene *scene_create(bool physics_view_mode){
@@ -116,7 +115,7 @@ Scene *scene_create(bool physics_view_mode){
   // };
   // scene->entities[scene->num_entities++] = plane;
 
-  // Create a PhysicsWorld and populate it with PhysicsBodies
+  //Create a PhysicsWorld and populate it with PhysicsBodies
   scene->physics_world = physics_world_create();
   for(int i = 0; i < scene->num_entities; i++){
     physics_add_body(scene->physics_world, &scene->entities[i]);
@@ -194,72 +193,27 @@ void scene_render(Scene *scene){
   // Draw level
   level_render(&scene->level, &context);
 
-  // For each entity in the scene
+  // Draw entities
   for(int i = 0; i < scene->num_entities; i++){
     entity_render(&scene->entities[i], &context);
   }
-  // for(int i = 0; i < scene->num_entities; i++){
-  //   // Bind its shader
-  //   struct Entity *entity = &scene->entities[i];
-  //   shader_use(entity->shader);
-  //
-  //   // Get its model matrix
-  //   mat4 model;
-  //   glm_mat4_identity(model);
-  //   // Translate
-  //   glm_translate(model, entity->position);
-  //   // Rotate
-  //   glm_rotate_y(model, glm_rad(entity->rotation[1]), model);
-  //   glm_rotate_x(model, glm_rad(entity->rotation[0]), model);
-  //   glm_rotate_z(model, glm_rad(entity->rotation[2]), model);
-  //   // Scale
-  //   glm_scale(model, entity->scale);
-  //
-  //   // Set normal matrix uniform
-  //   mat3 transposed_mat3;
-  //   mat3 normal;
-  //   glm_mat4_pick3t(model, transposed_mat3);
-  //   glm_mat3_inv(transposed_mat3, normal);
-  //   shader_set_mat3(entity->shader, "normal", normal);
-  //
-  //   // Set its model, view, and projection matrix uniforms
-  //   shader_set_mat4(entity->shader, "model", model);
-  //   shader_set_mat4(entity->shader, "view", view);
-  //   shader_set_mat4(entity->shader, "projection", projection);
-  //
-  //   // Lighting uniforms
-  //   shader_set_vec3(entity->shader, "dirLight.direction", scene->light->direction);
-  //   shader_set_vec3(entity->shader, "dirLight.ambient", scene->light->ambient);
-  //   shader_set_vec3(entity->shader, "dirLight.diffuse", scene->light->diffuse);
-  //   shader_set_vec3(entity->shader, "dirLight.specular", scene->light->specular);
-  //
-  //   // Set camera position as viewPos in the fragment shader
-  //   shader_set_vec3(entity->shader, "viewPos", scene->player.camera->position);
-  //
-  //   // Draw model
-  //   model_draw(entity->model, entity->shader);
-  //
-  //   // Render the model's AABB
-  //   if (scene->physics_view_mode){
-  //     AABB_render(&entity->model->aabb, model, view, projection);
-  //   }
-  // }
 
   // Skybox
   glDepthFunc(GL_LEQUAL);
   shader_use(scene->skybox->shader);
 
-  // Set view and projection matrix uniforms
+  // Build skybox view matrix, ignoring translation
   mat3 view_skybox_mat3;
   mat4 view_skybox;
+  glm_mat4_identity(view_skybox);
   glm_mat4_pick3(view, view_skybox_mat3);
   glm_mat4_ins3(view_skybox_mat3, view_skybox);
+
   shader_set_mat4(scene->skybox->shader, "view", view_skybox);
   shader_set_mat4(scene->skybox->shader, "projection", projection);
 
   // Bind vertex array
   glBindVertexArray(scene->skybox->cubemapVAO);
-  printf("Bound to skybox's cubemapVAO %d\n", scene->skybox->cubemapVAO);
   // Bind texture
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_CUBE_MAP, scene->skybox->cubemap_texture_id);

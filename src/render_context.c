@@ -37,7 +37,6 @@ void level_render(struct Level *level, struct RenderContext *context){
   // Set camera position as viewPos in the fragment shader
   shader_set_vec3(level->shader, "viewPos", context->camera_position);
 
-  printf("Time to draw level with shader id %d\n", level->shader->ID);
   // Draw model
   model_draw(level->model, level->shader);
 }
@@ -78,7 +77,6 @@ void entity_render(struct Entity *entity, struct RenderContext *context){
   // Set camera position as viewPos in the fragment shader
   shader_set_vec3(entity->shader, "viewPos", context->camera_position);
 
-  printf("Time to draw entity with shader id %d\n", entity->shader->ID);
   // Draw model
   model_draw(entity->model, entity->shader);
 
