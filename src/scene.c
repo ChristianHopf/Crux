@@ -98,6 +98,8 @@ Scene *scene_create(bool physics_view_mode){
   };
   scene->entities[scene->num_entities++] = plane;
 
+  // Create a PhysicsWorld and populate it with PhysicsBodies
+
   // Skybox
   scene->skybox = skybox_create();
   if (!scene->skybox){
@@ -128,6 +130,9 @@ void scene_update(Scene *scene, float deltaTime){
   for(int i = 0; i < scene->num_entities-1; i++){
     Entity *entity = &scene->entities[i];
 
+    // **********
+    // MOVE TO PHYSICS_STEP
+    //
     // Sequential method: move this entity by its velocity
     vec3 update;
     glm_vec3_copy(entity->velocity, update);
@@ -180,6 +185,9 @@ void scene_update(Scene *scene, float deltaTime){
     // Update rotation vector
     // entity->rotation[1] -= rotationSpeed * deltaTime;
   }
+  //
+  // MOVE TO PHYSICS_STEP
+  // **********
 
   // Update light
   scene->light->direction[0] = (float)sin(lightSpeed * total_time);
