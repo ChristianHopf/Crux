@@ -100,11 +100,11 @@ Scene *scene_create(bool physics_view_mode){
   scene->entities[scene->num_entities++] = plane;
 
   // Create a PhysicsWorld and populate it with PhysicsBodies
-  struct PhysicsWorld *physics_world = physics_world_create();
+  scene->physics_world = physics_world_create();
   printf("Scene has %d entities\n", scene->num_entities);
   for(int i = 0; i < scene->num_entities; i++){
     printf("Time to add physics body for entity %d\n", i);
-    physics_add_body(physics_world, scene->entities[i].model->aabb);
+    physics_add_body(scene->physics_world, &scene->entities[i]);
   }
 
   // Skybox
@@ -132,69 +132,22 @@ void scene_update(Scene *scene, float deltaTime){
   // Update player
   player_update(&scene->player, deltaTime);
 
-  // Perform primitive collision detection:
-  // a single broad-phase check of every possible pair
+  // Sequential method: move entity, then check collisions
   for(int i = 0; i < scene->num_entities-1; i++){
     Entity *entity = &scene->entities[i];
-
-    // **********
-    // MOVE TO PHYSICS_STEP
-    //
-    // Sequential method: move this entity by its velocity
     vec3 update;
     glm_vec3_copy(entity->velocity, update);
     glm_vec3_scale(update, deltaTime, update);
     glm_vec3_add(entity->position, update, entity->position);
-
-    // Get matrix and vector to update current AABB into world space
-    mat4 eulerA;
-    mat3 aabbUpdateMatA;
-    glm_euler_xyz(entity->rotation, eulerA);
-    glm_mat4_pick3(eulerA, aabbUpdateMatA);
-      
-    vec3 aabbUpdateVecA;
-    glm_vec3_copy(scene->entities[i].position, aabbUpdateVecA);
-      
-    struct AABB worldAABB_A = {0};
-    AABB_update(&entity->model->aabb, aabbUpdateMatA, aabbUpdateVecA, &worldAABB_A);
-
-    // Check for collision with every other entity
-    for(int j = i+1; j < scene->num_entities; j++){
-      // Get matrix and vector to update AABB A
-      mat4 eulerB;
-      mat3 aabbUpdateMatB;
-      glm_euler_xyz(scene->entities[j].rotation, eulerB);
-      glm_mat4_pick3(eulerB, aabbUpdateMatB);
-      
-      vec3 aabbUpdateVecB;
-      glm_vec3_copy(scene->entities[j].position, aabbUpdateVecB);
-      
-      struct AABB worldAABB_B = {0};
-      AABB_update(&scene->entities[j].model->aabb, aabbUpdateMatB, aabbUpdateVecB, &worldAABB_B);
-
-      // Perform collision check
-      if (AABB_intersect(&worldAABB_A, &worldAABB_B)){
-        // printf("1\n");
-        printf("Collision detected between the following aabbs:\n");
-        print_aabb(&worldAABB_A);
-        print_aabb(&worldAABB_B);
-      }
-      else{
-        // printf("2\n");
-        // printf("No collision detected between the following aabbs:\n");
-        // print_aabb(&worldAABB_A);
-        // print_aabb(&worldAABB_B);
-      }
-    }
-
-    // Update translation vector
-    // entity->position[1] = (float)sin(glfwGetTime()*4) / 4;
-    // Update rotation vector
-    // entity->rotation[1] -= rotationSpeed * deltaTime;
   }
-  //
-  // MOVE TO PHYSICS_STEP
-  // **********
+
+  // Perform collision detection
+  physics_step(scene->physics_world, deltaTime);
+
+  // Update translation vector
+  // entity->position[1] = (float)sin(glfwGetTime()*4) / 4;
+  // Update rotation vector
+  // entity->rotation[1] -= rotationSpeed * deltaTime;
 
   // Update light
   scene->light->direction[0] = (float)sin(lightSpeed * total_time);
