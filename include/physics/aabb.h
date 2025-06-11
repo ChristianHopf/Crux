@@ -13,8 +13,6 @@ struct AABB {
   GLuint VAO, VBO, EBO;
 };
 
-// Shader program for rendering AABB wireframes
-static Shader *aabbShader;
 
 bool AABB_intersect(struct AABB *a, struct AABB *b);
 void AABB_merge(struct AABB *a, struct AABB *b);

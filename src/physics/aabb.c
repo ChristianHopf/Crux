@@ -1,5 +1,8 @@
 #include "physics/aabb.h"
 
+// Shader program for rendering AABB wireframes
+static Shader *aabbShader;
+
 bool AABB_intersect(struct AABB *a, struct AABB *b){
   if (a->max[0] < b->min[0] || a->min[0] > b->max[0]) return false;
   if (a->max[2] < b->min[2] || a->min[2] > b->max[2]) return false;

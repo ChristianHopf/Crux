@@ -1,89 +1,76 @@
-ifeq ($(OS),Windows_NT)
-  ifeq ($(shell uname -s),) # not in a bash-like shell
-	CLEANUP = del /F /Q
-	MKDIR = mkdir
-  else # in a bash-like shell, like msys
-	CLEANUP = rm -f
-	MKDIR = mkdir -p
-  endif
-	TARGET_EXTENSION=exe
-else
-	CLEANUP = rm -f
-	MKDIR = mkdir -p
-	TARGET_EXTENSION=out
-endif
+# Compiler and flags
+CC = gcc
+CFLAGS = -Iinclude -Iinclude/physics $(shell pkg-config --cflags freetype2) -Ithird_party/unity -Wall -Wextra -g
+LDFLAGS = -L/usr/lib $(shell pkg-config --libs freetype2) -lglfw -lGL -lcglm -lm -ldl -lassimp
 
-.PHONY: clean
-.PHONY: test
+# Directories
+SRC_DIR = src
+TEST_DIR = test
+OUT_DIR = executables
+UNITY_DIR = third_party/unity
+OBJ_DIR = build
 
-PATHU = third_party/unity/
-PATHS = src/
-PATHT = test/
-PATHB = build/
-PATHD = build/depends/
-PATHO = build/objs/
-PATHR = build/results/
+# Source files
+SRC_FILES = $(shell find $(SRC_DIR) -type f -name "*.c")
+TEST_FILES = $(wildcard $(TEST_DIR)/**/*.c)
+UNITY_SRC = $(UNITY_DIR)/unity.c
 
-BUILD_PATHS = $(PATHB) $(PATHD) $(PATHO) $(PATHR)
+# Object files
+SRC_OBJS = $(patsubst $(SRC_DIR)/%.c,$(OBJ_DIR)/%.o,$(SRC_FILES))
+TEST_OBJS = $(patsubst $(TEST_DIR)/%.c,$(OBJ_DIR)/test/%.o,$(TEST_FILES))
+UNITY_OBJ = $(OBJ_DIR)/unity.o
 
-SRCT = $(wildcard $(PATHT)*.c)
+# Output binaries
+MAIN_OUT = $(OUT_DIR)/collision2
+TEST_OUT = $(OUT_DIR)/test_runner
 
-COMPILE=gcc -c
-LINK=gcc
-DEPEND=gcc -MM -MG -MF
-CFLAGS=-I. -I$(PATHU) -I$(PATHS) -DTEST
+# Default target
+all: $(MAIN_OUT)
 
-RESULTS = $(patsubst $(PATHT)Test%.c,$(PATHR)Test%.txt,$(SRCT) )
+# Main engine build
+$(MAIN_OUT): $(SRC_OBJS)
+	@mkdir -p $(OUT_DIR)
+	@echo "Linking main binary: $@"
+	$(CC) -o $@ $^ $(LDFLAGS)
 
-PASSED = `grep -s PASS $(PATHR)*.txt`
-FAIL = `grep -s FAIL $(PATHR)*.txt`
-IGNORE = `grep -s IGNORE $(PATHR)*.txt`
+# Object files for source
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
+	@mkdir -p $(dir $@)
+	@echo "Compiling $<"
+	$(CC) $(CFLAGS) -c $< -o $@
 
-test: $(BUILD_PATHS) $(RESULTS)
-	@echo "-----------------------\nIGNORES:\n-----------------------"
-	@echo "$(IGNORE)"
-	@echo "-----------------------\nFAILURES:\n-----------------------"
-	@echo "$(FAIL)"
-	@echo "-----------------------\nPASSED:\n-----------------------"
-	@echo "$(PASSED)"
-	@echo "\nDONE"
+# Test build
+test: $(TEST_OUT)
+	@echo "Running tests: ./$(TEST_OUT)"
+	./$(TEST_OUT)
 
-$(PATHR)%.txt: $(PATHB)%.$(TARGET_EXTENSION)
-	-./$< > $@ 2>&1
+# Test runner build
+$(TEST_OUT): $(TEST_OBJS) $(UNITY_OBJ) $(filter-out $(OBJ_DIR)/main.o,$(SRC_OBJS))
+	@mkdir -p $(OUT_DIR)
+	@echo "Linking test binary: $@"
+	$(CC) -o $@ $^ $(LDFLAGS)
 
-$(PATHB)Test%.$(TARGET_EXTENSION): $(PATHO)Test%.o $(PATHO)%.o $(PATHO)unity.o #$(PATHD)Test%.d
-	$(LINK) -o $@ $^
+# Object files for tests
+$(OBJ_DIR)/test/%.o: $(TEST_DIR)/%.c
+	@mkdir -p $(dir $@)
+	@echo "Compiling test $<"
+	$(CC) $(CFLAGS) -c $< -o $@
 
-$(PATHO)%.o:: $(PATHT)%.c
-	$(COMPILE) $(CFLAGS) $< -o $@
+# Unity object file
+$(OBJ_DIR)/unity.o: $(UNITY_SRC)
+	@mkdir -p $(OBJ_DIR)
+	@echo "Compiling Unity $<"
+	$(CC) $(CFLAGS) -c $< -o $@
 
-$(PATHO)%.o:: $(PATHS)%.c
-	$(COMPILE) $(CFLAGS) $< -o $@
-
-$(PATHO)%.o:: $(PATHU)%.c $(PATHU)%.h
-	$(COMPILE) $(CFLAGS) $< -o $@
-
-$(PATHD)%.d:: $(PATHT)%.c
-	$(DEPEND) $@ $<
-
-$(PATHB):
-	$(MKDIR) $(PATHB)
-
-$(PATHD):
-	$(MKDIR) $(PATHD)
-
-$(PATHO):
-	$(MKDIR) $(PATHO)
-
-$(PATHR):
-	$(MKDIR) $(PATHR)
-
+# Clean
 clean:
-	$(CLEANUP) $(PATHO)*.o
-	$(CLEANUP) $(PATHB)*.$(TARGET_EXTENSION)
-	$(CLEANUP) $(PATHR)*.txt
+	rm -rf $(OBJ_DIR) $(OUT_DIR)
 
-.PRECIOUS: $(PATHB)Test%.$(TARGET_EXTENSION)
-.PRECIOUS: $(PATHD)%.d
-.PRECIOUS: $(PATHO)%.o
-.PRECIOUS: $(PATHR)%.txt
+# Debug target to print variables
+debug:
+	@echo "SRC_FILES: $(SRC_FILES)"
+	@echo "SRC_OBJS: $(SRC_OBJS)"
+	@echo "TEST_FILES: $(TEST_FILES)"
+	@echo "TEST_OBJS: $(TEST_OBJS)"
+
+.PHONY: all test clean debug
