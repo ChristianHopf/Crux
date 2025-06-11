@@ -21,7 +21,7 @@ void level_render(struct Level *level, struct RenderContext *context){
   mat3 normal;
   glm_mat4_pick3t(model, transposed_mat3);
   glm_mat3_inv(transposed_mat3, normal);
-  shader_set_mat3(entity->shader, "normal", normal);
+  shader_set_mat3(level->shader, "normal", normal);
 
   // Set its model, view, and projection matrix uniforms
   shader_set_mat4(level->shader, "model", model);
@@ -35,8 +35,9 @@ void level_render(struct Level *level, struct RenderContext *context){
   shader_set_vec3(level->shader, "dirLight.specular", context->light->specular);
 
   // Set camera position as viewPos in the fragment shader
-  shader_set_vec3(level->shader, "viewPos", context->camera->position);
+  shader_set_vec3(level->shader, "viewPos", context->camera_position);
 
+  printf("Time to draw level with shader id %d\n", level->shader->ID);
   // Draw model
   model_draw(level->model, level->shader);
 }
@@ -66,7 +67,7 @@ void entity_render(struct Entity *entity, struct RenderContext *context){
   // Set its model, view, and projection matrix uniforms
   shader_set_mat4(entity->shader, "model", model);
   shader_set_mat4(entity->shader, "view", context->view);
-  shader_set_mat4(entity->shader, "projection", context->view);
+  shader_set_mat4(entity->shader, "projection", context->projection);
 
   // Lighting uniforms
   shader_set_vec3(entity->shader, "dirLight.direction", context->light->direction);
@@ -77,11 +78,12 @@ void entity_render(struct Entity *entity, struct RenderContext *context){
   // Set camera position as viewPos in the fragment shader
   shader_set_vec3(entity->shader, "viewPos", context->camera_position);
 
+  printf("Time to draw entity with shader id %d\n", entity->shader->ID);
   // Draw model
   model_draw(entity->model, entity->shader);
 
   // Render the model's AABB
   if (context->physics_view_mode){
-    AABB_render(&entity->model->aabb, model, context->, context->projection);
+    AABB_render(&entity->model->aabb, model, context->view, context->projection);
   }
 }

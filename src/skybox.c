@@ -123,6 +123,7 @@ struct Skybox *skybox_create(){
 
   skybox->cubemap_texture_id = cubemap_texture_id;
   skybox->cubemapVAO = cubemapVAO;
+  printf("Assigned skybox cubemap VAO %d\n", skybox->cubemapVAO);
   skybox->cubemapVBO = cubemapVBO;
   skybox->shader = skyboxShader;
   

@@ -8,13 +8,13 @@
 #include "entity.h"
 #include "player.h"
 
-typedef struct {
+struct Light {
   vec3 direction;
 
   vec3 ambient;
   vec3 diffuse;
   vec3 specular;
-} Light;
+};
 
 typedef struct {
   struct Entity *entities;
@@ -24,7 +24,7 @@ typedef struct {
   struct PhysicsWorld *physics_world;
   struct Skybox *skybox;
   struct Player player;
-  Light *light;
+  struct Light *light;
   bool paused;
   bool physics_view_mode;
 } Scene;

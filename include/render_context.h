@@ -1,14 +1,20 @@
 #pragma once
 
+#include <stdbool.h>
+#include <cglm/cglm.h>
 #include "scene.h"
 #include "level.h"
 #include "entity.h"
 
 struct RenderContext {
+  // Values for shader uniforms
   mat4 view;
   mat4 projection;
   struct Light *light;
   vec3 camera_position;
+
+  // Bools
+  bool physics_view_mode;
 };
 
 
