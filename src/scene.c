@@ -41,16 +41,6 @@ Scene *scene_create(bool physics_view_mode){
   // Player
   player_init(&scene->player);
 
-  // Entities
-  scene->num_entities = 0;
-  scene->max_entities = 5;
-  scene->entities = (Entity *)malloc(scene->max_entities * sizeof(Entity));
-  if (!scene->entities){
-    printf("Error: failed to allocate scene entities\n");
-    free(scene);
-    return NULL;
-  }
-
   // Shaders and entities for physics dev
   Shader *shader = shader_create("shaders/shader.vs", "shaders/dirlight/shader.fs");
   if (!shader){
@@ -64,6 +54,29 @@ Scene *scene_create(bool physics_view_mode){
   //   glfwTerminate();
   //   return NULL;
   // }
+  
+  // Level
+  struct Model *planeModel = (struct Model *)malloc(sizeof(struct Model));
+  if (!planeModel){
+    printf("Error: failed to allocate oiiaiModel\n");
+    return NULL;
+  }
+  model_load(planeModel, "resources/basic/grass_plane/grass_plane.gltf");
+  struct Level level = {
+    .model = planeModel,
+    .shader = shader
+  };
+  scene->level = level;
+
+  // Entities
+  scene->num_entities = 0;
+  scene->max_entities = 5;
+  scene->entities = (struct Entity *)malloc(scene->max_entities * sizeof(struct Entity));
+  if (!scene->entities){
+    printf("Error: failed to allocate scene entities\n");
+    free(scene);
+    return NULL;
+  }
 
   struct Model *oiiaiModel = (struct Model *)malloc(sizeof(struct Model));
   if (!oiiaiModel){
@@ -71,7 +84,7 @@ Scene *scene_create(bool physics_view_mode){
     return NULL;
   }
   model_load(oiiaiModel, "resources/objects/oiiai/scene.gltf");
-  Entity oiiai = {
+  struct Entity oiiai = {
     .ID = 1,
     .position = {0.0f, 0.0f, 0.0f},
     .rotation = {0.0f, 0.0f, 0.0f},
@@ -82,22 +95,22 @@ Scene *scene_create(bool physics_view_mode){
   };
   scene->entities[scene->num_entities++] = oiiai;
 
-  struct Model *planeModel = (struct Model *)malloc(sizeof(struct Model));
-  if (!planeModel){
-    printf("Error: failed to allocate oiiaiModel\n");
-    return NULL;
-  }
-  model_load(planeModel, "resources/basic/grass_plane/grass_plane.gltf");
-  Entity plane = {
-    .ID = 1,
-    .position = {0.0f, -1.0f, 0.0f},
-    .rotation = {0.0f, 0.0f, 0.0f},
-    .scale = {3.0f, 3.0f, 3.0f},
-    .velocity = {0.0f, 0.0f, 0.0f},
-    .model = planeModel,
-    .shader = shader
-  };
-  scene->entities[scene->num_entities++] = plane;
+  // struct Model *planeModel = (struct Model *)malloc(sizeof(struct Model));
+  // if (!planeModel){
+  //   printf("Error: failed to allocate oiiaiModel\n");
+  //   return NULL;
+  // }
+  // model_load(planeModel, "resources/basic/grass_plane/grass_plane.gltf");
+  // struct Entity plane = {
+  //   .ID = 1,
+  //   .position = {0.0f, -1.0f, 0.0f},
+  //   .rotation = {0.0f, 0.0f, 0.0f},
+  //   .scale = {3.0f, 3.0f, 3.0f},
+  //   .velocity = {0.0f, 0.0f, 0.0f},
+  //   .model = planeModel,
+  //   .shader = shader
+  // };
+  // scene->entities[scene->num_entities++] = plane;
 
   // Create a PhysicsWorld and populate it with PhysicsBodies
   scene->physics_world = physics_world_create();
@@ -134,7 +147,7 @@ void scene_update(Scene *scene, float delta_time){
 
   // Sequential method: move entity, then check collisions
   for(int i = 0; i < scene->num_entities; i++){
-    Entity *entity = &scene->entities[i];
+    struct Entity *entity = &scene->entities[i];
     vec3 update;
     glm_vec3_copy(entity->velocity, update);
     glm_vec3_scale(update, delta_time, update);
@@ -166,10 +179,13 @@ void scene_render(Scene *scene){
   camera_get_view_matrix(scene->player.camera, view);
   glm_perspective(glm_rad(scene->player.camera->fov), 800.0f / 600.0f, 0.1f, 100.0f, projection);
 
+  // Draw level
+  
+
   // For each entity in the scene
   for(int i = 0; i < scene->num_entities; i++){
     // Bind its shader
-    Entity *entity = &scene->entities[i];
+    struct Entity *entity = &scene->entities[i];
     shader_use(entity->shader);
 
     // Get its model matrix

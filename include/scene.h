@@ -4,6 +4,7 @@
 #include <glad/glad.h>
 #include <stdbool.h>
 #include "physics/world.h"
+#include "level.h"
 #include "skybox.h"
 #include "entity.h"
 #include "player.h"
@@ -17,9 +18,10 @@ typedef struct {
 } Light;
 
 typedef struct {
-  Entity *entities;
+  struct Entity *entities;
   int num_entities;
   int max_entities;
+  struct Level level;
   struct PhysicsWorld *physics_world;
   struct Skybox *skybox;
   struct Player player;

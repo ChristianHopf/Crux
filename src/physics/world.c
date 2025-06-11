@@ -16,7 +16,7 @@ struct PhysicsWorld *physics_world_create(){
   return world;
 }
 
-void physics_add_body(struct PhysicsWorld *physics_world, Entity *entity){
+void physics_add_body(struct PhysicsWorld *physics_world, struct Entity *entity){
   printf("Physics world has %d bodies\n", physics_world->num_bodies);
   // Create body
   struct PhysicsBody body = {
