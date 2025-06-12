@@ -46,7 +46,7 @@ void physics_step(struct PhysicsWorld *physics_world, float delta_time){
 
   // Perform primitive collision detection:
   // a single broad-phase check of every possible pair
-  for(unsigned int i = 0; i < physics_world->num_bodies-1; i++){
+  for(unsigned int i = 0; i < physics_world->num_bodies; i++){
     struct PhysicsBody *bodyA = &physics_world->bodies[i];
 
     // Get matrix and vector to update current AABB into world space
@@ -60,6 +60,19 @@ void physics_step(struct PhysicsWorld *physics_world, float delta_time){
       
     struct AABB worldAABB_A = {0};
     AABB_update(&bodyA->aabb, rotationA, translationA, &worldAABB_A);
+
+    // Check collision with world space AABB and level plane
+    printf("Time to check collision between a world space AABB and the level plane!\n");
+    printf("World space AABB:\n");
+    print_aabb(&worldAABB_A);
+    printf("physics_world->level_plane:\n");
+    print_plane_collider(physics_world->level_plane);
+    if (AABB_intersect_plane(&worldAABB_A, physics_world->level_plane)){
+      printf("COLLISION DETECTED\n");
+    }
+    else{
+      printf("NO COLLISION DETECTED\n");
+    }
 
     // Check for collision with every other entity
     for(unsigned int j = i+1; j < physics_world->num_bodies; j++){

@@ -49,8 +49,8 @@ void test_non_intersecting_aabbs_false(void){
 void test_aabb_intersect_plane_true(void){
   // Trivial case
   struct AABB box = {
-    .min = {-0.5f, -0.5f, -0.5f},
-    .max = {0.5f, 0.5f, 0.5f}
+    .min = {-0.35f, -0.42f, -1.34f},
+    .max = {0.36f, 0.74f, 0.83f}
   };
   struct PlaneCollider plane = {
     .normal = {0.0f, 1.0f, 0.0f},
@@ -63,8 +63,8 @@ void test_aabb_intersect_plane_true(void){
 void test_aabb_intersect_plane_false(void){
   // Trivial case
   struct AABB box = {
-    .min = {1.0f, 1.0f, 1.0f},
-    .max = {2.0f, 2.0f, 2.0f}
+    .min = {-0.35f, -0.42f, -1.34f},
+    .max = {0.36f, 0.74f, 0.83f}
   };
   struct PlaneCollider plane = {
     .normal = {0.0f, 1.0f, 0.0f},

@@ -16,6 +16,7 @@ struct PhysicsBody {
 struct PhysicsWorld {
   struct PhysicsBody *bodies;
   unsigned int num_bodies;
+  struct PlaneCollider *level_plane;
 };
 
 

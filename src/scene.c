@@ -11,6 +11,7 @@
 #include "text.h"
 #include "physics/world.h"
 #include "physics/aabb.h"
+#include "physics/utils.h"
 #include "utils.h"
 
 Scene *scene_create(bool physics_view_mode){
@@ -92,8 +93,14 @@ Scene *scene_create(bool physics_view_mode){
   };
   scene->entities[scene->num_entities++] = oiiai;
 
-  //Create a PhysicsWorld and populate it with PhysicsBodies
+  // Create a PhysicsWorld and populate it with Colliders and PhysicsBodies
   scene->physics_world = physics_world_create();
+  // Maybe make a plane_collider_create function to pass a normal and distance
+  scene->physics_world->level_plane = (struct PlaneCollider *)calloc(1, sizeof(struct PlaneCollider *));
+  glm_vec3_copy((vec3){0.0f, 1.0f, 0.0f}, scene->physics_world->level_plane->normal);
+  scene->physics_world->level_plane->distance = -1.0f;
+  // print_plane_collider(scene->physics_world->level_plane);
+
   for(int i = 0; i < scene->num_entities; i++){
     physics_add_body(scene->physics_world, &scene->entities[i]);
   }
@@ -126,6 +133,11 @@ void scene_update(Scene *scene, float delta_time){
   // Sequential method: move entity, then check collisions
   for(int i = 0; i < scene->num_entities; i++){
     struct Entity *entity = &scene->entities[i];
+    // Update velocity according to gravity
+    // float gravity = 9.8 * delta_time;
+    // glm_vec3_sub(entity->velocity, (vec3){0.0f, gravity, 0.0f}, entity->velocity);
+
+    // Update position according ot velocity
     vec3 update;
     glm_vec3_copy(entity->velocity, update);
     glm_vec3_scale(update, delta_time, update);
@@ -160,10 +172,10 @@ void scene_render(Scene *scene){
   // Create a RenderContext, which is simply
   // a collection of parameters for rendering the Level and Entities
   struct RenderContext context = {
-    .light = scene->light,
-    .view = view,
-    .projection = projection,
-    .camera_position = scene->player.camera->position,
+    .light_ptr = scene->light,
+    .view_ptr = view,
+    .projection_ptr = projection,
+    .camera_position_ptr = scene->player.camera->position,
     .physics_view_mode = scene->physics_view_mode
   };
   // context.light = scene->light;

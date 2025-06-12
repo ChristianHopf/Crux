@@ -94,6 +94,8 @@ bool model_load(struct Model *model, const char *path){
 
   // Create buffers for rendering this model's AABB
   AABB_init(&model->aabb);
+  printf("ORIGINAL OIIAI AABB\n");
+  print_aabb(&model->aabb);
 
   aiReleaseImport(scene);
   return true;
