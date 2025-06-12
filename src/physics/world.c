@@ -41,7 +41,7 @@ void physics_step(struct PhysicsWorld *physics_world, float delta_time){
     struct PhysicsBody *body = &physics_world->bodies[i];
 
     // Update velocity according to gravity
-    float gravity = 1.0f * delta_time;
+    float gravity = 2.0f * delta_time;
     body->velocity[1] -= gravity;
 
     glm_vec3_muladds(body->velocity, delta_time, body->position);
@@ -72,6 +72,9 @@ void physics_step(struct PhysicsWorld *physics_world, float delta_time){
     print_plane_collider(physics_world->level_plane);
     if (AABB_intersect_plane(&worldAABB_A, physics_world->level_plane)){
       printf("COLLISION DETECTED\n");
+      // Primitive collision resolution: apply impulse to reverse the body's velocity
+      glm_vec3_scale(bodyA->velocity, -1.0f, bodyA->velocity);
+      print_glm_vec3(bodyA->velocity, "New oiiai velocity");
     }
     else{
       printf("NO COLLISION DETECTED\n");
@@ -102,7 +105,6 @@ void physics_step(struct PhysicsWorld *physics_world, float delta_time){
       print_aabb(&worldAABB_B);
       if (AABB_intersect(&worldAABB_A, &worldAABB_B)){
         printf("Collision detected\n");
-        
       }
       else{
         printf("No collision detected\n");
