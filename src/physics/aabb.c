@@ -8,7 +8,7 @@ static Shader *aabbShader;
 
 
 // Merge b into a
-void AABB_merge(struct AABB *a, struct AABB *b, struct AABB *dest){
+void AABB_merge(struct AABB *a, struct AABB *b){
   // a->min[0] = fminf(a->min[0], b->min[0]);
   // a->min[1] = fminf(a->min[1], b->min[1]);
   // a->min[2] = fminf(a->min[2], b->min[2]);
@@ -27,11 +27,8 @@ void AABB_merge(struct AABB *a, struct AABB *b, struct AABB *dest){
   // a->radius[1] = (a->radius[1] + b->radius[1]);
   // a->radius[2] = (a->radius[2] + b->radius[2]);
 
-  // If one of the AABBs is not initialized,
-  // copy the other over.
-  //
-  // ASSUMPTION: AABB_merge will NEVER be called
-  // on two uninitialized AABBs.
+  // If a is not initialized, copy b into a.
+  // If b is not initialized, return.
   if (!a->initialized){
     glm_vec3_copy(b->center, a->center);
     glm_vec3_copy(b->extents, a->extents);
@@ -39,21 +36,16 @@ void AABB_merge(struct AABB *a, struct AABB *b, struct AABB *dest){
     return;
   }
   if (!b->initialized){
-    glm_vec3_copy(a->center, b->center);
-    glm_vec3_copy(a->extents, b->extents);
-    b->initialized = true;
     return;
   }
 
-  vec3 minA;
-  vec3 maxA;
+  vec3 minA, maxA;
   glm_vec3_sub(a->center, a->extents, minA);
-  glm_vec3_sub(a->center, a->extents, maxA);
+  glm_vec3_add(a->center, a->extents, maxA);
 
-  vec3 minB;
-  vec3 maxB;
+  vec3 minB, maxB;
   glm_vec3_sub(b->center, b->extents, minB);
-  glm_vec3_sub(b->center, b->extents, maxB);
+  glm_vec3_add(b->center, b->extents, maxB);
 
   vec3 minMerged;
   minMerged[0] = glm_min(minA[0], minB[0]);
@@ -61,19 +53,20 @@ void AABB_merge(struct AABB *a, struct AABB *b, struct AABB *dest){
   minMerged[2] = glm_min(minA[2], minB[2]);
 
   vec3 maxMerged;
-  maxMerged[0] = glm_min(maxA[0], maxB[0]);
-  maxMerged[1] = glm_min(maxA[1], maxB[1]);
-  maxMerged[2] = glm_min(maxA[2], maxB[2]);
+  maxMerged[0] = glm_max(maxA[0], maxB[0]);
+  maxMerged[1] = glm_max(maxA[1], maxB[1]);
+  maxMerged[2] = glm_max(maxA[2], maxB[2]);
 
-  vec3 centerMerged;
-  vec3 extentsMerged;;
+  vec3 centerMerged, extentsMerged;
   glm_vec3_add(minMerged, maxMerged, centerMerged);
   glm_vec3_scale(centerMerged, 0.5f, centerMerged);
   glm_vec3_sub(maxMerged, minMerged, extentsMerged);
   glm_vec3_scale(extentsMerged, 0.5f, extentsMerged);
 
-  glm_vec3_copy(centerMerged, dest->center);
-  glm_vec3_copy(extentsMerged, dest->extents);
+  glm_vec3_copy(centerMerged, a->center);
+  glm_vec3_copy(extentsMerged, a->extents);
+
+  a->initialized = true;
 
   return;
 }

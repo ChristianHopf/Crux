@@ -91,9 +91,7 @@ bool model_load(struct Model *model, const char *path){
   struct AABB root_AABB = model_process_node(model, scene->mRootNode, scene, parent_transform, &model_mesh_index);
 
   // Merge model's AABB with the root AABB
-  AABB_merge(&model->aabb, &root_AABB, &model->aabb);
-  // glm_vec3_copy(root_AABB.min, model->aabb.min);
-  // glm_vec3_copy(root_AABB.max, model->aabb.max);
+  AABB_merge(&model->aabb, &root_AABB);
 
   // Create buffers for rendering this model's AABB
   AABB_init(&model->aabb);
@@ -111,12 +109,10 @@ struct AABB model_process_node(struct Model *model, struct aiNode *node, const s
   aiMultiplyMatrix4(&current_transform, &node->mTransformation);
 
   struct AABB node_AABB = {0};
+  node_AABB.initialized = false;
   //   .min = {FLT_MAX, FLT_MAX, FLT_MAX},
   //   .max = {FLT_MIN, FLT_MIN, FLT_MIN}
   // };
-
-  // printf("This node's transformation matrix:\n");
-  // print_aiMatrix4x4(&current_transform);
 
   // Process each of this node's meshesMore actions
   // The scene has an array of meshes.
@@ -124,19 +120,17 @@ struct AABB model_process_node(struct Model *model, struct aiNode *node, const s
   // The int at position i of this node's mMeshes is the index of its mesh in the scene's mesh array
  for(unsigned int i = 0; i < node->mNumMeshes; i++){
     struct aiMesh *ai_mesh = scene->mMeshes[node->mMeshes[i]];
-    // printf("Passing final mesh transformation matrix:\n");
-    // print_aiMatrix4x4(&current_transform);
     
     // Process this mesh and update this node's AABB by the mesh's AABB
     struct AABB mesh_AABB = model_process_mesh(ai_mesh, scene, current_transform, &model->meshes[*index]);
     (*index)++;
-    AABB_merge(&node_AABB, &mesh_AABB, &node_AABB);
+    AABB_merge(&node_AABB, &mesh_AABB);
   }
 
   // Process this node's children
   for (unsigned int i = 0; i < node->mNumChildren; i++){
     struct AABB child_node_AABB = model_process_node(model, node->mChildren[i], scene, current_transform, index);
-    AABB_merge(&node_AABB, &child_node_AABB, &node_AABB);
+    AABB_merge(&node_AABB, &child_node_AABB);
   }
 
   // Once we finish processing this node and building its AABB, return it to the parent node
