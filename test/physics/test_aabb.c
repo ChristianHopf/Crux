@@ -1,5 +1,6 @@
 #include "unity.h"
 #include "physics/aabb.h"
+#include "physics/utils.h"
 
 void setUp() {
 }
@@ -47,31 +48,48 @@ void test_non_intersecting_aabbs_false(void){
 }
 
 void test_aabb_intersect_plane_true(void){
-  // Trivial case
   struct AABB box = {
-    .min = {-0.35f, -0.42f, -1.34f},
-    .max = {0.36f, 0.74f, 0.83f}
-  };
-  struct PlaneCollider plane = {
-    .normal = {0.0f, 1.0f, 0.0f},
-    .distance = 0.0f
+    .min = {1.0f, 1.0f, 1.0f},
+    .max = {2.0f, 2.0f, 2.0f}
   };
 
-  TEST_ASSERT_TRUE(AABB_intersect_plane(&box, &plane));
+  // Trivial case: plane is the xz plane
+  struct PlaneCollider planeSimple = {
+    .normal = {0.0f, 1.0f, 0.0f},
+    .distance = 1.5f
+  };
+  // Plane is not xz, xy, or yz plane
+  struct PlaneCollider plane2 = {
+    .normal = {0.577f, 0.577f, 0.577f},
+    .distance = 2.0f
+  };
+  print_aabb(&box);
+  print_plane_collider(&plane2);
+
+  TEST_ASSERT_TRUE(AABB_intersect_plane(&box, &planeSimple));
+  TEST_ASSERT_TRUE(AABB_intersect_plane(&box, &plane2));
 }
 
 void test_aabb_intersect_plane_false(void){
-  // Trivial case
   struct AABB box = {
-    .min = {-0.35f, 2.42f, -1.34f},
-    .max = {0.36f, 3.74f, 0.83f}
+    .min = {1.0f, 1.0f, 1.0f},
+    .max = {2.0f, 2.0f, 2.0f}
   };
-  struct PlaneCollider plane = {
+
+  // Trivial case: plane is the xz plane
+  struct PlaneCollider planeSimple = {
     .normal = {0.0f, 1.0f, 0.0f},
     .distance = 0.0f
   };
+  // Plane is not xz, xy, or yz plane
+  struct PlaneCollider plane2 = {
+    .normal = {0.577f, 0.577f, 0.577f},
+    .distance = 10.0f
+  };
+  
 
-  TEST_ASSERT_FALSE(AABB_intersect_plane(&box, &plane));
+  TEST_ASSERT_FALSE(AABB_intersect_plane(&box, &planeSimple));
+  TEST_ASSERT_FALSE(AABB_intersect_plane(&box, &plane2));
 }
 
 
