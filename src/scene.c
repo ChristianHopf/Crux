@@ -1,6 +1,7 @@
 //#include <GLFW/glfw3.h>
 #include <cglm/euler.h>
 #include <cglm/mat4.h>
+#include <cglm/vec3.h>
 #include <glad/glad.h>
 #include <cglm/cglm.h>
 #include <cglm/mat3.h>
@@ -88,6 +89,7 @@ Scene *scene_create(bool physics_view_mode){
     .rotation = {0.0f, 0.0f, 0.0f},
     .scale = {3.0f, 3.0f, 3.0f},
     .velocity = {0.0f, -0.2f, 0.0f},
+    .physics_body = NULL,
     .model = oiiaiModel,
     .shader = shader
   };
@@ -99,10 +101,9 @@ Scene *scene_create(bool physics_view_mode){
   scene->physics_world->level_plane = (struct PlaneCollider *)calloc(1, sizeof(struct PlaneCollider *));
   glm_vec3_copy((vec3){0.0f, 1.0f, 0.0f}, scene->physics_world->level_plane->normal);
   scene->physics_world->level_plane->distance = -1.0f;
-  // print_plane_collider(scene->physics_world->level_plane);
 
   for(int i = 0; i < scene->num_entities; i++){
-    physics_add_body(scene->physics_world, &scene->entities[i]);
+    scene->entities[i].physics_body = physics_add_body(scene->physics_world, &scene->entities[i]);
   }
 
   // Skybox
@@ -142,6 +143,13 @@ void scene_update(Scene *scene, float delta_time){
 
   // Perform collision detection
   physics_step(scene->physics_world, delta_time);
+
+  // Match entity position with updated PhysicsBody position
+  for(int i = 0; i < scene->num_entities; i++){
+    printf("Time to sync %d entities with their physics bodies\n", scene->num_entities);
+    glm_vec3_copy(scene->entities[i].physics_body->position, scene->entities[i].position);
+    print_glm_vec3(scene->entities[i].position, "New entity position");
+  }
 
   // Update translation vector
   // entity->position[1] = (float)sin(glfwGetTime()*4) / 4;

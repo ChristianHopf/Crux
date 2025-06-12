@@ -22,7 +22,7 @@ struct PhysicsWorld {
 
 // World, bodies
 struct PhysicsWorld *physics_world_create();
-void physics_add_body(struct PhysicsWorld *physics_world, struct Entity *entity);
+struct PhysicsBody *physics_add_body(struct PhysicsWorld *physics_world, struct Entity *entity);
 
 void physics_step(struct PhysicsWorld *physics_world, float delta_time);
 
