@@ -24,8 +24,9 @@ struct PhysicsBody *physics_add_body(struct PhysicsWorld *physics_world, struct 
 
   // Assume uniform scaling
   body->aabb = entity->model->aabb;
-  glm_vec3_scale(body->aabb.min, entity->scale[0], body->aabb.min);
-  glm_vec3_scale(body->aabb.max, entity->scale[1], body->aabb.max);
+  glm_vec3_scale(body->aabb.extents, entity->scale[0], body->aabb.extents);
+  // glm_vec3_scale(body->aabb.min, entity->scale[0], body->aabb.min);
+  // glm_vec3_scale(body->aabb.max, entity->scale[1], body->aabb.max);
 
   // Copy the Entity's position, rotation, and velocity
   glm_vec3_copy(entity->position, body->position);
@@ -103,7 +104,7 @@ void physics_step(struct PhysicsWorld *physics_world, float delta_time){
       printf("World space AABBS:\n");
       print_aabb(&worldAABB_A);
       print_aabb(&worldAABB_B);
-      if (AABB_intersect(&worldAABB_A, &worldAABB_B)){
+      if (AABB_intersect_AABB(&worldAABB_A, &worldAABB_B)){
         printf("Collision detected\n");
       }
       else{

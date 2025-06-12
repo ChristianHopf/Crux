@@ -1,9 +1,18 @@
 #include "physics/utils.h"
 
 void print_aabb(struct AABB *aabb){
+  // Convert AABB to min/max format for debug printing
+  vec3 min;
+  vec3 max;
+  
+  for (int i = 0; i < 3; i++){
+    min[i] = aabb->center[i] - aabb->extents[i];
+    max[i] = aabb->center[i] + aabb->extents[i];
+  }
+
   printf("AABB {\n");
-  printf("  min: (%.2f, %.2f, %.2f)\n", aabb->min[0], aabb->min[1], aabb->min[2]);
-  printf("  max: (%.2f, %.2f, %.2f)\n", aabb->max[0], aabb->max[1], aabb->max[2]);
+  printf("  min: (%.2f, %.2f, %.2f\n)", min[0], min[1], min[2]);
+  printf("  max: (%.2f, %.2f, %.2f\n)", max[0], max[1], max[2]);
   printf("}\n");
 }
 

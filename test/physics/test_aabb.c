@@ -15,42 +15,52 @@ void assert_vec3_equal(vec3 expected, vec3 actual, const char* message) {
   }
 }
 void assert_aabb_equal(struct AABB *expected, struct AABB *actual){
-  assert_vec3_equal(expected->min, actual->min, "AABB min is incorrect");
-  assert_vec3_equal(expected->max, actual->max, "AABB max is incorrect");
+  assert_vec3_equal(expected->center, actual->center, "AABB min is incorrect");
+  assert_vec3_equal(expected->extents, actual->extents, "AABB max is incorrect");
 }
 
 // COLLISION TESTS
 //
 void test_intersecting_aabbs_true(void){
   struct AABB a = {
-    .min = {1.0f, 1.0f, 1.0f},
-    .max = {2.0f, 2.0f, 2.0f}
+    .center = {1.5f, 1.5f, 1.5f},
+    .extents = {0.5f, 0.5f, 0.5f}
+    // .min = {1.0f, 1.0f, 1.0f},
+    // .max = {2.0f, 2.0f, 2.0f}
   };
   struct AABB b = {
-    .min = {1.5f, 1.5f, 1.5f},
-    .max = {2.5f, 2.5f, 2.5f}
+    .center = {2.0f, 2.0f, 2.0f},
+    .extents = {0.5f, 0.5f, 0.5f}
+    // .min = {1.5f, 1.5f, 1.5f},
+    // .max = {2.5f, 2.5f, 2.5f}
   };
 
-  TEST_ASSERT_TRUE(AABB_intersect(&a, &b));
+  TEST_ASSERT_TRUE(AABB_intersect_AABB(&a, &b));
 }
 
 void test_non_intersecting_aabbs_false(void){
   struct AABB a = {
-    .min = {1.0f, 1.0f, 1.0f},
-    .max = {2.0f, 2.0f, 2.0f}
+    .center = {1.5f, 1.5f, 1.5f},
+    .extents = {0.5f, 0.5f, 0.5f}
+    // .min = {1.0f, 1.0f, 1.0f},
+    // .max = {2.0f, 2.0f, 2.0f}
   };
   struct AABB b = {
-    .min = {3.0f, 3.0f, 3.0f},
-    .max = {4.0f, 4.0f, 4.0f}
+    .center = {3.5f, 3.5f, 3.5f},
+    .extents = {0.5f, 0.5f, 0.5f}
+    // .min = {3.0f, 3.0f, 3.0f},
+    // .max = {4.0f, 4.0f, 4.0f}
   };
 
-  TEST_ASSERT_FALSE(AABB_intersect(&a, &b));
+  TEST_ASSERT_FALSE(AABB_intersect_AABB(&a, &b));
 }
 
 void test_aabb_intersect_plane_true(void){
   struct AABB box = {
-    .min = {1.0f, 1.0f, 1.0f},
-    .max = {2.0f, 2.0f, 2.0f}
+    .center = {1.5f, 1.5f, 1.5f},
+    .extents = {0.5f, 0.5f, 0.5f}
+    // .min = {1.0f, 1.0f, 1.0f},
+    // .max = {2.0f, 2.0f, 2.0f}
   };
 
   // Trivial case: plane is the xz plane
@@ -72,8 +82,10 @@ void test_aabb_intersect_plane_true(void){
 
 void test_aabb_intersect_plane_false(void){
   struct AABB box = {
-    .min = {1.0f, 1.0f, 1.0f},
-    .max = {2.0f, 2.0f, 2.0f}
+    .center = {1.5f, 1.5f, 1.5f},
+    .extents = {0.5f, 0.5f, 0.5f}
+    // .min = {1.0f, 1.0f, 1.0f},
+    // .max = {2.0f, 2.0f, 2.0f}
   };
 
   // Trivial case: plane is the xz plane
@@ -97,12 +109,14 @@ void test_aabb_intersect_plane_false(void){
 //
 void test_aabb_update(void){
   struct AABB src = {
-    .min = {-1.0f, -1.0f, -1.0f},
-    .max = { 1.0f,  1.0f,  1.0f}
+    .center = {0.0f, 0.0f, 0.0f},
+    .extents = {1.0f, 1.0f, 1.0f}
+    // .min = {-1.0f, -1.0f, -1.0f},
+    // .max = { 1.0f,  1.0f,  1.0f}
   };
   struct AABB dest = {
-    .min = {0.0f, 0.0f, 0.0f},
-    .max = {0.0f, 0.0f, 0.0f}
+    .center = {0.0f, 0.0f, 0.0f},
+    .extents = {0.0f, 0.0f, 0.0f}
   };
 
   mat3 rotation;
@@ -116,8 +130,10 @@ void test_aabb_update(void){
   AABB_update(&src, rotation, translation, &dest);
 
   struct AABB expected = {
-    .min = {4.0f, -1.0f, -1.0f},
-    .max = {6.0f, 1.0f, 1.0f}
+    .center = {5.0f, 0.0f, 0.0f},
+    .extents = {1.0f, 1.0f, 1.0f}
+    // .min = {4.0f, -1.0f, -1.0f},
+    // .max = {6.0f, 1.0f, 1.0f}
   };
   assert_aabb_equal(&expected, &dest);
 }
