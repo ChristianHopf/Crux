@@ -4,6 +4,7 @@
 #include <glad/glad.h>
 #include <cglm/cglm.h>
 #include <stdbool.h>
+#include "collider.h"
 #include "shader.h"
 
 struct AABB {
@@ -18,6 +19,10 @@ bool AABB_intersect(struct AABB *a, struct AABB *b);
 void AABB_merge(struct AABB *a, struct AABB *b);
 void AABB_update(struct AABB *src, mat3 rotation, vec3 translation, struct AABB *dest);
 void AABB_update_by_vertex(struct AABB *aabb, vec3 vertex);
+
+// Collision tests
+bool AABB_intersect(struct AABB *a, struct AABB *b);
+bool AABB_intersect_plane(struct AABB *box, struct PlaneCollider *plane);
 
 void AABB_init(struct AABB *aabb);
 void AABB_render(struct AABB *aabb, mat4 model, mat4 view, mat4 projection);

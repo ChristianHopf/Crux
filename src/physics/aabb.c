@@ -1,16 +1,10 @@
 #include "physics/aabb.h"
 #include "physics/utils.h"
+#include <cglm/vec3.h>
 
 // Shader program for rendering AABB wireframes
 static Shader *aabbShader;
 
-
-bool AABB_intersect(struct AABB *a, struct AABB *b){
-  if (a->max[0] < b->min[0] || a->min[0] > b->max[0]) return false;
-  if (a->max[2] < b->min[2] || a->min[2] > b->max[2]) return false;
-  if (a->max[1] < b->min[1] || a->min[1] > b->max[1]) return false;
-  return true;
-}
 
 // Merge b into a
 void AABB_merge(struct AABB *a, struct AABB *b){
@@ -47,7 +41,7 @@ void AABB_update(struct AABB *src, mat3 rotation, vec3 translation, struct AABB 
   }
 }
 
-// Figure out an optimal algorithm for this later.
+//Figure out an optimal algorithm for this later.
 // If you update the minimum x component, for example,
 // you certainly don't have to update the maximum x component.
 void AABB_update_by_vertex(struct AABB *aabb, vec3 vertex){
@@ -62,6 +56,40 @@ void AABB_update_by_vertex(struct AABB *aabb, vec3 vertex){
   aabb->max[2] = fmaxf(aabb->max[2], vertex[2]);
 }
 
+// COLLISION TESTS
+//
+// Intersection between AABBs
+bool AABB_intersect(struct AABB *a, struct AABB *b){
+  if (a->max[0] < b->min[0] || a->min[0] > b->max[0]) return false;
+  if (a->max[2] < b->min[2] || a->min[2] > b->max[2]) return false;
+  if (a->max[1] < b->min[1] || a->min[1] > b->max[1]) return false;
+  return true;
+}
+
+// Intersection between an AABB and a plane
+bool AABB_intersect_plane(struct AABB *box, struct PlaneCollider *plane){
+  // Get center and positive half-extents (switch AABB to c+h representation later)
+  vec3 center;
+  glm_vec3_add(box->max, box->min, center);
+  glm_vec3_scale(center, 0.5f, center);
+  vec3 extents;
+  glm_vec3_sub(box->max, center, extents);
+
+  // Get radius of the extents' projection interval onto the plane's normal
+  float r =
+    extents[0] * fabs(plane->normal[0]) +
+    extents[1] * fabs(plane->normal[1]) +
+    extents[2] * fabs(plane->normal[2]); 
+  // Get distance from the center of AABB to the plane
+  float s = glm_dot(plane->normal, center) - plane->distance;
+
+  // If the distance from the center to the plane is within the interval,
+  // the AABB is colliding with the plane
+  return fabs(s) <= r;
+}
+
+// RENDERING FUNCTIONS
+//
 // Assumes a model's AABB will never change
 void AABB_init(struct AABB *aabb){
   // Create the AABB shader
