@@ -84,7 +84,7 @@ Scene *scene_create(bool physics_view_mode){
   model_load(oiiaiModel, "resources/objects/oiiai/scene.gltf");
   struct Entity oiiai = {
     .ID = 1,
-    .position = {0.0f, 0.0f, 0.0f},
+    .position = {0.0f, 5.0f, 0.0f},
     .rotation = {0.0f, 0.0f, 0.0f},
     .scale = {3.0f, 3.0f, 3.0f},
     .velocity = {0.0f, -0.2f, 0.0f},
@@ -134,14 +134,10 @@ void scene_update(Scene *scene, float delta_time){
   for(int i = 0; i < scene->num_entities; i++){
     struct Entity *entity = &scene->entities[i];
     // Update velocity according to gravity
-    // float gravity = 9.8 * delta_time;
-    // glm_vec3_sub(entity->velocity, (vec3){0.0f, gravity, 0.0f}, entity->velocity);
+    float gravity = 1.0f * delta_time;
+    entity->velocity[1] -= gravity;
 
-    // Update position according ot velocity
-    vec3 update;
-    glm_vec3_copy(entity->velocity, update);
-    glm_vec3_scale(update, delta_time, update);
-    glm_vec3_add(entity->position, update, entity->position);
+    glm_vec3_muladds(entity->velocity, delta_time, entity->position);
   }
 
   // Perform collision detection
@@ -178,12 +174,6 @@ void scene_render(Scene *scene){
     .camera_position_ptr = scene->player.camera->position,
     .physics_view_mode = scene->physics_view_mode
   };
-  // context.light = scene->light;
-  // context.view = view;
-  // glm_mat4_copy(view, context.view);
-  // glm_mat4_copy(projection, context.projection);
-  // glm_vec3_copy(scene->player.camera->position, context.camera_position);
-  // context.physics_view_mode = scene->physics_view_mode;
 
   // Draw level
   level_render(&scene->level, &context);

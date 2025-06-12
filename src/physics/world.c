@@ -38,10 +38,16 @@ void physics_step(struct PhysicsWorld *physics_world, float delta_time){
   // Update each body in the physics world
   for(unsigned int i = 0; i < physics_world->num_bodies; i++){
     struct PhysicsBody *body = &physics_world->bodies[i];
-    vec3 update;
-    glm_vec3_copy(body->velocity, update);
-    glm_vec3_scale(update, delta_time, update);
-    glm_vec3_add(body->position, update, body->position);
+    // vec3 update;
+    // glm_vec3_copy(body->velocity, update);
+    // glm_vec3_scale(update, delta_time, update);
+    // glm_vec3_add(body->position, update, body->position);
+
+    // Update velocity according to gravity
+    float gravity = 1.0f * delta_time;
+    body->velocity[1] -= gravity;
+
+    glm_vec3_muladds(body->velocity, delta_time, body->position);
   }
 
   // Perform primitive collision detection:
