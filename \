@@ -155,6 +155,8 @@ struct AABB model_process_mesh(struct aiMesh *ai_mesh, const struct aiScene *sce
   // Create this mesh's AABB
   struct AABB mesh_AABB;
   mesh_AABB.initialized = false;
+    // .min = {FLT_MAX, FLT_MAX, FLT_MAX},
+    // .max = {FLT_MIN, FLT_MIN, FLT_MIN}
 
   // Process vertices
   for (unsigned int i = 0; i < ai_mesh->mNumVertices; i++){

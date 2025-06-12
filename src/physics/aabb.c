@@ -122,7 +122,7 @@ void AABB_update_by_vertex(struct AABB *aabb, vec3 vertex){
   // update the center and radius on that axis by half that distance
   for (int i = 0; i < 3; i++){
     if (vertex[i] > (aabb->center[i] + aabb->extents[i])){
-      float dist = vertex[i] - aabb->center[i] + aabb->extents[i];
+      float dist = vertex[i] - (aabb->center[i] + aabb->extents[i]);
       aabb->center[i] += dist * 0.5f;
       aabb->extents[i] += dist * 0.5f;
     }
