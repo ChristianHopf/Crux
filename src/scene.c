@@ -148,6 +148,7 @@ void scene_update(Scene *scene, float delta_time){
   for(int i = 0; i < scene->num_entities; i++){
     printf("Time to sync %d entities with their physics bodies\n", scene->num_entities);
     glm_vec3_copy(scene->entities[i].physics_body->position, scene->entities[i].position);
+    // print_glm_vec3(scene->entities[i].physics_body->position, "This entity's physics body position");
     print_glm_vec3(scene->entities[i].position, "New entity position");
   }
 

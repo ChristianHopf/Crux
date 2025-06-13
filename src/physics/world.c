@@ -46,6 +46,9 @@ void physics_step(struct PhysicsWorld *physics_world, float delta_time){
     body->velocity[1] -= gravity;
 
     glm_vec3_muladds(body->velocity, delta_time, body->position);
+
+    // printf("Applied gravity to body->velocity[1]\n");
+    // print_glm_vec3(body->position, "Physics step new body position");
   }
 
   // Perform primitive collision detection:
@@ -117,4 +120,32 @@ void physics_step(struct PhysicsWorld *physics_world, float delta_time){
     // Update rotation vector
     // entity->rotation[1] -= rotationSpeed * deltaTime;
   }
+}
+
+
+// Refactor into some pretty enum solution later
+float maximum_object_movement_over_time_aabb(struct PhysicsBody *body, float start_time, float end_time){
+  float interval = end_time - start_time;
+  return glm_vec3_norm(body->velocity) * interval;
+}
+
+// In the future, planes will be bounded and can move... maybe
+float maximum_object_movement_over_time_plane(struct PlaneCollider *plane, float start_time, float time){
+  return 0.0f;
+}
+
+// For now, only an AABB and a plane
+float minimum_object_distance_at_time(struct PhysicsBody *body, struct PlaneCollider *plane, float time){
+  // Translate the AABB by its velocity, scaled by time
+  glm_vec3_muladds(body->velocity, time, body->aabb.center);
+
+  // Get radius of the extents' projection interval onto the plane's normal
+  float r =
+    body->aabb.extents[0] * fabs(plane->normal[0]) +
+    body->aabb.extents[1] * fabs(plane->normal[1]) +
+    body->aabb.extents[2] * fabs(plane->normal[2]); 
+  // Get distance from the center of AABB to the plane
+  float s = glm_dot(plane->normal, body->aabb.center) - plane->distance;
+
+  return glm_max(s - r, 0);
 }
