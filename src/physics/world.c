@@ -94,7 +94,7 @@ void physics_step(struct PhysicsWorld *physics_world, float delta_time){
       // - n*v > 0 => moving away from the plane
       float n_dot_v = glm_dot(physics_world->level_plane->normal, rel_v);
 
-      // If n*v == 0 we may or may not already be colliding
+      // If the distance from the plane is within r, we're already colliding
       if (fabs(s) <= r){
         hit_time = 0;
       }
@@ -105,9 +105,31 @@ void physics_step(struct PhysicsWorld *physics_world, float delta_time){
       // Is equivalent to:
       // t = (r - ((n * C) - d)) / (n * v), or
       // t = (r - s) / (n * v)
-      if (n_dot_v != 0){
-        hit_time = (r - s) / n_dot_v;
+      else if (n_dot_v != 0){
+        // Positive side of the plane, moving towards it
+        // n_dot_v is negative, but we need a positive time value
+        if (s > 0 && n_dot_v < 0){
+          hit_time = (r - s) / -n_dot_v;
+        }
+        // Negative side of the plane, moving towards it
+        else if (s < 0 && n_dot_v > 0){
+          hit_time = (-r - s) / -n_dot_v;
+        }
       }
+      // If t isn't between 0 and delta_time, there's no collision within this interval
+      if (hit_time < 0 || hit_time > delta_time){
+        hit_time = -1;
+      }
+    }
+    // Broad-phase fails: no collision
+    else{
+      hit_time = -1;
+    }
+
+    // If a collision was detected, update position based on hit_time, and update velocity
+    if (hit_time != -1){
+      glm_vec3_muladds(bodyA->velocity, hit_time, bodyA->position);
+      glm_vec3_scale(bodyA->velocity, -1.0f, bodyA->velocity);
     }
   }
 
