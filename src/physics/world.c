@@ -51,6 +51,66 @@ void physics_step(struct PhysicsWorld *physics_world, float delta_time){
     // print_glm_vec3(body->position, "Physics step new body position");
   }
 
+  for(unsigned int i = 0; i < physics_world->num_bodies; i++){
+    struct PhysicsBody *bodyA = &physics_world->bodies[i];
+
+    // Get matrix and vector to update current AABB into world space
+    mat4 eulerA;
+    mat3 rotationA;
+    glm_euler_xyz(bodyA->rotation, eulerA);
+    glm_mat4_pick3(eulerA, rotationA);
+      
+    vec3 translationA;
+    glm_vec3_copy(bodyA->position, translationA);
+      
+    struct AABB worldAABB_A = {0};
+    AABB_update(&bodyA->aabb, rotationA, translationA, &worldAABB_A);
+
+    // BROAD PHASE:
+    // Create a hit_time float and perform interval halving
+    float hit_time;
+    if (interval_collision(bodyA, physics_world->level_plane, 0, delta_time, &hit_time)){
+      // NARROW PHASE:
+      // Check for precise collision between body and plane
+      // If 0 <= t <= hit_time, the AABB collided with the plane. Resolve accordingly
+
+      // Get relative velocity
+      vec3 rel_v;
+      glm_vec3_copy(bodyA->velocity, rel_v);
+      // glm_vec3_sub(bodyA->velocity, physics_world->level_plane->velocity, rel_v);
+
+      // Get radius of projection interval
+      float r =
+        bodyA->aabb->extents[0] * fabs(physics_world->level_plane->normal[0]) +
+        bodyA->aabb->extents[1] * fabs(physics_world->level_plane->normal[1]) +
+        bodyA->aabb->extents[2] * fabs(physics_world->level_plane->normal[2]); 
+
+      // Get distance from center of AABB to plane
+      float s = glm_dot(physics_world->level_plane->normal, bodyA->aabb->center) - physics_world->level_plane->distance;
+
+      // Get dot product of normal and relative velocity
+      // - n*v = 0 => moving parallel
+      // - n*v < 0 => moving towards plane
+      // - n*v > 0 => moving away from the plane
+      float n_dot_v = glm_dot(physics_world->level_plane->normal, rel_v);
+
+      // If n*v == 0 we may or may not already be colliding
+      if (fabs(s) <= r){
+        hit_time = 0;
+      }
+      
+      // If n*v != 0, solve for t.
+      // Ericson's equation:
+      // t = (r + d - (n * C)) / (n * v)
+      // Is equivalent to:
+      // t = (r - ((n * C) - d)) / (n * v), or
+      // t = (r - s) / (n * v)
+      if (n_dot_v != 0){
+        hit_time = (r - s) / n_dot_v;
+      }
+    }
+  }
+
   // Perform primitive collision detection:
   // a single broad-phase check of every possible pair
   for(unsigned int i = 0; i < physics_world->num_bodies; i++){
@@ -122,6 +182,32 @@ void physics_step(struct PhysicsWorld *physics_world, float delta_time){
   }
 }
 
+bool interval_collision(struct PhysicsBody *body, struct PlaneCollider *plane, float start_time, float end_time, float *hit_time){
+  // Compute sum of maximum distances the two bodies move over the interval
+  float max_move_A = maximum_object_movement_over_time_aabb(body, start_time, end_time);
+  float max_move_B = maximum_object_movement_over_time_plane(plane, start_time, end_time);
+  float max_move_sum = max_move_A + max_move_B;
+
+  // If initial minimum distance is larger than max_move_sum, exit
+  float min_dist_start = minimum_object_distance_at_time(body, plane, start_time);
+  if (min_dist_start > max_move_sum) return 0;
+
+  // If end minimum distance is still larger than max_move_sum, exit (bodies are moving away)
+  float min_dist_end = minimum_object_distance_at_time(body, plane, end_time);
+  if (min_dist_end > max_move_sum) return 0;
+
+  // If we recurse down to a small enough interval, assume collision at the start of the interval
+  if (end_time - start_time < INTERVAL_EPSILON){
+    hit_time = start_time;
+    return 1;
+  }
+
+  // Collision may have happened: halve the interval and check each half
+  float mid_time = (start_time + end_time) * 0.5f;
+  if (interval_collision(body, plane, start_time, mid_time, hit_time)) return 1;
+
+  return interval_collision(body, plane, mid_time, end_time, hit_time);
+}
 
 // Refactor into some pretty enum solution later
 float maximum_object_movement_over_time_aabb(struct PhysicsBody *body, float start_time, float end_time){
@@ -130,7 +216,7 @@ float maximum_object_movement_over_time_aabb(struct PhysicsBody *body, float sta
 }
 
 // In the future, planes will be bounded and can move... maybe
-float maximum_object_movement_over_time_plane(struct PlaneCollider *plane, float start_time, float time){
+float maximum_object_movement_over_time_plane(struct PlaneCollider *plane, float start_time, float end_time){
   return 0.0f;
 }
 

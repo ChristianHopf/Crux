@@ -151,12 +151,6 @@ bool AABB_intersect_AABB(struct AABB *a, struct AABB *b){
 
 // Intersection between an AABB and a plane
 bool AABB_intersect_plane(struct AABB *box, struct PlaneCollider *plane){
-  // Get center and positive half-extents (switch AABB to c+h representation later)
-  // vec3 center;
-  // glm_vec3_add(box->max, box->min, center);
-  // glm_vec3_scale(center, 0.5f, center);
-  // vec3 extents;
-  // glm_vec3_sub(box->max, center, extents);
 
   // Get radius of the extents' projection interval onto the plane's normal
   float r =

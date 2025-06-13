@@ -26,4 +26,9 @@ struct PhysicsBody *physics_add_body(struct PhysicsWorld *physics_world, struct 
 
 void physics_step(struct PhysicsWorld *physics_world, float delta_time);
 
+bool interval_collision(struct PhysicsBody *body, struct PlaneCollider *plane, float start_time, float end_time, float *hit_time);
+float maximum_object_movement_over_time_aabb(struct PhysicsBody *body, float start_time, float end_time);
+float maximum_object_movement_over_time_plane(struct PlaneCollider *plane, float start_time, float end_time);
+float minimum_object_distance_at_time(struct PhysicsBody *body, struct PlaneCollider *plane, float time);
+
 #endif
