@@ -1,4 +1,5 @@
 #include "physics/world.h"
+#include "distance.h"
 #include "utils.h"
 //#include <signal.h>
 
@@ -20,11 +21,15 @@ struct PhysicsWorld *physics_world_create(){
   return world;
 }
 
-struct PhysicsBody *physics_add_body(struct PhysicsWorld *physics_world, struct Entity *entity){
+struct PhysicsBody *physics_add_body(struct PhysicsWorld *physics_world, struct Entity *entity, COLLIDER_TYPE type){
 
   // Memory is already allocated: get a pointer, assign values, return the pointer
   struct PhysicsBody *body = &physics_world->bodies[physics_world->num_bodies++];
 
+  // Refactor to a switch on type to call the right body init function.
+  // One switch, one line per case, so it shouldn't have to ever be some complicated thing.
+
+  body->type = type;
   // Assume uniform scaling
   body->aabb = entity->model->aabb;
   glm_vec3_scale(body->aabb.extents, entity->scale[0], body->aabb.extents);
@@ -252,44 +257,46 @@ float maximum_object_movement_over_time(struct PhysicsBody *body, float start_ti
 }
 
 float minimum_object_distance_at_time(struct PhysicsBody *body_A, struct PhysicsBody *body_B, float time){
+  // Call the appropriate distance function from the table
+  DistanceFunction distance_function = distance_functions[body_A->type][body_B->type];
+  
+  return distance_function(body_A, body_B, time);
 }
-
-
 
 // Refactor into some pretty enum solution later
-float maximum_object_movement_over_time_aabb(struct PhysicsBody *body, float start_time, float end_time){
-  float interval = end_time - start_time;
-  return glm_vec3_norm(body->velocity) * interval;
-}
+// float maximum_object_movement_over_time_aabb(struct PhysicsBody *body, float start_time, float end_time){
+//   float interval = end_time - start_time;
+//   return glm_vec3_norm(body->velocity) * interval;
+// }
 
 // In the future, planes will be bounded and can move... maybe
-float maximum_object_movement_over_time_plane(struct PlaneCollider *plane, float start_time, float end_time){
-  return 0.0f;
-}
+// float maximum_object_movement_over_time_plane(struct PlaneCollider *plane, float start_time, float end_time){
+//   return 0.0f;
+// }
 
 // For now, only an AABB and a plane
-float minimum_object_distance_at_time(struct PhysicsBody *body, struct PlaneCollider *plane, float time){
-
-  // Get world space AABB to find minimum distance
-  mat4 eulerA;
-  mat3 rotationA;
-  glm_euler_xyz(body->rotation, eulerA);
-  glm_mat4_pick3(eulerA, rotationA);
-    
-  vec3 translationA;
-  glm_vec3_copy(body->position, translationA);
-  glm_vec3_muladds(body->velocity, time, translationA);
-    
-  struct AABB worldAABB_A = {0};
-  AABB_update(&body->aabb, rotationA, translationA, &worldAABB_A);
-
-  // Get radius of the extents' projection interval onto the plane's normal
-  float r =
-    worldAABB_A.extents[0] * fabs(plane->normal[0]) +
-    worldAABB_A.extents[1] * fabs(plane->normal[1]) +
-    worldAABB_A.extents[2] * fabs(plane->normal[2]); 
-  // Get distance from the center of AABB to the plane
-  float s = glm_dot(plane->normal, worldAABB_A.center) - plane->distance;
-
-  return glm_max(s - r, 0);
-}
+// float minimum_object_distance_at_time(struct PhysicsBody *body, struct PlaneCollider *plane, float time){
+//
+//   // Get world space AABB to find minimum distance
+//   mat4 eulerA;
+//   mat3 rotationA;
+//   glm_euler_xyz(body->rotation, eulerA);
+//   glm_mat4_pick3(eulerA, rotationA);
+//
+//   vec3 translationA;
+//   glm_vec3_copy(body->position, translationA);
+//   glm_vec3_muladds(body->velocity, time, translationA);
+//
+//   struct AABB worldAABB_A = {0};
+//   AABB_update(&body->aabb, rotationA, translationA, &worldAABB_A);
+//
+//   // Get radius of the extents' projection interval onto the plane's normal
+//   float r =
+//     worldAABB_A.extents[0] * fabs(plane->normal[0]) +
+//     worldAABB_A.extents[1] * fabs(plane->normal[1]) +
+//     worldAABB_A.extents[2] * fabs(plane->normal[2]); 
+//   // Get distance from the center of AABB to the plane
+//   float s = glm_dot(plane->normal, worldAABB_A.center) - plane->distance;
+//
+//   return glm_max(s - r, 0);
+// }

@@ -1,7 +1,7 @@
 #pragma once
 
 #include <cglm/cglm.h>
-#include "physics/abb.h"
+#include "aabb.h"
 #include "collider.h"
 #include "physics/utils.h"
 #include "entity.h"
