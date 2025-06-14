@@ -85,10 +85,10 @@ Scene *scene_create(bool physics_view_mode){
   model_load(oiiaiModel, "resources/objects/oiiai/scene.gltf");
   struct Entity oiiai = {
     .ID = 1,
-    .position = {0.0f, 5.0f, 0.0f},
+    .position = {0.0f, 9.0f, 0.0f},
     .rotation = {0.0f, 0.0f, 0.0f},
     .scale = {3.0f, 3.0f, 3.0f},
-    .velocity = {0.0f, -0.2f, 0.0f},
+    .velocity = {0.0f, 0.0f, 0.0f},
     .physics_body = NULL,
     .model = oiiaiModel,
     .shader = shader

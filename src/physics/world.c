@@ -4,6 +4,9 @@
 
 #define MAX_PHYSICS_BODIES 128
 
+// Collision timing
+#define INTERVAL_EPSILON 0.000001f
+
 struct PhysicsWorld *physics_world_create(){
   struct PhysicsWorld *world = (struct PhysicsWorld *)calloc(1, sizeof(struct PhysicsWorld));
   if (!world){
@@ -42,13 +45,12 @@ void physics_step(struct PhysicsWorld *physics_world, float delta_time){
     struct PhysicsBody *body = &physics_world->bodies[i];
 
     // Update velocity according to gravity
-    float gravity = 2.0f * delta_time;
+    float gravity = 4.0f * delta_time;
     body->velocity[1] -= gravity;
 
+    // Maybe with dynamic testing, we only want to add to its velocity,
+    // and not yet its position?
     glm_vec3_muladds(body->velocity, delta_time, body->position);
-
-    // printf("Applied gravity to body->velocity[1]\n");
-    // print_glm_vec3(body->position, "Physics step new body position");
   }
 
   for(unsigned int i = 0; i < physics_world->num_bodies; i++){
@@ -59,10 +61,10 @@ void physics_step(struct PhysicsWorld *physics_world, float delta_time){
     mat3 rotationA;
     glm_euler_xyz(bodyA->rotation, eulerA);
     glm_mat4_pick3(eulerA, rotationA);
-      
+
     vec3 translationA;
     glm_vec3_copy(bodyA->position, translationA);
-      
+
     struct AABB worldAABB_A = {0};
     AABB_update(&bodyA->aabb, rotationA, translationA, &worldAABB_A);
 
@@ -70,9 +72,8 @@ void physics_step(struct PhysicsWorld *physics_world, float delta_time){
     // Create a hit_time float and perform interval halving
     float hit_time;
     if (interval_collision(bodyA, physics_world->level_plane, 0, delta_time, &hit_time)){
-      // NARROW PHASE:
-      // Check for precise collision between body and plane
-      // If 0 <= t <= hit_time, the AABB collided with the plane. Resolve accordingly
+      printf("Broad phase passed\n");
+      // NARROW PHASE: AABB against plane
 
       // Get relative velocity
       vec3 rel_v;
@@ -81,12 +82,13 @@ void physics_step(struct PhysicsWorld *physics_world, float delta_time){
 
       // Get radius of projection interval
       float r =
-        bodyA->aabb->extents[0] * fabs(physics_world->level_plane->normal[0]) +
-        bodyA->aabb->extents[1] * fabs(physics_world->level_plane->normal[1]) +
-        bodyA->aabb->extents[2] * fabs(physics_world->level_plane->normal[2]); 
+        worldAABB_A.extents[0] * fabs(physics_world->level_plane->normal[0]) +
+        worldAABB_A.extents[1] * fabs(physics_world->level_plane->normal[1]) +
+        worldAABB_A.extents[2] * fabs(physics_world->level_plane->normal[2]); 
 
       // Get distance from center of AABB to plane
-      float s = glm_dot(physics_world->level_plane->normal, bodyA->aabb->center) - physics_world->level_plane->distance;
+      float s = glm_dot(physics_world->level_plane->normal, worldAABB_A.center) - physics_world->level_plane->distance;
+      printf("DISTANCE FROM AABB CENTER TO PLANE: %f\n", s);
 
       // Get dot product of normal and relative velocity
       // - n*v = 0 => moving parallel
@@ -107,16 +109,19 @@ void physics_step(struct PhysicsWorld *physics_world, float delta_time){
       // t = (r - s) / (n * v)
       else if (n_dot_v != 0){
         // Positive side of the plane, moving towards it
-        // n_dot_v is negative, but we need a positive time value
         if (s > 0 && n_dot_v < 0){
-          hit_time = (r - s) / -n_dot_v;
+          // hit_time = (r - s) / -n_dot_v;
+          hit_time = (r - s) / n_dot_v;
+          printf("COLLISION\n");
         }
         // Negative side of the plane, moving towards it
         else if (s < 0 && n_dot_v > 0){
-          hit_time = (-r - s) / -n_dot_v;
+          // hit_time = (-r - s) / -n_dot_v;
+          hit_time = (r - s) / n_dot_v;
         }
       }
-      // If t isn't between 0 and delta_time, there's no collision within this interval
+
+      // If t isn't within our given interval, there's no collision within this interval
       if (hit_time < 0 || hit_time > delta_time){
         hit_time = -1;
       }
@@ -126,110 +131,130 @@ void physics_step(struct PhysicsWorld *physics_world, float delta_time){
       hit_time = -1;
     }
 
+    // COLLISION RESOLUTION
     // If a collision was detected, update position based on hit_time, and update velocity
     if (hit_time != -1){
       glm_vec3_muladds(bodyA->velocity, hit_time, bodyA->position);
       glm_vec3_scale(bodyA->velocity, -1.0f, bodyA->velocity);
+      // bounce off!
     }
   }
 
   // Perform primitive collision detection:
   // a single broad-phase check of every possible pair
-  for(unsigned int i = 0; i < physics_world->num_bodies; i++){
-    struct PhysicsBody *bodyA = &physics_world->bodies[i];
-
-    // Get matrix and vector to update current AABB into world space
-    mat4 eulerA;
-    mat3 rotationA;
-    glm_euler_xyz(bodyA->rotation, eulerA);
-    glm_mat4_pick3(eulerA, rotationA);
-      
-    vec3 translationA;
-    glm_vec3_copy(bodyA->position, translationA);
-      
-    struct AABB worldAABB_A = {0};
-    AABB_update(&bodyA->aabb, rotationA, translationA, &worldAABB_A);
+  // for(unsigned int i = 0; i < physics_world->num_bodies; i++){
+  //   struct PhysicsBody *bodyA = &physics_world->bodies[i];
+  //
+  //   // Get matrix and vector to update current AABB into world space
+  //   mat4 eulerA;
+  //   mat3 rotationA;
+  //   glm_euler_xyz(bodyA->rotation, eulerA);
+  //   glm_mat4_pick3(eulerA, rotationA);
+  //
+  //   vec3 translationA;
+  //   glm_vec3_copy(bodyA->position, translationA);
+  //
+  //   struct AABB worldAABB_A = {0};
+  //   AABB_update(&bodyA->aabb, rotationA, translationA, &worldAABB_A);
 
     // Check collision with world space AABB and level plane
-    printf("Time to check collision between a world space AABB and the level plane!\n");
-    printf("World space AABB:\n");
-    print_aabb(&worldAABB_A);
-    printf("physics_world->level_plane:\n");
-    print_plane_collider(physics_world->level_plane);
-    if (AABB_intersect_plane(&worldAABB_A, physics_world->level_plane)){
-      printf("COLLISION DETECTED\n");
-      // Primitive collision resolution: apply impulse to reverse the body's velocity
-      glm_vec3_scale(bodyA->velocity, -1.0f, bodyA->velocity);
-      print_glm_vec3(bodyA->velocity, "New oiiai velocity");
-    }
-    else{
-      printf("NO COLLISION DETECTED\n");
-    }
-
-    // Check for collision with every other entity
-    for(unsigned int j = i+1; j < physics_world->num_bodies; j++){
-      struct PhysicsBody *bodyB = &physics_world->bodies[j];
-      // Get matrix and vector to update AABB A
-      mat4 eulerB;
-      mat3 rotationB;
-      glm_euler_xyz(bodyB->rotation, eulerB);
-      glm_mat4_pick3(eulerB, rotationB);
-      
-      vec3 translationB;
-      glm_vec3_copy(bodyB->position, translationB);
-      
-      struct AABB worldAABB_B = {0};
-      AABB_update(&bodyB->aabb, rotationB, translationB, &worldAABB_B);
-
-      // Perform collision check
-      printf("Time to check collision between the following AABBs:\n");
-      printf("Model space AABBs:\n");
-      print_aabb(&bodyA->aabb);
-      print_aabb(&bodyB->aabb);
-      printf("World space AABBS:\n");
-      print_aabb(&worldAABB_A);
-      print_aabb(&worldAABB_B);
-      if (AABB_intersect_AABB(&worldAABB_A, &worldAABB_B)){
-        printf("Collision detected\n");
-      }
-      else{
-        printf("No collision detected\n");
-      }
-    }
-
-    // Update translation vector
-    // entity->position[1] = (float)sin(glfwGetTime()*4) / 4;
-    // Update rotation vector
-    // entity->rotation[1] -= rotationSpeed * deltaTime;
-  }
+  //   printf("Time to check collision between a world space AABB and the level plane!\n");
+  //   printf("World space AABB:\n");
+  //   print_aabb(&worldAABB_A);
+  //   printf("physics_world->level_plane:\n");
+  //   print_plane_collider(physics_world->level_plane);
+  //   if (AABB_intersect_plane(&worldAABB_A, physics_world->level_plane)){
+  //     printf("COLLISION DETECTED\n");
+  //     // Primitive collision resolution: apply impulse to reverse the body's velocity
+  //     glm_vec3_scale(bodyA->velocity, -1.0f, bodyA->velocity);
+  //     print_glm_vec3(bodyA->velocity, "New oiiai velocity");
+  //   }
+  //   else{
+  //     printf("NO COLLISION DETECTED\n");
+  //   }
+  //
+  //   // Check for collision with every other entity
+  //   for(unsigned int j = i+1; j < physics_world->num_bodies; j++){
+  //     struct PhysicsBody *bodyB = &physics_world->bodies[j];
+  //     // Get matrix and vector to update AABB A
+  //     mat4 eulerB;
+  //     mat3 rotationB;
+  //     glm_euler_xyz(bodyB->rotation, eulerB);
+  //     glm_mat4_pick3(eulerB, rotationB);
+  //
+  //     vec3 translationB;
+  //     glm_vec3_copy(bodyB->position, translationB);
+  //
+  //     struct AABB worldAABB_B = {0};
+  //     AABB_update(&bodyB->aabb, rotationB, translationB, &worldAABB_B);
+  //
+  //     // Perform collision check
+  //     printf("Time to check collision between the following AABBs:\n");
+  //     printf("Model space AABBs:\n");
+  //     print_aabb(&bodyA->aabb);
+  //     print_aabb(&bodyB->aabb);
+  //     printf("World space AABBS:\n");
+  //     print_aabb(&worldAABB_A);
+  //     print_aabb(&worldAABB_B);
+  //     if (AABB_intersect_AABB(&worldAABB_A, &worldAABB_B)){
+  //       printf("Collision detected\n");
+  //     }
+  //     else{
+  //       printf("No collision detected\n");
+  //     }
+  //   }
+  //
+  //   // Update translation vector
+  //   // entity->position[1] = (float)sin(glfwGetTime()*4) / 4;
+  //   // Update rotation vector
+  //   // entity->rotation[1] -= rotationSpeed * deltaTime;
+  // }
 }
 
-bool interval_collision(struct PhysicsBody *body, struct PlaneCollider *plane, float start_time, float end_time, float *hit_time){
+bool interval_collision(struct PhysicsBody *body_A, struct PhysicsBody *body_B, float start_time, float end_time, float *hit_time){
   // Compute sum of maximum distances the two bodies move over the interval
-  float max_move_A = maximum_object_movement_over_time_aabb(body, start_time, end_time);
-  float max_move_B = maximum_object_movement_over_time_plane(plane, start_time, end_time);
+  float max_move_A = maximum_object_movement_over_time(body_A, start_time, end_time);
+  float max_move_B = maximum_object_movement_over_time(body_B, start_time, end_time);
   float max_move_sum = max_move_A + max_move_B;
 
   // If initial minimum distance is larger than max_move_sum, exit
-  float min_dist_start = minimum_object_distance_at_time(body, plane, start_time);
+  float min_dist_start = minimum_object_distance_at_time(body_A, body_B, start_time);
   if (min_dist_start > max_move_sum) return 0;
 
   // If end minimum distance is still larger than max_move_sum, exit (bodies are moving away)
-  float min_dist_end = minimum_object_distance_at_time(body, plane, end_time);
+  float min_dist_end = minimum_object_distance_at_time(body_A, body_B, end_time);
   if (min_dist_end > max_move_sum) return 0;
 
   // If we recurse down to a small enough interval, assume collision at the start of the interval
   if (end_time - start_time < INTERVAL_EPSILON){
-    hit_time = start_time;
+    *hit_time = start_time;
     return 1;
   }
 
   // Collision may have happened: halve the interval and check each half
   float mid_time = (start_time + end_time) * 0.5f;
-  if (interval_collision(body, plane, start_time, mid_time, hit_time)) return 1;
+  if (interval_collision(body_A, body_B, start_time, mid_time, hit_time)) return 1;
 
-  return interval_collision(body, plane, mid_time, end_time, hit_time);
+  return interval_collision(body_A, body_B, mid_time, end_time, hit_time);
 }
+
+float maximum_object_movement_over_time(struct PhysicsBody *body, float start_time, float end_time){
+  float delta_time = end_time - start_time;
+
+  switch(body.COLLIDER_TYPE){
+    case COLLIDER_AABB:
+      return glm_vec3_norm(body->velocity) * interval;
+    case COLLIDER_PLANE:
+      return 0.0f;
+    default:
+      return 0.0f;
+  }
+}
+
+float minimum_object_distance_at_time(struct PhysicsBody *body_A, struct PhysicsBody *body_B, float time){
+}
+
+
 
 // Refactor into some pretty enum solution later
 float maximum_object_movement_over_time_aabb(struct PhysicsBody *body, float start_time, float end_time){
@@ -244,16 +269,27 @@ float maximum_object_movement_over_time_plane(struct PlaneCollider *plane, float
 
 // For now, only an AABB and a plane
 float minimum_object_distance_at_time(struct PhysicsBody *body, struct PlaneCollider *plane, float time){
-  // Translate the AABB by its velocity, scaled by time
-  glm_vec3_muladds(body->velocity, time, body->aabb.center);
+
+  // Get world space AABB to find minimum distance
+  mat4 eulerA;
+  mat3 rotationA;
+  glm_euler_xyz(body->rotation, eulerA);
+  glm_mat4_pick3(eulerA, rotationA);
+    
+  vec3 translationA;
+  glm_vec3_copy(body->position, translationA);
+  glm_vec3_muladds(body->velocity, time, translationA);
+    
+  struct AABB worldAABB_A = {0};
+  AABB_update(&body->aabb, rotationA, translationA, &worldAABB_A);
 
   // Get radius of the extents' projection interval onto the plane's normal
   float r =
-    body->aabb.extents[0] * fabs(plane->normal[0]) +
-    body->aabb.extents[1] * fabs(plane->normal[1]) +
-    body->aabb.extents[2] * fabs(plane->normal[2]); 
+    worldAABB_A.extents[0] * fabs(plane->normal[0]) +
+    worldAABB_A.extents[1] * fabs(plane->normal[1]) +
+    worldAABB_A.extents[2] * fabs(plane->normal[2]); 
   // Get distance from the center of AABB to the plane
-  float s = glm_dot(plane->normal, body->aabb.center) - plane->distance;
+  float s = glm_dot(plane->normal, worldAABB_A.center) - plane->distance;
 
   return glm_max(s - r, 0);
 }
