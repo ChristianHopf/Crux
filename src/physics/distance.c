@@ -1,5 +1,10 @@
 #include "distance.h"
 
+DistanceFunction distance_functions[NUM_COLLIDER_TYPES][NUM_COLLIDER_TYPES] = {
+  [COLLIDER_AABB][COLLIDER_PLANE] = min_dist_at_time_AABB_plane,
+  [COLLIDER_PLANE][COLLIDER_AABB] = min_dist_at_time_AABB_plane
+};
+
 float min_dist_at_time_AABB_plane(struct PhysicsBody *body_AABB, struct PhysicsBody *body_plane, float time){
 
   // Get pointers to the bodies' colliders

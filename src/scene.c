@@ -50,22 +50,6 @@ Scene *scene_create(bool physics_view_mode){
     glfwTerminate();
     return NULL;
   }
-  
-  // Level
-  struct Model *planeModel = (struct Model *)malloc(sizeof(struct Model));
-  if (!planeModel){
-    printf("Error: failed to allocate oiiaiModel\n");
-    return NULL;
-  }
-  model_load(planeModel, "resources/basic/grass_plane/grass_plane.gltf");
-  struct Level level = {
-    .position = {0.0f, -1.0f, 0.0f},
-    .rotation = {0.0f, 0.0f, 0.0f},
-    .scale = {3.0f, 3.0f, 3.0f},
-    .model = planeModel,
-    .shader = shader
-  };
-  scene->level = level;
 
   // Entities
   scene->num_entities = 0;
@@ -83,8 +67,8 @@ Scene *scene_create(bool physics_view_mode){
     return NULL;
   }
   model_load(oiiaiModel, "resources/objects/oiiai/scene.gltf");
-  struct Entity oiiai = {
-    .ID = 1,
+  struct Entity oiiaiEntity = {
+    .ID = 2,
     .position = {0.0f, 9.0f, 0.0f},
     .rotation = {0.0f, 0.0f, 0.0f},
     .scale = {3.0f, 3.0f, 3.0f},
@@ -93,15 +77,42 @@ Scene *scene_create(bool physics_view_mode){
     .model = oiiaiModel,
     .shader = shader
   };
-  scene->entities[scene->num_entities++] = oiiai;
+  scene->entities[scene->num_entities++] = oiiaiEntity;
+
+  struct Model *planeModel = (struct Model *)malloc(sizeof(struct Model));
+  if (!planeModel){
+    printf("Error: failed to allocate oiiaiModel\n");
+    return NULL;
+  }
+  model_load(planeModel, "resources/basic/grass_plane/grass_plane.gltf");
+  // struct Level level = {
+  //   .position = {0.0f, -1.0f, 0.0f},
+  //   .rotation = {0.0f, 0.0f, 0.0f},
+  //   .scale = {3.0f, 3.0f, 3.0f},
+  //   .model = planeModel,
+  //   .shader = shader
+  // };
+  // scene->level = level
+  struct Entity planeEntity = {
+    .ID = 1,
+    .position = {0.0f, -1.0f, 0.0f},
+    .rotation = {0.0f, 0.0f, 0.0f},
+    .scale = {3.0f, 3.0f, 3.0f},
+    .velocity = {0.0f, 0.0f, 0.0f},
+    .physics_body = NULL,
+    .model = planeModel,
+    .shader = shader
+  };
+  scene->entities[scene->num_entities++] = planeEntity;
 
   // Create a PhysicsWorld and populate it with Colliders and PhysicsBodies
   scene->physics_world = physics_world_create();
   // Maybe make a plane_collider_create function to pass a normal and distance
-  scene->physics_world->level_plane = (struct PlaneCollider *)calloc(1, sizeof(struct PlaneCollider *));
-  glm_vec3_copy((vec3){0.0f, 1.0f, 0.0f}, scene->physics_world->level_plane->normal);
-  scene->physics_world->level_plane->distance = -1.0f;
+  // scene->physics_world->level_plane = (struct PlaneCollider *)calloc(1, sizeof(struct PlaneCollider *));
+  // glm_vec3_copy((vec3){0.0f, 1.0f, 0.0f}, scene->physics_world->level_plane->normal);
+  // scene->physics_world->level_plane->distance = -1.0f;
 
+  // Later, do one for static and one for dynamic entities
   for(int i = 0; i < scene->num_entities; i++){
     scene->entities[i].physics_body = physics_add_body(scene->physics_world, &scene->entities[i]);
   }
@@ -132,14 +143,14 @@ void scene_update(Scene *scene, float delta_time){
   player_update(&scene->player, delta_time);
 
   // Sequential method: move entity, then check collisions
-  for(int i = 0; i < scene->num_entities; i++){
-    struct Entity *entity = &scene->entities[i];
-    // Update velocity according to gravity
-    float gravity = 1.0f * delta_time;
-    entity->velocity[1] -= gravity;
-
-    glm_vec3_muladds(entity->velocity, delta_time, entity->position);
-  }
+  // for(int i = 0; i < scene->num_entities; i++){
+  //   struct Entity *entity = &scene->entities[i];
+  //   // Update velocity according to gravity
+  //   float gravity = 1.0f * delta_time;
+  //   entity->velocity[1] -= gravity;
+  //
+  //   glm_vec3_muladds(entity->velocity, delta_time, entity->position);
+  // }
 
   // Perform collision detection
   physics_step(scene->physics_world, delta_time);
@@ -185,7 +196,7 @@ void scene_render(Scene *scene){
   };
 
   // Draw level
-  level_render(&scene->level, &context);
+  // level_render(&scene->level, &context);
 
   // Draw entities
   for(int i = 0; i < scene->num_entities; i++){

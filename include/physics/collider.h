@@ -22,7 +22,7 @@ typedef enum {
 //   vec3 velocity;
 // };
 
-// struct PlaneCollider {
-//   vec3 normal;
-//   float distance;
-// };
+struct PlaneCollider {
+  vec3 normal;
+  float distance;
+};
