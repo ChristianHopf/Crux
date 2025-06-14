@@ -5,24 +5,24 @@ DistanceFunction distance_functions[NUM_COLLIDER_TYPES][NUM_COLLIDER_TYPES] = {
   [COLLIDER_PLANE][COLLIDER_AABB] = min_dist_at_time_AABB_plane
 };
 
-float min_dist_at_time_AABB_plane(struct PhysicsBody *body_AABB, struct PhysicsBody *body_plane, float time){
+float min_dist_at_time_AABB_plane(struct PhysicsBody *body_A, struct PhysicsBody *body_B, float time){
 
   // Get pointers to the bodies' colliders
-  struct AABB *box = body_AABB->collider;
-  struct Plane *plane = body_plane->collider;
+  struct AABB *box = &body_A->collider.aabb;
+  struct Plane *plane = &body_B->collider.plane;
 
   // Get world space AABB to find minimum distance
   mat4 eulerA;
   mat3 rotationA;
-  glm_euler_xyz(body_AABB->rotation, eulerA);
+  glm_euler_xyz(body_A->rotation, eulerA);
   glm_mat4_pick3(eulerA, rotationA);
     
   vec3 translationA;
-  glm_vec3_copy(body_AABB->position, translationA);
-  glm_vec3_muladds(body_AABB->velocity, time, translationA);
+  glm_vec3_copy(body_A->position, translationA);
+  glm_vec3_muladds(body_A->velocity, time, translationA);
     
   struct AABB worldAABB_A = {0};
-  AABB_update(&box, rotationA, translationA, &worldAABB_A);
+  AABB_update(box, rotationA, translationA, &worldAABB_A);
 
   // Get radius of the extents' projection interval onto the plane's normal
   float r =

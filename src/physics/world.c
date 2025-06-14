@@ -5,6 +5,9 @@
 
 #define MAX_PHYSICS_BODIES 128
 
+// Fixed time step to avoid huge delta time values
+#define MAX_DELTA_TIME 0.01666
+
 // Collision timing
 #define INTERVAL_EPSILON 0.000001f
 
@@ -38,23 +41,33 @@ struct PhysicsBody *physics_add_body(struct PhysicsWorld *physics_world, struct 
       };
 
       body->type = COLLIDER_PLANE;
-      body->collider = plane;
-      body->position = entity->position;
-      body->rotation = entity->rotation;
-      body->velocity = entity->velocity;
+      body->collider.plane = plane;
+      glm_vec3_copy(entity->position, body->position);
+      glm_vec3_copy(entity->rotation, body->rotation);
+      glm_vec3_copy(entity->velocity, body->velocity);
       break;
     case 2:
       // oiiai
-      // Assume uniform scaling
-      body->type = COLLIDER_AABB;
+      struct AABB aabb = {
+        .center = {0.0014968, 0.1823103, -0.0838950},
+        .extents = {0.1195973, 0.1933212, 0.3620904}
+      };
 
-      body->collider = entity->model->aabb;
-      glm_vec3_scale(body->collider.extents, entity->scale[0], body->collider.extents);
+      body->type = COLLIDER_AABB;
+      // body->collider.aabb = aabb;
+      body->collider.aabb = entity->model->aabb;
+
+      // Scale extents assuming uniform scaling, init center at its iniital world space position
+      glm_vec3_scale(body->collider.aabb.extents, entity->scale[0], body->collider.aabb.extents);
+      // glm_vec3_add(body->collider.aabb.center, entity->position, body->collider.aabb.center);
       // glm_vec3_scale(body->aabb.min, entity->scale[0], body->aabb.min);
       // glm_vec3_scale(body->aabb.max, entity->scale[1], body->aabb.max);
 
       // Copy the Entity's position, rotation, and velocity
       glm_vec3_copy(entity->position, body->position);
+      print_glm_vec3(entity->position, "Entity position");
+      print_glm_vec3(body->position, "Body position");
+
       glm_vec3_copy(entity->rotation, body->rotation);
       glm_vec3_copy(entity->velocity, body->velocity);
       break;
@@ -69,17 +82,21 @@ struct PhysicsBody *physics_add_body(struct PhysicsWorld *physics_world, struct 
 }
 
 void physics_step(struct PhysicsWorld *physics_world, float delta_time){
+  if (delta_time > MAX_DELTA_TIME){
+    delta_time = MAX_DELTA_TIME;
+  }
   // Update each body in the physics world
   for(unsigned int i = 0; i < physics_world->num_bodies-1; i++){
     struct PhysicsBody *body = &physics_world->bodies[i];
 
     // Update velocity according to gravity
-    float gravity = 4.0f * delta_time;
-    body->velocity[1] -= gravity;
+    float gravity = 9.8f;
+    body->velocity[1] -= gravity * delta_time;
 
     // Maybe with dynamic testing, we only want to add to its velocity,
     // and not yet its position?
     glm_vec3_muladds(body->velocity, delta_time, body->position);
+    print_glm_vec3(body->position, "Applied gravity, new body position");
   }
 
   for(unsigned int i = 0; i < physics_world->num_bodies-1; i++){
@@ -95,7 +112,7 @@ void physics_step(struct PhysicsWorld *physics_world, float delta_time){
     glm_vec3_copy(bodyA->position, translationA);
 
     struct AABB worldAABB_A = {0};
-    AABB_update(&bodyA->aabb, rotationA, translationA, &worldAABB_A);
+    AABB_update(&bodyA->collider.aabb, rotationA, translationA, &worldAABB_A);
 
     // BROAD PHASE:
     // Create a hit_time float and perform interval halving
@@ -111,19 +128,19 @@ void physics_step(struct PhysicsWorld *physics_world, float delta_time){
 
       // Get radius of projection interval
       float r =
-        worldAABB_A.extents[0] * fabs(physics_world->bodies[1].normal[0]) +
-        worldAABB_A.extents[1] * fabs(physics_world->bodies[1].normal[1]) +
-        worldAABB_A.extents[2] * fabs(physics_world->bodies[1].normal[2]); 
+        worldAABB_A.extents[0] * fabs(physics_world->bodies[1].collider.plane.normal[0]) +
+        worldAABB_A.extents[1] * fabs(physics_world->bodies[1].collider.plane.normal[1]) +
+        worldAABB_A.extents[2] * fabs(physics_world->bodies[1].collider.plane.normal[2]); 
 
       // Get distance from center of AABB to plane
-      float s = glm_dot(physics_world->bodies[1].normal, worldAABB_A.center) - physics_world->bodies[1].distance;
+      float s = glm_dot(physics_world->bodies[1].collider.plane.normal, worldAABB_A.center) - physics_world->bodies[1].collider.plane.distance;
       printf("DISTANCE FROM AABB CENTER TO PLANE: %f\n", s);
 
       // Get dot product of normal and relative velocity
       // - n*v = 0 => moving parallel
       // - n*v < 0 => moving towards plane
       // - n*v > 0 => moving away from the plane
-      float n_dot_v = glm_dot(physics_world->bodies[1].normal, rel_v);
+      float n_dot_v = glm_dot(physics_world->bodies[1].collider.plane.normal, rel_v);
 
       // If the distance from the plane is within r, we're already colliding
       if (fabs(s) <= r){
@@ -270,9 +287,9 @@ bool interval_collision(struct PhysicsBody *body_A, struct PhysicsBody *body_B, 
 float maximum_object_movement_over_time(struct PhysicsBody *body, float start_time, float end_time){
   float delta_time = end_time - start_time;
 
-  switch(body.COLLIDER_TYPE){
+  switch(body->type){
     case COLLIDER_AABB:
-      return glm_vec3_norm(body->velocity) * interval;
+      return glm_vec3_norm(body->velocity) * delta_time;
     case COLLIDER_PLANE:
       return 0.0f;
     default:

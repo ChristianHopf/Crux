@@ -7,7 +7,7 @@
 typedef enum {
   COLLIDER_AABB,
   COLLIDER_PLANE,
-} ColliderType;
+} COLLIDER_TYPE;
 
 // struct Collider {
 //   COLLIDER_TYPE type;

@@ -11,9 +11,14 @@ void print_aabb(struct AABB *aabb){
   }
 
   printf("AABB {\n");
-  printf("  min: (%.2f, %.2f, %.2f\n)", min[0], min[1], min[2]);
-  printf("  max: (%.2f, %.2f, %.2f\n)", max[0], max[1], max[2]);
+  printf("  center: (%.7f, %.7f, %.7f)\n", aabb->center[0], aabb->center[1], aabb->center[2]);
+  printf("  extents: (%.7f, %.7f, %.7f)\n", aabb->extents[0], aabb->extents[1], aabb->extents[2]);
   printf("}\n");
+
+  // printf("AABB {\n");
+  // printf("  min: (%.2f, %.2f, %.2f\n)", min[0], min[1], min[2]);
+  // printf("  max: (%.2f, %.2f, %.2f\n)", max[0], max[1], max[2]);
+  // printf("}\n");
 }
 
 void print_plane_collider(struct PlaneCollider *plane){

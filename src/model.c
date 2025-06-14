@@ -153,7 +153,7 @@ struct AABB model_process_mesh(struct aiMesh *ai_mesh, const struct aiScene *sce
   aiMatrix4x4_to_mat4(&node_transform, node_transform_mat4);
 
   // Create this mesh's AABB
-  struct AABB mesh_AABB;
+  struct AABB mesh_AABB = {0};
   mesh_AABB.initialized = false;
 
   // Process vertices

@@ -16,6 +16,9 @@ typedef float (*DistanceFunction)(struct PhysicsBody *body_A, struct PhysicsBody
 // Do this for static things in other files too
 extern DistanceFunction distance_functions[NUM_COLLIDER_TYPES][NUM_COLLIDER_TYPES];
 
+// Minimum distance functions
+float min_dist_at_time_AABB_plane(struct PhysicsBody *body_A, struct PhysicsBody *body_B, float time);
+
 // DistanceFunction distance_functions[NUM_COLLIDER_TYPES][NUM_COLLIDER_TYPES] = {
 //   [COLLIDER_AABB][COLLIDER_PLANE] = min_dist_at_time_AABB_plane,
 //   [COLLIDER_PLANE][COLLIDER_AABB] = min_dist_at_time_AABB_plane
