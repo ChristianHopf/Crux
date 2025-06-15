@@ -1,10 +1,11 @@
 #include "physics/narrow_phase.h"
+#include <alloca.h>
 
 struct CollisionResult narrow_phase_AABB_plane(struct PhysicsBody *body_AABB, struct PhysicsBody *body_plane, float delta_time){
   struct AABB *box = &body_AABB->collider.data.aabb;
   struct Plane *plane = &body_plane->collider.data.plane;
 
-  struct CollisionResult result;
+  struct CollisionResult result = {0};
 
   // Get a world space version of the current AABB
   mat4 eulerA;
@@ -46,7 +47,10 @@ struct CollisionResult narrow_phase_AABB_plane(struct PhysicsBody *body_AABB, st
     if (fabs(s) <= r){
       result.colliding = true;
     }
-    result.hit_time = 0;
+    else{
+      result.colliding = false;
+    }
+    result.hit_time = -1;
   }
   // If n*v != 0, solve for t.
   // Ericson's equation:
@@ -55,24 +59,23 @@ struct CollisionResult narrow_phase_AABB_plane(struct PhysicsBody *body_AABB, st
   // t = (r - ((n * C) - d)) / (n * v), or
   // t = (r - s) / (n * v)
   else {
-    // Positive side of the plane, moving towards it
-    if (s > 0 && n_dot_v < 0){
-      // Might need to fiddle with signs if plane is facing the other way
-      result.hit_time = (r - s) / -n_dot_v;
+    // s is greater than r sometimes
+    if (s <= r && s >= -r){
+      // Positive side of plane
+      if (n_dot_v < 0){
+        result.hit_time = (r - s) / -n_dot_v;
+        printf("Hit time will be %f\n", result.hit_time);
+      }
+      // Negative side of plane
+      else if (n_dot_v > 0 && s < 0){
+        result.hit_time = (r + s) / -n_dot_v;
+      }
       // result.hit_time = (r - s) / n_dot_v;
-      printf("Hit time is %f\n", result.hit_time);
+      result.colliding = (result.hit_time >= 0 && result.hit_time <= delta_time);
     }
-    // Negative side of the plane, moving towards it
-    else if (s < 0 && n_dot_v > 0){
-      // hit_time = (-r - s) / -n_dot_v;
-      result.hit_time = (r - s) / n_dot_v;
-    }
-    result.colliding = true;
 
-    // If t isn't within our given interval, there's no collision within this interval
-    if (result.hit_time < 0 || result.hit_time > delta_time){
+    if (!result.colliding){
       result.hit_time = -1;
-      result.colliding = false;
     }
 
     // Point of contact Q = C(t) - rn
