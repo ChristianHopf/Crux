@@ -1,4 +1,5 @@
 #include "physics/world.h"
+#include "narrow_phase.h"
 #include "distance.h"
 #include "utils.h"
 #include <cglm/vec3.h>
@@ -78,87 +79,81 @@ void physics_step(struct PhysicsWorld *physics_world, float delta_time){
     struct PhysicsBody *body_A = &physics_world->dynamic_bodies[i];
 
     // Get a world space version of the current AABB
-    mat4 eulerA;
-    mat3 rotationA;
-    glm_euler_xyz(body_A->rotation, eulerA);
-    glm_mat4_pick3(eulerA, rotationA);
-
-    vec3 translationA;
-    glm_vec3_copy(body_A->position, translationA);
-
-    vec3 scaleA;
-    glm_vec3_copy(body_A->scale, scaleA);
-
-    struct AABB worldAABB_A = {0};
-    AABB_update(&body_A->collider.data.aabb, rotationA, translationA, scaleA, &worldAABB_A);
+    // mat4 eulerA;
+    // mat3 rotationA;
+    // glm_euler_xyz(body_A->rotation, eulerA);
+    // glm_mat4_pick3(eulerA, rotationA);
+    //
+    // vec3 translationA;
+    // glm_vec3_copy(body_A->position, translationA);
+    //
+    // vec3 scaleA;
+    // glm_vec3_copy(body_A->scale, scaleA);
+    //
+    // struct AABB worldAABB_A = {0};
+    // AABB_update(&body_A->collider.data.aabb, rotationA, translationA, scaleA, &worldAABB_A);
 
     // BROAD PHASE:
     // Create a hit_time float and perform interval halving
     printf("BROAD PHASE\n");
     float hit_time;
+    struct CollisionResult result = {0};
     if (interval_collision(body_A, &physics_world->static_bodies[0], 0, delta_time, &hit_time)){
       printf("BROAD PHASE PASSED -> NARROW PHASE\n");
       // NARROW PHASE: AABB against plane
+      result = narrow_phase_AABB_plane(body_A, &physics_world->static_bodies[0], delta_time);
 
-      // Get relative velocity
-      vec3 rel_v;
-      glm_vec3_copy(body_A->velocity, rel_v);
-
-      // Get radius of projection interval
-      float r =
-        worldAABB_A.extents[0] * fabs(physics_world->static_bodies[0].collider.data.plane.normal[0]) +
-        worldAABB_A.extents[1] * fabs(physics_world->static_bodies[0].collider.data.plane.normal[1]) +
-        worldAABB_A.extents[2] * fabs(physics_world->static_bodies[0].collider.data.plane.normal[2]); 
-
-      // Get distance from center of AABB to plane
-      float s = glm_dot(physics_world->static_bodies[0].collider.data.plane.normal, worldAABB_A.center) - physics_world->static_bodies[0].collider.data.plane.distance;
-
-      // Get dot product of normal and relative velocity
-      // - n*v = 0 => moving parallel
-      // - n*v < 0 => moving towards plane
-      // - n*v > 0 => moving away from the plane
-      float n_dot_v = glm_dot(physics_world->static_bodies[0].collider.data.plane.normal, rel_v);
-
-      // If the distance from the plane is within r, we're already colliding
-      if (fabs(s) <= r){
-        hit_time = 0;
-      }
-      
-      // If n*v != 0, solve for t.
-      // Ericson's equation:
-      // t = (r + d - (n * C)) / (n * v)
-      // Is equivalent to:
-      // t = (r - ((n * C) - d)) / (n * v), or
-      // t = (r - s) / (n * v)
-      else if (n_dot_v != 0){
-        // Positive side of the plane, moving towards it
-        if (s > 0 && n_dot_v < 0){
-          // Might need to fiddle with signs if plane is facing the other way
-          // hit_time = (r - s) / -n_dot_v;
-          hit_time = (r - s) / n_dot_v;
-        }
-        // Negative side of the plane, moving towards it
-        else if (s < 0 && n_dot_v > 0){
-          // hit_time = (-r - s) / -n_dot_v;
-          hit_time = (r - s) / n_dot_v;
-        }
-      }
-
-      // If t isn't within our given interval, there's no collision within this interval
-      if (hit_time < 0 || hit_time > delta_time){
-        hit_time = -1;
-      }
+    //   // Get relative velocity
+    //   vec3 rel_v;
+    //   glm_vec3_copy(body_A->velocity, rel_v);
+    //
+    //   // Get radius of projection interval
+    //   float r =
+    //     worldAABB_A.extents[0] * fabs(physics_world->static_bodies[0].collider.data.plane.normal[0]) +
+    //     worldAABB_A.extents[1] * fabs(physics_world->static_bodies[0].collider.data.plane.normal[1]) +
+    //     worldAABB_A.extents[2] * fabs(physics_world->static_bodies[0].collider.data.plane.normal[2]); 
+    //
+    //   // Get distance from center of AABB to plane
+    //   float s = glm_dot(physics_world->static_bodies[0].collider.data.plane.normal, worldAABB_A.center) - physics_world->static_bodies[0].collider.data.plane.distance;
+    //
+    //   float n_dot_v = glm_dot(physics_world->static_bodies[0].collider.data.plane.normal, rel_v);
+    //
+    //   // If the distance from the plane is within r, we're already colliding
+    //   if (fabs(s) <= r){
+    //     hit_time = 0;
+    //   }
+    //
+    //   else if (n_dot_v != 0){
+    //     if (s > 0 && n_dot_v < 0){
+    //       hit_time = (r - s) / n_dot_v;
+    //     }
+    //     else if (s < 0 && n_dot_v > 0){
+    //       // hit_time = (-r - s) / -n_dot_v;
+    //       hit_time = (r - s) / n_dot_v;
+    //     }
+    //     // Point of contact Q = C(t) - rn
+    //     vec3 Q;
+    //     glm_vec3_copy(worldAABB_A.center, Q);
+    //     glm_vec3_muladds(body_A->velocity, hit_time, Q);
+    //     glm_vec3_mulsubs(physics_world->static_bodies[0].collider.data.plane.normal, Q);
+    //   }
+    //
+    //   // If t isn't within our given interval, there's no collision within this interval
+    //   if (hit_time < 0 || hit_time > delta_time){
+    //     hit_time = -1;
+    //   }
+    // }
+    // else{
+    //   hit_time = -1;
+    // }
     }
-    // Broad-phase fails: no collision
-    else{
-      hit_time = -1;
-    }
-
     // COLLISION RESOLUTION
     // If a collision was detected, update position based on hit_time, and update velocity
-    if (hit_time != -1){
-      glm_vec3_muladds(body_A->velocity, hit_time, body_A->position);
+    if (result.colliding){
+      printf("Resulting hit time: %f\n", result.hit_time);
+      glm_vec3_muladds(body_A->velocity, result.hit_time, body_A->position);
       glm_vec3_scale(body_A->velocity, -1.0f, body_A->velocity);
+      print_glm_vec3(body_A->position, "OIIAI POSITION");
       // bounce off!
     }
     else{

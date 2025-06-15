@@ -548,14 +548,10 @@ void scene_render(struct Scene *scene){
   // level_render(&scene->level, &context);
 
   // Draw entities
-  printf("Static entities to render: %d\n", scene->num_static_entities);
   for(int i = 0; i < scene->num_static_entities; i++){
-    printf("Rendering plane\n");
     entity_render(&scene->static_entities[i], &context);
   }
-  printf("Dynamic entities to render: %d\n", scene->num_dynamic_entities);
   for(int i = 0; i < scene->num_dynamic_entities; i++){
-    printf("Rendering oiiai\n");
     entity_render(&scene->dynamic_entities[i], &context);
   }
 
