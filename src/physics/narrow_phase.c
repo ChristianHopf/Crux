@@ -64,18 +64,22 @@ struct CollisionResult narrow_phase_AABB_plane(struct PhysicsBody *body_AABB, st
       // Positive side of plane
       if (n_dot_v < 0){
         result.hit_time = (r - s) / -n_dot_v;
-        printf("Hit time will be %f\n", result.hit_time);
+        result.colliding = (result.hit_time >= 0 && result.hit_time <= delta_time);
       }
       // Negative side of plane
       else if (n_dot_v > 0 && s < 0){
         result.hit_time = (r + s) / -n_dot_v;
+        result.colliding = (result.hit_time >= 0 && result.hit_time <= delta_time);
       }
-      // result.hit_time = (r - s) / n_dot_v;
-      result.colliding = (result.hit_time >= 0 && result.hit_time <= delta_time);
+      // Positive n_dot_v and positive s within radius
+      else{
+        result.hit_time = -1;
+        result.colliding = true;
+      }
     }
-
-    if (!result.colliding){
+    else{
       result.hit_time = -1;
+      result.colliding = false;
     }
 
     // Point of contact Q = C(t) - rn

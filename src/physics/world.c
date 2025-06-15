@@ -92,7 +92,7 @@ void physics_step(struct PhysicsWorld *physics_world, float delta_time){
     // If a collision was detected, update position based on hit_time, and update velocity
     printf("Time to resolve collision with CollisionResult:\n");
     printf("Hit time: %f\nColliding: %s\n", result.hit_time, result.colliding ? "true" : "false");
-    if (result.colliding && result.hit_time >= 0){
+    if (result.hit_time >= 0){
       glm_vec3_muladds(body_A->velocity, result.hit_time, body_A->position);
       glm_vec3_scale(body_A->velocity, -1.0f, body_A->velocity);
       print_glm_vec3(body_A->position, "OIIAI POSITION");
