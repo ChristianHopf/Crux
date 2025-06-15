@@ -2,13 +2,13 @@
 
 void print_aabb(struct AABB *aabb){
   // Convert AABB to min/max format for debug printing
-  vec3 min;
-  vec3 max;
-  
-  for (int i = 0; i < 3; i++){
-    min[i] = aabb->center[i] - aabb->extents[i];
-    max[i] = aabb->center[i] + aabb->extents[i];
-  }
+  // vec3 min;
+  // vec3 max;
+  //
+  // for (int i = 0; i < 3; i++){
+  //   min[i] = aabb->center[i] - aabb->extents[i];
+  //   max[i] = aabb->center[i] + aabb->extents[i];
+  // }
 
   printf("AABB {\n");
   printf("  center: (%.7f, %.7f, %.7f)\n", aabb->center[0], aabb->center[1], aabb->center[2]);
@@ -21,8 +21,8 @@ void print_aabb(struct AABB *aabb){
   // printf("}\n");
 }
 
-void print_plane_collider(struct PlaneCollider *plane){
-  printf("PlaneCollider:\n");
+void print_plane(struct Plane *plane){
+  printf("Plane:\n");
   printf("{\n");
   printf("  Normal: (%.3f, %.3f, %.3f)\n", plane->normal[0], plane->normal[1], plane->normal[2]);
   printf("  Distance: %.2f\n", plane->distance);

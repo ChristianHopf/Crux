@@ -29,6 +29,7 @@ struct Scene *scene_init(char *scene_path){
 
   // Parse scene JSON
   const char *scene_data = (const char *)read_file(scene_path);
+  printf("Scene json: \n%s\n", scene_data);
 
   const cJSON *shaders_json;
   const cJSON *models_json;
@@ -42,6 +43,7 @@ struct Scene *scene_init(char *scene_path){
     if (!error_ptr){
       fprintf(stderr, "Error before: %s\n", error_ptr);
     }
+    printf("Failed to parse json\n");
     cJSON_Delete(scene_json);
     return NULL;
   }
