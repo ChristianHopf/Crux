@@ -69,9 +69,9 @@ Scene *scene_create(bool physics_view_mode){
   model_load(oiiaiModel, "resources/objects/oiiai/scene.gltf");
   struct Entity oiiaiEntity = {
     .ID = 2,
-    .position = {0.0f, 3.0f, 0.0f},
+    .position = {0.0f, 2.0f, 0.0f},
     .rotation = {0.0f, 0.0f, 0.0f},
-    .scale = {3.0f, 3.0f, 3.0f},
+    .scale = {1.0f, 1.0f, 1.0f},
     .velocity = {0.0f, 0.0f, 0.0f},
     .physics_body = NULL,
     .model = oiiaiModel,
@@ -95,7 +95,7 @@ Scene *scene_create(bool physics_view_mode){
   // scene->level = level
   struct Entity planeEntity = {
     .ID = 1,
-    .position = {0.0f, -1.0f, 0.0f},
+    .position = {0.0f, 0.0f, 0.0f},
     .rotation = {0.0f, 0.0f, 0.0f},
     .scale = {3.0f, 3.0f, 3.0f},
     .velocity = {0.0f, 0.0f, 0.0f},
@@ -157,10 +157,10 @@ void scene_update(Scene *scene, float delta_time){
 
   // Match entity position with updated PhysicsBody position
   for(int i = 0; i < scene->num_entities; i++){
-    printf("Time to sync %d entities with their physics bodies\n", scene->num_entities);
+    // printf("Time to sync %d entities with their physics bodies\n", scene->num_entities);
     glm_vec3_copy(scene->entities[i].physics_body->position, scene->entities[i].position);
     // print_glm_vec3(scene->entities[i].physics_body->position, "This entity's physics body position");
-    print_glm_vec3(scene->entities[i].position, "New entity position");
+    // print_glm_vec3(scene->entities[i].position, "New entity position");
   }
 
   // Update translation vector

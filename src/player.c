@@ -26,22 +26,27 @@ void player_jump(struct Player *player){
   //glm_vec3_add(player->velocity, (vec3){0.0f, 3.0f, 0.0f}, player->velocity);
   player->velocity[1] = 3.0f;
   player->is_grounded = false;
-  printf("Player upward velocity: %f\n", player->velocity[1]);
+  // printf("Player upward velocity: %f\n", player->velocity[1]);
 }
 
 void player_update(struct Player *player, float delta_time){
-  // First apply gravity to the player's velocity
-  float gravity = 9.8 * delta_time;
-  glm_vec3_sub(player->velocity, (vec3){0.0f, gravity, 0.0f}, player->velocity);
+  // if (!player->is_grounded){
+    // Apply gravity to the player's velocity
+    float gravity = 9.8f;
+    // glm_vec3_sub(player->velocity, (vec3){0.0f, gravity * delta_time, 0.0f}, player->velocity);
+    player->velocity[1] -= gravity * delta_time;
 
-  printf("Player velocity: [%f %f %f]\n", player->velocity[0], player->velocity[1], player->velocity[2]);
+    // printf("Player velocity: [%f %f %f]\n", player->velocity[0], player->velocity[1], player->velocity[2]);
 
-  // Add player's velocity to the camera position, scaled by delta_time
-  vec3 update;
-  glm_vec3_copy(player->velocity, update);
-  glm_vec3_scale(update, delta_time, update);
-  glm_vec3_add(update, player->camera->position, player->camera->position);
+    // Add player's velocity to the camera position, scaled by delta_time
+    vec3 update;
+    glm_vec3_copy(player->velocity, update);
+    glm_vec3_scale(update, delta_time, update);
+    // glm_vec3_muladds(player->velocity, delta_time, player->camera->position);
+    glm_vec3_add(update, player->camera->position, player->camera->position);
 
+  // }
+  
   // If this update makes the player hit the ground, set their velocity back to 0
   if (player->camera->position[1] <= 0.0f){
     player->camera->position[1] = 0.0f;

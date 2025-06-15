@@ -1,5 +1,6 @@
 #include "physics/aabb.h"
 #include "physics/utils.h"
+#include "utils.h"
 #include <cglm/util.h>
 #include <cglm/vec3.h>
 
@@ -71,7 +72,7 @@ void AABB_merge(struct AABB *a, struct AABB *b){
   return;
 }
 
-void AABB_update(struct AABB *src, mat3 rotation, vec3 translation, struct AABB *dest){
+void AABB_update(struct AABB *src, mat3 rotation, vec3 translation, vec3 scale, struct AABB *dest){
   // printf("Time to update AABB src and store in dest. Current values of src and dest:\n");
   // print_aabb(src);
   // print_aabb(dest);
@@ -102,6 +103,12 @@ void AABB_update(struct AABB *src, mat3 rotation, vec3 translation, struct AABB 
       dest->extents[i] += fabs(rotation[i][j]) * src->extents[j];
     }
   }
+  for(int i = 0; i < 3; i++){
+    // glm_vec3_scale(body->collider.aabb.extents[i], fabs(entity->scale[i]), body->collider.aabb.extents);
+    dest->extents[i] *= fabs(scale[i]);
+  }
+  print_glm_vec3(dest->center, "World space AABB center");
+  print_glm_vec3(dest->extents, "World space AABB extents");
 }
 
 //Figure out an optimal algorithm for this later.

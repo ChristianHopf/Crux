@@ -20,9 +20,12 @@ float min_dist_at_time_AABB_plane(struct PhysicsBody *body_A, struct PhysicsBody
   vec3 translationA;
   glm_vec3_copy(body_A->position, translationA);
   glm_vec3_muladds(body_A->velocity, time, translationA);
+
+  vec3 scaleA;
+  glm_vec3_copy(body_A->scale, scaleA);
     
   struct AABB worldAABB_A = {0};
-  AABB_update(box, rotationA, translationA, &worldAABB_A);
+  AABB_update(box, rotationA, translationA, scaleA, &worldAABB_A);
 
   // Get radius of the extents' projection interval onto the plane's normal
   float r =

@@ -26,7 +26,7 @@ struct AABB {
 
 
 void AABB_merge(struct AABB *a, struct AABB *b);
-void AABB_update(struct AABB *src, mat3 rotation, vec3 translation, struct AABB *dest);
+void AABB_update(struct AABB *src, mat3 rotation, vec3 translation, vec3 scale, struct AABB *dest);
 void AABB_update_by_vertex(struct AABB *aabb, vec3 vertex);
 
 // Collision tests
