@@ -25,7 +25,7 @@ struct PhysicsWorld *physics_world_create(){
   return world;
 }
 
-struct PhysicsBody *physics_add_body(struct PhysicsWorld *physics_world, struct Entity *entity){
+struct PhysicsBody *physics_add_body(struct PhysicsWorld *physics_world, struct Entity *entity, COLLIDER_TYPE type, ){
 
   // Memory is already allocated: get a pointer, assign values, return the pointer
   struct PhysicsBody *body = &physics_world->bodies[physics_world->num_bodies++];

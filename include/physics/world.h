@@ -7,11 +7,12 @@
 #include "entity.h"
 
 struct PhysicsBody {
-  COLLIDER_TYPE type;
-  union {
-    struct AABB aabb;
-    struct Plane plane;
-  } collider;
+  ColliderType type;
+  union ColliderData collider;
+  // union {
+  //   struct AABB aabb;
+  //   struct Plane plane;
+  // } collider;
   vec3 position;
   vec3 rotation;
   vec3 scale;
@@ -34,7 +35,7 @@ struct PhysicsWorld {
 
 // World, bodies
 struct PhysicsWorld *physics_world_create();
-struct PhysicsBody  *physics_add_body(struct PhysicsWorld *physics_world, struct Entity *entity);
+struct PhysicsBody  *physics_add_body(struct PhysicsWorld *physics_world, struct Entity *entity, struct Collider collider);
 
 void physics_step(struct PhysicsWorld *physics_world, float delta_time);
 

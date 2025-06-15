@@ -5,9 +5,19 @@
 #include "plane.h"
 
 typedef enum {
-  COLLIDER_AABB,
+  COLLIDER_AABB = 0,
   COLLIDER_PLANE,
-} COLLIDER_TYPE;
+} ColliderType;
+
+union ColliderData{
+  struct AABB;
+  struct Plane;
+};
+
+struct Collider{
+  ColliderType type;
+  union ColliderData data;
+};
 
 // struct Collider {
 //   COLLIDER_TYPE type;

@@ -65,8 +65,10 @@ void scene_init(struct Scene *scene, char *scene_path){
       cJSON_Delete(scene_json);
       return;
     }
+    char *vertex_path = cJSON_GetStringValue(vertex);
+    char *fragment_path = cJSON_GetStringValue(fragment);
 
-    Shader *shader = shader_create("shaders/shader.vs", "shaders/dirlight/shader.fs");
+    Shader *shader = shader_create(vertex_path, fragment_path;
     if (!shader){
       printf("Error: failed to create shader program\n");
     }
@@ -89,21 +91,22 @@ void scene_init(struct Scene *scene, char *scene_path){
       fprintf(stderr, "Error: invalid JSON data in models: model must be a string (filepath)\n");
       return;
     }
+    char *model_path = cJSON_GetStringValue(model);
 
     struct Model *loaded_model = (struct Model *)malloc(sizeof(struct Model));
     if (!loaded_model){
-      fprintf(stderr, "Error: failed to allocate model with path %s in scene_init\n", model);
+      fprintf(stderr, "Error: failed to allocate model with path %s in scene_init\n", model_path);
       return;
     }
-    if (!model_load(loaded_model, model)){
-      fprintf(stderr, "Error: failed to load model with path %s in scene_init\n", model);
+    if (!model_load(loaded_model, model_path){
+      fprintf(stderr, "Error: failed to load model with path %s in scene_init\n", model_path);
     }
 
     models[index] = loaded_model;
     index++;
   }
 
-  // Create entities
+  // Create entities and populate PhysicsWorld
   meshes = cJSON_GetObjectItemCaseSensitive(scene_json, "meshes");
   if (!meshes){
     fprintf(stderr, "Error: failed to get meshes object in scene_json, meshes is either invalid or does not exist\n");
@@ -119,6 +122,8 @@ void scene_init(struct Scene *scene, char *scene_path){
     fprintf(stderr, "Error: failed to get meshes[\"dynamic\"] object in scene_init, invalid or does not exist\n");
     return;
   }
+
+  scene->physics_world = physics_world_create();
 
   // Process static meshes
   int num_static_meshes = cJSON_GetArraySize(static_meshes);
@@ -140,8 +145,8 @@ void scene_init(struct Scene *scene, char *scene_path){
       return;
     }
 
-    entity->model = models[model_index];
-    entity->shader = shaders[shader_index];
+    entity->model = models[cJSON_GetNumberValue(model_index)];
+    entity->shader = shaders[cJSON_GetNumberValue(shader_index)];
 
     cJSON *position_json = cJSON_GetObjectItemCaseSensitive(mesh, "position");
     if (!cJSON_IsArray(position_json) || cJSON_GetArraySize(position) != 3){
@@ -176,43 +181,221 @@ void scene_init(struct Scene *scene, char *scene_path){
       fprintf(stderr, "Error: failed to get collider object in mesh at index %d, either invalid or does not exist\n", index);
       return;
     }
-
-    
-
     cJSON *collider_type = cJSON_GetObjectItemCaseSensitive(collider_json, "type");
     if (!cJSON_IsNumber(collider_type)){
       fprintf(stderr, "Error: failed to get type in collider object in mesh at index %d, either invalid or does not exist\n", index);
       return;
     }
-
     cJSON *collider_data_json = cJSON_GetObjectItemCaseSensitive(collider_json, "data");
     if (!collider_data_json){
       fprintf(stderr, "Error: failed to get data in collider object in mesh at index %d, either invalid or does not exist\n", index);
       return;
     }
 
-    switch(cJSON_GetNumberValue(collider_type)){
+    ColliderType type = cJSON_GetNumberValue(collider_type);
+    switch(type){
       // AABB
       case 0:
         // Get AABB, call physics_add_body with type and data.
-        // Add a call to physics_create_world above
+        struct AABB aabb;
+
+        cJSON *center_json = cJSON_GetObjectItemCaseSensitive(collider_data_json, "center");
+        if (!cJSON_IsArray(center_json) || cJSON_GetArraySize(center) != 3){
+          fprintf(stderr, "Error: failed to get center in collider object in static mesh at index %d, either invalid or does not exist\n", index);
+          return;
+        }
+        aabb.center[0] = cJSON_GetNumberValue(cJSON_GetArrayItem(center, 0));
+        aabb.center[1] = cJSON_GetNumberValue(cJSON_GetArrayItem(center, 1));
+        aabb.center[2] = cJSON_GetNumberValue(cJSON_GetArrayItem(center, 2));
+
+        cJSON *extents_json = cJSON_GetObjectItemCaseSensitive(collider_data_json, "extents");
+        if (!cJSON_IsArray(extents_json) || cJSON_GetArraySize(extents) != 3){
+          fprintf(stderr, "Error: failed to get extents in collider object in static mesh at index %d, either invalid or does not exist\n", index);
+          return;
+        }
+        aabb.extents[0] = cJSON_GetNumberValue(cJSON_GetArrayItem(extents, 0));
+        aabb.extents[1] = cJSON_GetNumberValue(cJSON_GetArrayItem(extents, 1));
+        aabb.extents[2] = cJSON_GetNumberValue(cJSON_GetArrayItem(extents, 2));
+
+        aabb.initialized = true;
+
+        struct Collider collider = {
+          .type = type,
+          .collider = aabb
+        };
         break;
       // Plane
       case 1:
+        struct Plane plane;
+
+        cJSON *normal_json = cJSON_GetObjectItemCaseSensitive(collider_data_json, "normal");
+        if (!cJSON_IsArray(normal_json) || cJSON_GetArraySize(normal) != 3){
+          fprintf(stderr, "Error: failed to get normal in collider object in static mesh at index %d, either invalid or does not exist\n", index);
+          return;
+        }
+        plane.normal[0] = cJSON_GetNumberValue(cJSON_GetArrayItem(normal, 0));
+        plane.normal[1] = cJSON_GetNumberValue(cJSON_GetArrayItem(normal, 1));
+        plane.normal[2] = cJSON_GetNumberValue(cJSON_GetArrayItem(normal, 2));
+
+        cJSON *distance = cJSON_GetObjectItemCaseSensitive(collider_data_json, "distance");
+        if(!cJSON_IsNumber(distance)){
+          fprintf(stderr, "Error: failed to get distance in collider object in static mesh at index %d, either invalid or does not exist\n", index);
+          return;
+        }
+
+        plane.distance = cJSON_GetNumberValue(distance);
+
+        struct Collider collider = {
+          .type = type,
+          .collider = plane
+        };
         break;
       default:
         break;
     }
+    entity->physics_body = physics_add_body(scene->physics_world, entity, collider);
   }
 
   // Process dynamic meshes
   int num_dynamic_meshes = cJSON_GetArraySize(dynamic_meshes);
-  struct Entity *dynamic_entities[num_dynamic_meshes];
+  struct Entity dynamic_entities[num_dynamic_meshes];
 
   index = 0;
   cJSON_ArrayForEach(mesh, dynamic_meshes){
     // Create Entity
+    struct Entity *entity = &dynamic_entities[index];
+
+    cJSON *model_index_json = cJSON_GetObjectItemCaseSensitive(mesh, "model_index");
+    cJSON *shader_index_json = cJSON_GetObjectItemCaseSensitive(mesh, "shader_index");
+    if(!cJSON_IsNumber(model_index_json)){
+      fprintf(stderr, "Error: failed to get model_index in dynamic mesh at index %d, either invalid or does not exist\n", index);
+      return;
+    }
+    if(!cJSON_IsNumber(shader_index_json)){
+      fprintf(stderr, "Error: failed to get shader_index in dynamic mesh at index %d, either invalid or does not exist\n", index);
+      return;
+    }
+
+    entity->model = models[cJSON_GetNumberValue(model_index)];
+    entity->shader = shaders[cJSON_GetNumberValue(shader_index)];
+
+    cJSON *position_json = cJSON_GetObjectItemCaseSensitive(mesh, "position");
+    if (!cJSON_IsArray(position_json) || cJSON_GetArraySize(position) != 3){
+      fprintf(stderr, "Error: failed to get position in dynamic mesh at index %d, either invalid or does not exist\n", index);
+      return;
+    }
+    entity->position[0] = cJSON_GetNumberValue(cJSON_GetArrayItem(position, 0));
+    entity->position[1] = cJSON_GetNumberValue(cJSON_GetArrayItem(position, 1));
+    entity->position[2] = cJSON_GetNumberValue(cJSON_GetArrayItem(position, 2));
+
+    cJSON *rotation_json = cJSON_GetObjectItemCaseSensitive(mesh, "rotation");
+    if (!cJSON_IsArray(rotation_json) || cJSON_GetArraySize(rotation) != 3){
+      fprintf(stderr, "Error: failed to get rotation in dynamic mesh at index %d, either invalid or does not exist\n", index);
+      return;
+    }
+    entity->rotation[0] = cJSON_GetNumberValue(cJSON_GetArrayItem(rotation, 0));
+    entity->rotation[1] = cJSON_GetNumberValue(cJSON_GetArrayItem(rotation, 1));
+    entity->rotation[2] = cJSON_GetNumberValue(cJSON_GetArrayItem(rotation, 2));
+
+    cJSON *scale_json = cJSON_GetObjectItemCaseSensitive(mesh, "scale");
+    if (!cJSON_IsArray(scale_json) || cJSON_GetArraySize(scale) != 3){
+      fprintf(stderr, "Error: failed to get scale in dynamic mesh at index %d, either invalid or does not exist\n", index);
+      return;
+    }
+    entity->scale[0] = cJSON_GetNumberValue(cJSON_GetArrayItem(scale, 0));
+    entity->scale[1] = cJSON_GetNumberValue(cJSON_GetArrayItem(scale, 1));
+    entity->scale[2] = cJSON_GetNumberValue(cJSON_GetArrayItem(scale, 2));
+
+    cJSON *velocity_json = cJSON_GetObjectItemCaseSensitive(mesh, "velocity");
+    if (!cJSON_IsArray(velocity_json) || cJSON_GetArraySize(velocity) != 3){
+      fprintf(stderr, "Error: failed to get velocity in dynamic mesh at index %d, either invalid or does not exist\n", index);
+      return;
+    }
+    entity->velocity[0] = cJSON_GetNumberValue(cJSON_GetArrayItem(velocity, 0));
+    entity->velocity[1] = cJSON_GetNumberValue(cJSON_GetArrayItem(velocity, 1));
+    entity->velocity[2] = cJSON_GetNumberValue(cJSON_GetArrayItem(velocity, 2));
+
+    // Process mesh collider
+    cJSON *collider_json = cJSON_GetObjectItemCaseSensitive(mesh, "collider");
+    if (!collider){
+      fprintf(stderr, "Error: failed to get collider object in dynamic mesh at index %d, either invalid or does not exist\n", index);
+      return;
+    }
+    cJSON *collider_type = cJSON_GetObjectItemCaseSensitive(collider_json, "type");
+    if (!cJSON_IsNumber(collider_type)){
+      fprintf(stderr, "Error: failed to get type in collider object in dynamic mesh at index %d, either invalid or does not exist\n", index);
+      return;
+    }
+    cJSON *collider_data_json = cJSON_GetObjectItemCaseSensitive(collider_json, "data");
+    if (!collider_data_json){
+      fprintf(stderr, "Error: failed to get data in collider object in dynamic mesh at index %d, either invalid or does not exist\n", index);
+      return;
+    }
+
+    ColliderType type = cJSON_GetNumberValue(collider_type);
+    switch(cJSON_GetNumberValue(type)){
+      // AABB
+      case 0:
+        // Get AABB, call physics_add_body with type and data.
+        struct AABB aabb;
+
+        cJSON *center_json = cJSON_GetObjectItemCaseSensitive(collider_data_json, "center");
+        if (!cJSON_IsArray(center_json) || cJSON_GetArraySize(center) != 3){
+          fprintf(stderr, "Error: failed to get center in collider object in static mesh at index %d, either invalid or does not exist\n", index);
+          return;
+        }
+        aabb.center[0] = cJSON_GetNumberValue(cJSON_GetArrayItem(center, 0));
+        aabb.center[1] = cJSON_GetNumberValue(cJSON_GetArrayItem(center, 1));
+        aabb.center[2] = cJSON_GetNumberValue(cJSON_GetArrayItem(center, 2));
+
+        cJSON *extents_json = cJSON_GetObjectItemCaseSensitive(collider_data_json, "extents");
+        if (!cJSON_IsArray(extents_json) || cJSON_GetArraySize(extents) != 3){
+          fprintf(stderr, "Error: failed to get extents in collider object in static mesh at index %d, either invalid or does not exist\n", index);
+          return;
+        }
+        aabb.extents[0] = cJSON_GetNumberValue(cJSON_GetArrayItem(extents, 0));
+        aabb.extents[1] = cJSON_GetNumberValue(cJSON_GetArrayItem(extents, 1));
+        aabb.extents[2] = cJSON_GetNumberValue(cJSON_GetArrayItem(extents, 2));
+
+        aabb.initialized = true;
+
+        struct Collider collider = {
+          .type = type,
+          .collider = aabb
+        };
+        break;
+      // Plane
+      case 1:
+        struct Plane plane;
+
+        cJSON *normal_json = cJSON_GetObjectItemCaseSensitive(collider_data_json, "normal");
+        if (!cJSON_IsArray(normal_json) || cJSON_GetArraySize(normal) != 3){
+          fprintf(stderr, "Error: failed to get normal in collider object in static mesh at index %d, either invalid or does not exist\n", index);
+          return;
+        }
+        plane.normal[0] = cJSON_GetNumberValue(cJSON_GetArrayItem(normal, 0));
+        plane.normal[1] = cJSON_GetNumberValue(cJSON_GetArrayItem(normal, 1));
+        plane.normal[2] = cJSON_GetNumberValue(cJSON_GetArrayItem(normal, 2));
+
+        cJSON *distance = cJSON_GetObjectItemCaseSensitive(collider_data_json, "distance");
+        if(!cJSON_IsNumber(distance)){
+          fprintf(stderr, "Error: failed to get distance in collider object in static mesh at index %d, either invalid or does not exist\n", index);
+          return;
+        }
+
+        plane.distance = cJSON_GetNumberValue(distance);
+
+        struct Collider collider = {
+          .type = type,
+          .collider = plane
+        };
+        break;
+      default:
+        break;
+    }
+    entity->physics_body = physics_add_body(scene->physics_world, entity, collider);
   }
+
   
   // Lights
   lights = cJSON_GetObjectItemCaseSensitive(scene_json, "lights");
@@ -440,4 +623,124 @@ void free_scene(Scene *scene){
     free(scene->skybox);
     free(scene);
   }
+}
+
+void scene_process_static_meshes(){
+  cJSON_ArrayForEach(mesh, static_meshes){
+    // Create Entity
+    struct Entity *entity = &static_entities[index];
+
+    cJSON *model_index_json = cJSON_GetObjectItemCaseSensitive(mesh, "model_index");
+    cJSON *shader_index_json = cJSON_GetObjectItemCaseSensitive(mesh, "shader_index");
+    if(!cJSON_IsNumber(model_index_json)){
+      fprintf(stderr, "Error: failed to get model_index in static mesh at index %d, either invalid or does not exist\n", index);
+      return;
+    }
+    if(!cJSON_IsNumber(shader_index_json)){
+      fprintf(stderr, "Error: failed to get shader_index in static mesh at index %d, either invalid or does not exist\n", index);
+      return;
+    }
+
+    entity->model = models[cJSON_GetNumberValue(model_index)];
+    entity->shader = shaders[cJSON_GetNumberValue(shader_index)];
+
+    cJSON *position_json = cJSON_GetObjectItemCaseSensitive(mesh, "position");
+    if (!cJSON_IsArray(position_json) || cJSON_GetArraySize(position) != 3){
+      fprintf(stderr, "Error: failed to get position in static mesh at index %d, either invalid or does not exist\n", index);
+      return;
+    }
+    entity->position[0] = cJSON_GetNumberValue(cJSON_GetArrayItem(position, 0));
+    entity->position[1] = cJSON_GetNumberValue(cJSON_GetArrayItem(position, 1));
+    entity->position[2] = cJSON_GetNumberValue(cJSON_GetArrayItem(position, 2));
+
+    cJSON *rotation_json = cJSON_GetObjectItemCaseSensitive(mesh, "rotation");
+    if (!cJSON_IsArray(rotation_json) || cJSON_GetArraySize(rotation) != 3){
+      fprintf(stderr, "Error: failed to get rotation in static mesh at index %d, either invalid or does not exist\n", index);
+      return;
+    }
+    entity->rotation[0] = cJSON_GetNumberValue(cJSON_GetArrayItem(rotation, 0));
+    entity->rotation[1] = cJSON_GetNumberValue(cJSON_GetArrayItem(rotation, 1));
+    entity->rotation[2] = cJSON_GetNumberValue(cJSON_GetArrayItem(rotation, 2));
+
+    cJSON *scale_json = cJSON_GetObjectItemCaseSensitive(mesh, "scale");
+    if (!cJSON_IsArray(scale_json) || cJSON_GetArraySize(scale) != 3){
+      fprintf(stderr, "Error: failed to get scale in static mesh at index %d, either invalid or does not exist\n", index);
+      return;
+    }
+    entity->scale[0] = cJSON_GetNumberValue(cJSON_GetArrayItem(scale, 0));
+    entity->scale[1] = cJSON_GetNumberValue(cJSON_GetArrayItem(scale, 1));
+    entity->scale[2] = cJSON_GetNumberValue(cJSON_GetArrayItem(scale, 2));
+
+    // Process mesh collider
+    cJSON *collider_json = cJSON_GetObjectItemCaseSensitive(mesh, "collider");
+    if (!collider){
+      fprintf(stderr, "Error: failed to get collider object in mesh at index %d, either invalid or does not exist\n", index);
+      return;
+    }
+    cJSON *collider_type = cJSON_GetObjectItemCaseSensitive(collider_json, "type");
+    if (!cJSON_IsNumber(collider_type)){
+      fprintf(stderr, "Error: failed to get type in collider object in mesh at index %d, either invalid or does not exist\n", index);
+      return;
+    }
+    cJSON *collider_data_json = cJSON_GetObjectItemCaseSensitive(collider_json, "data");
+    if (!collider_data_json){
+      fprintf(stderr, "Error: failed to get data in collider object in mesh at index %d, either invalid or does not exist\n", index);
+      return;
+    }
+
+    switch(cJSON_GetNumberValue(collider_type)){
+      // AABB
+      case 0:
+        // Get AABB, call physics_add_body with type and data.
+        struct AABB aabb;
+
+        cJSON *center_json = cJSON_GetObjectItemCaseSensitive(collider_data_json, "center");
+        if (!cJSON_IsArray(center_json) || cJSON_GetArraySize(center) != 3){
+          fprintf(stderr, "Error: failed to get center in collider object in static mesh at index %d, either invalid or does not exist\n", index);
+          return;
+        }
+        aabb.center[0] = cJSON_GetNumberValue(cJSON_GetArrayItem(center, 0));
+        aabb.center[1] = cJSON_GetNumberValue(cJSON_GetArrayItem(center, 1));
+        aabb.center[2] = cJSON_GetNumberValue(cJSON_GetArrayItem(center, 2));
+
+        cJSON *extents_json = cJSON_GetObjectItemCaseSensitive(collider_data_json, "extents");
+        if (!cJSON_IsArray(extents_json) || cJSON_GetArraySize(extents) != 3){
+          fprintf(stderr, "Error: failed to get extents in collider object in static mesh at index %d, either invalid or does not exist\n", index);
+          return;
+        }
+        aabb.extents[0] = cJSON_GetNumberValue(cJSON_GetArrayItem(extents, 0));
+        aabb.extents[1] = cJSON_GetNumberValue(cJSON_GetArrayItem(extents, 1));
+        aabb.extents[2] = cJSON_GetNumberValue(cJSON_GetArrayItem(extents, 2));
+
+        aabb.initialized = true;
+        break;
+      // Plane
+      case 1:
+        struct Plane plane;
+
+        cJSON *normal_json = cJSON_GetObjectItemCaseSensitive(collider_data_json, "normal");
+        if (!cJSON_IsArray(normal_json) || cJSON_GetArraySize(normal) != 3){
+          fprintf(stderr, "Error: failed to get normal in collider object in static mesh at index %d, either invalid or does not exist\n", index);
+          return;
+        }
+        plane.normal[0] = cJSON_GetNumberValue(cJSON_GetArrayItem(normal, 0));
+        plane.normal[1] = cJSON_GetNumberValue(cJSON_GetArrayItem(normal, 1));
+        plane.normal[2] = cJSON_GetNumberValue(cJSON_GetArrayItem(normal, 2));
+
+        cJSON *distance = cJSON_GetObjectItemCaseSensitive(collider_data_json, "distance");
+        if(!cJSON_IsNumber(distance)){
+          fprintf(stderr, "Error: failed to get distance in collider object in static mesh at index %d, either invalid or does not exist\n", index);
+          return;
+        }
+
+        plane.distance = cJSON_GetNumberValue(distance);
+        break;
+      default:
+        break;
+    }
+  }
+}
+
+void scene_process_dynamic_meshes(){
+
 }
