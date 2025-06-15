@@ -8,8 +8,8 @@ DistanceFunction distance_functions[NUM_COLLIDER_TYPES][NUM_COLLIDER_TYPES] = {
 float min_dist_at_time_AABB_plane(struct PhysicsBody *body_A, struct PhysicsBody *body_B, float time){
 
   // Get pointers to the bodies' colliders
-  struct AABB *box = &body_A->collider.aabb;
-  struct Plane *plane = &body_B->collider.plane;
+  struct AABB *box = &body_A->collider.data.aabb;
+  struct Plane *plane = &body_B->collider.data.plane;
 
   // Get world space AABB to find minimum distance
   mat4 eulerA;

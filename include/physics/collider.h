@@ -9,9 +9,9 @@ typedef enum {
   COLLIDER_PLANE,
 } ColliderType;
 
-union ColliderData{
-  struct AABB;
-  struct Plane;
+union ColliderData {
+  struct AABB aabb;
+  struct Plane plane;
 };
 
 struct Collider{

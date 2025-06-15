@@ -1,6 +1,6 @@
 # Compiler and flags
 CC = gcc
-CFLAGS = -Iinclude -Iinclude/physics $(addprefix -I,$(shell find third_party -type d)) $(shell pkg-config --cflags freetype2) -Ithird_party/unity -Wall -Wextra -g
+CFLAGS = -Iinclude -Iinclude/physics $(addprefix -I,$(shell find third_party -type d)) $(shell pkg-config --cflags freetype2) -Wall -Wextra -g
 LDFLAGS = -L/usr/lib $(shell pkg-config --libs freetype2) -lglfw -lGL -lcglm -lm -ldl -lassimp
 
 # Directories
@@ -8,21 +8,21 @@ SRC_DIR = src
 THIRD_PARTY_SRC_DIR = third_party
 TEST_DIR = test
 OUT_DIR = executables
-UNITY_DIR = third_party/unity
+# UNITY_DIR = third_party/unity
 OBJ_DIR = build
 
 # Source files
 SRC_FILES = $(shell find $(SRC_DIR) -type f -name "*.c") $(shell find $(THIRD_PARTY_SRC_DIR) -type f -name "*.c")
 TEST_FILES = $(wildcard $(TEST_DIR)/**/*.c)
-UNITY_SRC = $(UNITY_DIR)/unity.c
+# UNITY_SRC = $(UNITY_DIR)/unity.c
 
 # Object files
 SRC_OBJS = $(patsubst $(SRC_DIR)/%.c,$(OBJ_DIR)/%.o,$(SRC_FILES))
-TEST_OBJS = $(patsubst $(TEST_DIR)/%.c,$(OBJ_DIR)/test/%.o,$(TEST_FILES))
-UNITY_OBJ = $(OBJ_DIR)/unity.o
+# TEST_OBJS = $(patsubst $(TEST_DIR)/%.c,$(OBJ_DIR)/test/%.o,$(TEST_FILES))
+# UNITY_OBJ = $(OBJ_DIR)/unity.o
 
 # Output binaries
-MAIN_OUT = $(OUT_DIR)/scenejson1
+MAIN_OUT = $(OUT_DIR)/scenejson2
 TEST_OUT = $(OUT_DIR)/test_runner
 
 # Default target
@@ -58,10 +58,10 @@ $(OBJ_DIR)/test/%.o: $(TEST_DIR)/%.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
 # Unity object file
-$(OBJ_DIR)/unity.o: $(UNITY_SRC)
-	@mkdir -p $(OBJ_DIR)
-	@echo "Compiling Unity $<"
-	$(CC) $(CFLAGS) -c $< -o $@
+# $(OBJ_DIR)/unity.o: $(UNITY_SRC)
+# 	@mkdir -p $(OBJ_DIR)
+# 	@echo "Compiling Unity $<"
+# 	$(CC) $(CFLAGS) -c $< -o $@
 
 # Clean
 clean:

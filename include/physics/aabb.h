@@ -1,11 +1,10 @@
-#ifndef PHYSICS_AABB_H
-#define PHYSICS_AABB_H
+#pragma once
 
 #include <glad/glad.h>
 #include <cglm/cglm.h>
 #include <stdbool.h>
-#include "collider.h"
 #include "shader.h"
+#include "plane.h"
 
 // struct AABB {
 //   vec3 min;
@@ -31,9 +30,7 @@ void AABB_update_by_vertex(struct AABB *aabb, vec3 vertex);
 
 // Collision tests
 bool AABB_intersect_AABB(struct AABB *a, struct AABB *b);
-bool AABB_intersect_plane(struct AABB *box, struct PlaneCollider *plane);
+bool AABB_intersect_plane(struct AABB *box, struct Plane *plane);
 
 void AABB_init(struct AABB *aabb);
 void AABB_render(struct AABB *aabb, mat4 model, mat4 view, mat4 projection);
-
-#endif
