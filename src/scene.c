@@ -29,7 +29,6 @@ struct Scene *scene_init(char *scene_path){
 
   // Parse scene JSON
   const char *scene_data = (const char *)read_file(scene_path);
-  printf("Scene json: \n%s\n", scene_data);
 
   const cJSON *shaders_json;
   const cJSON *models_json;
@@ -76,6 +75,7 @@ struct Scene *scene_init(char *scene_path){
       printf("Error: failed to create shader program\n");
     }
     shaders[index] = shader;
+    printf("Loaded shader with id %d\n", shader->ID);
     index++;
   }
 
@@ -86,6 +86,7 @@ struct Scene *scene_init(char *scene_path){
     return NULL;
   }
   int num_models = cJSON_GetArraySize(models_json);
+  printf("Number of models to load: %d\n", num_models);
   struct Model *models[num_models];
 
   index = 0;
@@ -107,6 +108,7 @@ struct Scene *scene_init(char *scene_path){
     }
 
     models[index] = loaded_model;
+    printf("Loaded model with filepath %s\n", model_path);
     index++;
   }
 
@@ -132,9 +134,8 @@ struct Scene *scene_init(char *scene_path){
   // Process static meshes
   int num_static_meshes = cJSON_GetArraySize(static_meshes);
   scene->static_entities = (struct Entity *)malloc(num_static_meshes * sizeof(struct Entity));
+  scene->num_static_entities = num_static_meshes;
   
-  // struct Entity static_entities[num_static_meshes];
-
   index = 0;
   cJSON *mesh_json;
   cJSON_ArrayForEach(mesh_json, static_meshes){
@@ -151,14 +152,14 @@ struct Scene *scene_init(char *scene_path){
       fprintf(stderr, "Error: failed to get shader_index in static mesh at index %d, either invalid or does not exist\n", index);
       return NULL;
     }
+    printf("Model index is %d\n", (int)cJSON_GetNumberValue(model_index_json));
 
     entity->model = models[(int)cJSON_GetNumberValue(model_index_json)];
     entity->shader = shaders[(int)cJSON_GetNumberValue(shader_index_json)];
 
-    vec3 position, rotation, scale;
-    scene_process_vec3_json(cJSON_GetObjectItemCaseSensitive(mesh_json, "position"), position);
-    scene_process_vec3_json(cJSON_GetObjectItemCaseSensitive(mesh_json, "rotation"), rotation);
-    scene_process_vec3_json(cJSON_GetObjectItemCaseSensitive(mesh_json, "scale"), scale);
+    scene_process_vec3_json(cJSON_GetObjectItemCaseSensitive(mesh_json, "position"), entity->position);
+    scene_process_vec3_json(cJSON_GetObjectItemCaseSensitive(mesh_json, "rotation"), entity->rotation);
+    scene_process_vec3_json(cJSON_GetObjectItemCaseSensitive(mesh_json, "scale"), entity->scale);
 
     // Process mesh collider
     cJSON *collider_json = cJSON_GetObjectItemCaseSensitive(mesh_json, "collider");
@@ -214,6 +215,15 @@ struct Scene *scene_init(char *scene_path){
       default:
         break;
     }
+    printf("Added Entity to scene->static_entities at index %d:\n", index);
+    printf("Shader id: %d, model index: %d\n", (int)cJSON_GetNumberValue(shader_index_json), (int)cJSON_GetNumberValue(model_index_json));
+    printf("Model directory: %s\n", entity->model->directory);
+    print_glm_vec3(entity->position, "Entity position");
+    print_glm_vec3(entity->rotation, "Entity rotation");
+    print_glm_vec3(entity->scale, "Entity scale");
+    print_glm_vec3(collider.data.plane.normal, "Plane normal");
+    printf("Plane distance: %f\n", collider.data.plane.distance);
+
     entity->physics_body = physics_add_body(scene->physics_world, entity, collider, false);
     index++;
   }
@@ -221,6 +231,7 @@ struct Scene *scene_init(char *scene_path){
   // Process dynamic meshes
   int num_dynamic_meshes = cJSON_GetArraySize(dynamic_meshes);
   scene->dynamic_entities = (struct Entity *)malloc(num_dynamic_meshes * sizeof(struct Entity));
+  scene->num_dynamic_entities = num_dynamic_meshes;
 
   index = 0;
   cJSON_ArrayForEach(mesh_json, dynamic_meshes){
@@ -241,7 +252,6 @@ struct Scene *scene_init(char *scene_path){
     entity->model = models[(int)cJSON_GetNumberValue(model_index_json)];
     entity->shader = shaders[(int)cJSON_GetNumberValue(shader_index_json)];
 
-    // vec3 position, rotation, scale, velocity;
     scene_process_vec3_json(cJSON_GetObjectItemCaseSensitive(mesh_json, "position"), entity->position);
     scene_process_vec3_json(cJSON_GetObjectItemCaseSensitive(mesh_json, "rotation"), entity->rotation);
     scene_process_vec3_json(cJSON_GetObjectItemCaseSensitive(mesh_json, "scale"), entity->scale);
@@ -351,6 +361,9 @@ struct Scene *scene_init(char *scene_path){
     // scene->lights[index] = light;
     index++;
   }
+
+  // Player
+  player_init(&scene->player);
   
   // Skybox
   //
@@ -535,10 +548,14 @@ void scene_render(struct Scene *scene){
   // level_render(&scene->level, &context);
 
   // Draw entities
+  printf("Static entities to render: %d\n", scene->num_static_entities);
   for(int i = 0; i < scene->num_static_entities; i++){
+    printf("Rendering plane\n");
     entity_render(&scene->static_entities[i], &context);
   }
+  printf("Dynamic entities to render: %d\n", scene->num_dynamic_entities);
   for(int i = 0; i < scene->num_dynamic_entities; i++){
+    printf("Rendering oiiai\n");
     entity_render(&scene->dynamic_entities[i], &context);
   }
 
