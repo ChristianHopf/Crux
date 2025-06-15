@@ -71,7 +71,7 @@ Scene *scene_create(bool physics_view_mode){
     .ID = 2,
     .position = {0.0f, 2.0f, 0.0f},
     .rotation = {0.0f, 0.0f, 0.0f},
-    .scale = {1.0f, 1.0f, 1.0f},
+    .scale = {3.0f, 3.0f, 3.0f},
     .velocity = {0.0f, 0.0f, 0.0f},
     .physics_body = NULL,
     .model = oiiaiModel,

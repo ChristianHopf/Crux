@@ -2,7 +2,7 @@
 #include "player.h"
 
 void player_init(struct Player *player){
-  vec3 cameraPos = {0.0f, 0.0f, 3.0f};
+  vec3 cameraPos = {0.0f, 1.0f, 3.0f};
   vec3 cameraUp = {0.0f, 1.0f, 0.0f};
   float yaw = -90.0f;
   float pitch = 0.0f;
@@ -30,7 +30,7 @@ void player_jump(struct Player *player){
 }
 
 void player_update(struct Player *player, float delta_time){
-  // if (!player->is_grounded){
+  if (!player->is_grounded){
     // Apply gravity to the player's velocity
     float gravity = 9.8f;
     // glm_vec3_sub(player->velocity, (vec3){0.0f, gravity * delta_time, 0.0f}, player->velocity);
@@ -45,11 +45,11 @@ void player_update(struct Player *player, float delta_time){
     // glm_vec3_muladds(player->velocity, delta_time, player->camera->position);
     glm_vec3_add(update, player->camera->position, player->camera->position);
 
-  // }
+  }
   
   // If this update makes the player hit the ground, set their velocity back to 0
-  if (player->camera->position[1] <= 0.0f){
-    player->camera->position[1] = 0.0f;
+  if (player->camera->position[1] <= 1.0f){
+    player->camera->position[1] = 1.0f;
     player->velocity[1] = 0.0f;
     player->is_grounded = true;
   }

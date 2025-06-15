@@ -95,6 +95,8 @@ void AABB_update(struct AABB *src, mat3 rotation, vec3 translation, vec3 scale, 
   //   }
   // }
 
+  // Scale center properly if not zero in model space
+
   for (int i = 0; i < 3; i++){
     dest->center[i] = translation[i];
     dest->extents[i] = 0.0f;
@@ -102,13 +104,9 @@ void AABB_update(struct AABB *src, mat3 rotation, vec3 translation, vec3 scale, 
       dest->center[i] += rotation[i][j] * src->center[j];
       dest->extents[i] += fabs(rotation[i][j]) * src->extents[j];
     }
-  }
-  for(int i = 0; i < 3; i++){
-    // glm_vec3_scale(body->collider.aabb.extents[i], fabs(entity->scale[i]), body->collider.aabb.extents);
     dest->extents[i] *= fabs(scale[i]);
   }
-  print_glm_vec3(dest->center, "World space AABB center");
-  print_glm_vec3(dest->extents, "World space AABB extents");
+  glm_vec3_mul(dest->center, scale, dest->center);
 }
 
 //Figure out an optimal algorithm for this later.
