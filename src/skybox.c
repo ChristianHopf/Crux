@@ -57,7 +57,7 @@ static char *cubemapFaces[] = {
 };
 
 
-struct Skybox *skybox_create(){
+struct Skybox *skybox_create(char *directory){
 
   // Allocate struct Skybox
   struct Skybox *skybox = (struct Skybox *)malloc(sizeof(struct Skybox));
@@ -94,7 +94,7 @@ struct Skybox *skybox_create(){
 
     // Build path string for each face texture
     char facePath[32];
-    snprintf(facePath, sizeof(facePath), "resources/skybox/%s", cubemapFaces[i]);
+    snprintf(facePath, sizeof(facePath), "%s/%s", directory, cubemapFaces[i]);
 
     unsigned char *data = stbi_load(facePath, &width, &height, &channels, 0);
     if (!data){

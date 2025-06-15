@@ -34,8 +34,8 @@ const unsigned int SCREEN_HEIGHT = 768;
 
 // Mouse
 bool firstMouse = true;
-float lastX = 400.0f;
-float lastY = 300.0f;
+float lastX = 512.0f;
+float lastY = 384.0f;
 
 // Lighting
 vec3 lightPos = {1.2f, 0.5f, 2.0f};

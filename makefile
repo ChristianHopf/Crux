@@ -1,17 +1,18 @@
 # Compiler and flags
 CC = gcc
-CFLAGS = -Iinclude -Iinclude/physics $(shell pkg-config --cflags freetype2) -Ithird_party/unity -Wall -Wextra -g
+CFLAGS = -Iinclude -Iinclude/physics $(addprefix -I,$(shell find third_party -type d)) $(shell pkg-config --cflags freetype2) -Ithird_party/unity -Wall -Wextra -g
 LDFLAGS = -L/usr/lib $(shell pkg-config --libs freetype2) -lglfw -lGL -lcglm -lm -ldl -lassimp
 
 # Directories
 SRC_DIR = src
+THIRD_PARTY_SRC_DIR = third_party
 TEST_DIR = test
 OUT_DIR = executables
 UNITY_DIR = third_party/unity
 OBJ_DIR = build
 
 # Source files
-SRC_FILES = $(shell find $(SRC_DIR) -type f -name "*.c")
+SRC_FILES = $(shell find $(SRC_DIR) -type f -name "*.c") $(shell find $(THIRD_PARTY_SRC_DIR) -type f -name "*.c")
 TEST_FILES = $(wildcard $(TEST_DIR)/**/*.c)
 UNITY_SRC = $(UNITY_DIR)/unity.c
 

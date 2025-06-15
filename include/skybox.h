@@ -13,7 +13,7 @@ struct Skybox {
 
 
 // Generate VBO, VAO, and texture IDs for a cubemap, return as a struct Skybox
-// (Could later take parameters for specific cubemap textures. For now, hardcode everything)
-struct Skybox *skybox_create();
+// directory is the path to the directory containing 6 texture files of a cubemap
+struct Skybox *skybox_create(char *directory);
 
 #endif

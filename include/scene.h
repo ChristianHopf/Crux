@@ -16,6 +16,19 @@ struct Light {
   vec3 specular;
 };
 
+// struct Scene {
+//   struct Entity *entities;
+//   int num_entities;
+//   int max_entities;
+//   struct Level level;
+//   struct PhysicsWorld *physics_world;
+//   struct Skybox *skybox;
+//   struct Player player;
+//   struct Light *light;
+//   bool paused;
+//   bool physics_view_mode;
+// };
+
 typedef struct {
   struct Entity *entities;
   int num_entities;
@@ -29,6 +42,7 @@ typedef struct {
   bool physics_view_mode;
 } Scene;
 
+// void scene_init(struct Scene *scene);
 Scene *scene_create(bool physics_view_mode);
 
 void scene_update(Scene *scene, float deltaTime);
