@@ -123,7 +123,7 @@ void physics_step(struct PhysicsWorld *physics_world, float delta_time){
                 worldAABB.extents[1] * fabsf(normal[1]) +
                 worldAABB.extents[2] * fabsf(normal[2]);
       float s = glm_vec3_dot(normal, worldAABB.center) - physics_world->static_bodies[0].collider.data.plane.distance;
-      float penetration = (s < r) ? (r - s) : 0.0f; // Only correct if penetrating
+      float penetration = (s < r) ? (r - s) + 0.001 : 0.0f; // Only correct if penetrating
       if (penetration > 0.0f) {
         vec3 correction;
         glm_vec3_scale(normal, penetration, correction);
