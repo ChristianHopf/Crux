@@ -98,16 +98,6 @@ void physics_step(struct PhysicsWorld *physics_world, float delta_time){
       velocity_before[1] -= gravity * result.hit_time;
       glm_vec3_muladds(velocity_before, result.hit_time, body_A->position);
 
-
-
-      // glm_vec3_copy(result.point_of_contact, body_A->position);
-      // glm_vec3_scale(body_A->velocity, -1.0f, body_A->velocity);
-      
-      // Correct position in case of penetration
-      // if (result.penetration){
-      //   glm_vec3_muladds(physics_world->static_bodies[0].collider.data.plane.normal, result.penetration, body_A->position);
-      // }
-
       struct AABB worldAABB = {0};
       mat4 eulerA;
       mat3 rotationA;
@@ -127,11 +117,7 @@ void physics_step(struct PhysicsWorld *physics_world, float delta_time){
       if (penetration > 0.0f) {
         vec3 correction;
         glm_vec3_scale(normal, penetration, correction);
-        print_glm_vec3(body_A->position, "Body position before correction");
         glm_vec3_add(body_A->position, correction, body_A->position);
-        printf("Penetration correction: %f\n", penetration);
-        print_glm_vec3(body_A->position, "Corrected body position");
-        print_glm_vec3(body_A->collider.data.aabb.extents, "Body extents");
       }
 
       // Reflect velocity vector over normal
@@ -141,38 +127,35 @@ void physics_step(struct PhysicsWorld *physics_world, float delta_time){
       vec3 reflection;
       glm_vec3_scale(physics_world->static_bodies[0].collider.data.plane.normal, -2.0f * v_dot_n * restitution, reflection);
       glm_vec3_add(velocity_before, reflection, body_A->velocity);
-      print_glm_vec3(body_A->velocity, "Reflected body velocity after penetration correction");
 
-      float velocity_magnitude = glm_vec3_norm(body_A->velocity);
-      if (velocity_magnitude < 0.5){
-printf("TINY VELOCITY MAGNITUDE: %f\n", velocity_magnitude);
-        float distance_to_plane = glm_dot(worldAABB.center, normal) - physics_world->static_bodies[0].collider.data.plane.distance;
-        printf("Distance to plane: %f\n", distance_to_plane);
-        print_glm_vec3(worldAABB.extents, "World AABB extents");
+      // float velocity_magnitude = glm_vec3_norm(body_A->velocity);
+      v_dot_n = glm_dot(normal, body_A->velocity);
+      if (v_dot_n < 0.5 && glm_dot(normal, (vec3){0.0f, -1.0f, 0.0f}) < 0){
+        float distance_to_plane = glm_dot(body_A->position, normal) - physics_world->static_bodies[0].collider.data.plane.distance;
+        printf("Body distance to plane: %f\n", distance_to_plane);
+        print_glm_vec3(body_A->collider.data.aabb.extents, "Body AABB extents");
+
+        glm_vec3_zero(body_A->velocity);
+        body_A->at_rest = true;
       }
-      
+      else{
+        // Update body position as normal, with remaining time
+        float remaining_time = delta_time - result.hit_time;
+        if (remaining_time > 0){
+          body_A->velocity[1] -= gravity * remaining_time;
 
-
-      // Update body position as normal, with remaining time
-      float remaining_time = delta_time - result.hit_time;
-      if (remaining_time > 0){
-        body_A->velocity[1] -= gravity * remaining_time;
-
-        glm_vec3_muladds(body_A->velocity, remaining_time, body_A->position);
+          glm_vec3_muladds(body_A->velocity, remaining_time, body_A->position);
+        }
       }
-
-      print_glm_vec3(body_A->position, "New body position");
-      print_glm_vec3(body_A->velocity, "New body velocity");
     }
     else{
       // Update body position as normal
-      float gravity = 9.8f;
-      body_A->velocity[1] -= gravity * delta_time;
+      if (!body_A->at_rest){
+        float gravity = 9.8f;
+        body_A->velocity[1] -= gravity * delta_time;
 
-      printf("No collision, updating position with gravity\n");
-      glm_vec3_muladds(body_A->velocity, delta_time, body_A->position);
-      print_glm_vec3(body_A->position, "New body position");
-      print_glm_vec3(body_A->velocity, "New body velocity");
+        glm_vec3_muladds(body_A->velocity, delta_time, body_A->position);
+      }
     }
   }
 }

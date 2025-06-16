@@ -13,6 +13,7 @@ struct PhysicsBody {
   vec3 rotation;
   vec3 scale;
   vec3 velocity;
+  bool at_rest;
 };
 
 struct PhysicsWorld {
