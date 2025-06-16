@@ -90,24 +90,48 @@ void physics_step(struct PhysicsWorld *physics_world, float delta_time){
     }
 
     // COLLISION RESOLUTION
-    // If a collision was detected, update position based on hit_time, and update velocity
     if (result.colliding && result.hit_time >= 0){
       // First move by velocity according to hit_time, applying gravity until collision
       float gravity = 9.8f;
-      body_A->velocity[1] -= 9.8 * result.hit_time;
-      glm_vec3_muladds(body_A->velocity, result.hit_time, body_A->position);
+      vec3 velocity_before;
+      glm_vec3_copy(body_A->velocity, velocity_before);
+      velocity_before[1] -= 9.8 * result.hit_time;
+      glm_vec3_muladds(velocity_before, result.hit_time, body_A->position);
       // glm_vec3_scale(body_A->velocity, -1.0f, body_A->velocity);
-
+      
       // Correct position in case of penetration
-      if (result.penetration){
-        glm_vec3_muladds(physics_world->static_bodies[0].collider.data.plane.normal, result.penetration, body_A->position);
+      // if (result.penetration){
+      //   glm_vec3_muladds(physics_world->static_bodies[0].collider.data.plane.normal, result.penetration, body_A->position);
+      // }
+      struct AABB worldAABB = {0};
+      mat4 eulerA;
+      mat3 rotationA;
+      glm_euler_xyz(body_A->rotation, eulerA);
+      glm_mat4_pick3(eulerA, rotationA);
+      vec3 translationA, scaleA;
+      glm_vec3_copy(body_A->position, translationA);
+      glm_vec3_copy(body_A->scale, scaleA);
+      AABB_update(&body_A->collider.data.aabb, rotationA, translationA, scaleA, &worldAABB);
+      vec3 normal;
+      glm_vec3_copy(physics_world->static_bodies[0].collider.data.plane.normal, normal);
+      float r = worldAABB.extents[0] * fabsf(normal[0]) +
+                worldAABB.extents[1] * fabsf(normal[1]) +
+                worldAABB.extents[2] * fabsf(normal[2]);
+      float s = glm_vec3_dot(normal, worldAABB.center) - physics_world->static_bodies[0].collider.data.plane.distance;
+      float penetration = (s < r) ? (r - s) : 0.0f; // Only correct if penetrating
+      if (penetration > 0.0f) {
+          vec3 correction;
+          glm_vec3_scale(normal, penetration, correction);
+          glm_vec3_add(body_A->position, correction, body_A->position);
+          printf("Penetration correction: %f\n", penetration);
       }
 
       // Reflect velocity vector over normal
-      float v_dot_n = glm_dot(body_A->velocity, physics_world->static_bodies[0].collider.data.plane.normal);
+      float restitution = 0.8f;
+      float v_dot_n = glm_dot(velocity_before, physics_world->static_bodies[0].collider.data.plane.normal);
       vec3 reflection;
-      glm_vec3_scale(physics_world->static_bodies[0].collider.data.plane.normal, -2.0f * v_dot_n, reflection);
-      glm_vec3_add(body_A->velocity, reflection, body_A->velocity);
+      glm_vec3_scale(physics_world->static_bodies[0].collider.data.plane.normal, -2.0f * v_dot_n * restitution, reflection);
+      glm_vec3_add(velocity_before, reflection, body_A->velocity);
 
       // Update body position as normal, with remaining time
       float remaining_time = delta_time - result.hit_time;
