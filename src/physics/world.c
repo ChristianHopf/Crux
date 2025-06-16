@@ -91,14 +91,25 @@ void physics_step(struct PhysicsWorld *physics_world, float delta_time){
 
     // COLLISION RESOLUTION
     // If a collision was detected, update position based on hit_time, and update velocity
-    printf("Time to resolve collision with CollisionResult:\n");
-    printf("Hit time: %f\nColliding: %s\n", result.hit_time, result.colliding ? "true" : "false");
     if (result.colliding && result.hit_time >= 0){
-
-      // First move by velocity according to hit_time
+      // First move by velocity according to hit_time, applying gravity until collision
+      float gravity = 9.8f;
+      vec3 velocity_before = {0};
+      glm_vec3_copy(body_A->velocity, velocity_before);
+      velocity_before[1] -= 9.8 * result.hit_time;
       glm_vec3_muladds(body_A->velocity, result.hit_time, body_A->position);
-      glm_vec3_scale(body_A->velocity, -1.0f, body_A->velocity);
-      print_glm_vec3(body_A->position, "OIIAI POSITION");
+      // glm_vec3_scale(body_A->velocity, -1.0f, body_A->velocity);
+
+      // Correct position in case of penetration
+      if (result.penetration){
+        glm_vec3_muladds(physics_world->static_bodies[0].collider.data.plane.normal, result.penetration, body_A->position);
+      }
+
+      // Reflect velocity vector over normal
+      float v_dot_n = glm_dot(velocity_before, physics_world->static_bodies[0].collider.data.plane.normal);
+      vec3 reflection;
+      glm_vec3_scale(physics_world->static_bodies[0].collider.data.plane.normal, -2.0f * v_dot_n, reflection);
+      glm_vec3_add(velocity_before, reflection, body_A->velocity);
 
       // Update body position as normal, with remaining time
       float remaining_time = delta_time - result.hit_time;
@@ -108,6 +119,9 @@ void physics_step(struct PhysicsWorld *physics_world, float delta_time){
 
         glm_vec3_muladds(body_A->velocity, remaining_time, body_A->position);
       }
+
+      print_glm_vec3(body_A->position, "New body position");
+      print_glm_vec3(body_A->velocity, "New body velocity");
     }
     else{
       // Update body position as normal

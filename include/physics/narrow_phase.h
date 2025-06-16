@@ -6,6 +6,7 @@
 
 struct CollisionResult {
   float hit_time;
+  float penetration;
   vec3 point_of_contact;
   bool colliding;
 };

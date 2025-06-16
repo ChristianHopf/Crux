@@ -1,5 +1,4 @@
 #include "physics/narrow_phase.h"
-#include <alloca.h>
 
 struct CollisionResult narrow_phase_AABB_plane(struct PhysicsBody *body_AABB, struct PhysicsBody *body_plane, float delta_time){
   struct AABB *box = &body_AABB->collider.data.aabb;
@@ -77,6 +76,11 @@ struct CollisionResult narrow_phase_AABB_plane(struct PhysicsBody *body_AABB, st
       }
     }
 
+    // Sometimes hit_time is bigger than delta_time. Clamp to delta_time
+    if (result.colliding){
+      result.hit_time = fmaxf(0.0f, fminf(result.hit_time, delta_time));
+    }
+
     // If hit_time is outside of time interval,
     // no collision unless s is within r
     if (!result.colliding){
@@ -91,9 +95,19 @@ struct CollisionResult narrow_phase_AABB_plane(struct PhysicsBody *body_AABB, st
 
     // Point of contact Q = C(t) - rn
     // vec3 Q;
-    glm_vec3_copy(worldAABB_A.center, result.point_of_contact);
-    glm_vec3_muladds(body_AABB->velocity, result.hit_time, result.point_of_contact);
-    glm_vec3_mulsubs(plane->normal, r, result.point_of_contact);
+    if (result.colliding){
+      glm_vec3_copy(worldAABB_A.center, result.point_of_contact);
+      glm_vec3_muladds(body_AABB->velocity, result.hit_time, result.point_of_contact);
+
+      if (fabs(s) < r){
+        float dist = glm_dot(plane->normal, result.point_of_contact) - plane->distance;
+        result.penetration = dist;
+        glm_vec3_mulsubs(plane->normal, dist, result.point_of_contact);
+      }
+    }
+    // glm_vec3_copy(worldAABB_A.center, result.point_of_contact);
+    // glm_vec3_muladds(body_AABB->velocity, result.hit_time, result.point_of_contact);
+    // glm_vec3_mulsubs(plane->normal, r, result.point_of_contact);
   }
 
   return result;
