@@ -78,9 +78,6 @@ void physics_step(struct PhysicsWorld *physics_world, float delta_time){
   for(unsigned int i = 0; i < physics_world->num_dynamic_bodies; i++){
     struct PhysicsBody *body_A = &physics_world->dynamic_bodies[i];
 
-    float gravity = 9.8f;
-    body_A->velocity[1] -= gravity * delta_time;
-
     // BROAD PHASE:
     // Create a hit_time float and perform interval halving
     printf("BROAD PHASE\n");
@@ -96,10 +93,8 @@ void physics_step(struct PhysicsWorld *physics_world, float delta_time){
     // If a collision was detected, update position based on hit_time, and update velocity
     if (result.colliding && result.hit_time >= 0){
       // First move by velocity according to hit_time, applying gravity until collision
-      // float gravity = 9.8f;
-      // vec3 velocity_before = {0};
-      // glm_vec3_copy(body_A->velocity, velocity_before);
-      // velocity_before[1] -= 9.8 * result.hit_time;
+      float gravity = 9.8f;
+      body_A->velocity[1] -= 9.8 * result.hit_time;
       glm_vec3_muladds(body_A->velocity, result.hit_time, body_A->position);
       // glm_vec3_scale(body_A->velocity, -1.0f, body_A->velocity);
 
@@ -112,14 +107,12 @@ void physics_step(struct PhysicsWorld *physics_world, float delta_time){
       float v_dot_n = glm_dot(body_A->velocity, physics_world->static_bodies[0].collider.data.plane.normal);
       vec3 reflection;
       glm_vec3_scale(physics_world->static_bodies[0].collider.data.plane.normal, -2.0f * v_dot_n, reflection);
-      // glm_vec3_add(velocity_before, reflection, body_A->velocity);
       glm_vec3_add(body_A->velocity, reflection, body_A->velocity);
 
       // Update body position as normal, with remaining time
       float remaining_time = delta_time - result.hit_time;
       if (remaining_time > 0){
-        // float gravity = 9.8f;
-        // body_A->velocity[1] -= gravity * remaining_time;
+        body_A->velocity[1] -= gravity * remaining_time;
 
         glm_vec3_muladds(body_A->velocity, remaining_time, body_A->position);
       }
@@ -129,8 +122,8 @@ void physics_step(struct PhysicsWorld *physics_world, float delta_time){
     }
     else{
       // Update body position as normal
-      // float gravity = 9.8f;
-      // body_A->velocity[1] -= gravity * delta_time;
+      float gravity = 9.8f;
+      body_A->velocity[1] -= gravity * delta_time;
 
       printf("No collision, updating position with gravity\n");
       glm_vec3_muladds(body_A->velocity, delta_time, body_A->position);
