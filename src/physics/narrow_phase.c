@@ -67,20 +67,23 @@ struct CollisionResult narrow_phase_AABB_plane(struct PhysicsBody *body_AABB, st
         result.colliding = (result.hit_time >= 0 && result.hit_time <= delta_time);
       }
       // Negative side of plane
-      else if (n_dot_v > 0 && s < 0){
+      else{
         result.hit_time = (r + s) / -n_dot_v;
         result.colliding = (result.hit_time >= 0 && result.hit_time <= delta_time);
       }
-      // Positive n_dot_v and positive s within radius
-      else{
-        result.hit_time = -1;
+    }
+
+    // If hit_time is outside of time interval,
+    // no collision unless s is within r
+    if (!result.colliding){
+      if (fabs(s) <= r){
+        result.hit_time = 0;
         result.colliding = true;
       }
-    }
-    else{
-      result.hit_time = -1;
-      result.colliding = false;
-    }
+      else{
+        result.hit_time = -1;
+      }
+    } 
 
     // Point of contact Q = C(t) - rn
     // vec3 Q;
