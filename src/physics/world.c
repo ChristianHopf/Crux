@@ -133,6 +133,15 @@ void physics_step(struct PhysicsWorld *physics_world, float delta_time){
       glm_vec3_scale(physics_world->static_bodies[0].collider.data.plane.normal, -2.0f * v_dot_n * restitution, reflection);
       glm_vec3_add(velocity_before, reflection, body_A->velocity);
 
+      // Subtract velocity along the normal from velocity if very small (stop tiny bounces)
+      float velocity_threshold = 0.1f;
+      float normal_velocity = glm_vec3_dot(body_A->velocity, normal);
+      if (fabs(normal_velocity) < velocity_threshold){
+        vec3 normal_velocity_component;
+        glm_vec3_scale(normal, normal_velocity, normal_velocity_component);
+        glm_vec3_sub(body_A->velocity, normal_velocity_component, body_A->velocity);
+      }
+
       // Update body position as normal, with remaining time
       float remaining_time = delta_time - result.hit_time;
       if (remaining_time > 0){
