@@ -46,11 +46,12 @@ struct CollisionResult narrow_phase_AABB_plane(struct PhysicsBody *body_AABB, st
   if (n_dot_v == 0){
     if (fabs(s) <= r){
       result.colliding = true;
+      result.hit_time = 0;
     }
     else{
       result.colliding = false;
+      result.hit_time = -1;
     }
-    result.hit_time = -1;
   }
   // If n*v != 0, solve for t.
   // Ericson's equation:
@@ -59,15 +60,18 @@ struct CollisionResult narrow_phase_AABB_plane(struct PhysicsBody *body_AABB, st
   // t = (r - ((n * C) - d)) / (n * v), or
   // t = (r - s) / (n * v)
   else {
-    // s is greater than r sometimes
-    if (s <= r && s >= -r){
-      // Positive side of plane
-      if (n_dot_v < 0){
-        result.hit_time = (r - s) / -n_dot_v;
-        result.colliding = (result.hit_time >= 0 && result.hit_time <= delta_time);
-      }
-      // Negative side of plane
-      else{
+    // Moving towards plane
+    if (n_dot_v < 0){
+      result.hit_time = (r - s) / -n_dot_v;
+      result.colliding = (result.hit_time >= 0 && result.hit_time <= delta_time);
+    }
+    // Moving away from plane
+    else{
+      // Already intersecting
+      if (fabs(s) <= r){
+        result.hit_time = 0;
+        result.colliding = true;
+      } else {
         result.hit_time = (r + s) / -n_dot_v;
         result.colliding = (result.hit_time >= 0 && result.hit_time <= delta_time);
       }
