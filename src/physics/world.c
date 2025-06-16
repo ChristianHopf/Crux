@@ -95,7 +95,7 @@ void physics_step(struct PhysicsWorld *physics_world, float delta_time){
       float gravity = 9.8f;
       vec3 velocity_before;
       glm_vec3_copy(body_A->velocity, velocity_before);
-      velocity_before[1] -= 9.8 * result.hit_time;
+      velocity_before[1] -= gravity * result.hit_time;
       glm_vec3_muladds(velocity_before, result.hit_time, body_A->position);
 
 
@@ -143,6 +143,14 @@ void physics_step(struct PhysicsWorld *physics_world, float delta_time){
       glm_vec3_add(velocity_before, reflection, body_A->velocity);
       print_glm_vec3(body_A->velocity, "Reflected body velocity after penetration correction");
 
+      float velocity_magnitude = glm_vec3_norm(body_A->velocity);
+      if (velocity_magnitude < 0.5){
+printf("TINY VELOCITY MAGNITUDE: %f\n", velocity_magnitude);
+        float distance_to_plane = glm_dot(worldAABB.center, normal) - physics_world->static_bodies[0].collider.data.plane.distance;
+        printf("Distance to plane: %f\n", distance_to_plane);
+        print_glm_vec3(worldAABB.extents, "World AABB extents");
+      }
+      
 
 
       // Update body position as normal, with remaining time

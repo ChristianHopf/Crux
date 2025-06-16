@@ -2,7 +2,7 @@
 #include "player.h"
 
 void player_init(struct Player *player){
-  vec3 cameraPos = {0.0f, 1.0f, 3.0f};
+  vec3 cameraPos = {0.0f, 0.0f, 3.0f};
   vec3 cameraUp = {0.0f, 1.0f, 0.0f};
   float yaw = -90.0f;
   float pitch = 0.0f;
@@ -48,8 +48,8 @@ void player_update(struct Player *player, float delta_time){
   }
   
   // If this update makes the player hit the ground, set their velocity back to 0
-  if (player->camera->position[1] <= 1.0f){
-    player->camera->position[1] = 1.0f;
+  if (player->camera->position[1] <= 0.0f){
+    player->camera->position[1] = 0.0f;
     player->velocity[1] = 0.0f;
     player->is_grounded = true;
   }

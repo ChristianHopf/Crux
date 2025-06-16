@@ -155,7 +155,7 @@ bool AABB_intersect_AABB(struct AABB *a, struct AABB *b){
 }
 
 // Intersection between an AABB and a plane
-bool AABB_intersect_plane(struct AABB *box, struct PlaneCollider *plane){
+bool AABB_intersect_plane(struct AABB *box, struct Plane *plane){
 
   // Get radius of the extents' projection interval onto the plane's normal
   float r =
