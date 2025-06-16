@@ -1,6 +1,7 @@
 #include "physics/world.h"
 #include "narrow_phase.h"
 #include "distance.h"
+#include "resolution.h"
 #include "utils.h"
 #include <cglm/vec3.h>
 
@@ -30,7 +31,6 @@ struct PhysicsWorld *physics_world_create(){
 }
 
 struct PhysicsBody *physics_add_body(struct PhysicsWorld *physics_world, struct Entity *entity, struct Collider collider, bool dynamic){
-
   // Memory is already allocated: get a pointer, assign values, return the pointer
   struct PhysicsBody *body;
   switch(dynamic){
@@ -75,86 +75,38 @@ void physics_step(struct PhysicsWorld *physics_world, float delta_time){
     delta_time = MAX_DELTA_TIME;
   }
 
+  // Naive algorithm: check all (dynamic) bodies against all other bodies
   for(unsigned int i = 0; i < physics_world->num_dynamic_bodies; i++){
     struct PhysicsBody *body_A = &physics_world->dynamic_bodies[i];
 
-    // BROAD PHASE:
-    // Create a hit_time float and perform interval halving
-    printf("BROAD PHASE\n");
-    float hit_time;
-    struct CollisionResult result = {0};
-    if (interval_collision(body_A, &physics_world->static_bodies[0], 0, delta_time, &hit_time)){
-      printf("BROAD PHASE PASSED -> NARROW PHASE\n");
-      // NARROW PHASE: AABB against plane
-      result = narrow_phase_AABB_plane(body_A, &physics_world->static_bodies[0], delta_time);
-    }
+    for (unsigned int j = 0; j < physics_world->num_static_bodies; j++){
+      struct PhysicsBody *body_B = &physics_world->static_bodies[j];
 
-    // COLLISION RESOLUTION
-    if (result.colliding && result.hit_time >= 0){
-      // First move by velocity according to hit_time, applying gravity until collision
-      float gravity = 9.8f;
-      vec3 velocity_before;
-      glm_vec3_copy(body_A->velocity, velocity_before);
-      velocity_before[1] -= gravity * result.hit_time;
-      glm_vec3_muladds(velocity_before, result.hit_time, body_A->position);
-
-      struct AABB worldAABB = {0};
-      mat4 eulerA;
-      mat3 rotationA;
-      glm_euler_xyz(body_A->rotation, eulerA);
-      glm_mat4_pick3(eulerA, rotationA);
-      vec3 translationA, scaleA;
-      glm_vec3_copy(body_A->position, translationA);
-      glm_vec3_copy(body_A->scale, scaleA);
-      AABB_update(&body_A->collider.data.aabb, rotationA, translationA, scaleA, &worldAABB);
-      vec3 normal;
-      glm_vec3_copy(physics_world->static_bodies[0].collider.data.plane.normal, normal);
-      float r = worldAABB.extents[0] * fabsf(normal[0]) +
-                worldAABB.extents[1] * fabsf(normal[1]) +
-                worldAABB.extents[2] * fabsf(normal[2]);
-      float s = glm_vec3_dot(normal, worldAABB.center) - physics_world->static_bodies[0].collider.data.plane.distance;
-      float penetration = (s < r) ? (r - s) + 0.001 : 0.0f; // Only correct if penetrating
-      if (penetration > 0.0f) {
-        vec3 correction;
-        glm_vec3_scale(normal, penetration, correction);
-        glm_vec3_add(body_A->position, correction, body_A->position);
+      // BROAD PHASE: Create a hit_time float and perform interval halving
+      float hit_time;
+      struct CollisionResult result = {0};
+      if (interval_collision(body_A, body_B, 0, delta_time, &hit_time)){
+        // NARROW PHASE: AABB against plane
+        result = narrow_phase_AABB_plane(body_A, body_B, delta_time);
       }
 
-      // Reflect velocity vector over normal
-      float restitution = 0.8f;
-      float rest_velocity_threshold = 0.1f;
-      float v_dot_n = glm_dot(velocity_before, physics_world->static_bodies[0].collider.data.plane.normal);
-      vec3 reflection;
-      glm_vec3_scale(physics_world->static_bodies[0].collider.data.plane.normal, -2.0f * v_dot_n * restitution, reflection);
-      glm_vec3_add(velocity_before, reflection, body_A->velocity);
-
-      // float velocity_magnitude = glm_vec3_norm(body_A->velocity);
-      v_dot_n = glm_dot(normal, body_A->velocity);
-      if (v_dot_n < 0.5 && glm_dot(normal, (vec3){0.0f, -1.0f, 0.0f}) < 0){
-        float distance_to_plane = glm_dot(body_A->position, normal) - physics_world->static_bodies[0].collider.data.plane.distance;
-        // printf("Body distance to plane: %f\n", distance_to_plane);
-        // print_glm_vec3(body_A->collider.data.aabb.extents, "Body AABB extents");
-
-        glm_vec3_zero(body_A->velocity);
-        body_A->at_rest = true;
-      }
-      else{
-        // Update body position as normal, with remaining time
-        float remaining_time = delta_time - result.hit_time;
-        if (remaining_time > 0){
-          body_A->velocity[1] -= gravity * remaining_time;
-
-          glm_vec3_muladds(body_A->velocity, remaining_time, body_A->position);
+      // COLLISION RESOLUTION
+      if (result.colliding && result.hit_time >= 0){
+        ResolutionFunction resolution_function = resolution_functions[body_A->collider.type][body_B->collider.type];
+        if (!resolution_function){
+          fprintf(stderr, "Error: no collision resolution function found for types %d and %d\n", body_A->collider.type, body_B->collider.type);
+        }
+        else{
+          resolution_function(body_A, body_B, result, delta_time);
         }
       }
-    }
-    else{
-      // Update body position as normal
-      if (!body_A->at_rest){
-        float gravity = 9.8f;
-        body_A->velocity[1] -= gravity * delta_time;
-
-        glm_vec3_muladds(body_A->velocity, delta_time, body_A->position);
+      // If no collision, update body by its full movement
+      else{
+        if (!body_A->at_rest){
+          float gravity = 9.8f;
+          body_A->velocity[1] -= gravity * delta_time;
+          glm_vec3_muladds(body_A->velocity, delta_time, body_A->position);
+        }
       }
     }
   }
