@@ -88,16 +88,26 @@ void physics_step(struct PhysicsWorld *physics_world, float delta_time){
       // NARROW PHASE: AABB against plane
       result = narrow_phase_AABB_plane(body_A, &physics_world->static_bodies[0], delta_time);
     }
+
     // COLLISION RESOLUTION
     // If a collision was detected, update position based on hit_time, and update velocity
     printf("Time to resolve collision with CollisionResult:\n");
     printf("Hit time: %f\nColliding: %s\n", result.hit_time, result.colliding ? "true" : "false");
     if (result.colliding && result.hit_time >= 0){
+
+      // First move by velocity according to hit_time
       glm_vec3_muladds(body_A->velocity, result.hit_time, body_A->position);
       glm_vec3_scale(body_A->velocity, -1.0f, body_A->velocity);
       print_glm_vec3(body_A->position, "OIIAI POSITION");
-      // print_glm_vec3(body_A->velocity, "OIIAI VELOCITY");
-      // bounce off!
+
+      // Update body position as normal, with remaining time
+      float remaining_time = delta_time - result.hit_time;
+      if (remaining_time > 0){
+        float gravity = 9.8f;
+        body_A->velocity[1] -= gravity * remaining_time;
+
+        glm_vec3_muladds(body_A->velocity, remaining_time, body_A->position);
+      }
     }
     else{
       // Update body position as normal
