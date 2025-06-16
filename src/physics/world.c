@@ -97,7 +97,7 @@ void physics_step(struct PhysicsWorld *physics_world, float delta_time){
       vec3 velocity_before = {0};
       glm_vec3_copy(body_A->velocity, velocity_before);
       velocity_before[1] -= 9.8 * result.hit_time;
-      glm_vec3_muladds(body_A->velocity, result.hit_time, body_A->position);
+      glm_vec3_muladds(velocity_before, result.hit_time, body_A->position);
       // glm_vec3_scale(body_A->velocity, -1.0f, body_A->velocity);
 
       // Correct position in case of penetration
