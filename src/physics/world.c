@@ -98,6 +98,8 @@ void physics_step(struct PhysicsWorld *physics_world, float delta_time){
       velocity_before[1] -= 9.8 * result.hit_time;
       glm_vec3_muladds(velocity_before, result.hit_time, body_A->position);
 
+
+
       // glm_vec3_copy(result.point_of_contact, body_A->position);
       // glm_vec3_scale(body_A->velocity, -1.0f, body_A->velocity);
       
@@ -123,10 +125,13 @@ void physics_step(struct PhysicsWorld *physics_world, float delta_time){
       float s = glm_vec3_dot(normal, worldAABB.center) - physics_world->static_bodies[0].collider.data.plane.distance;
       float penetration = (s < r) ? (r - s) : 0.0f; // Only correct if penetrating
       if (penetration > 0.0f) {
-          vec3 correction;
-          glm_vec3_scale(normal, penetration, correction);
-          glm_vec3_add(body_A->position, correction, body_A->position);
-          printf("Penetration correction: %f\n", penetration);
+        vec3 correction;
+        glm_vec3_scale(normal, penetration, correction);
+        print_glm_vec3(body_A->position, "Body position before correction");
+        glm_vec3_add(body_A->position, correction, body_A->position);
+        printf("Penetration correction: %f\n", penetration);
+        print_glm_vec3(body_A->position, "Corrected body position");
+        print_glm_vec3(body_A->collider.data.aabb.extents, "Body extents");
       }
 
       // Reflect velocity vector over normal
@@ -136,6 +141,9 @@ void physics_step(struct PhysicsWorld *physics_world, float delta_time){
       vec3 reflection;
       glm_vec3_scale(physics_world->static_bodies[0].collider.data.plane.normal, -2.0f * v_dot_n * restitution, reflection);
       glm_vec3_add(velocity_before, reflection, body_A->velocity);
+      print_glm_vec3(body_A->velocity, "Reflected body velocity after penetration correction");
+
+
 
       // Update body position as normal, with remaining time
       float remaining_time = delta_time - result.hit_time;
@@ -155,6 +163,8 @@ void physics_step(struct PhysicsWorld *physics_world, float delta_time){
 
       printf("No collision, updating position with gravity\n");
       glm_vec3_muladds(body_A->velocity, delta_time, body_A->position);
+      print_glm_vec3(body_A->position, "New body position");
+      print_glm_vec3(body_A->velocity, "New body velocity");
     }
   }
 }

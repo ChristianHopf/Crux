@@ -102,7 +102,7 @@ struct CollisionResult narrow_phase_AABB_plane(struct PhysicsBody *body_AABB, st
       if (fabs(s) < r){
         float dist = glm_dot(plane->normal, result.point_of_contact) - plane->distance;
         result.penetration = dist;
-        printf("Result penetration %f\n", dist);
+        // printf("Result penetration %f\n", s - dist);
         glm_vec3_mulsubs(plane->normal, dist, result.point_of_contact);
       }
     }
