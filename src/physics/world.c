@@ -97,12 +97,15 @@ void physics_step(struct PhysicsWorld *physics_world, float delta_time){
       glm_vec3_copy(body_A->velocity, velocity_before);
       velocity_before[1] -= 9.8 * result.hit_time;
       glm_vec3_muladds(velocity_before, result.hit_time, body_A->position);
+
+      // glm_vec3_copy(result.point_of_contact, body_A->position);
       // glm_vec3_scale(body_A->velocity, -1.0f, body_A->velocity);
       
       // Correct position in case of penetration
       // if (result.penetration){
       //   glm_vec3_muladds(physics_world->static_bodies[0].collider.data.plane.normal, result.penetration, body_A->position);
       // }
+
       struct AABB worldAABB = {0};
       mat4 eulerA;
       mat3 rotationA;
@@ -126,21 +129,43 @@ void physics_step(struct PhysicsWorld *physics_world, float delta_time){
           printf("Penetration correction: %f\n", penetration);
       }
 
-      // Reflect velocity vector over normal
-      float restitution = 0.8f;
-      float v_dot_n = glm_dot(velocity_before, physics_world->static_bodies[0].collider.data.plane.normal);
-      vec3 reflection;
-      glm_vec3_scale(physics_world->static_bodies[0].collider.data.plane.normal, -2.0f * v_dot_n * restitution, reflection);
-      glm_vec3_add(velocity_before, reflection, body_A->velocity);
+      
+      float v_dot_n = glm_vec3_dot(velocity_before, normal);
+      float rest_velocity_threshold = 0.1f;
 
-      // Subtract velocity along the normal from velocity if very small (stop tiny bounces)
-      float velocity_threshold = 0.1f;
-      float normal_velocity = glm_vec3_dot(body_A->velocity, normal);
-      if (fabs(normal_velocity) < velocity_threshold){
-        vec3 normal_velocity_component;
-        glm_vec3_scale(normal, normal_velocity, normal_velocity_component);
-        glm_vec3_sub(body_A->velocity, normal_velocity_component, body_A->velocity);
+      glm_vec3_copy(velocity_before, body_A->velocity);
+
+      for(int i = 0; i < 2; i++){
+        v_dot_n = glm_vec3_dot(body_A->velocity, normal);
+        if (fabs(v_dot_n) < rest_velocity_threshold && s <= r){
+          float target_velocity = 0.0f;
+          float gravity_velocity = -gravity * delta_time;
+          float delta_velocity = target_velocity - (v_dot_n + gravity_velocity);
+          float impulse = delta_velocity;
+          if (impulse > 0){
+            vec3 impulse_vector;
+            glm_vec3_scale(normal, impulse, impulse_vector);
+            glm_vec3_add(body_A->velocity, impulse_vector, body_A->velocity);
+          }
+        }
+        else if (v_dot_n < 0){
+          vec3 reflection;
+          glm_vec3_scale(physics_world->static_bodies[0].collider.data.plane.normal, -2.0f * v_dot_n * 0.8, reflection);
+          glm_vec3_add(velocity_before, reflection, body_A->velocity);
+        }
       }
+
+      // Reflect velocity vector over normal
+      // float restitution = 0.8f;
+      // float rest_velocity_threshold = 0.1f;
+      // float v_dot_n = glm_dot(velocity_before, physics_world->static_bodies[0].collider.data.plane.normal);
+      // vec3 reflection;
+      // glm_vec3_scale(physics_world->static_bodies[0].collider.data.plane.normal, -2.0f * v_dot_n * restitution, reflection);
+      // glm_vec3_add(velocity_before, reflection, body_A->velocity);
+
+      // vec3 reflection;
+      // glm_vec3_scale(physics_world->static_bodies[0].collider.data.plane.normal, -2.0f * v_dot_n * restitution, reflection);
+      // glm_vec3_add(velocity_before, reflection, body_A->velocity);
 
       // Update body position as normal, with remaining time
       float remaining_time = delta_time - result.hit_time;
@@ -149,6 +174,14 @@ void physics_step(struct PhysicsWorld *physics_world, float delta_time){
 
         glm_vec3_muladds(body_A->velocity, remaining_time, body_A->position);
       }
+
+      // Update body position as normal, with remaining time
+      // float remaining_time = delta_time - result.hit_time;
+      // if (remaining_time > 0){
+      //   body_A->velocity[1] -= gravity * remaining_time;
+      //
+      //   glm_vec3_muladds(body_A->velocity, remaining_time, body_A->position);
+      // }
 
       print_glm_vec3(body_A->position, "New body position");
       print_glm_vec3(body_A->velocity, "New body velocity");
