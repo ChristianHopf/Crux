@@ -39,7 +39,7 @@ struct CollisionResult narrow_phase_AABB_plane(struct PhysicsBody *body_AABB, st
   // - n*v < 0 => moving towards plane
   // - n*v > 0 => moving away from the plane
   float n_dot_v = glm_dot(plane->normal, rel_v);
-  printf("r: %f, s: %f, n_dot_v: %f\n", r, s, n_dot_v);
+  // printf("r: %f, s: %f, n_dot_v: %f\n", r, s, n_dot_v);
 
   // n*v == 0 => parallel movement
   if (n_dot_v == 0){

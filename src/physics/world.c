@@ -132,8 +132,8 @@ void physics_step(struct PhysicsWorld *physics_world, float delta_time){
       v_dot_n = glm_dot(normal, body_A->velocity);
       if (v_dot_n < 0.5 && glm_dot(normal, (vec3){0.0f, -1.0f, 0.0f}) < 0){
         float distance_to_plane = glm_dot(body_A->position, normal) - physics_world->static_bodies[0].collider.data.plane.distance;
-        printf("Body distance to plane: %f\n", distance_to_plane);
-        print_glm_vec3(body_A->collider.data.aabb.extents, "Body AABB extents");
+        // printf("Body distance to plane: %f\n", distance_to_plane);
+        // print_glm_vec3(body_A->collider.data.aabb.extents, "Body AABB extents");
 
         glm_vec3_zero(body_A->velocity);
         body_A->at_rest = true;
