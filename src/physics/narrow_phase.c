@@ -115,3 +115,8 @@ struct CollisionResult narrow_phase_AABB_plane(struct PhysicsBody *body_AABB, st
 
   return result;
 }
+
+struct CollisionResult narrow_phase_sphere_plane(struct PhysicsBody *body_sphere, struct PhysicsBody *body_plane, float delta_time){
+  struct Sphere *sphere = &body_sphere->collider.data.sphere;
+  struct Plane *plane = &body_plane->collider.data.plane;
+}

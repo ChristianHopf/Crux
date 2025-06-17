@@ -184,12 +184,9 @@ struct Scene *scene_init(char *scene_path){
       case COLLIDER_AABB:
         struct AABB aabb;
 
-        // vec3 center, extents;
         scene_process_vec3_json(cJSON_GetObjectItemCaseSensitive(collider_data_json, "center"), aabb.center);
         scene_process_vec3_json(cJSON_GetObjectItemCaseSensitive(collider_data_json, "extents"), aabb.extents);
 
-        // aabb.center = center;
-        // aabb.extents = extents;
         aabb.initialized = true;
 
         collider.type = type;
@@ -198,7 +195,6 @@ struct Scene *scene_init(char *scene_path){
       case COLLIDER_PLANE:
         struct Plane plane;
 
-        // vec3 normal;
         scene_process_vec3_json(cJSON_GetObjectItemCaseSensitive(collider_data_json, "normal"), plane.normal);
 
         cJSON *distance = cJSON_GetObjectItemCaseSensitive(collider_data_json, "distance");
@@ -280,12 +276,9 @@ struct Scene *scene_init(char *scene_path){
       case COLLIDER_AABB:
         struct AABB aabb;
 
-        // vec3 center, extents;
         scene_process_vec3_json(cJSON_GetObjectItemCaseSensitive(collider_data_json, "center"), aabb.center);
         scene_process_vec3_json(cJSON_GetObjectItemCaseSensitive(collider_data_json, "extents"), aabb.extents);
 
-        // aabb.center = center;
-        // aabb.extents = extents;
         aabb.initialized = true;
 
         collider.type = type;
@@ -352,13 +345,7 @@ struct Scene *scene_init(char *scene_path){
     glm_vec3_copy(ambient, light->ambient);
     glm_vec3_copy(diffuse, light->diffuse);
     glm_vec3_copy(specular, light->specular);
-    // struct Light light = {
-    //   .direction = direction,
-    //   .ambient = ambient,
-    //   .diffuse = diffuse,
-    //   .specular = specular
-    // };
-    // scene->lights[index] = light;
+
     index++;
   }
 
@@ -376,114 +363,10 @@ struct Scene *scene_init(char *scene_path){
   }
 
   char *skybox_dir = cJSON_GetStringValue(skybox_json);
-
   scene->skybox = skybox_create(skybox_dir);
 
   return scene;
 }
-
-// struct Scene *scene_create(bool physics_view_mode){
-//   // Allocate scene
-//   Scene *scene = (Scene *)malloc(sizeof(Scene));
-//   if (!scene){
-//     printf("Error: failed to allocate scene\n");
-//     return NULL;
-//   }
-//
-//   // Physics view mode (render AABBs)
-//   scene->physics_view_mode = physics_view_mode;
-//
-//   // Start unpaused
-//   scene->paused = false;
-//
-//   // Light
-//   scene->light = (struct Light *)malloc(sizeof(struct Light));
-//   if (!scene->light){
-//     printf("Error: failed to allocate scene light\n");
-//     return NULL;
-//   }
-//   glm_vec3_copy((vec3){-0.2f, 0.0f, -0.3f}, scene->light->direction);
-//   glm_vec3_copy((vec3){0.2f, 0.2f, 0.2f}, scene->light->ambient);
-//   glm_vec3_copy((vec3){0.8f, 0.8f, 0.8f}, scene->light->diffuse);
-//   glm_vec3_copy((vec3){1.0f, 1.0f, 1.0f}, scene->light->specular);
-//
-//   // Player
-//   player_init(&scene->player);
-//
-//   // Shaders and entities for physics dev
-//   Shader *shader = shader_create("shaders/shader.vs", "shaders/dirlight/shader.fs");
-//   if (!shader){
-//     printf("Error: failed to create shader program\n");
-//     glfwTerminate();
-//     return NULL;
-//   }
-
-  // Entities
-  // scene->num_entities = 0;
-  // scene->max_entities = 5;
-  // scene->entities = (struct Entity *)malloc(scene->max_entities * sizeof(struct Entity));
-  // if (!scene->entities){
-  //   printf("Error: failed to allocate scene entities\n");
-  //   free(scene);
-  //   return NULL;
-  // }
-  //
-  // struct Model *oiiaiModel = (struct Model *)malloc(sizeof(struct Model));
-  // if (!oiiaiModel){
-  //   printf("Error: failed to allocate oiiaiModel\n");
-  //   return NULL;
-  // }
-  // model_load(oiiaiModel, "resources/objects/oiiai/scene.gltf");
-  // struct Entity oiiaiEntity = {
-  //   .ID = 2,
-  //   .position = {0.0f, 2.0f, 0.0f},
-  //   .rotation = {0.0f, 0.0f, 0.0f},
-  //   .scale = {3.0f, 3.0f, 3.0f},
-  //   .velocity = {0.0f, 0.0f, 0.0f},
-  //   .physics_body = NULL,
-  //   .model = oiiaiModel,
-  //   .shader = shader
-  // };
-  // scene->entities[scene->num_entities++] = oiiaiEntity;
-  //
-  // struct Model *planeModel = (struct Model *)malloc(sizeof(struct Model));
-  // if (!planeModel){
-  //   printf("Error: failed to allocate oiiaiModel\n");
-  //   return NULL;
-  // }
-  // model_load(planeModel, "resources/basic/grass_plane/grass_plane.gltf");
-  // struct Entity planeEntity = {
-  //   .ID = 1,
-  //   .position = {0.0f, 0.0f, 0.0f},
-  //   .rotation = {0.0f, 0.0f, 0.0f},
-  //   .scale = {3.0f, 3.0f, 3.0f},
-  //   .velocity = {0.0f, 0.0f, 0.0f},
-  //   .physics_body = NULL,
-  //   .model = planeModel,
-  //   .shader = shader
-  // };
-  // scene->entities[scene->num_entities++] = planeEntity;
-
-  // Create a PhysicsWorld and populate it with Colliders and PhysicsBodies
-  // scene->physics_world = physics_world_create();
-  // Maybe make a plane_collider_create function to pass a normal and distance
-  // scene->physics_world->level_plane = (struct PlaneCollider *)calloc(1, sizeof(struct PlaneCollider *));
-  // glm_vec3_copy((vec3){0.0f, 1.0f, 0.0f}, scene->physics_world->level_plane->normal);
-  // scene->physics_world->level_plane->distance = -1.0f;
-
-  // Later, do one for static and one for dynamic entities
-//   for(int i = 0; i < scene->num_entities; i++){
-//     scene->entities[i].physics_body = physics_add_body(scene->physics_world, &scene->entities[i]);
-//   }
-//
-//   // Skybox
-//   scene->skybox = skybox_create();
-//   if (!scene->skybox){
-//     printf("Error: failed to create skybox in scene_create\n");
-//   }
-//
-//   return scene;
-// }
 
 void scene_update(struct Scene *scene, float delta_time){
   // Skip update if the scene is paused
@@ -495,7 +378,7 @@ void scene_update(struct Scene *scene, float delta_time){
   static float total_time = 0.0f;
   total_time += delta_time;
 
-  // float rotationSpeed = 100.0f;
+  float rotationSpeed = 100.0f;
   float lightSpeed = 1.0f;
 
   // Update player
@@ -506,16 +389,10 @@ void scene_update(struct Scene *scene, float delta_time){
 
   // Match entity position with updated PhysicsBody position
   for(int i = 0; i < scene->num_dynamic_entities; i++){
+    struct Entity *entity = &scene->dynamic_entities[i];
     // printf("Time to sync %d entities with their physics bodies\n", scene->num_entities);
-    glm_vec3_copy(scene->dynamic_entities[i].physics_body->position, scene->dynamic_entities[i].position);
-    // print_glm_vec3(scene->entities[i].physics_body->position, "This entity's physics body position");
-    // print_glm_vec3(scene->entities[i].position, "New entity position");
+    glm_vec3_copy(entity->physics_body->position, scene->dynamic_entities[i].position);
   }
-
-  // Update translation vector
-  // entity->position[1] = (float)sin(glfwGetTime()*4) / 4;
-  // Update rotation vector
-  // entity->rotation[1] -= rotationSpeed * deltaTime;
 
   // Update light
   scene->lights[0].direction[0] = (float)sin(lightSpeed * total_time);

@@ -38,3 +38,7 @@ float min_dist_at_time_AABB_plane(struct PhysicsBody *body_A, struct PhysicsBody
   // If distance (s - r) is negative, their minimum distance is 0
   return glm_max(s - r, 0);
 }
+
+float min_dist_at_time_sphere_plane(struct PhysicsBody *body_A, struct PhysicsBody *body_B, float time){
+
+}

@@ -3,6 +3,7 @@
 #include <cglm/cglm.h>
 #include "aabb.h"
 #include "plane.h"
+#include "sphere.h"
 
 typedef enum {
   COLLIDER_AABB = 0,
@@ -12,6 +13,7 @@ typedef enum {
 union ColliderData {
   struct AABB aabb;
   struct Plane plane;
+  struct Sphere sphere;
 };
 
 struct Collider{
