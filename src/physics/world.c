@@ -98,12 +98,25 @@ void physics_step(struct PhysicsWorld *physics_world, float delta_time){
     for (unsigned int j = 0; j < physics_world->num_static_bodies; j++){
       struct PhysicsBody *body_B = &physics_world->static_bodies[j];
 
+      // Order bodies by enum value for function tables
+      if (body_A->collider.type > body_B->collider.type){
+        struct PhysicsBody *temp = body_A;
+        body_A = body_B;
+        body_B = body_A;
+      }
+
       // BROAD PHASE: Create a hit_time float and perform interval halving
       float hit_time;
       struct CollisionResult result = {0};
       if (interval_collision(body_A, body_B, 0, delta_time, &hit_time)){
-        // NARROW PHASE: AABB against plane
-        result = narrow_phase_AABB_plane(body_A, body_B, delta_time);
+        // NARROW PHASE
+        NarrowPhaseFunction narrow_phase_function = narrow_phase_functions[body_A->collider.type][body_B->collider.type];
+        if (!narrow_phase_function){
+          fprintf(stderr, "Error: no narrow phase function found for collider types %d, %d\n", body_A->collider.type, body_B->collider.type);
+        }
+        else{
+          result = narrow_phase_AABB_plane(body_A, body_B, delta_time);
+        }
       }
 
       // COLLISION RESOLUTION
@@ -156,15 +169,16 @@ bool interval_collision(struct PhysicsBody *body_A, struct PhysicsBody *body_B, 
 
 float maximum_object_movement_over_time(struct PhysicsBody *body, float start_time, float end_time){
   float delta_time = end_time - start_time;
+  return glm_vec3_norm(body->velocity) * delta_time;
 
-  switch(body->collider.type){
-    case COLLIDER_AABB:
-      return glm_vec3_norm(body->velocity) * delta_time;
-    case COLLIDER_PLANE:
-      return 0.0f;
-    default:
-      return 0.0f;
-  }
+  // switch(body->collider.type){
+  //   case COLLIDER_AABB:
+  //     return glm_vec3_norm(body->velocity) * delta_time;
+  //   case COLLIDER_PLANE:
+  //     return 0.0f;
+  //   default:
+  //     return 0.0f;
+  // }
 }
 
 float minimum_object_distance_at_time(struct PhysicsBody *body_A, struct PhysicsBody *body_B, float time){

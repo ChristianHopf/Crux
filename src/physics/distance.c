@@ -2,7 +2,9 @@
 
 DistanceFunction distance_functions[NUM_COLLIDER_TYPES][NUM_COLLIDER_TYPES] = {
   [COLLIDER_AABB][COLLIDER_PLANE] = min_dist_at_time_AABB_plane,
-  [COLLIDER_PLANE][COLLIDER_AABB] = min_dist_at_time_AABB_plane
+  // [COLLIDER_PLANE][COLLIDER_AABB] = min_dist_at_time_AABB_plane,
+  [COLLIDER_SPHERE][COLLIDER_PLANE] = min_dist_at_time_sphere_plane,
+  // [COLLIDER_PLANE][COLLIDER_SPHERE] = min_dist_at_time_sphere_plane,
 };
 
 float min_dist_at_time_AABB_plane(struct PhysicsBody *body_A, struct PhysicsBody *body_B, float time){

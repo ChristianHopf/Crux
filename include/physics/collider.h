@@ -7,8 +7,8 @@
 
 typedef enum {
   COLLIDER_AABB = 0,
-  COLLIDER_PLANE,
   COLLIDER_SPHERE,
+  COLLIDER_PLANE,
   COLLIDER_COUNT
 } ColliderType;
 
