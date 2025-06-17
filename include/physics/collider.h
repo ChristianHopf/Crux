@@ -8,6 +8,8 @@
 typedef enum {
   COLLIDER_AABB = 0,
   COLLIDER_PLANE,
+  COLLIDER_SPHERE,
+  COLLIDER_COUNT
 } ColliderType;
 
 union ColliderData {

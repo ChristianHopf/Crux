@@ -32,7 +32,7 @@ struct PhysicsWorld *physics_world_create(){
 
 struct PhysicsBody *physics_add_body(struct PhysicsWorld *physics_world, struct Entity *entity, struct Collider collider, bool dynamic){
   // Memory is already allocated: get a pointer, assign values, return the pointer
-  struct PhysicsBody *body;
+struct PhysicsBody *body;
   switch(dynamic){
     case true:
       body = &physics_world->dynamic_bodies[physics_world->num_dynamic_bodies++];
@@ -43,30 +43,46 @@ struct PhysicsBody *physics_add_body(struct PhysicsWorld *physics_world, struct 
   }
 
   // Check type validity
-
-  // Initialize body for the appropriate type
-  switch(collider.type){
-    case COLLIDER_AABB:
-      body->collider.data.aabb = collider.data.aabb;
-
-      glm_vec3_copy(entity->position, body->position);
-      glm_vec3_copy(entity->rotation, body->rotation);
-      glm_vec3_copy(entity->scale, body->scale);
-      glm_vec3_copy(entity->velocity, body->velocity);
-      break;
-    case COLLIDER_PLANE:
-      body->collider.data.plane = collider.data.plane;
-
-      glm_vec3_copy(entity->position, body->position);
-      glm_vec3_copy(entity->rotation, body->rotation);
-      glm_vec3_copy(entity->scale, body->scale);
-      glm_vec3_copy(entity->velocity, body->velocity);
-      break;
-    default:
-      return NULL;
+  if (collider.type < 0 || collider.type > COLLIDER_COUNT){
+    fprintf(stderr, "Error: collider type provided to physics_add_body is invalid\n");
+    return NULL;
   }
-
-  body->collider.type = collider.type;
+  // Initialize body for the appropriate type
+  // switch(collider.type){
+  //   case COLLIDER_AABB:
+  //     // body->collider.data.aabb = collider.data.aabb;
+  //     body->collider = collider;
+  //
+  //     glm_vec3_copy(entity->position, body->position);
+  //     glm_vec3_copy(entity->rotation, body->rotation);
+  //     glm_vec3_copy(entity->scale, body->scale);
+  //     glm_vec3_copy(entity->velocity, body->velocity);
+  //     break;
+  //   case COLLIDER_PLANE:
+  //     // body->collider.data.plane = collider.data.plane;
+  //     body->collider = collider;
+  //
+  //     glm_vec3_copy(entity->position, body->position);
+  //     glm_vec3_copy(entity->rotation, body->rotation);
+  //     glm_vec3_copy(entity->scale, body->scale);
+  //     glm_vec3_copy(entity->velocity, body->velocity);
+  //     break;
+  //   case COLLIDER_SPHERE:
+  //     body->collider = collider;
+  //     glm_vec3_copy
+      // glm_vec3_copy(entity->position, body->position);
+      // glm_vec3_copy(entity->rotation, body->rotation);
+      // glm_vec3_copy(entity->scale, body->scale);
+      // glm_vec3_copy(entity->velocity, body->velocity);
+  //     break;
+  //   default:
+  //     return NULL;
+  // }
+  body->collider = collider;
+  glm_vec3_copy(entity->position, body->position);
+  glm_vec3_copy(entity->rotation, body->rotation);
+  glm_vec3_copy(entity->scale, body->scale);
+  glm_vec3_copy(entity->velocity, body->velocity);
   return body;
 }
 

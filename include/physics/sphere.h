@@ -7,6 +7,6 @@ struct Sphere {
   float radius;
 };
 
-void sphere_intersect_aabb();
-void sphere_intersect_plane();
-void sphere_intersect_sphere();
+bool sphere_intersect_aabb();
+bool sphere_intersect_plane();
+bool sphere_intersect_sphere();

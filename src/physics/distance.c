@@ -16,11 +16,9 @@ float min_dist_at_time_AABB_plane(struct PhysicsBody *body_A, struct PhysicsBody
   mat3 rotationA;
   glm_euler_xyz(body_A->rotation, eulerA);
   glm_mat4_pick3(eulerA, rotationA);
-    
   vec3 translationA;
   glm_vec3_copy(body_A->position, translationA);
   glm_vec3_muladds(body_A->velocity, time, translationA);
-
   vec3 scaleA;
   glm_vec3_copy(body_A->scale, scaleA);
     
@@ -40,5 +38,21 @@ float min_dist_at_time_AABB_plane(struct PhysicsBody *body_A, struct PhysicsBody
 }
 
 float min_dist_at_time_sphere_plane(struct PhysicsBody *body_A, struct PhysicsBody *body_B, float time){
+  // Get pointers to the bodies' colliders
+  struct AABB *box = &body_A->collider.data.aabb;
+  struct Plane *plane = &body_B->collider.data.plane;
 
+
+  struct Sphere world_sphere;
+  glm_vec3_copy(body_A->position, world_sphere.center);
+  glm_vec3_muladds(body_A->velocity, time, world_sphere.center);
+  glm_vec3_scale(world_sphere.center, body_A->scale[0], world_sphere.center);
+
+  // Project center position vector onto normal, subtract plane dist from origin
+  float distance =
+    world_sphere.center[0] * fabs(plane->normal[0]) +
+    world_sphere.center[1] * fabs(plane->normal[1]) +
+    world_sphere.center[2] * fabs(plane->normal[2]) - plane->distance;
+
+  return glm_max(distance, 0);
 }
