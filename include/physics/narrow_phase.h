@@ -4,6 +4,8 @@
 #include <stdbool.h>
 #include "physics/world.h"
 
+#define NUM_COLLIDER_TYPES 3
+
 struct CollisionResult {
   float hit_time;
   float penetration;
@@ -11,7 +13,7 @@ struct CollisionResult {
   bool colliding;
 };
 
-typedef CollisionResult (*NarrowPhaseFunction)(struct PhysicsBody *body_A, struct PhysicsBody *body_B, float delta_time);
+typedef struct CollisionResult (*NarrowPhaseFunction)(struct PhysicsBody *body_A, struct PhysicsBody *body_B, float delta_time);
 
 // Move table definition to distance.c, but put an extern here.
 // Do this for static things in other files too

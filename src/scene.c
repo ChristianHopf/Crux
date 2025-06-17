@@ -192,6 +192,21 @@ struct Scene *scene_init(char *scene_path){
         collider.type = type;
         collider.data.aabb = aabb;
         break;
+      case COLLIDER_SPHERE:
+        struct Sphere sphere;
+
+        scene_process_vec3_json(cJSON_GetObjectItemCaseSensitive(collider_data_json, "center"), sphere.center);
+
+        cJSON *radius = cJSON_GetObjectItemCaseSensitive(collider_data_json, "radius");
+        if(!cJSON_IsNumber(radius)){
+          fprintf(stderr, "Error: failed to get radius in collider object in static mesh at index %d, either invalid or does not exist\n", index);
+          return NULL;
+        }
+        sphere.radius = cJSON_GetNumberValue(radius);
+
+        collider.type = type;
+        collider.data.sphere = sphere;
+        break;
       case COLLIDER_PLANE:
         struct Plane plane;
 
@@ -283,6 +298,21 @@ struct Scene *scene_init(char *scene_path){
 
         collider.type = type;
         collider.data.aabb = aabb;
+        break;
+      case COLLIDER_SPHERE:
+        struct Sphere sphere;
+
+        scene_process_vec3_json(cJSON_GetObjectItemCaseSensitive(collider_data_json, "center"), sphere.center);
+
+        cJSON *radius = cJSON_GetObjectItemCaseSensitive(collider_data_json, "radius");
+        if(!cJSON_IsNumber(radius)){
+          fprintf(stderr, "Error: failed to get radius in collider object in static mesh at index %d, either invalid or does not exist\n", index);
+          return NULL;
+        }
+        sphere.radius = cJSON_GetNumberValue(radius);
+
+        collider.type = type;
+        collider.data.sphere = sphere;
         break;
       case COLLIDER_PLANE:
         struct Plane plane;

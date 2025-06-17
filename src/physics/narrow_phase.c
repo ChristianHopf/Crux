@@ -130,16 +130,18 @@ struct CollisionResult narrow_phase_sphere_plane(struct PhysicsBody *body_sphere
 
   // Get world space sphere
   struct Sphere world_sphere;
-  glm_vec3_copy(body_A->position, world_sphere.center);
-  glm_vec3_muladds(body_A->velocity, time, world_sphere.center);
-  glm_vec3_scale(world_sphere.center, body_A->scale[0], world_sphere.center);
-  glm_vec3_scale(world_sphere.radius, body_A->scale[0], world_sphere.radius);
+  glm_vec3_copy(body_sphere->position, world_sphere.center);
+  // glm_vec3_muladds(body_A->velocity, time, world_sphere.center);
+  glm_vec3_scale(world_sphere.center, body_sphere->scale[0], world_sphere.center);
+  // glm_vec3_scale(world_sphere.radius, body_A->scale[0], world_sphere.radius);
+  world_sphere.radius = sphere->radius * body_sphere->scale[0];
 
   // Get signed distance from sphere center to plane
-  float s = glm_dot(world_sphere->center, plane->normal) - plane->distance;
+  float s = glm_dot(world_sphere.center, plane->normal) - plane->distance;
+  printf("Signed distance from sphere center to plane: %f\n", s);
 
   // Get velocity along normal
-  float n_dot_v = glm_dot(body_A->velocity, plane->normal);
+  float n_dot_v = glm_dot(body_sphere->velocity, plane->normal);
 
   // Compute product of signed distance and normal velocity
   float discriminant = s * n_dot_v;
@@ -150,7 +152,7 @@ struct CollisionResult narrow_phase_sphere_plane(struct PhysicsBody *body_sphere
   // - term < 0 => sphere is moving towards the plane
   // - term == 0 => sphere is moving parallel to the plane
   if (discriminant == 0){
-    if (fabs(s) <= world_sphere->radius){
+    if (fabs(s) <= world_sphere.radius){
       result.hit_time = 0;
       result.colliding = true;
     }
@@ -162,18 +164,18 @@ struct CollisionResult narrow_phase_sphere_plane(struct PhysicsBody *body_sphere
   else{
     if (discriminant < 0){
       // t = (r - ((n * C) - d)) / (n * v)
-      result.hit_time = (world_sphere->radius - s) / n_dot_v;
+      result.hit_time = (world_sphere.radius - s) / n_dot_v;
       result.colliding = (result.hit_time >= 0 && result.hit_time <= delta_time);
     }
     else{
       // t = (-r - ((n * C) - d)) / (n * v)
-      result.hit_time = (-world_sphere->radius - s) / n_dot_v;
+      result.hit_time = (-world_sphere.radius - s) / n_dot_v;
       result.colliding = (result.hit_time >= 0 && result.hit_time <= delta_time);
     }
 
     // If hit_time is outside of interval, check if already colliding
-    if (!colliding){
-      if (fabs(s <= world_sphere->radius)){
+    if (!result.colliding){
+      if (fabs(s <= world_sphere.radius)){
         result.hit_time = 0;
         result.colliding = true;
       }

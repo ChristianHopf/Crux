@@ -3,6 +3,7 @@
 
 ResolutionFunction resolution_functions[NUM_COLLIDER_TYPES][NUM_COLLIDER_TYPES] = {
   [COLLIDER_AABB][COLLIDER_PLANE] = resolve_collision_AABB_plane,
+  [COLLIDER_SPHERE][COLLIDER_PLANE] = resolve_collision_sphere_plane
 };
 
 void resolve_collision_AABB_plane(struct PhysicsBody *body_A, struct PhysicsBody *body_B, struct CollisionResult result, float delta_time){
@@ -58,6 +59,7 @@ void resolve_collision_AABB_plane(struct PhysicsBody *body_A, struct PhysicsBody
     // Else update body position as normal with remaining time
     else{
       float remaining_time = delta_time - result.hit_time;
+      float gravity = 9.8f;
       if (remaining_time > 0){
         body_A->velocity[1] -= gravity * remaining_time;
         glm_vec3_muladds(body_A->velocity, remaining_time, body_A->position);
@@ -83,15 +85,16 @@ void resolve_collision_sphere_plane(struct PhysicsBody *body_A, struct PhysicsBo
     // Correct penetration
     struct Sphere world_sphere;
     glm_vec3_copy(body_A->position, world_sphere.center);
-    glm_vec3_muladds(body_A->velocity, time, world_sphere.center);
     glm_vec3_scale(world_sphere.center, body_A->scale[0], world_sphere.center);
-    glm_vec3_scale(world_sphere.radius, body_A->scale[0], world_sphere.radius);
-    float s = glm_dot(world_sphere->center, plane->normal) - plane->distance;
+    world_sphere.radius = sphere->radius * body_A->scale[0];
+
+    float s = glm_dot(world_sphere.center, plane->normal) - plane->distance;
     float n_dot_v = glm_dot(body_A->velocity, plane->normal);
-    float penetration = (s < r) ? (r - s) + 0.001 : 0.0f;
+    float penetration = (s < world_sphere.radius) ? (world_sphere.radius - s) + 0.001 : 0.0f;
     if (penetration > 0.0f) {
+      printf("Penetration of %f with s %f, sphere radius %f\n", penetration, s, world_sphere.radius);
       vec3 correction;
-      glm_vec3_scale(normal, penetration, correction);
+      glm_vec3_scale(plane->normal, penetration, correction);
       glm_vec3_add(body_A->position, correction, body_A->position);
     }
 
@@ -105,9 +108,9 @@ void resolve_collision_sphere_plane(struct PhysicsBody *body_A, struct PhysicsBo
 
     // If velocity along the normal is very small,
     // and the normal is opposite gravity, stop (eventually, spheres should be able to roll)
-    v_dot_n = glm_dot(normal, body_A->velocity);
-    if (v_dot_n < 0.5 && glm_dot(normal, (vec3){0.0f, -1.0f, 0.0f}) < 0){
-      float distance_to_plane = glm_dot(body_A->position, normal) - plane->distance;
+    v_dot_n = glm_dot(plane->normal, body_A->velocity);
+    if (v_dot_n < 0.5 && glm_dot(plane->normal, (vec3){0.0f, -1.0f, 0.0f}) < 0){
+      float distance_to_plane = glm_dot(body_A->position, plane->normal) - plane->distance;
       glm_vec3_zero(body_A->velocity);
       body_A->at_rest = true;
     }
@@ -115,6 +118,7 @@ void resolve_collision_sphere_plane(struct PhysicsBody *body_A, struct PhysicsBo
   // Else update body position as normal with remaining time
   else{
     float remaining_time = delta_time - result.hit_time;
+    float gravity = 9.8f;
     if (remaining_time > 0){
       body_A->velocity[1] -= gravity * remaining_time;
       glm_vec3_muladds(body_A->velocity, remaining_time, body_A->position);

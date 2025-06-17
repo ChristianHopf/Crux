@@ -8,7 +8,7 @@
 // different types of volumes. I didn't want a huge switch statement, and it turns out
 // you can do this in C!
 
-#define NUM_COLLIDER_TYPES 2
+#define NUM_COLLIDER_TYPES 3
 
 typedef float (*DistanceFunction)(struct PhysicsBody *body_A, struct PhysicsBody *body_B, float time);
 

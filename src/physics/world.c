@@ -36,9 +36,12 @@ struct PhysicsBody *body;
   switch(dynamic){
     case true:
       body = &physics_world->dynamic_bodies[physics_world->num_dynamic_bodies++];
+      glm_vec3_copy(entity->velocity, body->velocity);
+      printf("Sphere radius %f\n", collider.data.sphere.radius);
       break;
     case false:
       body = &physics_world->static_bodies[physics_world->num_static_bodies++];
+      glm_vec3_copy((vec3){0.0f, 0.0f, 0.0f}, body->velocity);
       break;
   }
 
@@ -82,7 +85,7 @@ struct PhysicsBody *body;
   glm_vec3_copy(entity->position, body->position);
   glm_vec3_copy(entity->rotation, body->rotation);
   glm_vec3_copy(entity->scale, body->scale);
-  glm_vec3_copy(entity->velocity, body->velocity);
+
   return body;
 }
 
@@ -109,6 +112,7 @@ void physics_step(struct PhysicsWorld *physics_world, float delta_time){
       float hit_time;
       struct CollisionResult result = {0};
       if (interval_collision(body_A, body_B, 0, delta_time, &hit_time)){
+        printf("NARROW PHASE\n");
         // NARROW PHASE
         NarrowPhaseFunction narrow_phase_function = narrow_phase_functions[body_A->collider.type][body_B->collider.type];
         if (!narrow_phase_function){
@@ -146,14 +150,19 @@ bool interval_collision(struct PhysicsBody *body_A, struct PhysicsBody *body_B, 
   float max_move_A = maximum_object_movement_over_time(body_A, start_time, end_time);
   float max_move_B = maximum_object_movement_over_time(body_B, start_time, end_time);
   float max_move_sum = max_move_A + max_move_B;
+  // printf("Max movement by A at start time %f: %f\n", start_time, max_move_A);
+  // printf("Max movement by B at start time %f: %f\n", start_time, max_move_B);
+  printf("Max move sum between start and end time: %f\n", max_move_sum);
 
   // If initial minimum distance is larger than max_move_sum, exit
   float min_dist_start = minimum_object_distance_at_time(body_A, body_B, start_time);
   if (min_dist_start > max_move_sum) return 0;
+  printf("Min dist bw sphere and plane at start time %f: %f\n", start_time, min_dist_start);
 
   // If end minimum distance is still larger than max_move_sum, exit (bodies are moving away)
   float min_dist_end = minimum_object_distance_at_time(body_A, body_B, end_time);
   if (min_dist_end > max_move_sum) return 0;
+  // printf("Min dist bw sphere and plane at end time %f: %f\n", end_time, min_dist_end);
 
   // If we recurse down to a small enough interval, assume collision at the start of the interval
   if (end_time - start_time < INTERVAL_EPSILON){
@@ -170,6 +179,8 @@ bool interval_collision(struct PhysicsBody *body_A, struct PhysicsBody *body_B, 
 
 float maximum_object_movement_over_time(struct PhysicsBody *body, float start_time, float end_time){
   float delta_time = end_time - start_time;
+  // print_glm_vec3(body->velocity, "Body velocity");
+  // printf("glm_vec3_norm of body velocity: %f\n", glm_vec3_norm(body->velocity));
   return glm_vec3_norm(body->velocity) * delta_time;
 
   // switch(body->collider.type){
