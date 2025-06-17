@@ -11,7 +11,6 @@ NarrowPhaseFunction narrow_phase_functions[NUM_COLLIDER_TYPES][NUM_COLLIDER_TYPE
 struct CollisionResult narrow_phase_AABB_plane(struct PhysicsBody *body_AABB, struct PhysicsBody *body_plane, float delta_time){
   struct AABB *box = &body_AABB->collider.data.aabb;
   struct Plane *plane = &body_plane->collider.data.plane;
-
   struct CollisionResult result = {0};
 
   // Get a world space version of the current AABB
@@ -80,7 +79,7 @@ struct CollisionResult narrow_phase_AABB_plane(struct PhysicsBody *body_AABB, st
         result.hit_time = 0;
         result.colliding = true;
       } else {
-        result.hit_time = (r + s) / -n_dot_v;
+    result.hit_time = (r + s) / -n_dot_v;
         result.colliding = (result.hit_time >= 0 && result.hit_time <= delta_time);
         // printf("Moving away result hit time %f\n", result.hit_time);
       }
@@ -95,7 +94,7 @@ struct CollisionResult narrow_phase_AABB_plane(struct PhysicsBody *body_AABB, st
     // no collision unless s is within r
     if (!result.colliding){
       if (fabs(s) <= r){
-        result.hit_time = 0;
+    result.hit_time = 0;
         result.colliding = true;
       }
       else{
@@ -105,17 +104,17 @@ struct CollisionResult narrow_phase_AABB_plane(struct PhysicsBody *body_AABB, st
 
     // Point of contact Q = C(t) - rn
     // vec3 Q;
-    if (result.colliding){
-      glm_vec3_copy(worldAABB_A.center, result.point_of_contact);
-      glm_vec3_muladds(body_AABB->velocity, result.hit_time, result.point_of_contact);
-
-      if (fabs(s) < r){
-        float dist = glm_dot(plane->normal, result.point_of_contact) - plane->distance;
-        result.penetration = dist;
-        // printf("Result penetration %f\n", s - dist);
-        glm_vec3_mulsubs(plane->normal, dist, result.point_of_contact);
-      }
-    }
+    // if (result.colliding){
+    //   glm_vec3_copy(worldAABB_A.center, result.point_of_contact);
+    //   glm_vec3_muladds(body_AABB->velocity, result.hit_time, result.point_of_contact);
+    //
+    //   if (fabs(s) < r){
+    //     float dist = glm_dot(plane->normal, result.point_of_contact) - plane->distance;
+    //     result.penetration = dist;
+    //     // printf("Result penetration %f\n", s - dist);
+    //     glm_vec3_mulsubs(plane->normal, dist, result.point_of_contact);
+    //   }
+    // }
     // glm_vec3_copy(worldAABB_A.center, result.point_of_contact);
     // glm_vec3_muladds(body_AABB->velocity, result.hit_time, result.point_of_contact);
     // glm_vec3_mulsubs(plane->normal, r, result.point_of_contact);
@@ -127,4 +126,62 @@ struct CollisionResult narrow_phase_AABB_plane(struct PhysicsBody *body_AABB, st
 struct CollisionResult narrow_phase_sphere_plane(struct PhysicsBody *body_sphere, struct PhysicsBody *body_plane, float delta_time){
   struct Sphere *sphere = &body_sphere->collider.data.sphere;
   struct Plane *plane = &body_plane->collider.data.plane;
+  struct CollisionResult result = {0};
+
+  // Get world space sphere
+  struct Sphere world_sphere;
+  glm_vec3_copy(body_A->position, world_sphere.center);
+  glm_vec3_muladds(body_A->velocity, time, world_sphere.center);
+  glm_vec3_scale(world_sphere.center, body_A->scale[0], world_sphere.center);
+  glm_vec3_scale(world_sphere.radius, body_A->scale[0], world_sphere.radius);
+
+  // Get signed distance from sphere center to plane
+  float s = glm_dot(world_sphere->center, plane->normal) - plane->distance;
+
+  // Get velocity along normal
+  float n_dot_v = glm_dot(body_A->velocity, plane->normal);
+
+  // Compute product of signed distance and normal velocity
+  float discriminant = s * n_dot_v;
+
+  // Solve for t based on plane displacement according to the sign of:
+  // (n * V)(n * C - d)
+  // - term > 0 => sphere is moving away from the plane
+  // - term < 0 => sphere is moving towards the plane
+  // - term == 0 => sphere is moving parallel to the plane
+  if (discriminant == 0){
+    if (fabs(s) <= world_sphere->radius){
+      result.hit_time = 0;
+      result.colliding = true;
+    }
+    else{
+      result.hit_time = -1;
+      result.colliding = false;
+    }
+  }
+  else{
+    if (discriminant < 0){
+      // t = (r - ((n * C) - d)) / (n * v)
+      result.hit_time = (world_sphere->radius - s) / n_dot_v;
+      result.colliding = (result.hit_time >= 0 && result.hit_time <= delta_time);
+    }
+    else{
+      // t = (-r - ((n * C) - d)) / (n * v)
+      result.hit_time = (-world_sphere->radius - s) / n_dot_v;
+      result.colliding = (result.hit_time >= 0 && result.hit_time <= delta_time);
+    }
+
+    // If hit_time is outside of interval, check if already colliding
+    if (!colliding){
+      if (fabs(s <= world_sphere->radius)){
+        result.hit_time = 0;
+        result.colliding = true;
+      }
+      else{
+        result.hit_time = -1;
+      }
+    }
+  }
+
+  return result;
 }

@@ -112,10 +112,11 @@ void physics_step(struct PhysicsWorld *physics_world, float delta_time){
         // NARROW PHASE
         NarrowPhaseFunction narrow_phase_function = narrow_phase_functions[body_A->collider.type][body_B->collider.type];
         if (!narrow_phase_function){
-          fprintf(stderr, "Error: no narrow phase function found for collider types %d, %d\n", body_A->collider.type, body_B->collider.type);
+          fprintf(stderr, "Error: no narrow phase function found for collider types %d, %d\n",
+                  body_A->collider.type, body_B->collider.type);
         }
         else{
-          result = narrow_phase_AABB_plane(body_A, body_B, delta_time);
+          result = narrow_phase_function(body_A, body_B, delta_time);
         }
       }
 
@@ -124,7 +125,8 @@ void physics_step(struct PhysicsWorld *physics_world, float delta_time){
         printf("COLLISION\n");
         ResolutionFunction resolution_function = resolution_functions[body_A->collider.type][body_B->collider.type];
         if (!resolution_function){
-          fprintf(stderr, "Error: no collision resolution function found for types %d and %d\n", body_A->collider.type, body_B->collider.type);
+          fprintf(stderr, "Error: no collision resolution function found for types %d and %d\n",
+                  body_A->collider.type, body_B->collider.type);
         }
         else{
           resolution_function(body_A, body_B, result, delta_time);
@@ -137,7 +139,6 @@ void physics_step(struct PhysicsWorld *physics_world, float delta_time){
       glm_vec3_muladds(body_A->velocity, delta_time, body_A->position);
     }
   }
-  
 }
 
 bool interval_collision(struct PhysicsBody *body_A, struct PhysicsBody *body_B, float start_time, float end_time, float *hit_time){
