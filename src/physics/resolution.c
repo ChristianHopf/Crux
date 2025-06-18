@@ -58,6 +58,7 @@ void resolve_collision_AABB_plane(struct PhysicsBody *body_A, struct PhysicsBody
     }
     // Else update body position as normal with remaining time
     else{
+      // printf("weeeeeeee\n");
       float remaining_time = delta_time - result.hit_time;
       float gravity = 9.8f;
       if (remaining_time > 0){

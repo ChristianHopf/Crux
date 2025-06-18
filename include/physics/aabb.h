@@ -20,7 +20,7 @@ struct AABB {
   // Necessary for recursively building an AABB
   // that bounds a model, given Assimp's node hierarchy
   bool initialized;
-  GLuint VAO, VBO, EBO;
+  // GLuint VAO, VBO, EBO;
 };
 
 

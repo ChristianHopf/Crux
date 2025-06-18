@@ -29,7 +29,7 @@ struct Scene {
   struct PhysicsWorld *physics_world;
   // Options
   bool paused;
-  bool physics_view_mode;
+  bool physics_debug_mode;
 };
 
 // typedef struct {

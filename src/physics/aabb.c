@@ -96,6 +96,8 @@ void AABB_update(struct AABB *src, mat3 rotation, vec3 translation, vec3 scale, 
   // }
 
   // Scale center properly if not zero in model space
+  print_glm_vec3(src->center, "AABB update src center");
+  print_glm_vec3(src->extents, "AABB update src extents");
 
   for (int i = 0; i < 3; i++){
     dest->center[i] = translation[i];
@@ -173,99 +175,89 @@ bool AABB_intersect_plane(struct AABB *box, struct Plane *plane){
 // RENDERING FUNCTIONS
 //
 // Assumes a model's AABB will never change
-void AABB_init(struct AABB *aabb){
-  // Create the AABB shader
-  if (!aabbShader){
-    Shader *aabbShaderPtr = shader_create("shaders/physics/aabb.vs", "shaders/physics/aabb.fs");
-    if (!aabbShaderPtr){
-      printf("Error: failed to create AABB shader\n");
-      return;
-    }
-    aabbShader = aabbShaderPtr;
-  }
-
-  // Define vertices and indices for the box, based on min and max
-  float vertices[24] = {
-    aabb->center[0] + aabb->extents[0], aabb->center[1] + aabb->extents[1], aabb->center[2] + aabb->extents[2],
-    aabb->center[0] + aabb->extents[0], aabb->center[1] + aabb->extents[1], aabb->center[2] - aabb->extents[2],
-    aabb->center[0] + aabb->extents[0], aabb->center[1] - aabb->extents[1], aabb->center[2] - aabb->extents[2],
-    aabb->center[0] + aabb->extents[0], aabb->center[1] - aabb->extents[1], aabb->center[2] + aabb->extents[2],
-
-    aabb->center[0] - aabb->extents[0], aabb->center[1] - aabb->extents[1], aabb->center[2] - aabb->extents[2],
-    aabb->center[0] - aabb->extents[0], aabb->center[1] - aabb->extents[1], aabb->center[2] + aabb->extents[2],
-    aabb->center[0] - aabb->extents[0], aabb->center[1] + aabb->extents[1], aabb->center[2] + aabb->extents[2],
-    aabb->center[0] - aabb->extents[0], aabb->center[1] + aabb->extents[1], aabb->center[2] - aabb->extents[2],
-
-    // aabb->max[0], aabb->max[1], aabb->max[2],
-    // aabb->max[0], aabb->max[1], aabb->min[2],
-    // aabb->max[0], aabb->min[1], aabb->min[2],
-    // aabb->max[0], aabb->min[1], aabb->max[2],
-    //
-    // aabb->min[0], aabb->min[1], aabb->min[2],
-    // aabb->min[0], aabb->min[1], aabb->max[2],
-    // aabb->min[0], aabb->max[1], aabb->max[2],
-    // aabb->min[0], aabb->max[1], aabb->min[2],
-  };
-  unsigned int indices[24] = {
-    0, 1,
-    1, 2,
-    2, 3,
-    3, 0,
-
-    0, 6,
-    1, 7,
-    2, 4,
-    3, 5,
-
-    4, 5,
-    5, 6,
-    6, 7,
-    7, 4
-  };
-
-  // Gen VAO, VBO, EBO
-  glGenVertexArrays(1, &aabb->VAO);
-  glGenBuffers(1, &aabb->VBO);
-  glGenBuffers(1, &aabb->EBO);
-  glBindVertexArray(aabb->VAO);
-
-  glBindBuffer(GL_ARRAY_BUFFER, aabb->VBO);
-  glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, aabb->EBO);
-  glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-
-  // Configure attribute pointer, unbind
-  glEnableVertexAttribArray(0);
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-
-  // Assign ints to the AABB struct
-
-  // Unbind
-  glBindVertexArray(0);
-}
+// void AABB_init(struct AABB *aabb){
+//   // Create the AABB shader
+//   if (!aabbShader){
+//     Shader *aabbShaderPtr = shader_create("shaders/physics/aabb.vs", "shaders/physics/aabb.fs");
+//     if (!aabbShaderPtr){
+//       printf("Error: failed to create AABB shader\n");
+//       return;
+//     }
+//     aabbShader = aabbShaderPtr;
+//   }
+//
+//   // Define vertices and indices for the box, based on min and max
+//   float vertices[24] = {
+//     aabb->center[0] + aabb->extents[0], aabb->center[1] + aabb->extents[1], aabb->center[2] + aabb->extents[2],
+//     aabb->center[0] + aabb->extents[0], aabb->center[1] + aabb->extents[1], aabb->center[2] - aabb->extents[2],
+//     aabb->center[0] + aabb->extents[0], aabb->center[1] - aabb->extents[1], aabb->center[2] - aabb->extents[2],
+//     aabb->center[0] + aabb->extents[0], aabb->center[1] - aabb->extents[1], aabb->center[2] + aabb->extents[2],
+//
+//     aabb->center[0] - aabb->extents[0], aabb->center[1] - aabb->extents[1], aabb->center[2] - aabb->extents[2],
+//     aabb->center[0] - aabb->extents[0], aabb->center[1] - aabb->extents[1], aabb->center[2] + aabb->extents[2],
+//     aabb->center[0] - aabb->extents[0], aabb->center[1] + aabb->extents[1], aabb->center[2] + aabb->extents[2],
+//     aabb->center[0] - aabb->extents[0], aabb->center[1] + aabb->extents[1], aabb->center[2] - aabb->extents[2],
+//   };
+//   unsigned int indices[24] = {
+//     0, 1,
+//     1, 2,
+//     2, 3,
+//     3, 0,
+//
+//     0, 6,
+//     1, 7,
+//     2, 4,
+//     3, 5,
+//
+//     4, 5,
+//     5, 6,
+//     6, 7,
+//     7, 4
+//   };
+//
+//   // Gen VAO, VBO, EBO
+//   glGenVertexArrays(1, &aabb->VAO);
+//   glGenBuffers(1, &aabb->VBO);
+//   glGenBuffers(1, &aabb->EBO);
+//   glBindVertexArray(aabb->VAO);
+//
+//   glBindBuffer(GL_ARRAY_BUFFER, aabb->VBO);
+//   glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+//
+//   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, aabb->EBO);
+//   glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+//
+//   // Configure attribute pointer, unbind
+//   glEnableVertexAttribArray(0);
+//   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+//
+//   // Assign ints to the AABB struct
+//
+//   // Unbind
+//   glBindVertexArray(0);
+// }
 
 // For now, assume the user has created the shader program and set its uniforms
 // Performance will be very bad because I'm generating new buffers
 // to buffer data that might not change on every frame.
 // Could make a solution with static buffer IDs and glBufferSubData later.
-void AABB_render(struct AABB *aabb, mat4 model, mat4 view, mat4 projection){
-  // Use shader, set uniforms
-  shader_use(aabbShader);
-  shader_set_mat4(aabbShader, "model", model);
-  shader_set_mat4(aabbShader, "view", view);
-  shader_set_mat4(aabbShader, "projection", projection);
-
-  // Draw lines
-  glLineWidth(2.0f);
-  glBindVertexArray(aabb->VAO);
-  glDrawElements(GL_LINES, 24, GL_UNSIGNED_INT, 0);
-
-  glBindVertexArray(0);
-
-  // Cleanup
-  // glBindVertexArray(0);
-  // glDeleteVertexArrays(1, &VAO);
-  // glDeleteBuffers(1, &VBO);
-  // glDeleteBuffers(1, &EBO);
-}
+// void AABB_render(struct AABB *aabb, mat4 model, mat4 view, mat4 projection){
+//   // Use shader, set uniforms
+//   shader_use(aabbShader);
+//   shader_set_mat4(aabbShader, "model", model);
+//   shader_set_mat4(aabbShader, "view", view);
+//   shader_set_mat4(aabbShader, "projection", projection);
+//
+//   // Draw lines
+//   glLineWidth(2.0f);
+//   glBindVertexArray(aabb->VAO);
+//   glDrawElements(GL_LINES, 24, GL_UNSIGNED_INT, 0);
+//
+//   glBindVertexArray(0);
+//
+//   // Cleanup
+//   // glBindVertexArray(0);
+//   // glDeleteVertexArrays(1, &VAO);
+//   // glDeleteBuffers(1, &VBO);
+//   // glDeleteBuffers(1, &EBO);
+// }

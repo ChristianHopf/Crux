@@ -13,9 +13,6 @@ struct RenderContext {
   mat4 *projection_ptr;
   struct Light *light_ptr;
   vec3 *camera_position_ptr;
-
-  // Bools
-  bool physics_view_mode;
 };
 
 

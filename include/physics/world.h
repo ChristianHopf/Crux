@@ -1,5 +1,6 @@
 #pragma once
 
+#include <glad/glad.h>
 #include <cglm/cglm.h>
 #include <stdbool.h>
 #include "aabb.h"
@@ -14,6 +15,8 @@ struct PhysicsBody {
   vec3 scale;
   vec3 velocity;
   bool at_rest;
+
+  GLuint VAO, VBO, EBO;
 };
 
 struct PhysicsWorld {

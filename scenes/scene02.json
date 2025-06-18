@@ -18,7 +18,7 @@
 				"rotation": [0.0, 0.0, 0.0],
 				"scale": [0.5, 0.5, 0.5],
 				"collider": {
-					"type": 1,
+					"type": 2,
 					"data": {
 						"normal": [0.0, 1.0, 0.0],
 						"distance": 0
@@ -32,7 +32,7 @@
 				"rotation": [0.0, 0.0, 180.0],
 				"scale": [0.5, 0.5, 0.5],
 				"collider": {
-					"type": 1,
+					"type": 2,
 					"data": {
 						"normal": [0.0, -1.0, 0.0],
 						"distance": -5
@@ -46,7 +46,7 @@
 				"rotation": [0.0, 0.0, -90.0],
 				"scale": [0.5, 0.5, 0.5],
 				"collider": {
-					"type": 1,
+					"type": 2,
 					"data": {
 						"normal": [1.0, 0.0, 0.0],
 						"distance": -5
@@ -60,7 +60,7 @@
 				"rotation": [0.0, 0.0, 90.0],
 				"scale": [0.5, 0.5, 0.5],
 				"collider": {
-					"type": 1,
+					"type": 2,
 					"data": {
 						"normal": [-1.0, 0.0, 0.0],
 						"distance": -5
@@ -74,7 +74,7 @@
 				"rotation": [90.0, 0.0, 0.0],
 				"scale": [0.5, 0.5, 0.5],
 				"collider": {
-					"type": 1,
+					"type": 2,
 					"data": {
 						"normal": [0.0, 0.0, 1.0],
 						"distance": -5
@@ -88,7 +88,7 @@
 				"rotation": [-90.0, 0.0, 0.0],
 				"scale": [0.5, 0.5, 0.5],
 				"collider": {
-					"type": 1,
+					"type": 2,
 					"data": {
 						"normal": [0.0, 0.0, -1.0],
 						"distance": -5
@@ -103,7 +103,7 @@
 				"position": [0.0, 2.0, -1.0],
 				"rotation": [0.0, 0.0, 0.0],
 				"scale": [1.0, 1.0, 1.0],
-				"velocity": [10.0, 0.0, 0.0],
+				"velocity": [0.0, 0.0, 0.0],
 				"collider": {
 					"type": 0,
 					"data": {

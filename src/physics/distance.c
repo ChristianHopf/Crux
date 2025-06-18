@@ -41,7 +41,6 @@ float min_dist_at_time_AABB_plane(struct PhysicsBody *body_A, struct PhysicsBody
 }
 
 float min_dist_at_time_sphere_plane(struct PhysicsBody *body_A, struct PhysicsBody *body_B, float time){
-  printf("MIN DIST SPHERE PLANE at time %f\n", time);
   // Get pointers to the bodies' colliders
   struct Sphere *sphere = &body_A->collider.data.sphere;
   struct Plane *plane = &body_B->collider.data.plane;
@@ -50,12 +49,7 @@ float min_dist_at_time_sphere_plane(struct PhysicsBody *body_A, struct PhysicsBo
   glm_vec3_copy(body_A->position, world_sphere.center);
   glm_vec3_muladds(body_A->velocity, time, world_sphere.center);
   glm_vec3_scale(world_sphere.center, body_A->scale[0], world_sphere.center);
-  // glm_vec3_scale(world_sphere.radius, body_A->scale[0], world_sphere.radius);
-  printf("Sphere radius: %f, body scale factor: %f\n", sphere->radius, body_A->scale[0]);
-  printf("World space sphere radius should be %f\n", sphere->radius * body_A->scale[0]);
   world_sphere.radius = sphere->radius * body_A->scale[0];
-  print_glm_vec3(world_sphere.center, "World space sphere center");
-  printf("World space sphere radius: %f\n", world_sphere.radius);
 
   // Not finding a radius of projection, just want signed distance
   float s = glm_dot(world_sphere.center, plane->normal) - plane->distance;

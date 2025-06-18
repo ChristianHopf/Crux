@@ -12,6 +12,7 @@
 #include "text.h"
 #include "physics/world.h"
 #include "physics/aabb.h"
+#include "physics/debug_renderer.h"
 #include "physics/utils.h"
 #include "utils.h"
 
@@ -24,7 +25,7 @@ struct Scene *scene_init(char *scene_path){
   }
 
   // Set options
-  scene->physics_view_mode = true;
+  scene->physics_debug_mode = true;
   scene->paused = false;
 
   // Parse scene JSON
@@ -298,6 +299,8 @@ struct Scene *scene_init(char *scene_path){
 
         collider.type = type;
         collider.data.aabb = aabb;
+        printf("OIIAI has collider type %d\n", type);
+        print_aabb(&collider.data.aabb);
         break;
       case COLLIDER_SPHERE:
         struct Sphere sphere;
@@ -338,6 +341,11 @@ struct Scene *scene_init(char *scene_path){
     index++;
   }
   scene->max_entities = 64;
+
+  // Init physics debug renderer
+  if (scene->physics_debug_mode){
+    physics_debug_renderer_init(scene->physics_world);
+  }
   
   // Lights
   lights_json = cJSON_GetObjectItemCaseSensitive(scene_json, "lights");
@@ -416,6 +424,7 @@ void scene_update(struct Scene *scene, float delta_time){
 
   // Perform collision detection
   physics_step(scene->physics_world, delta_time);
+  printf("called physics step\n");
 
   // Match entity position with updated PhysicsBody position
   for(int i = 0; i < scene->num_dynamic_entities; i++){
@@ -448,7 +457,6 @@ void scene_render(struct Scene *scene){
     .view_ptr = &view,
     .projection_ptr = &projection,
     .camera_position_ptr = &scene->player.camera->position,
-    .physics_view_mode = scene->physics_view_mode
   };
 
   // Draw level
@@ -460,6 +468,10 @@ void scene_render(struct Scene *scene){
   }
   for(int i = 0; i < scene->num_dynamic_entities; i++){
     entity_render(&scene->dynamic_entities[i], &context);
+  }
+
+  if (scene->physics_debug_mode){
+    physics_debug_render(scene->physics_world, &context);
   }
 
   // Draw skybox

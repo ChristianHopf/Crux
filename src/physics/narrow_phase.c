@@ -69,7 +69,7 @@ struct CollisionResult narrow_phase_AABB_plane(struct PhysicsBody *body_AABB, st
     // Moving towards plane
     if (n_dot_v < 0){
       result.hit_time = (r - s) / -n_dot_v;
-      printf("Result hit time (towards plane)%f\n", result.hit_time);
+      printf("Moving toward plane, result hit time (towards plane)%f\n", result.hit_time);
       result.colliding = (result.hit_time >= 0 && result.hit_time <= delta_time);
     }
     // Moving away from plane
@@ -79,7 +79,7 @@ struct CollisionResult narrow_phase_AABB_plane(struct PhysicsBody *body_AABB, st
         result.hit_time = 0;
         result.colliding = true;
       } else {
-    result.hit_time = (r + s) / -n_dot_v;
+        result.hit_time = (r + s) / -n_dot_v;
         result.colliding = (result.hit_time >= 0 && result.hit_time <= delta_time);
         // printf("Moving away result hit time %f\n", result.hit_time);
       }

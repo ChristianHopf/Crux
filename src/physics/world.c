@@ -36,8 +36,11 @@ struct PhysicsBody *body;
   switch(dynamic){
     case true:
       body = &physics_world->dynamic_bodies[physics_world->num_dynamic_bodies++];
+      body->collider = collider;
+      glm_vec3_copy(entity->position, body->position);
+      glm_vec3_copy(entity->rotation, body->rotation);
+      glm_vec3_copy(entity->scale, body->scale);
       glm_vec3_copy(entity->velocity, body->velocity);
-      printf("Sphere radius %f\n", collider.data.sphere.radius);
       break;
     case false:
       body = &physics_world->static_bodies[physics_world->num_static_bodies++];
@@ -114,6 +117,7 @@ void physics_step(struct PhysicsWorld *physics_world, float delta_time){
       if (interval_collision(body_A, body_B, 0, delta_time, &hit_time)){
         printf("NARROW PHASE\n");
         // NARROW PHASE
+        printf("Body A type is %d, body B type is %d\n", body_A->collider.type, body_B->collider.type);
         NarrowPhaseFunction narrow_phase_function = narrow_phase_functions[body_A->collider.type][body_B->collider.type];
         if (!narrow_phase_function){
           fprintf(stderr, "Error: no narrow phase function found for collider types %d, %d\n",
@@ -152,12 +156,12 @@ bool interval_collision(struct PhysicsBody *body_A, struct PhysicsBody *body_B, 
   float max_move_sum = max_move_A + max_move_B;
   // printf("Max movement by A at start time %f: %f\n", start_time, max_move_A);
   // printf("Max movement by B at start time %f: %f\n", start_time, max_move_B);
-  printf("Max move sum between start and end time: %f\n", max_move_sum);
+  // printf("Max move sum between start and end time: %f\n", max_move_sum);
 
   // If initial minimum distance is larger than max_move_sum, exit
   float min_dist_start = minimum_object_distance_at_time(body_A, body_B, start_time);
   if (min_dist_start > max_move_sum) return 0;
-  printf("Min dist bw sphere and plane at start time %f: %f\n", start_time, min_dist_start);
+  // printf("Min dist bw sphere and plane at start time %f: %f\n", start_time, min_dist_start);
 
   // If end minimum distance is still larger than max_move_sum, exit (bodies are moving away)
   float min_dist_end = minimum_object_distance_at_time(body_A, body_B, end_time);
