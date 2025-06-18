@@ -55,8 +55,7 @@ void physics_debug_render(struct PhysicsWorld *physics_world, struct RenderConte
   for (unsigned int i = 0; i < physics_world->num_dynamic_bodies; i++){
     struct PhysicsBody *body = &physics_world->dynamic_bodies[i];
 
-    glBindVertexArray(body->VAO);
-    glBindBuffer(GL_ARRAY_BUFFER, body->VBO);
+    
 
     mat4 model;
 
@@ -73,6 +72,8 @@ void physics_debug_render(struct PhysicsWorld *physics_world, struct RenderConte
         glm_rotate_z(model, glm_rad(body->rotation[2]), model);
         glm_scale(model, body->scale);
 
+        glBindVertexArray(body->VAO);
+        glBindBuffer(GL_ARRAY_BUFFER, body->VBO);
         physics_debug_AABB_render(box, context, model);
         break;
       case COLLIDER_SPHERE:
@@ -87,6 +88,7 @@ void physics_debug_render(struct PhysicsWorld *physics_world, struct RenderConte
         // glm_rotate_z(model, glm_rad(body->rotation[2]), model);
         glm_scale(model, body->scale);
 
+        glBindVertexArray(body->VAO);
         physics_debug_sphere_render(sphere, context, model);
         break;
       case COLLIDER_PLANE:
@@ -228,17 +230,19 @@ void physics_debug_sphere_init(struct PhysicsBody *body){
 
   int num_vertices = (stack_count + 1) * (sector_count + 1);
   printf("NUM VERTICES IS %d\n", num_vertices);
-  int num_indices = (sector_count * (stack_count - 2) * 6) + (sector_count * 6);
+  int num_indices = (sector_count * ((2 * stack_count) - 2)) * 3;
+  printf("NUM INDICES IS %d\n", num_indices);
+  // int num_indices = (sector_count * (stack_count - 2) * 6) + (sector_count * 6);
 
   // Vertices
-  float *vertices = (float *)malloc(num_vertices * sizeof(float));
+  float *vertices = (float *)malloc(num_vertices * 3 * sizeof(float));
   if (!vertices){
     fprintf(stderr, "Error: failed to allocate sphere vertices in physics_debug_sphere_init\n");
     return;
   }
   printf("Allocated %d vertices\n", num_vertices);
 
-  int vertex_index;
+  int vertex_index = 0;
   for (int i = 0; i <= stack_count; i++){
     stack_angle = (M_PI / 2) - (i * stack_step);
     float stack_xy = sphere->radius * cosf(stack_angle); // r * cos(phi)
@@ -257,14 +261,14 @@ void physics_debug_sphere_init(struct PhysicsBody *body){
   }
 
   // Indices
-  float *indices = (float *)malloc(num_indices * sizeof(float));
+  unsigned int *indices = (float *)malloc(num_indices * sizeof(float));
   if (!indices){
     fprintf(stderr, "Error: failed to allocate sphere indices in physics_debug_sphere_init\n");
     return;
   }
   printf("Allocated %d indices\n", num_indices);
   int k1, k2;
-  int indices_index;
+  unsigned int indices_index = 0;
   for (int i = 0; i < stack_count; i++){
     k1 = i * (sector_count + 1);
     k2 = k1 + sector_count + 1;
@@ -292,10 +296,10 @@ void physics_debug_sphere_init(struct PhysicsBody *body){
   glBindVertexArray(body->VAO);
 
   glBindBuffer(GL_ARRAY_BUFFER, body->VBO);
-  glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_DYNAMIC_DRAW);
+  glBufferData(GL_ARRAY_BUFFER, num_vertices * 3 * sizeof(float), vertices, GL_DYNAMIC_DRAW);
 
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, body->EBO);
-  glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+  glBufferData(GL_ELEMENT_ARRAY_BUFFER, num_indices * sizeof(unsigned int), indices, GL_STATIC_DRAW);
 
   // Configure attribute pointer, unbind
   glEnableVertexAttribArray(0);
@@ -349,7 +353,7 @@ void physics_debug_sphere_render(struct Sphere *sphere, struct RenderContext *co
   printf("Time to render the sphere\n");
 
   // Draw triangles
-  glDrawElements(GL_TRIANGLES, 480, GL_UNSIGNED_INT, (void*)0);
+  glDrawElements(GL_TRIANGLES, 2280, GL_UNSIGNED_INT, (void*)0);
 
   glBindVertexArray(0);
 }
