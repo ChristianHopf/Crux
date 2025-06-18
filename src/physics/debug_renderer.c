@@ -16,16 +16,6 @@ void physics_debug_render(struct PhysicsWorld *physics_world, struct RenderConte
       case COLLIDER_AABB:
         // Get updated AABB and model matrix
         struct AABB *box = &body->collider.data.aabb;
-        struct AABB worldAABB;
-        mat4 eulerA;
-        mat3 rotationA;
-        glm_euler_xyz(body->rotation, eulerA);
-        glm_mat4_pick3(eulerA, rotationA);
-        vec3 translationA, scaleA;
-        glm_vec3_copy(body->position, translationA);
-        glm_vec3_copy(body->scale, scaleA);
-        struct AABB worldAABB_A = {0};
-        AABB_update(&box, rotationA, translationA, scaleA, &worldAABB);
 
         mat4 model;
         glm_mat4_identity(model);
@@ -35,7 +25,7 @@ void physics_debug_render(struct PhysicsWorld *physics_world, struct RenderConte
         glm_rotate_z(model, glm_rad(body->rotation[2]), model);
         glm_scale(model, body->scale);
 
-        physics_debug_AABB_render(&worldAABB, context, model);
+        physics_debug_AABB_render(box, context, model);
         break;
       case COLLIDER_SPHERE:
         // debug_sphere_render(body);
@@ -51,24 +41,12 @@ void physics_debug_render(struct PhysicsWorld *physics_world, struct RenderConte
     struct PhysicsBody *body = &physics_world->dynamic_bodies[i];
 
     glBindVertexArray(body->VAO);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, body->VBO);
+    glBindBuffer(GL_ARRAY_BUFFER, body->VBO);
 
     switch(body->collider.type){
       case COLLIDER_AABB:
         // Get updated AABB and model matrix
         struct AABB *box = &body->collider.data.aabb;
-        printf("Body collider aabb\n");
-        print_aabb(box);
-        // struct AABB worldAABB;
-        mat4 eulerA;
-        mat3 rotationA;
-        glm_euler_xyz(body->rotation, eulerA);
-        glm_mat4_pick3(eulerA, rotationA);
-        vec3 translationA, scaleA;
-        glm_vec3_copy(body->position, translationA);
-        glm_vec3_copy(body->scale, scaleA);
-        struct AABB worldAABB_A = {0};
-        AABB_update(box, rotationA, translationA, scaleA, &worldAABB_A);
 
         mat4 model;
         glm_mat4_identity(model);
@@ -78,12 +56,7 @@ void physics_debug_render(struct PhysicsWorld *physics_world, struct RenderConte
         glm_rotate_z(model, glm_rad(body->rotation[2]), model);
         glm_scale(model, body->scale);
 
-        // printf("Rendering aabb with vao %d\n", body->VAO);
-        print_glm_vec3(translationA, "translationA");
-        // print_glm_vec3(scaleA, "scaleA");
-        // print_glm_vec3(body->rotation, "body rotation");
-        // physics_debug_AABB_render(&body->collider.data.aabb, context, model);
-        physics_debug_AABB_render(&worldAABB_A, context, model);
+        physics_debug_AABB_render(box, context, model);
         break;
       case COLLIDER_SPHERE:
         // debug_sphere_render(body);
@@ -132,7 +105,6 @@ void physics_debug_renderer_init(struct PhysicsWorld *physics_world){
     switch(body->collider.type){
       case COLLIDER_AABB:
         physics_debug_AABB_init(body);
-        printf("Initialized aabb debug rendering\n");
         break;
       case COLLIDER_SPHERE:
         // debug_sphere_init(body);
@@ -185,10 +157,10 @@ void physics_debug_AABB_init(struct PhysicsBody *body){
     7, 4
   };
 
-  printf("INIT AABB DEBUG VERTICES\n");
-  for(int i = 0; i < 8; i++){
-    printf("Vertex (%f %f %f)\n", vertices[i], vertices[i+1], vertices[i+2]);
-  }
+  // printf("INIT AABB DEBUG VERTICES\n");
+  // for(int i = 0; i < 8; i++){
+  //   printf("Vertex (%f %f %f)\n", vertices[i*3], vertices[i*3+1], vertices[i*3+2]);
+  // }
 
   // Gen VAO, VBO, EBO
   glGenVertexArrays(1, &body->VAO);
@@ -197,7 +169,7 @@ void physics_debug_AABB_init(struct PhysicsBody *body){
   glBindVertexArray(body->VAO);
 
   glBindBuffer(GL_ARRAY_BUFFER, body->VBO);
-  glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_DYNAMIC_DRAW);
 
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, body->EBO);
   glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
@@ -237,10 +209,10 @@ void physics_debug_AABB_render(struct AABB *aabb, struct RenderContext *context,
     aabb->center[0] - aabb->extents[0], aabb->center[1] + aabb->extents[1], aabb->center[2] + aabb->extents[2],
     aabb->center[0] - aabb->extents[0], aabb->center[1] + aabb->extents[1], aabb->center[2] - aabb->extents[2],
   };
-  for(int i = 0; i < 8; i++){
-    printf("Vertex (%f %f %f)\n", vertices[i], vertices[i+1], vertices[i+2]);
-  }
-  glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, sizeof(vertices), &vertices);
+  // for(int i = 0; i < 8; i++){
+  //   printf("Vertex (%f %f %f)\n", vertices[i*3], vertices[i*3+1], vertices[i*3+2]);
+  // }
+  glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), &vertices);
 
   // Draw lines
   glLineWidth(2.0f);

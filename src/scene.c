@@ -424,12 +424,10 @@ void scene_update(struct Scene *scene, float delta_time){
 
   // Perform collision detection
   physics_step(scene->physics_world, delta_time);
-  printf("called physics step\n");
 
   // Match entity position with updated PhysicsBody position
   for(int i = 0; i < scene->num_dynamic_entities; i++){
     struct Entity *entity = &scene->dynamic_entities[i];
-    // printf("Time to sync %d entities with their physics bodies\n", scene->num_entities);
     glm_vec3_copy(entity->physics_body->position, scene->dynamic_entities[i].position);
   }
 

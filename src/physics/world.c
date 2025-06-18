@@ -117,7 +117,6 @@ void physics_step(struct PhysicsWorld *physics_world, float delta_time){
       if (interval_collision(body_A, body_B, 0, delta_time, &hit_time)){
         printf("NARROW PHASE\n");
         // NARROW PHASE
-        printf("Body A type is %d, body B type is %d\n", body_A->collider.type, body_B->collider.type);
         NarrowPhaseFunction narrow_phase_function = narrow_phase_functions[body_A->collider.type][body_B->collider.type];
         if (!narrow_phase_function){
           fprintf(stderr, "Error: no narrow phase function found for collider types %d, %d\n",
@@ -145,6 +144,10 @@ void physics_step(struct PhysicsWorld *physics_world, float delta_time){
       float gravity = 9.8f;
       body_A->velocity[1] -= gravity * delta_time;
       glm_vec3_muladds(body_A->velocity, delta_time, body_A->position);
+      // body_A->rotation[1] -= 100.0f * delta_time;
+      // struct AABB rotated_AABB = {0};
+      // AABB_update(&body_A->collider.data.aabb, body_A->rotation, body_A->position, body_A->scale, &rotated_AABB);
+      // body_A->collider.data.aabb = rotated_AABB;
     }
   }
 }

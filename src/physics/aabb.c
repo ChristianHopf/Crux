@@ -73,34 +73,13 @@ void AABB_merge(struct AABB *a, struct AABB *b){
 }
 
 void AABB_update(struct AABB *src, mat3 rotation, vec3 translation, vec3 scale, struct AABB *dest){
-  // printf("Time to update AABB src and store in dest. Current values of src and dest:\n");
-  // print_aabb(src);
-  // print_aabb(dest);
-  // For all three axes:
-  // for (int i = 0; i < 3; i++){
-  //   // Add translation
-  //   dest->min[i] = dest->max[i] = translation[i];
-  //
-  //   // Form the min and max extents of this axis by summing smaller and larger terms
-  //   for (int j = 0; j < 3; j++){
-  //     float e = rotation[i][j] * src->min[j];
-  //     float f = rotation[i][j] * src->max[j];
-  //     if (e < f){
-  //       dest->min[i] += e;
-  //       dest->max[i] += f;
-  //     } else{
-  //       dest->min[i] += f;
-  //       dest->max[i] += e;
-  //     }
-  //   }
-  // }
-
-  // Scale center properly if not zero in model space
-  print_glm_vec3(src->center, "AABB update src center");
-  print_glm_vec3(src->extents, "AABB update src extents");
+  // glm_vec3_copy(src->center, dest->center);
+  // glm_vec3_mul(dest->center, scale, dest->center);
+  // glm_mat3_mulv(rotation, dest->center, dest->center);
+  glm_vec3_add(dest->center, translation, dest->center);
 
   for (int i = 0; i < 3; i++){
-    dest->center[i] = translation[i];
+    // dest->center[i] = translation[i];
     dest->extents[i] = 0.0f;
     for (int j = 0; j < 3; j++){
       dest->center[i] += rotation[i][j] * src->center[j];
@@ -108,7 +87,6 @@ void AABB_update(struct AABB *src, mat3 rotation, vec3 translation, vec3 scale, 
     }
     dest->extents[i] *= fabs(scale[i]);
   }
-  glm_vec3_mul(dest->center, scale, dest->center);
 }
 
 //Figure out an optimal algorithm for this later.
