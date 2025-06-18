@@ -10,24 +10,6 @@ static Shader *aabbShader;
 
 // Merge b into a
 void AABB_merge(struct AABB *a, struct AABB *b){
-  // a->min[0] = fminf(a->min[0], b->min[0]);
-  // a->min[1] = fminf(a->min[1], b->min[1]);
-  // a->min[2] = fminf(a->min[2], b->min[2]);
-  //
-  // a->max[0] = fmaxf(a->max[0], b->max[0]);
-  // a->max[1] = fmaxf(a->max[1], b->max[1]);
-  // a->max[2] = fmaxf(a->max[2], b->max[2]);
-
-  // Compute new center
-  // a->center[0] = (a->center[0] + b->center[0]) * 0.5f;
-  // a->center[1] = (a->center[1] + b->center[1]) * 0.5f;
-  // a->center[2] = (a->center[2] + b->center[2]) * 0.5f;
-
-  // Compute new radius
-  // a->radius[0] = (a->radius[0] + b->radius[0]);
-  // a->radius[1] = (a->radius[1] + b->radius[1]);
-  // a->radius[2] = (a->radius[2] + b->radius[2]);
-
   // If a is not initialized, copy b into a.
   // If b is not initialized, return.
   if (!a->initialized){
@@ -76,10 +58,10 @@ void AABB_update(struct AABB *src, mat3 rotation, vec3 translation, vec3 scale, 
   // glm_vec3_copy(src->center, dest->center);
   // glm_vec3_mul(dest->center, scale, dest->center);
   // glm_mat3_mulv(rotation, dest->center, dest->center);
-  glm_vec3_add(dest->center, translation, dest->center);
+  // glm_vec3_add(dest->center, translation, dest->center);
 
   for (int i = 0; i < 3; i++){
-    // dest->center[i] = translation[i];
+    dest->center[i] = translation[i];
     dest->extents[i] = 0.0f;
     for (int j = 0; j < 3; j++){
       dest->center[i] += rotation[i][j] * src->center[j];

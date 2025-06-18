@@ -19,10 +19,9 @@ float min_dist_at_time_AABB_plane(struct PhysicsBody *body_A, struct PhysicsBody
   mat3 rotationA;
   glm_euler_xyz(body_A->rotation, eulerA);
   glm_mat4_pick3(eulerA, rotationA);
-  vec3 translationA;
+  vec3 translationA, scaleA;
   glm_vec3_copy(body_A->position, translationA);
   glm_vec3_muladds(body_A->velocity, time, translationA);
-  vec3 scaleA;
   glm_vec3_copy(body_A->scale, scaleA);
     
   struct AABB worldAABB_A = {0};
