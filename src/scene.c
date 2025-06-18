@@ -429,6 +429,7 @@ void scene_update(struct Scene *scene, float delta_time){
   for(int i = 0; i < scene->num_dynamic_entities; i++){
     struct Entity *entity = &scene->dynamic_entities[i];
     glm_vec3_copy(entity->physics_body->position, scene->dynamic_entities[i].position);
+    glm_vec3_copy(entity->physics_body->rotation, scene->dynamic_entities[i].rotation);
   }
 
   // Update light

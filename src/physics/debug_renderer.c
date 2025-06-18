@@ -55,8 +55,6 @@ void physics_debug_render(struct PhysicsWorld *physics_world, struct RenderConte
   for (unsigned int i = 0; i < physics_world->num_dynamic_bodies; i++){
     struct PhysicsBody *body = &physics_world->dynamic_bodies[i];
 
-    
-
     mat4 model;
 
     switch(body->collider.type){
@@ -64,17 +62,26 @@ void physics_debug_render(struct PhysicsWorld *physics_world, struct RenderConte
         // Get updated AABB and model matrix
         struct AABB *box = &body->collider.data.aabb;
 
-        // mat4 model;
+        struct AABB rotated_AABB = {0};
+        mat4 eulerA;
+        mat3 rotationA;
+        glm_euler_xyz(body->rotation, eulerA);
+        glm_mat4_pick3(eulerA, rotationA);
+        vec3 translationA, scaleA;
+        glm_vec3_copy((vec3){0.0f, 0.0f, 0.0f}, translationA);
+        glm_vec3_copy((vec3){1.0f, 1.0f, 1.0f}, scaleA);
+        AABB_update(&body->collider.data.aabb, rotationA, translationA, scaleA, &rotated_AABB);
+
         glm_mat4_identity(model);
         glm_translate(model, body->position);
-        glm_rotate_y(model, glm_rad(body->rotation[1]), model);
-        glm_rotate_x(model, glm_rad(body->rotation[0]), model);
-        glm_rotate_z(model, glm_rad(body->rotation[2]), model);
+        // glm_rotate_y(model, glm_rad(body->rotation[1]), model);
+        // glm_rotate_x(model, glm_rad(body->rotation[0]), model);
+        // glm_rotate_z(model, glm_rad(body->rotation[2]), model);
         glm_scale(model, body->scale);
 
         glBindVertexArray(body->VAO);
         glBindBuffer(GL_ARRAY_BUFFER, body->VBO);
-        physics_debug_AABB_render(box, context, model);
+        physics_debug_AABB_render(&rotated_AABB, context, model);
         break;
       case COLLIDER_SPHERE:
         struct Sphere *sphere = &body->collider.data.sphere;

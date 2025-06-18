@@ -24,6 +24,8 @@ struct CollisionResult narrow_phase_AABB_plane(struct PhysicsBody *body_AABB, st
   glm_vec3_copy(body_AABB->scale, scaleA);
   struct AABB worldAABB_A = {0};
   AABB_update(box, rotationA, translationA, scaleA, &worldAABB_A);
+  printf("NARROW PHASE WORLD SPACE AABB\n");
+  print_aabb(&worldAABB_A);
 
   // Get relative velocity
   vec3 rel_v;
@@ -36,8 +38,8 @@ struct CollisionResult narrow_phase_AABB_plane(struct PhysicsBody *body_AABB, st
     worldAABB_A.extents[2] * fabs(plane->normal[2]); 
 
   // Get distance from center of AABB to plane
-  printf("Dot product of plane normal and world aabb center %f\n", glm_dot(plane->normal, worldAABB_A.center));
-  printf("Plane distance from origin: %f\n", plane->distance);
+  // printf("Dot product of plane normal and world aabb center %f\n", glm_dot(plane->normal, worldAABB_A.center));
+  // printf("Plane distance from origin: %f\n", plane->distance);
   float s = glm_dot(plane->normal, worldAABB_A.center) - plane->distance;
   // printf("Distance from center to plane: %f\n", s);
 
@@ -46,7 +48,7 @@ struct CollisionResult narrow_phase_AABB_plane(struct PhysicsBody *body_AABB, st
   // - n*v < 0 => moving towards plane
   // - n*v > 0 => moving away from the plane
   float n_dot_v = glm_dot(plane->normal, rel_v);
-  printf("r: %f, s: %f, n_dot_v: %f\n", r, s, n_dot_v);
+  // printf("r: %f, s: %f, n_dot_v: %f\n", r, s, n_dot_v);
 
   // n*v == 0 => parallel movement
   if (n_dot_v == 0){

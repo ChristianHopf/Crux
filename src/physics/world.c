@@ -71,26 +71,21 @@ void physics_step(struct PhysicsWorld *physics_world, float delta_time){
   for(unsigned int i = 0; i < physics_world->num_dynamic_bodies; i++){
     struct PhysicsBody *body_A = &physics_world->dynamic_bodies[i];
 
+    body_A->rotation[0] -= 100.0f * delta_time;
+    body_A->rotation[0] = fmodf(body_A->rotation[0], 360);
     body_A->rotation[1] -= 100.0f * delta_time;
-    body_A->rotation[1] = fmodf(body_A->rotation[1], 2.0f * M_PI);
-    if (body_A->rotation[1] < 0.0f){
-      body_A->rotation[1] += 2.0f * M_PI;
+    body_A->rotation[1] = fmodf(body_A->rotation[1], 360);
+    body_A->rotation[2] -= 100.0f * delta_time;
+    body_A->rotation[2] = fmodf(body_A->rotation[1], 360);
+    if (body_A->rotation[0] < 0.0f){
+      body_A->rotation[0] += 360;
     }
-    printf("Rotation about y axis is %f\n", body_A->rotation[1]);
-    struct AABB rotated_AABB = {0};
-    mat4 eulerA;
-    mat3 rotationA;
-    glm_euler_xyz(body_A->rotation, eulerA);
-    glm_mat4_pick3(eulerA, rotationA);
-    vec3 translationA, scaleA;
-    glm_vec3_copy(body_A->collider.data.aabb.center, translationA);
-    glm_vec3_copy((vec3){1.0f, 1.0f, 1.0f}, scaleA);
-    AABB_update(&body_A->collider.data.aabb, rotationA, translationA, scaleA, &rotated_AABB);
-
-    printf("ORIGINAL AND ROTATED AABBS\n");
-    print_aabb(&body_A->collider.data.aabb);
-    print_aabb(&rotated_AABB);
-    body_A->collider.data.aabb = rotated_AABB;
+    if (body_A->rotation[1] < 0.0f){
+      body_A->rotation[1] += 360;
+    }
+    if (body_A->rotation[2] < 0.0f){
+      body_A->rotation[2] += 360;
+    }
 
     for (unsigned int j = 0; j < physics_world->num_static_bodies; j++){
       struct PhysicsBody *body_B = &physics_world->static_bodies[j];

@@ -55,6 +55,15 @@ void AABB_merge(struct AABB *a, struct AABB *b){
 }
 
 void AABB_update(struct AABB *src, mat3 rotation, vec3 translation, vec3 scale, struct AABB *dest){
+  // glm_vec3_zero(dest->center);
+  // glm_vec3_zero(dest->extents);
+  // print_glm_vec3(dest->center, "ZEROED DEST CENTER");
+  // print_glm_vec3(dest->extents, "ZEROED DEST EXTENTS");
+  // printf("Rotation Matrix:\n");
+  // for (int i = 0; i < 3; i++) {
+  //     printf("%f %f %f\n", rotation[i][0], rotation[i][1], rotation[i][2]);
+  // }
+  //
   // glm_vec3_copy(src->center, dest->center);
   // glm_vec3_mul(dest->center, scale, dest->center);
   // glm_mat3_mulv(rotation, dest->center, dest->center);
@@ -69,6 +78,12 @@ void AABB_update(struct AABB *src, mat3 rotation, vec3 translation, vec3 scale, 
     }
     dest->extents[i] *= fabs(scale[i]);
   }
+  // print_glm_vec3(src->center, "AABB UPDATE: SRC CENTER");
+  // print_glm_vec3(dest->center, "AABB UPDATE: DEST CENTER");
+  //
+  printf("ORIGINAL AND ROTATED AABBS\n");
+  print_aabb(src);
+  print_aabb(dest);
 }
 
 //Figure out an optimal algorithm for this later.
