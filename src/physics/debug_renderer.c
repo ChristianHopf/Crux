@@ -1,5 +1,7 @@
 #include "physics/debug_renderer.h"
 #include "shader.h"
+#include <math.h>
+#include <signal.h>
 
 // Shaders for wireframes (bounding volumes) and translucent objects (planes)
 static Shader *wireframeShader;
@@ -12,12 +14,14 @@ void physics_debug_render(struct PhysicsWorld *physics_world, struct RenderConte
     glBindVertexArray(body->VAO);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, body->VBO);
 
+    mat4 model;
+
     switch(body->collider.type){
       case COLLIDER_AABB:
         // Get updated AABB and model matrix
         struct AABB *box = &body->collider.data.aabb;
 
-        mat4 model;
+        // mat4 model;
         glm_mat4_identity(model);
         glm_translate(model, body->position);
         glm_rotate_y(model, glm_rad(body->rotation[1]), model);
@@ -28,7 +32,18 @@ void physics_debug_render(struct PhysicsWorld *physics_world, struct RenderConte
         physics_debug_AABB_render(box, context, model);
         break;
       case COLLIDER_SPHERE:
-        // debug_sphere_render(body);
+        struct Sphere *sphere = &body->collider.data.sphere;
+
+        // mat4 model;
+        glm_mat4_identity(model);
+        glm_translate(model, body->position);
+        // Spheres are invariant to rotation
+        // glm_rotate_y(model, glm_rad(body->rotation[1]), model);
+        // glm_rotate_x(model, glm_rad(body->rotation[0]), model);
+        // glm_rotate_z(model, glm_rad(body->rotation[2]), model);
+        glm_scale(model, body->scale);
+
+        physics_debug_sphere_render(sphere, context, model);
         break;
       case COLLIDER_PLANE:
         // debug_plane_render(body);
@@ -43,12 +58,14 @@ void physics_debug_render(struct PhysicsWorld *physics_world, struct RenderConte
     glBindVertexArray(body->VAO);
     glBindBuffer(GL_ARRAY_BUFFER, body->VBO);
 
+    mat4 model;
+
     switch(body->collider.type){
       case COLLIDER_AABB:
         // Get updated AABB and model matrix
         struct AABB *box = &body->collider.data.aabb;
 
-        mat4 model;
+        // mat4 model;
         glm_mat4_identity(model);
         glm_translate(model, body->position);
         glm_rotate_y(model, glm_rad(body->rotation[1]), model);
@@ -59,7 +76,18 @@ void physics_debug_render(struct PhysicsWorld *physics_world, struct RenderConte
         physics_debug_AABB_render(box, context, model);
         break;
       case COLLIDER_SPHERE:
-        // debug_sphere_render(body);
+        struct Sphere *sphere = &body->collider.data.sphere;
+
+        // mat4 model;
+        glm_mat4_identity(model);
+        glm_translate(model, body->position);
+        // Spheres are invariant to rotation
+        // glm_rotate_y(model, glm_rad(body->rotation[1]), model);
+        // glm_rotate_x(model, glm_rad(body->rotation[0]), model);
+        // glm_rotate_z(model, glm_rad(body->rotation[2]), model);
+        glm_scale(model, body->scale);
+
+        physics_debug_sphere_render(sphere, context, model);
         break;
       case COLLIDER_PLANE:
         // debug_plane_render(body);
@@ -72,8 +100,8 @@ void physics_debug_render(struct PhysicsWorld *physics_world, struct RenderConte
 
 void physics_debug_renderer_init(struct PhysicsWorld *physics_world){
   // wireframeShader = shader_create("shaders/physics/wireframe.vs", "shaders/physics/wireframe.fs");
-  wireframeShader = shader_create("shaders/physics/aabb.vs", "shaders/physics/aabb.fs");
-  translucentShader = shader_create("shaders/physics/translucent.vs", "shaders/physics/translucent.fs");
+  wireframeShader = shader_create("shaders/physics/common.vs", "shaders/physics/aabb.fs");
+  translucentShader = shader_create("shaders/physics/common.vs", "shaders/physics/translucent.fs");
 
   if (!wireframeShader){
     fprintf(stderr, "Error: failed to create wireframe shader in debug_renderer_init\n");
@@ -91,7 +119,7 @@ void physics_debug_renderer_init(struct PhysicsWorld *physics_world){
         physics_debug_AABB_init(body);
         break;
       case COLLIDER_SPHERE:
-        // debug_sphere_init(body);
+        physics_debug_sphere_init(body);
         break;
       case COLLIDER_PLANE:
         // debug_plane_init(body);
@@ -107,7 +135,8 @@ void physics_debug_renderer_init(struct PhysicsWorld *physics_world){
         physics_debug_AABB_init(body);
         break;
       case COLLIDER_SPHERE:
-        // debug_sphere_init(body);
+        printf("Time to init debug sphere\n");
+        physics_debug_sphere_init(body);
         break;
       case COLLIDER_PLANE:
         // debug_plane_init(body);
@@ -119,7 +148,6 @@ void physics_debug_renderer_init(struct PhysicsWorld *physics_world){
 }
 
 void physics_debug_AABB_init(struct PhysicsBody *body){
-  // Create the AABB shader
   if (!wireframeShader){
     fprintf(stderr, "Error: wireframe shader program not initialized\n");
     return;
@@ -162,7 +190,7 @@ void physics_debug_AABB_init(struct PhysicsBody *body){
   //   printf("Vertex (%f %f %f)\n", vertices[i*3], vertices[i*3+1], vertices[i*3+2]);
   // }
 
-  // Gen VAO, VBO, EBO
+  // Buffers
   glGenVertexArrays(1, &body->VAO);
   glGenBuffers(1, &body->VBO);
   glGenBuffers(1, &body->EBO);
@@ -183,7 +211,98 @@ void physics_debug_AABB_init(struct PhysicsBody *body){
 }
 
 void physics_debug_sphere_init(struct PhysicsBody *body){
+  if (!wireframeShader){
+    fprintf(stderr, "Error: wireframe shader program not initialized\n");
+    return;
+  }
 
+  struct Sphere *sphere = &body->collider.data.sphere;
+
+  // Create sphere vertices and indices using stacks and sectors
+  // (https://songho.ca/opengl/gl_sphere.html)
+  int sector_count = 20;
+  int stack_count = 20;
+  float sector_step = (2 * M_PI) / 20;
+  float stack_step = M_PI / 20;
+  float sector_angle, stack_angle;
+
+  int num_vertices = (stack_count + 1) * (sector_count + 1);
+  printf("NUM VERTICES IS %d\n", num_vertices);
+  int num_indices = (sector_count * (stack_count - 2) * 6) + (sector_count * 6);
+
+  // Vertices
+  float *vertices = (float *)malloc(num_vertices * sizeof(float));
+  if (!vertices){
+    fprintf(stderr, "Error: failed to allocate sphere vertices in physics_debug_sphere_init\n");
+    return;
+  }
+  printf("Allocated %d vertices\n", num_vertices);
+
+  int vertex_index;
+  for (int i = 0; i <= stack_count; i++){
+    stack_angle = (M_PI / 2) - (i * stack_step);
+    float stack_xy = sphere->radius * cosf(stack_angle); // r * cos(phi)
+    float z = sphere->radius * sinf(stack_angle);
+
+    for (int j = 0; j <= sector_count; j++){
+      sector_angle = j * sector_step;
+      float x = stack_xy * cosf(sector_angle); // r * cos(phi) * cos(theta)
+      float y = stack_xy * sinf(sector_angle); // r * cos(phi) * sin(theta)
+
+      vertices[vertex_index * 3] = x;
+      vertices[vertex_index * 3 + 1] = y;
+      vertices[vertex_index * 3 + 2] = z;
+      vertex_index++;
+    }
+  }
+
+  // Indices
+  float *indices = (float *)malloc(num_indices * sizeof(float));
+  if (!indices){
+    fprintf(stderr, "Error: failed to allocate sphere indices in physics_debug_sphere_init\n");
+    return;
+  }
+  printf("Allocated %d indices\n", num_indices);
+  int k1, k2;
+  int indices_index;
+  for (int i = 0; i < stack_count; i++){
+    k1 = i * (sector_count + 1);
+    k2 = k1 + sector_count + 1;
+
+    for (int j = 0; j < sector_count; j++, k1++, k2++){
+      // 2 triangles/sector (except first and last)
+      if (i != 0){
+        indices[indices_index++] = k1;
+        indices[indices_index++] = k2;
+        indices[indices_index++] = k1 + 1;
+      }
+      if (i != (stack_count - 1)){
+        indices[indices_index++] = k1 + 1;
+        indices[indices_index++] = k2;
+        indices[indices_index++] = k2 + 1;
+      }
+    }
+  }
+  printf("Time to buffer sphere data\n");
+
+  // Buffers
+  glGenVertexArrays(1, &body->VAO);
+  glGenBuffers(1, &body->VBO);
+  glGenBuffers(1, &body->EBO);
+  glBindVertexArray(body->VAO);
+
+  glBindBuffer(GL_ARRAY_BUFFER, body->VBO);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_DYNAMIC_DRAW);
+
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, body->EBO);
+  glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
+  // Configure attribute pointer, unbind
+  glEnableVertexAttribArray(0);
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+
+  // Unbind VAO
+  glBindVertexArray(0);
 }
 
 void physics_debug_plane_init(struct PhysicsBody *body){
@@ -222,7 +341,17 @@ void physics_debug_AABB_render(struct AABB *aabb, struct RenderContext *context,
 }
 
 void physics_debug_sphere_render(struct Sphere *sphere, struct RenderContext *context, mat4 model){
-  // Maybe make spheres use the translucent shader too?
+  // Shader and uniforms
+  shader_use(translucentShader);
+  shader_set_mat4(translucentShader, "model", model);
+  shader_set_mat4(translucentShader, "view", context->view_ptr);
+  shader_set_mat4(translucentShader, "projection", context->projection_ptr);
+  printf("Time to render the sphere\n");
+
+  // Draw triangles
+  glDrawElements(GL_TRIANGLES, 480, GL_UNSIGNED_INT, (void*)0);
+
+  glBindVertexArray(0);
 }
 
 void physics_debug_plane_render(struct Plane *plane, struct RenderContext *context, mat4 model){

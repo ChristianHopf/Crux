@@ -53,37 +53,7 @@ struct PhysicsBody *body;
     fprintf(stderr, "Error: collider type provided to physics_add_body is invalid\n");
     return NULL;
   }
-  // Initialize body for the appropriate type
-  // switch(collider.type){
-  //   case COLLIDER_AABB:
-  //     // body->collider.data.aabb = collider.data.aabb;
-  //     body->collider = collider;
-  //
-  //     glm_vec3_copy(entity->position, body->position);
-  //     glm_vec3_copy(entity->rotation, body->rotation);
-  //     glm_vec3_copy(entity->scale, body->scale);
-  //     glm_vec3_copy(entity->velocity, body->velocity);
-  //     break;
-  //   case COLLIDER_PLANE:
-  //     // body->collider.data.plane = collider.data.plane;
-  //     body->collider = collider;
-  //
-  //     glm_vec3_copy(entity->position, body->position);
-  //     glm_vec3_copy(entity->rotation, body->rotation);
-  //     glm_vec3_copy(entity->scale, body->scale);
-  //     glm_vec3_copy(entity->velocity, body->velocity);
-  //     break;
-  //   case COLLIDER_SPHERE:
-  //     body->collider = collider;
-  //     glm_vec3_copy
-      // glm_vec3_copy(entity->position, body->position);
-      // glm_vec3_copy(entity->rotation, body->rotation);
-      // glm_vec3_copy(entity->scale, body->scale);
-      // glm_vec3_copy(entity->velocity, body->velocity);
-  //     break;
-  //   default:
-  //     return NULL;
-  // }
+
   body->collider = collider;
   glm_vec3_copy(entity->position, body->position);
   glm_vec3_copy(entity->rotation, body->rotation);
@@ -157,19 +127,14 @@ bool interval_collision(struct PhysicsBody *body_A, struct PhysicsBody *body_B, 
   float max_move_A = maximum_object_movement_over_time(body_A, start_time, end_time);
   float max_move_B = maximum_object_movement_over_time(body_B, start_time, end_time);
   float max_move_sum = max_move_A + max_move_B;
-  // printf("Max movement by A at start time %f: %f\n", start_time, max_move_A);
-  // printf("Max movement by B at start time %f: %f\n", start_time, max_move_B);
-  // printf("Max move sum between start and end time: %f\n", max_move_sum);
 
   // If initial minimum distance is larger than max_move_sum, exit
   float min_dist_start = minimum_object_distance_at_time(body_A, body_B, start_time);
   if (min_dist_start > max_move_sum) return 0;
-  // printf("Min dist bw sphere and plane at start time %f: %f\n", start_time, min_dist_start);
 
   // If end minimum distance is still larger than max_move_sum, exit (bodies are moving away)
   float min_dist_end = minimum_object_distance_at_time(body_A, body_B, end_time);
   if (min_dist_end > max_move_sum) return 0;
-  // printf("Min dist bw sphere and plane at end time %f: %f\n", end_time, min_dist_end);
 
   // If we recurse down to a small enough interval, assume collision at the start of the interval
   if (end_time - start_time < INTERVAL_EPSILON){
@@ -189,15 +154,6 @@ float maximum_object_movement_over_time(struct PhysicsBody *body, float start_ti
   // print_glm_vec3(body->velocity, "Body velocity");
   // printf("glm_vec3_norm of body velocity: %f\n", glm_vec3_norm(body->velocity));
   return glm_vec3_norm(body->velocity) * delta_time;
-
-  // switch(body->collider.type){
-  //   case COLLIDER_AABB:
-  //     return glm_vec3_norm(body->velocity) * delta_time;
-  //   case COLLIDER_PLANE:
-  //     return 0.0f;
-  //   default:
-  //     return 0.0f;
-  // }
 }
 
 float minimum_object_distance_at_time(struct PhysicsBody *body_A, struct PhysicsBody *body_B, float time){
