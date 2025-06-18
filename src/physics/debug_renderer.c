@@ -83,9 +83,9 @@ void physics_debug_render(struct PhysicsWorld *physics_world, struct RenderConte
         glm_mat4_identity(model);
         glm_translate(model, body->position);
         // Spheres are invariant to rotation
-        // glm_rotate_y(model, glm_rad(body->rotation[1]), model);
-        // glm_rotate_x(model, glm_rad(body->rotation[0]), model);
-        // glm_rotate_z(model, glm_rad(body->rotation[2]), model);
+        glm_rotate_y(model, glm_rad(body->rotation[1]), model);
+        glm_rotate_x(model, glm_rad(body->rotation[0]), model);
+        glm_rotate_z(model, glm_rad(body->rotation[2]), model);
         glm_scale(model, body->scale);
 
         glBindVertexArray(body->VAO);
@@ -253,9 +253,9 @@ void physics_debug_sphere_init(struct PhysicsBody *body){
       float x = stack_xy * cosf(sector_angle); // r * cos(phi) * cos(theta)
       float y = stack_xy * sinf(sector_angle); // r * cos(phi) * sin(theta)
 
-      vertices[vertex_index * 3] = x;
-      vertices[vertex_index * 3 + 1] = y;
-      vertices[vertex_index * 3 + 2] = z;
+      vertices[vertex_index * 3] = sphere->center[0] + x;
+      vertices[vertex_index * 3 + 1] = sphere->center[1] + y;
+      vertices[vertex_index * 3 + 2] = sphere->center[2] + z;
       vertex_index++;
     }
   }

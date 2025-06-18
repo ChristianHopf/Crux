@@ -468,12 +468,13 @@ void scene_render(struct Scene *scene){
     entity_render(&scene->dynamic_entities[i], &context);
   }
 
+  // Draw skybox
+  skybox_render(scene->skybox, &context);
+
+  // Draw physics debug volumes
   if (scene->physics_debug_mode){
     physics_debug_render(scene->physics_world, &context);
   }
-
-  // Draw skybox
-  skybox_render(scene->skybox, &context);
 
   // Render text
   text_render("Crux Engine 0.1", 4.0f, 744.0f, 1.0f, (vec3){1.0f, 1.0f, 1.0f});
