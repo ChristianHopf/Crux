@@ -8,7 +8,7 @@ ResolutionFunction resolution_functions[NUM_COLLIDER_TYPES][NUM_COLLIDER_TYPES] 
 };
 
 void resolve_collision_AABB_plane(struct PhysicsBody *body_A, struct PhysicsBody *body_B, struct CollisionResult result, float delta_time){
-  if (result.colliding && result.hit_time >= 0){
+  // if (result.colliding && result.hit_time >= 0){
     struct AABB *box = &body_A->collider.data.aabb;
     struct Plane *plane = &body_B->collider.data.plane;
 
@@ -59,25 +59,36 @@ void resolve_collision_AABB_plane(struct PhysicsBody *body_A, struct PhysicsBody
       body_A->at_rest = true;
     }
     // Else update body position as normal with remaining time
-    else{
-      // printf("weeeeeeee\n");
-      float remaining_time = delta_time - result.hit_time;
-      float gravity = 9.8f;
-      if (remaining_time > 0){
-        body_A->velocity[1] -= gravity * remaining_time;
-        glm_vec3_muladds(body_A->velocity, remaining_time, body_A->position);
-      }
-    }
-  }
+  //   else{
+  //     // printf("weeeeeeee\n");
+  //     float remaining_time = delta_time - result.hit_time;
+  //     float gravity = 9.8f;
+  //     if (remaining_time > 0){
+  //       body_A->velocity[1] -= gravity * remaining_time;
+  //       glm_vec3_muladds(body_A->velocity, remaining_time, body_A->position);
+  //     }
+  //   }
+  // }
 }
 void resolve_collision_sphere_sphere(struct PhysicsBody *body_A, struct PhysicsBody *body_B, struct CollisionResult result, float delta_time){
+  // if (result.colliding && result.hit_time >= 0){
 
+  // }
+  // Else update body position as normal with remaining time
+  // else{
+  //   float remaining_time = delta_time - result.hit_time;
+  //   float gravity = 9.8f;
+  //   if (remaining_time > 0){
+  //     body_A->velocity[1] -= gravity * remaining_time;
+  //     glm_vec3_muladds(body_A->velocity, remaining_time, body_A->position);
+  //   }
+  // }
 }
 
 void resolve_collision_sphere_plane(struct PhysicsBody *body_A, struct PhysicsBody *body_B, struct CollisionResult result, float delta_time){
   // Might be able to merge collision resolution into one function, with helpers
   // based on types?
-  if (result.colliding && result.hit_time >= 0){
+  // if (result.colliding && result.hit_time >= 0){
     struct Sphere *sphere = &body_A->collider.data.sphere;
     struct Plane *plane = &body_B->collider.data.plane;
 
@@ -120,14 +131,14 @@ void resolve_collision_sphere_plane(struct PhysicsBody *body_A, struct PhysicsBo
       glm_vec3_zero(body_A->velocity);
       body_A->at_rest = true;
     }
-  }
+  // }
   // Else update body position as normal with remaining time
-  else{
-    float remaining_time = delta_time - result.hit_time;
-    float gravity = 9.8f;
-    if (remaining_time > 0){
-      body_A->velocity[1] -= gravity * remaining_time;
-      glm_vec3_muladds(body_A->velocity, remaining_time, body_A->position);
-    }
-  }
+  // else{
+  //   float remaining_time = delta_time - result.hit_time;
+  //   float gravity = 9.8f;
+  //   if (remaining_time > 0){
+  //     body_A->velocity[1] -= gravity * remaining_time;
+  //     glm_vec3_muladds(body_A->velocity, remaining_time, body_A->position);
+  //   }
+  // }
 }
