@@ -6,7 +6,6 @@ NarrowPhaseFunction narrow_phase_functions[NUM_COLLIDER_TYPES][NUM_COLLIDER_TYPE
   [COLLIDER_AABB][COLLIDER_PLANE] = narrow_phase_AABB_plane,
   [COLLIDER_SPHERE][COLLIDER_SPHERE] = narrow_phase_sphere_sphere,
   [COLLIDER_SPHERE][COLLIDER_PLANE] = narrow_phase_sphere_plane,
-  // [COLLIDER_PLANE][COLLIDER_SPHERE] = narrow_phase_sphere_plane,
 };
 
 
