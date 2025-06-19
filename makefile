@@ -22,7 +22,7 @@ TEST_OBJS = $(patsubst $(TEST_DIR)/%.c,$(OBJ_DIR)/test/%.o,$(TEST_FILES))
 UNITY_OBJ = $(OBJ_DIR)/unity.o
 
 # Output binaries
-MAIN_OUT = $(OUT_DIR)/physrotate1
+MAIN_OUT = $(OUT_DIR)/spherecol1
 TEST_OUT = $(OUT_DIR)/test_runner
 
 # Default target

@@ -1,5 +1,7 @@
 #include "physics/narrow_phase.h"
 
+#define EPSILON 0.0001
+
 NarrowPhaseFunction narrow_phase_functions[NUM_COLLIDER_TYPES][NUM_COLLIDER_TYPES] = {
   [COLLIDER_AABB][COLLIDER_PLANE] = narrow_phase_AABB_plane,
   // [COLLIDER_PLANE][COLLIDER_AABB] = narrow_phase_AABB_plane,
@@ -123,6 +125,69 @@ struct CollisionResult narrow_phase_AABB_plane(struct PhysicsBody *body_AABB, st
     // glm_vec3_mulsubs(plane->normal, r, result.point_of_contact);
   }
 
+  return result;
+}
+
+struct CollisionResult narrow_phase_sphere_sphere(struct PhysicsBody *body_sphere_A, struct PhysicsBody *body_sphere_B, float delta_time){
+  struct Sphere *sphere_A = &body_sphere_A->collider.data.sphere;
+  struct Sphere *sphere_B = &body_sphere_B->collider.data.sphere;
+  struct CollisionResult result = {0};
+
+  // Get world space spheres
+  struct Sphere world_sphere_A = {0};
+  glm_vec3_add(sphere_A->center, body_sphere_A->position, world_sphere_A.center);
+  world_sphere_A.radius = sphere_A->radius * body_sphere_A->scale[0];
+
+  struct Sphere world_sphere_B = {0};
+  glm_vec3_add(sphere_B->center, body_sphere_B->position, world_sphere_B.center);
+  world_sphere_B.radius = sphere_B->radius * body_sphere_B->scale[0];
+
+  // s - difference between centers
+  // v - relative velocity
+  // r - sum of radii
+  vec3 s, v;
+  float r;
+  glm_vec3_sub(world_sphere_A.center, world_sphere_B.center, s);
+  glm_vec3_sub(body_sphere_A->velocity, body_sphere_B->velocity, v);
+  r = world_sphere_A.radius + world_sphere_B.radius;
+
+  // If the distance between spheres is less than the sum of their radii,
+  // they're already colliding
+  float c = glm_dot(s, s) - (r * r);
+  if (c < 0.0f){
+    result.hit_time = 0;
+    result.colliding = true;
+  }
+  else{
+    // If the magnitude of the relative velocity is 0,
+    // the spheres aren't moving relative to each other
+    float a = glm_dot(v, v);
+    if (a < EPSILON){
+      result.hit_time = -1;
+      result.colliding = false;
+    }
+
+    // If the projection of the relative velocity on the difference vector is positive,
+    // the spheres are moving away from each other.
+    float b = glm_dot(v, s);
+    if (b >= 0.0f){
+      result.hit_time = -1;
+      result.colliding = false;
+    }
+
+    // If there is no real-valued root for the discriminant of the quadratic equation for t,
+    // the spheres do not collide
+    float d = (b * b) - a * c;
+    if (d < 0.0f){
+      result.hit_time = -1;
+      result.colliding = false;
+    }
+
+    // Two solutions for t, we want the first (smaller) one
+    result.hit_time = (-b - sqrt(d)) / a;
+    result.colliding = true;
+  }
+  
   return result;
 }
 
