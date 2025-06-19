@@ -2,10 +2,21 @@
 #include "collider.h"
 
 ResolutionFunction resolution_functions[NUM_COLLIDER_TYPES][NUM_COLLIDER_TYPES] = {
+  [COLLIDER_AABB][COLLIDER_AABB] = resolve_collision_AABB_AABB,
+  [COLLIDER_AABB][COLLIDER_SPHERE] = resolve_collision_AABB_sphere,
   [COLLIDER_AABB][COLLIDER_PLANE] = resolve_collision_AABB_plane,
   [COLLIDER_SPHERE][COLLIDER_SPHERE] = resolve_collision_sphere_sphere,
   [COLLIDER_SPHERE][COLLIDER_PLANE] = resolve_collision_sphere_plane
 };
+
+
+void resolve_collision_AABB_AABB(struct PhysicsBody *body_A, struct PhysicsBody *body_B, struct CollisionResult result, float delta_time){
+
+}
+
+void resolve_collision_AABB_sphere(struct PhysicsBody *body_A, struct PhysicsBody *body_B, struct CollisionResult result, float delta_time){
+
+}
 
 void resolve_collision_AABB_plane(struct PhysicsBody *body_A, struct PhysicsBody *body_B, struct CollisionResult result, float delta_time){
   struct AABB *box = &body_A->collider.data.aabb;

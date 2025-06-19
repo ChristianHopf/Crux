@@ -3,11 +3,20 @@
 #define EPSILON 0.0001
 
 NarrowPhaseFunction narrow_phase_functions[NUM_COLLIDER_TYPES][NUM_COLLIDER_TYPES] = {
+  [COLLIDER_AABB][COLLIDER_AABB] = narrow_phase_AABB_AABB,
+  [COLLIDER_AABB][COLLIDER_SPHERE] = narrow_phase_AABB_sphere,
   [COLLIDER_AABB][COLLIDER_PLANE] = narrow_phase_AABB_plane,
   [COLLIDER_SPHERE][COLLIDER_SPHERE] = narrow_phase_sphere_sphere,
   [COLLIDER_SPHERE][COLLIDER_PLANE] = narrow_phase_sphere_plane,
 };
 
+struct CollisionResult narrow_phase_AABB_AABB(struct PhysicsBody *body_AABB_A, struct PhysicsBody *body_AABB_B, float delta_time){
+
+}
+
+struct CollisionResult narrow_phase_AABB_sphere(struct PhysicsBody *body_AABB, struct PhysicsBody *body_sphere, float delta_time){
+
+}
 
 struct CollisionResult narrow_phase_AABB_plane(struct PhysicsBody *body_AABB, struct PhysicsBody *body_plane, float delta_time){
   struct AABB *box = &body_AABB->collider.data.aabb;

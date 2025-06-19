@@ -17,6 +17,8 @@ typedef float (*DistanceFunction)(struct PhysicsBody *body_A, struct PhysicsBody
 extern DistanceFunction distance_functions[NUM_COLLIDER_TYPES][NUM_COLLIDER_TYPES];
 
 // Minimum distance functions
+float min_dist_at_time_AABB_AABB(struct PhysicsBody *body_A, struct PhysicsBody *body_B, float time);
+float min_dist_at_time_AABB_sphere(struct PhysicsBody *body_A, struct PhysicsBody *body_B, float time);
 float min_dist_at_time_AABB_plane(struct PhysicsBody *body_A, struct PhysicsBody *body_B, float time);
 float min_dist_at_time_sphere_sphere(struct PhysicsBody *body_A, struct PhysicsBody *body_B, float time);
 float min_dist_at_time_sphere_plane(struct PhysicsBody *body_A, struct PhysicsBody *body_B, float time);
