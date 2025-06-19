@@ -135,8 +135,7 @@ struct CollisionResult narrow_phase_sphere_plane(struct PhysicsBody *body_sphere
   struct Sphere world_sphere = {0};
   glm_vec3_add(sphere->center, body_sphere->position, world_sphere.center);
   // glm_vec3_muladds(body_A->velocity, time, world_sphere.center);
-  glm_vec3_scale(world_sphere.center, body_sphere->scale[0], world_sphere.center);
-  // glm_vec3_scale(world_sphere.radius, body_A->scale[0], world_sphere.radius);
+  // glm_vec3_scale(world_sphere.center, body_sphere->scale[0], world_sphere.center);
   world_sphere.radius = sphere->radius * body_sphere->scale[0];
 
   // Get signed distance from sphere center to plane
@@ -178,7 +177,7 @@ struct CollisionResult narrow_phase_sphere_plane(struct PhysicsBody *body_sphere
 
     // If hit_time is outside of interval, check if already colliding
     if (!result.colliding){
-      if (fabs(s <= world_sphere.radius)){
+      if (abs(s <= world_sphere.radius)){
         result.hit_time = 0;
         result.colliding = true;
       }

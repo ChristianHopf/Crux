@@ -87,7 +87,7 @@ void resolve_collision_sphere_plane(struct PhysicsBody *body_A, struct PhysicsBo
     // Correct penetration
     struct Sphere world_sphere = {0};
     glm_vec3_add(sphere->center, body_A->position, world_sphere.center);
-    glm_vec3_scale(world_sphere.center, body_A->scale[0], world_sphere.center);
+    // glm_vec3_scale(world_sphere.center, body_A->scale[0], world_sphere.center);
     world_sphere.radius = sphere->radius * body_A->scale[0];
 
     float s = glm_dot(world_sphere.center, plane->normal) - plane->distance;

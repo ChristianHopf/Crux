@@ -11,4 +11,5 @@ extern ResolutionFunction resolution_functions[NUM_COLLIDER_TYPES][NUM_COLLIDER_
 
 // Minimum distance functions
 void resolve_collision_AABB_plane(struct PhysicsBody *body_A, struct PhysicsBody *body_B, struct CollisionResult result, float delta_time);
+void resolve_collision_sphere_sphere(struct PhysicsBody *body_A, struct PhysicsBody *body_B, struct CollisionResult result, float delta_time);
 void resolve_collision_sphere_plane(struct PhysicsBody *body_A, struct PhysicsBody *body_B, struct CollisionResult result, float delta_time);

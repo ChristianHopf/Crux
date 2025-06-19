@@ -42,6 +42,31 @@ float min_dist_at_time_AABB_plane(struct PhysicsBody *body_A, struct PhysicsBody
   return glm_max(s - r, 0);
 }
 
+float min_dist_at_time_sphere_sphere(struct PhysicsBody *body_A, struct PhysicsBody *body_B, float time){
+  struct Sphere *sphere_A = &body_A->collider.data.sphere;
+  struct Sphere *sphere_B = &body_B->collider.data.sphere;
+
+  struct Sphere world_sphere_A = {0};
+  glm_vec3_add(sphere_A->center, body_A->position, world_sphere_A.center);
+  glm_vec3_muladds(body_A->velocity, time, world_sphere_A.center);
+  glm_vec3_scale(world_sphere_A.center, body_A->scale[0], world_sphere_A.center);
+  world_sphere_A.radius = sphere_A->radius * body_A->scale[0];
+
+  struct Sphere world_sphere_B = {0};
+  glm_vec3_add(sphere_B->center, body_B->position, world_sphere_B.center);
+  glm_vec3_muladds(body_B->velocity, time, world_sphere_B.center);
+  glm_vec3_scale(world_sphere_B.center, body_B->scale[0], world_sphere_B.center);
+  world_sphere_B.radius = sphere_B->radius * body_B->scale[0];
+
+  // Distance between spheres: distance between centers - sum of radii
+  vec3 difference;
+  glm_vec3_sub(world_sphere_A.center, world_sphere_B.center, difference);
+  float distance_squared = glm_dot(difference, difference);
+  float radius_sum = world_sphere_A.radius + world_sphere_B.radius;
+
+  return distance_squared < (radius_sum * radius_sum) ? 0.0f : sqrt(distance_squared) - radius_sum;
+}
+
 float min_dist_at_time_sphere_plane(struct PhysicsBody *body_A, struct PhysicsBody *body_B, float time){
   // Get pointers to the bodies' colliders
   struct Sphere *sphere = &body_A->collider.data.sphere;
@@ -50,7 +75,7 @@ float min_dist_at_time_sphere_plane(struct PhysicsBody *body_A, struct PhysicsBo
   struct Sphere world_sphere = {0};
   glm_vec3_add(sphere->center, body_A->position, world_sphere.center);
   glm_vec3_muladds(body_A->velocity, time, world_sphere.center);
-  glm_vec3_scale(world_sphere.center, body_A->scale[0], world_sphere.center);
+  // glm_vec3_scale(world_sphere.center, body_A->scale[0], world_sphere.center);
   world_sphere.radius = sphere->radius * body_A->scale[0];
 
   // Not finding a radius of projection, just want signed distance
