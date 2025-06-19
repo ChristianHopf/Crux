@@ -65,19 +65,33 @@ void physics_debug_render(struct PhysicsWorld *physics_world, struct RenderConte
         struct AABB rotated_AABB = {0};
         mat4 eulerA;
         mat3 rotationA;
-        glm_euler_xyz(body->rotation, eulerA);
+
+
+        vec3 rotation_rad;
+        glm_vec3_copy(body->rotation, rotation_rad);
+        glm_vec3_scale(rotation_rad, M_PI / 180.0f, rotation_rad); // Degrees to radians
+        glm_euler_xyz(rotation_rad, eulerA);
         glm_mat4_pick3(eulerA, rotationA);
+        mat3 inv_rotation;
+        glm_mat3_inv(rotationA, inv_rotation);
         vec3 translationA, scaleA;
-        glm_vec3_copy((vec3){0.0f, 0.0f, 0.0f}, translationA);
-        glm_vec3_copy((vec3){1.0f, 1.0f, 1.0f}, scaleA);
-        AABB_update(&body->collider.data.aabb, rotationA, translationA, scaleA, &rotated_AABB);
+        glm_vec3_copy(body->position, translationA); // Use body position
+        glm_vec3_copy(body->scale, scaleA); // Use body scale
+        AABB_update(box, rotationA, translationA, scaleA, &rotated_AABB);
+
+        // glm_euler_xyz(body->rotation, eulerA);
+        // glm_mat4_pick3(eulerA, rotationA);
+        // vec3 translationA, scaleA;
+        // glm_vec3_copy(body->position, translationA);
+        // glm_vec3_copy(body->scale, scaleA);
+        // AABB_update(&body->collider.data.aabb, rotationA, translationA, scaleA, &rotated_AABB);
 
         glm_mat4_identity(model);
-        glm_translate(model, body->position);
+        // glm_translate(model, body->position);
         // glm_rotate_y(model, glm_rad(body->rotation[1]), model);
         // glm_rotate_x(model, glm_rad(body->rotation[0]), model);
         // glm_rotate_z(model, glm_rad(body->rotation[2]), model);
-        glm_scale(model, body->scale);
+        // glm_scale(model, body->scale);
 
         glBindVertexArray(body->VAO);
         glBindBuffer(GL_ARRAY_BUFFER, body->VBO);
@@ -88,11 +102,14 @@ void physics_debug_render(struct PhysicsWorld *physics_world, struct RenderConte
 
         // mat4 model;
         glm_mat4_identity(model);
-        glm_translate(model, body->position);
+        vec3 translation;
+        glm_vec3_add(body->position, sphere->center, translation);
+        glm_translate(model, translation);
+        // glm_translate(model, body->position);
         // Spheres are invariant to rotation
-        glm_rotate_y(model, glm_rad(body->rotation[1]), model);
-        glm_rotate_x(model, glm_rad(body->rotation[0]), model);
-        glm_rotate_z(model, glm_rad(body->rotation[2]), model);
+        // glm_rotate_y(model, glm_rad(body->rotation[1]), model);
+        // glm_rotate_x(model, glm_rad(body->rotation[0]), model);
+        // glm_rotate_z(model, glm_rad(body->rotation[2]), model);
         glm_scale(model, body->scale);
 
         glBindVertexArray(body->VAO);
@@ -144,7 +161,6 @@ void physics_debug_renderer_init(struct PhysicsWorld *physics_world){
         physics_debug_AABB_init(body);
         break;
       case COLLIDER_SPHERE:
-        printf("Time to init debug sphere\n");
         physics_debug_sphere_init(body);
         break;
       case COLLIDER_PLANE:
@@ -236,9 +252,7 @@ void physics_debug_sphere_init(struct PhysicsBody *body){
   float sector_angle, stack_angle;
 
   int num_vertices = (stack_count + 1) * (sector_count + 1);
-  printf("NUM VERTICES IS %d\n", num_vertices);
   int num_indices = (sector_count * ((2 * stack_count) - 2)) * 3;
-  printf("NUM INDICES IS %d\n", num_indices);
   // int num_indices = (sector_count * (stack_count - 2) * 6) + (sector_count * 6);
 
   // Vertices
@@ -247,7 +261,6 @@ void physics_debug_sphere_init(struct PhysicsBody *body){
     fprintf(stderr, "Error: failed to allocate sphere vertices in physics_debug_sphere_init\n");
     return;
   }
-  printf("Allocated %d vertices\n", num_vertices);
 
   int vertex_index = 0;
   for (int i = 0; i <= stack_count; i++){
@@ -260,9 +273,12 @@ void physics_debug_sphere_init(struct PhysicsBody *body){
       float x = stack_xy * cosf(sector_angle); // r * cos(phi) * cos(theta)
       float y = stack_xy * sinf(sector_angle); // r * cos(phi) * sin(theta)
 
-      vertices[vertex_index * 3] = sphere->center[0] + x;
-      vertices[vertex_index * 3 + 1] = sphere->center[1] + y;
-      vertices[vertex_index * 3 + 2] = sphere->center[2] + z;
+      // vertices[vertex_index * 3] = sphere->center[0] + x;
+      // vertices[vertex_index * 3 + 1] = sphere->center[1] + y;
+      // vertices[vertex_index * 3 + 2] = sphere->center[2] + z;
+      vertices[vertex_index * 3] = x;
+      vertices[vertex_index * 3 + 1] = y;
+      vertices[vertex_index * 3 + 2] = z;
       vertex_index++;
     }
   }
@@ -273,7 +289,6 @@ void physics_debug_sphere_init(struct PhysicsBody *body){
     fprintf(stderr, "Error: failed to allocate sphere indices in physics_debug_sphere_init\n");
     return;
   }
-  printf("Allocated %d indices\n", num_indices);
   int k1, k2;
   unsigned int indices_index = 0;
   for (int i = 0; i < stack_count; i++){
@@ -294,7 +309,6 @@ void physics_debug_sphere_init(struct PhysicsBody *body){
       }
     }
   }
-  printf("Time to buffer sphere data\n");
 
   // Buffers
   glGenVertexArrays(1, &body->VAO);
@@ -357,7 +371,6 @@ void physics_debug_sphere_render(struct Sphere *sphere, struct RenderContext *co
   shader_set_mat4(translucentShader, "model", model);
   shader_set_mat4(translucentShader, "view", context->view_ptr);
   shader_set_mat4(translucentShader, "projection", context->projection_ptr);
-  printf("Time to render the sphere\n");
 
   // Draw triangles
   glDrawElements(GL_TRIANGLES, 2280, GL_UNSIGNED_INT, (void*)0);

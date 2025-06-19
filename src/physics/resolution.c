@@ -23,6 +23,7 @@ void resolve_collision_AABB_plane(struct PhysicsBody *body_A, struct PhysicsBody
     mat3 rotationA;
     glm_euler_xyz(body_A->rotation, eulerA);
     glm_mat4_pick3(eulerA, rotationA);
+
     vec3 translationA, scaleA;
     glm_vec3_copy(body_A->position, translationA);
     glm_vec3_copy(body_A->scale, scaleA);
@@ -41,7 +42,7 @@ void resolve_collision_AABB_plane(struct PhysicsBody *body_A, struct PhysicsBody
     }
 
     // Reflect velocity vector over normal
-    float restitution = 0.8f;
+    float restitution = 1.0f;
     float rest_velocity_threshold = 0.1f;
     float v_dot_n = glm_dot(velocity_before, plane->normal);
     vec3 reflection;
@@ -84,8 +85,8 @@ void resolve_collision_sphere_plane(struct PhysicsBody *body_A, struct PhysicsBo
     glm_vec3_muladds(velocity_before, result.hit_time, body_A->position);
 
     // Correct penetration
-    struct Sphere world_sphere;
-    glm_vec3_copy(body_A->position, world_sphere.center);
+    struct Sphere world_sphere = {0};
+    glm_vec3_add(sphere->center, body_A->position, world_sphere.center);
     glm_vec3_scale(world_sphere.center, body_A->scale[0], world_sphere.center);
     world_sphere.radius = sphere->radius * body_A->scale[0];
 

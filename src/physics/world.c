@@ -37,9 +37,6 @@ struct PhysicsBody *body;
     case true:
       body = &physics_world->dynamic_bodies[physics_world->num_dynamic_bodies++];
       body->collider = collider;
-      glm_vec3_copy(entity->position, body->position);
-      glm_vec3_copy(entity->rotation, body->rotation);
-      glm_vec3_copy(entity->scale, body->scale);
       glm_vec3_copy(entity->velocity, body->velocity);
       break;
     case false:
@@ -71,21 +68,24 @@ void physics_step(struct PhysicsWorld *physics_world, float delta_time){
   for(unsigned int i = 0; i < physics_world->num_dynamic_bodies; i++){
     struct PhysicsBody *body_A = &physics_world->dynamic_bodies[i];
 
-    body_A->rotation[0] -= 100.0f * delta_time;
-    body_A->rotation[0] = fmodf(body_A->rotation[0], 360);
-    body_A->rotation[1] -= 100.0f * delta_time;
+    // Collision detection will be off sometimes with AABBs.
+    // I think this is because of angular velocity not being considered.
+    // This should work fine with spheres, though.
+    // body_A->rotation[0] += 100.0f * delta_time;
+    // body_A->rotation[0] = fmodf(body_A->rotation[0], 360);
+    body_A->rotation[1] += 100.0f * delta_time;
     body_A->rotation[1] = fmodf(body_A->rotation[1], 360);
-    body_A->rotation[2] -= 100.0f * delta_time;
-    body_A->rotation[2] = fmodf(body_A->rotation[1], 360);
-    if (body_A->rotation[0] < 0.0f){
-      body_A->rotation[0] += 360;
-    }
+    // body_A->rotation[2] += 100.0f * delta_time;
+    // body_A->rotation[2] = fmodf(body_A->rotation[2], 360);
+    // if (body_A->rotation[0] < 0.0f){
+    //   body_A->rotation[0] += 360;
+    // }
     if (body_A->rotation[1] < 0.0f){
       body_A->rotation[1] += 360;
     }
-    if (body_A->rotation[2] < 0.0f){
-      body_A->rotation[2] += 360;
-    }
+    // if (body_A->rotation[2] < 0.0f){
+    //   body_A->rotation[2] += 360;
+    // }
 
     for (unsigned int j = 0; j < physics_world->num_static_bodies; j++){
       struct PhysicsBody *body_B = &physics_world->static_bodies[j];

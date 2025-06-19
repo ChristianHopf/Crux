@@ -19,6 +19,7 @@ float min_dist_at_time_AABB_plane(struct PhysicsBody *body_A, struct PhysicsBody
   mat3 rotationA;
   glm_euler_xyz(body_A->rotation, eulerA);
   glm_mat4_pick3(eulerA, rotationA);
+
   vec3 translationA, scaleA;
   glm_vec3_copy(body_A->position, translationA);
   glm_vec3_muladds(body_A->velocity, time, translationA);
@@ -36,6 +37,8 @@ float min_dist_at_time_AABB_plane(struct PhysicsBody *body_A, struct PhysicsBody
   float s = glm_dot(plane->normal, worldAABB_A.center) - plane->distance;
 
   // If distance (s - r) is negative, their minimum distance is 0
+  printf("MINIMUM DISTANCE FROM AABB TO PLANE: %f\n", s - r);
+  print_glm_vec3(worldAABB_A.extents, "World AABB extents");
   return glm_max(s - r, 0);
 }
 
@@ -44,8 +47,8 @@ float min_dist_at_time_sphere_plane(struct PhysicsBody *body_A, struct PhysicsBo
   struct Sphere *sphere = &body_A->collider.data.sphere;
   struct Plane *plane = &body_B->collider.data.plane;
 
-  struct Sphere world_sphere;
-  glm_vec3_copy(body_A->position, world_sphere.center);
+  struct Sphere world_sphere = {0};
+  glm_vec3_add(sphere->center, body_A->position, world_sphere.center);
   glm_vec3_muladds(body_A->velocity, time, world_sphere.center);
   glm_vec3_scale(world_sphere.center, body_A->scale[0], world_sphere.center);
   world_sphere.radius = sphere->radius * body_A->scale[0];

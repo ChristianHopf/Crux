@@ -18,6 +18,7 @@ struct CollisionResult narrow_phase_AABB_plane(struct PhysicsBody *body_AABB, st
   mat3 rotationA;
   glm_euler_xyz(body_AABB->rotation, eulerA);
   glm_mat4_pick3(eulerA, rotationA);
+
   vec3 translationA;
   glm_vec3_copy(body_AABB->position, translationA);
   vec3 scaleA;
@@ -131,8 +132,8 @@ struct CollisionResult narrow_phase_sphere_plane(struct PhysicsBody *body_sphere
   struct CollisionResult result = {0};
 
   // Get world space sphere
-  struct Sphere world_sphere;
-  glm_vec3_copy(body_sphere->position, world_sphere.center);
+  struct Sphere world_sphere = {0};
+  glm_vec3_add(sphere->center, body_sphere->position, world_sphere.center);
   // glm_vec3_muladds(body_A->velocity, time, world_sphere.center);
   glm_vec3_scale(world_sphere.center, body_sphere->scale[0], world_sphere.center);
   // glm_vec3_scale(world_sphere.radius, body_A->scale[0], world_sphere.radius);

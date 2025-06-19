@@ -64,10 +64,13 @@ void AABB_update(struct AABB *src, mat3 rotation, vec3 translation, vec3 scale, 
   //     printf("%f %f %f\n", rotation[i][0], rotation[i][1], rotation[i][2]);
   // }
   //
-  // glm_vec3_copy(src->center, dest->center);
-  // glm_vec3_mul(dest->center, scale, dest->center);
-  // glm_mat3_mulv(rotation, dest->center, dest->center);
-  // glm_vec3_add(dest->center, translation, dest->center);
+  glm_vec3_copy(src->center, dest->center);
+  glm_vec3_mul(dest->center, scale, dest->center);
+  glm_mat3_mulv(rotation, dest->center, dest->center);
+  glm_vec3_add(dest->center, translation, dest->center);
+
+  // mat3 inv_rotation;
+  // glm_mat3_inv(rotation, inv_rotation);
 
   for (int i = 0; i < 3; i++){
     dest->center[i] = translation[i];
@@ -78,6 +81,7 @@ void AABB_update(struct AABB *src, mat3 rotation, vec3 translation, vec3 scale, 
     }
     dest->extents[i] *= fabs(scale[i]);
   }
+
   // print_glm_vec3(src->center, "AABB UPDATE: SRC CENTER");
   // print_glm_vec3(dest->center, "AABB UPDATE: DEST CENTER");
   //

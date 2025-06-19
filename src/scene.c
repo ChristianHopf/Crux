@@ -306,6 +306,7 @@ struct Scene *scene_init(char *scene_path){
         struct Sphere sphere;
 
         scene_process_vec3_json(cJSON_GetObjectItemCaseSensitive(collider_data_json, "center"), sphere.center);
+        // glm_vec3_sub(sphere.center, entity->position, sphere.center);
 
         cJSON *radius = cJSON_GetObjectItemCaseSensitive(collider_data_json, "radius");
         if(!cJSON_IsNumber(radius)){
@@ -485,9 +486,6 @@ void scene_pause(struct Scene *scene){
   bool prev = scene->paused;
   scene->paused = !prev;
 }
-
-// void free_scene(struct Scene *scene){
-//   if (scene){
 //     // Rewrite this to actually free everything
 //     free(scene->entities);
 //     free(scene->player.camera);
