@@ -49,13 +49,13 @@ float min_dist_at_time_sphere_sphere(struct PhysicsBody *body_A, struct PhysicsB
   struct Sphere world_sphere_A = {0};
   glm_vec3_add(sphere_A->center, body_A->position, world_sphere_A.center);
   glm_vec3_muladds(body_A->velocity, time, world_sphere_A.center);
-  glm_vec3_scale(world_sphere_A.center, body_A->scale[0], world_sphere_A.center);
+  // glm_vec3_scale(world_sphere_A.center, body_A->scale[0], world_sphere_A.center);
   world_sphere_A.radius = sphere_A->radius * body_A->scale[0];
 
   struct Sphere world_sphere_B = {0};
   glm_vec3_add(sphere_B->center, body_B->position, world_sphere_B.center);
   glm_vec3_muladds(body_B->velocity, time, world_sphere_B.center);
-  glm_vec3_scale(world_sphere_B.center, body_B->scale[0], world_sphere_B.center);
+  // glm_vec3_scale(world_sphere_B.center, body_B->scale[0], world_sphere_B.center);
   world_sphere_B.radius = sphere_B->radius * body_B->scale[0];
 
   // Distance between spheres: distance between centers - sum of radii
