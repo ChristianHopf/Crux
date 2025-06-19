@@ -73,16 +73,16 @@ void physics_step(struct PhysicsWorld *physics_world, float delta_time){
     // This should work fine with spheres, though.
     // body_A->rotation[0] += 100.0f * delta_time;
     // body_A->rotation[0] = fmodf(body_A->rotation[0], 360);
-    body_A->rotation[1] += 100.0f * delta_time;
-    body_A->rotation[1] = fmodf(body_A->rotation[1], 360);
+    // body_A->rotation[1] += 100.0f * delta_time;
+    // body_A->rotation[1] = fmodf(body_A->rotation[1], 360);
     // body_A->rotation[2] += 100.0f * delta_time;
     // body_A->rotation[2] = fmodf(body_A->rotation[2], 360);
     // if (body_A->rotation[0] < 0.0f){
     //   body_A->rotation[0] += 360;
     // }
-    if (body_A->rotation[1] < 0.0f){
-      body_A->rotation[1] += 360;
-    }
+    // if (body_A->rotation[1] < 0.0f){
+    //   body_A->rotation[1] += 360;
+    // }
     // if (body_A->rotation[2] < 0.0f){
     //   body_A->rotation[2] += 360;
     // }
@@ -126,11 +126,54 @@ void physics_step(struct PhysicsWorld *physics_world, float delta_time){
         }
       }
     }
+    // if (!body_A->at_rest){
+    //   float gravity = 9.8f;
+    //   body_A->velocity[1] -= gravity * delta_time;
+    //   glm_vec3_muladds(body_A->velocity, delta_time, body_A->position);
+    // }
+  }
+
+  for(unsigned int i = 0; i < physics_world->num_dynamic_bodies; i++){
+    struct PhysicsBody *body_A = &physics_world->dynamic_bodies[i];
+
+    for(unsigned int j = i + 1; j < physics_world->num_dynamic_bodies; j++){
+      struct PhysicsBody *body_B = &physics_world->dynamic_bodies[j];
+
+      // Order bodies by enum value for function tables
+      if (body_A->collider.type > body_B->collider.type){
+        struct PhysicsBody *temp = body_A;
+        body_A = body_B;
+        body_B = body_A;
+      }
+
+      float hit_time;
+      struct CollisionResult result = {0};
+      if (interval_collision(body_A, body_B, 0, delta_time, &hit_time)){
+        printf("DYNAMIC-DYNAMIC NARROW PHASE\n");
+        NarrowPhaseFunction narrow_phase_function = narrow_phase_functions[body_A->collider.type][body_B->collider.type];
+        if (!narrow_phase_function){
+        fprintf(stderr, "Error: no narrow phase function found for collider types %d, %d\n",
+                  body_A->collider.type, body_B->collider.type);
+        }
+        else{
+          result = narrow_phase_function(body_A, body_B, delta_time);
+        }
+      }
+      if (result.colliding && result.hit_time >= 0){
+        ResolutionFunction resolution_function = resolution_functions[body_A->collider.type][body_B->collider.type];
+        if (!resolution_function){
+          fprintf(stderr, "Error: no collision resolution function found for types %d and %d\n",
+                  body_A->collider.type, body_B->collider.type);
+        }
+        else{
+          resolution_function(body_A, body_B, result, delta_time);
+        }
+      }
+    }
     if (!body_A->at_rest){
       float gravity = 9.8f;
       body_A->velocity[1] -= gravity * delta_time;
       glm_vec3_muladds(body_A->velocity, delta_time, body_A->position);
-
     }
   }
 }
@@ -172,5 +215,10 @@ float maximum_object_movement_over_time(struct PhysicsBody *body, float start_ti
 float minimum_object_distance_at_time(struct PhysicsBody *body_A, struct PhysicsBody *body_B, float time){
   // Call the appropriate distance function from the table
   DistanceFunction distance_function = distance_functions[body_A->collider.type][body_B->collider.type];
+  if (!distance_function){
+    fprintf(stderr, "Error: no minimum distance function found for types %d and %d\n",
+            body_A->collider.type, body_B->collider.type);
+    return 0;
+  }
   return distance_function(body_A, body_B, time);
 }

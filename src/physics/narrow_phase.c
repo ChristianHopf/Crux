@@ -4,7 +4,7 @@
 
 NarrowPhaseFunction narrow_phase_functions[NUM_COLLIDER_TYPES][NUM_COLLIDER_TYPES] = {
   [COLLIDER_AABB][COLLIDER_PLANE] = narrow_phase_AABB_plane,
-  // [COLLIDER_PLANE][COLLIDER_AABB] = narrow_phase_AABB_plane,
+  [COLLIDER_SPHERE][COLLIDER_SPHERE] = narrow_phase_sphere_sphere,
   [COLLIDER_SPHERE][COLLIDER_PLANE] = narrow_phase_sphere_plane,
   // [COLLIDER_PLANE][COLLIDER_SPHERE] = narrow_phase_sphere_plane,
 };
@@ -188,6 +188,9 @@ struct CollisionResult narrow_phase_sphere_sphere(struct PhysicsBody *body_spher
     result.colliding = true;
   }
   
+  if (result.colliding){
+    printf("SPHERE COLLISION\n");
+  }
   return result;
 }
 
@@ -205,7 +208,7 @@ struct CollisionResult narrow_phase_sphere_plane(struct PhysicsBody *body_sphere
 
   // Get signed distance from sphere center to plane
   float s = glm_dot(world_sphere.center, plane->normal) - plane->distance;
-  printf("Signed distance from sphere center to plane: %f\n", s);
+  // printf("Signed distance from sphere center to plane: %f\n", s);
 
   // Get velocity along normal
   float n_dot_v = glm_dot(body_sphere->velocity, plane->normal);
