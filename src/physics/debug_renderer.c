@@ -66,30 +66,20 @@ void physics_debug_render(struct PhysicsWorld *physics_world, struct RenderConte
         mat4 eulerA;
         mat3 rotationA;
 
-
         vec3 rotation_rad;
         glm_vec3_copy(body->rotation, rotation_rad);
         glm_vec3_scale(rotation_rad, M_PI / 180.0f, rotation_rad); // Degrees to radians
         glm_euler_xyz(rotation_rad, eulerA);
         glm_mat4_pick3(eulerA, rotationA);
-        mat3 inv_rotation;
-        glm_mat3_inv(rotationA, inv_rotation);
         vec3 translationA, scaleA;
         glm_vec3_copy(body->position, translationA); // Use body position
         glm_vec3_copy(body->scale, scaleA); // Use body scale
         AABB_update(box, rotationA, translationA, scaleA, &rotated_AABB);
 
-        // glm_euler_xyz(body->rotation, eulerA);
-        // glm_mat4_pick3(eulerA, rotationA);
-        // vec3 translationA, scaleA;
-        // glm_vec3_copy(body->position, translationA);
-        // glm_vec3_copy(body->scale, scaleA);
-        // AABB_update(&body->collider.data.aabb, rotationA, translationA, scaleA, &rotated_AABB);
-
         glm_mat4_identity(model);
         // glm_translate(model, body->position);
-        // glm_rotate_y(model, glm_rad(body->rotation[1]), model);
-        // glm_rotate_x(model, glm_rad(body->rotation[0]), model);
+        // glm_rotate_x(model, glm_rad(body->rotation[1]), model);
+        // glm_rotate_y(model, glm_rad(body->rotation[0]), model);
         // glm_rotate_z(model, glm_rad(body->rotation[2]), model);
         // glm_scale(model, body->scale);
 

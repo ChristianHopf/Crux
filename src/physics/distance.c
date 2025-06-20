@@ -14,7 +14,41 @@ float min_dist_at_time_AABB_AABB(struct PhysicsBody *body_A, struct PhysicsBody 
 }
 
 float min_dist_at_time_AABB_sphere(struct PhysicsBody *body_A, struct PhysicsBody *body_B, float time){
+  struct AABB *box = &body_A->collider.data.aabb;
+  struct Sphere *sphere = &body_B->collider.data.sphere;
 
+  // Get world space bodies
+  mat4 eulerA;
+  mat3 rotationA;
+  glm_euler_xyz(body_A->rotation, eulerA);
+  glm_mat4_pick3(eulerA, rotationA);
+
+  vec3 translationA, scaleA;
+  glm_vec3_copy(body_A->position, translationA);
+  glm_vec3_muladds(body_A->velocity, time, translationA);
+  glm_vec3_copy(body_A->scale, scaleA);
+    
+  struct AABB world_AABB = {0};
+  AABB_update(box, rotationA, translationA, scaleA, &world_AABB);
+
+  struct Sphere world_sphere = {0};
+  glm_vec3_add(sphere->center, body_B->position, world_sphere.center);
+  glm_vec3_muladds(body_B->velocity, time, world_sphere.center);
+  world_sphere.radius = sphere->radius * body_B->scale[0];
+
+  // Get squared distance between center and AABB
+  float distance_squared = 0.0f;
+  for(int i = 0; i < 3; i++){
+    float v = world_sphere.center[i];
+    float min_extent = world_AABB.center[i] - world_AABB.extents[i];
+    float max_extent = world_AABB.center[i] + world_AABB.extents[i];
+
+    if (v < min_extent) distance_squared += (min_extent - v) * (min_extent - v);
+    if (v > min_extent) distance_squared += (v - min_extent) * (v - min_extent);
+  }
+
+  // Return 0 or sqrt like with sphere-sphere
+  return distance_squared < (world_sphere.radius * world_sphere.radius) ? 0.0f : sqrt(distance_squared) - world_sphere.radius;
 }
 
 float min_dist_at_time_AABB_plane(struct PhysicsBody *body_A, struct PhysicsBody *body_B, float time){
@@ -46,8 +80,6 @@ float min_dist_at_time_AABB_plane(struct PhysicsBody *body_A, struct PhysicsBody
   float s = glm_dot(plane->normal, worldAABB_A.center) - plane->distance;
 
   // If distance (s - r) is negative, their minimum distance is 0
-  printf("MINIMUM DISTANCE FROM AABB TO PLANE: %f\n", s - r);
-  print_glm_vec3(worldAABB_A.extents, "World AABB extents");
   return glm_max(s - r, 0);
 }
 
@@ -58,13 +90,11 @@ float min_dist_at_time_sphere_sphere(struct PhysicsBody *body_A, struct PhysicsB
   struct Sphere world_sphere_A = {0};
   glm_vec3_add(sphere_A->center, body_A->position, world_sphere_A.center);
   glm_vec3_muladds(body_A->velocity, time, world_sphere_A.center);
-  // glm_vec3_scale(world_sphere_A.center, body_A->scale[0], world_sphere_A.center);
   world_sphere_A.radius = sphere_A->radius * body_A->scale[0];
 
   struct Sphere world_sphere_B = {0};
   glm_vec3_add(sphere_B->center, body_B->position, world_sphere_B.center);
   glm_vec3_muladds(body_B->velocity, time, world_sphere_B.center);
-  // glm_vec3_scale(world_sphere_B.center, body_B->scale[0], world_sphere_B.center);
   world_sphere_B.radius = sphere_B->radius * body_B->scale[0];
 
   // Distance between spheres: distance between centers - sum of radii

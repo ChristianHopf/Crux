@@ -59,35 +59,37 @@ void AABB_update(struct AABB *src, mat3 rotation, vec3 translation, vec3 scale, 
   // glm_vec3_zero(dest->extents);
   // print_glm_vec3(dest->center, "ZEROED DEST CENTER");
   // print_glm_vec3(dest->extents, "ZEROED DEST EXTENTS");
-  // printf("Rotation Matrix:\n");
-  // for (int i = 0; i < 3; i++) {
-  //     printf("%f %f %f\n", rotation[i][0], rotation[i][1], rotation[i][2]);
-  // }
+  printf("AABB_update Rotation Matrix:\n");
+  for (int i = 0; i < 3; i++) {
+      printf("%f %f %f\n", rotation[i][0], rotation[i][1], rotation[i][2]);
+  }
   //
-  glm_vec3_copy(src->center, dest->center);
-  glm_vec3_mul(dest->center, scale, dest->center);
-  glm_mat3_mulv(rotation, dest->center, dest->center);
-  glm_vec3_add(dest->center, translation, dest->center);
+  // glm_vec3_copy(src->center, dest->center);
+  // glm_vec3_mul(dest->center, scale, dest->center);
+  // glm_mat3_mulv(rotation, dest->center, dest->center);
+  // glm_vec3_add(dest->center, translation, dest->center);
 
   // mat3 inv_rotation;
   // glm_mat3_inv(rotation, inv_rotation);
 
+  // Ericson's algorithm uses a row-major rotation matrix,
+  // but GLM expects column-major. Swap i and j to match model rendering
   for (int i = 0; i < 3; i++){
     dest->center[i] = translation[i];
     dest->extents[i] = 0.0f;
     for (int j = 0; j < 3; j++){
-      dest->center[i] += rotation[i][j] * src->center[j];
-      dest->extents[i] += fabs(rotation[i][j]) * src->extents[j];
+      dest->center[i] += rotation[j][i] * src->center[j];
+      dest->extents[i] += fabs(rotation[j][i]) * src->extents[j] * fabs(scale[i]);
     }
-    dest->extents[i] *= fabs(scale[i]);
+    // dest->extents[i] *= fabs(scale[i]);
   }
 
   // print_glm_vec3(src->center, "AABB UPDATE: SRC CENTER");
   // print_glm_vec3(dest->center, "AABB UPDATE: DEST CENTER");
   //
-  printf("ORIGINAL AND ROTATED AABBS\n");
-  print_aabb(src);
-  print_aabb(dest);
+  // printf("ORIGINAL AND ROTATED AABBS\n");
+  // print_aabb(src);
+  // print_aabb(dest);
 }
 
 //Figure out an optimal algorithm for this later.

@@ -9,10 +9,13 @@ void entity_render(struct Entity *entity, struct RenderContext *context){
   // Translate
   glm_translate(model, entity->position);
   // Rotate
+  vec3 rotation_radians = {glm_rad(entity->rotation[0]), glm_rad(entity->rotation[1]), glm_rad(entity->rotation[2])};
+  mat4 rotation;
+  glm_euler_xyz(rotation_radians, rotation);
+  glm_mul(model, rotation, model);
+  // glm_rotate_x(model, glm_rad(entity->rotation[0]), model);
   // glm_rotate_y(model, glm_rad(entity->rotation[1]), model);
-  glm_rotate_x(model, glm_rad(-entity->rotation[0]), model);
-  glm_rotate_y(model, glm_rad(-entity->rotation[1]), model);
-  glm_rotate_z(model, glm_rad(-entity->rotation[2]), model);
+  // glm_rotate_z(model, glm_rad(entity->rotation[2]), model);
   // Scale
   glm_scale(model, entity->scale);
 

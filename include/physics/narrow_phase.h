@@ -24,3 +24,6 @@ struct CollisionResult narrow_phase_AABB_sphere(struct PhysicsBody *body_AABB, s
 struct CollisionResult narrow_phase_AABB_plane(struct PhysicsBody *body_AABB, struct PhysicsBody *body_plane, float delta_time);
 struct CollisionResult narrow_phase_sphere_sphere(struct PhysicsBody *body_sphere_A, struct PhysicsBody *body_sphere_B, float delta_time);
 struct CollisionResult narrow_phase_sphere_plane(struct PhysicsBody *body_sphere, struct PhysicsBody *body_plane, float delta_time);
+
+// Helper tests
+bool ray_intersect_AABB(vec3 p, vec3 d, struct AABB *e, float *hit_time, float end_time);

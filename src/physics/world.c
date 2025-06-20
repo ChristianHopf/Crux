@@ -4,6 +4,7 @@
 #include "resolution.h"
 #include "utils.h"
 #include <cglm/vec3.h>
+#include <stdbool.h>
 
 #define MAX_PHYSICS_BODIES 128
 
@@ -38,6 +39,7 @@ struct PhysicsBody *body;
       body = &physics_world->dynamic_bodies[physics_world->num_dynamic_bodies++];
       body->collider = collider;
       glm_vec3_copy(entity->velocity, body->velocity);
+      printf("Added dynamic body of type %d\n", collider.type);
       break;
     case false:
       body = &physics_world->static_bodies[physics_world->num_static_bodies++];
@@ -71,21 +73,21 @@ void physics_step(struct PhysicsWorld *physics_world, float delta_time){
     // Collision detection will be off sometimes with AABBs.
     // I think this is because of angular velocity not being considered.
     // This should work fine with spheres, though.
-    // body_A->rotation[0] += 100.0f * delta_time;
-    // body_A->rotation[0] = fmodf(body_A->rotation[0], 360);
+    body_A->rotation[0] += 100.0f * delta_time;
+    body_A->rotation[0] = fmodf(body_A->rotation[0], 360);
     body_A->rotation[1] += 100.0f * delta_time;
     body_A->rotation[1] = fmodf(body_A->rotation[1], 360);
-    // body_A->rotation[2] += 100.0f * delta_time;
-    // body_A->rotation[2] = fmodf(body_A->rotation[2], 360);
-    // if (body_A->rotation[0] < 0.0f){
-    //   body_A->rotation[0] += 360;
-    // }
+    body_A->rotation[2] += 100.0f * delta_time;
+    body_A->rotation[2] = fmodf(body_A->rotation[2], 360);
+    if (body_A->rotation[0] < 0.0f){
+      body_A->rotation[0] += 360;
+    }
     if (body_A->rotation[1] < 0.0f){
       body_A->rotation[1] += 360;
     }
-    // if (body_A->rotation[2] < 0.0f){
-    //   body_A->rotation[2] += 360;
-    // }
+    if (body_A->rotation[2] < 0.0f){
+      body_A->rotation[2] += 360;
+    }
 
     for (unsigned int j = 0; j < physics_world->num_static_bodies; j++){
       struct PhysicsBody *body_B = &physics_world->static_bodies[j];
@@ -101,7 +103,6 @@ void physics_step(struct PhysicsWorld *physics_world, float delta_time){
       float hit_time;
       struct CollisionResult result = {0};
       if (interval_collision(body_A, body_B, 0, delta_time, &hit_time)){
-        printf("NARROW PHASE\n");
         // NARROW PHASE
         NarrowPhaseFunction narrow_phase_function = narrow_phase_functions[body_A->collider.type][body_B->collider.type];
         if (!narrow_phase_function){
@@ -115,7 +116,6 @@ void physics_step(struct PhysicsWorld *physics_world, float delta_time){
 
       // COLLISION RESOLUTION
       if (result.colliding && result.hit_time >= 0){
-        printf("COLLISION\n");
         ResolutionFunction resolution_function = resolution_functions[body_A->collider.type][body_B->collider.type];
         if (!resolution_function){
           fprintf(stderr, "Error: no collision resolution function found for types %d and %d\n",
@@ -136,20 +136,23 @@ void physics_step(struct PhysicsWorld *physics_world, float delta_time){
   for(unsigned int i = 0; i < physics_world->num_dynamic_bodies; i++){
     struct PhysicsBody *body_A = &physics_world->dynamic_bodies[i];
 
-    for(unsigned int j = i + 1; j < physics_world->num_dynamic_bodies; j++){
+    for(unsigned int j = 0; j < physics_world->num_dynamic_bodies; j++){
+      if (i == j) continue;
+
       struct PhysicsBody *body_B = &physics_world->dynamic_bodies[j];
 
       // Order bodies by enum value for function tables
+      bool body_swap = false;
       if (body_A->collider.type > body_B->collider.type){
         struct PhysicsBody *temp = body_A;
         body_A = body_B;
-        body_B = body_A;
+        body_B = temp;
+        body_swap = true;
       }
 
       float hit_time;
       struct CollisionResult result = {0};
       if (interval_collision(body_A, body_B, 0, delta_time, &hit_time)){
-        printf("DYNAMIC-DYNAMIC NARROW PHASE\n");
         NarrowPhaseFunction narrow_phase_function = narrow_phase_functions[body_A->collider.type][body_B->collider.type];
         if (!narrow_phase_function){
         fprintf(stderr, "Error: no narrow phase function found for collider types %d, %d\n",
@@ -168,6 +171,12 @@ void physics_step(struct PhysicsWorld *physics_world, float delta_time){
         else{
           resolution_function(body_A, body_B, result, delta_time);
         }
+      }
+      // Reorder bodies by enum value
+      if (body_swap){
+        struct PhysicsBody *temp = body_A;
+        body_A = body_B;
+        body_B = temp;
       }
     }
     if (!body_A->at_rest){

@@ -1,3 +1,4 @@
+#include <stdbool.h>
 #include "physics/narrow_phase.h"
 
 #define EPSILON 0.0001
@@ -15,7 +16,84 @@ struct CollisionResult narrow_phase_AABB_AABB(struct PhysicsBody *body_AABB_A, s
 }
 
 struct CollisionResult narrow_phase_AABB_sphere(struct PhysicsBody *body_AABB, struct PhysicsBody *body_sphere, float delta_time){
+  struct AABB *box = &body_AABB->collider.data.aabb;
+  struct Sphere *sphere = &body_sphere->collider.data.sphere;
+  struct CollisionResult result = {0};
 
+  // Get world space bodies
+  mat4 eulerA;
+  mat3 rotationA;
+  glm_euler_xyz(body_AABB->rotation, eulerA);
+  glm_mat4_pick3(eulerA, rotationA);
+  vec3 translationA;
+  glm_vec3_copy(body_AABB->position, translationA);
+  vec3 scaleA;
+  glm_vec3_copy(body_AABB->scale, scaleA);
+  struct AABB world_AABB = {0};
+  AABB_update(box, rotationA, translationA, scaleA, &world_AABB);
+
+  struct Sphere world_sphere = {0};
+  glm_vec3_add(sphere->center, body_sphere->position, world_sphere.center);
+  world_sphere.radius = sphere->radius * body_sphere->scale[0];
+
+  // Get the AABB e that bounds the world_AABB swept by the sphere
+  struct AABB e = world_AABB;
+  glm_vec3_adds(e.extents, world_sphere.radius, e.extents);
+
+  vec3 rel_v;
+  glm_vec3_sub(body_AABB->velocity, body_sphere->velocity, rel_v);
+
+  // LAZY VERSION: Assume sphere direction ray intersection with the bounding AABB e an intersection with the world AABB.
+  // Come back to this later for more precise edge and corner testing and point of contact.
+  // vec3 p;
+  float t_min;
+  bool intersect = ray_intersect_AABB(world_sphere.center, rel_v, &e, &t_min, delta_time);
+  if (!intersect || t_min > delta_time){
+    result.hit_time = -1;
+    result.colliding = false;
+    printf("NO AABB SPHERE COLLISION\n");
+  }
+  else{
+    result.hit_time = t_min;
+    result.colliding = true;
+    printf("AABB SPHERE COLLISION\n");
+  }
+
+  return result;
+
+  // else{
+  //   // Bit flags for the faces outside of which the point p of intersection between sphere center and AABB e lies
+  //   // -u: min, v: max
+  //   // Ex: u = 6, v = 1 => The sphere lies on the min side of e's y and z extents, and the max size of its x extent.
+  //   int u, v = 0;
+  //   vec3 box_min, box_max;
+  //   glm_vec3_sub(world_AABB.center, world_AABB.extents, box_min);
+  //   glm_vec3_add(world_AABB.center, world_AABB.extents, box_max);
+  //   if (p[0] < box_min[0]) u |= 1;
+  //   if (p[0] > box_max[0]) v |= 1;
+  //   if (p[1] < box_min[1]) u |= 2;
+  //   if (p[1] > box_max[1]) v |= 2;
+  //   if (p[2] < box_min[2]) u |= 4;
+  //   if (p[2] > box_max[2]) v |= 4;
+  //
+  //   // Bit mask m = u OR v
+  //   int m = u + v;
+  //
+  //   // Line segment
+  //
+  //   // If all 3 bits were set, p is in some vertex region
+  //   if (m == 7){
+  //
+  //   }
+  //   // If only 1 bit was set, p is in some face region
+  //   else if ((m & (m - 1)) == 0){
+  //
+  //   }
+  //   // Else, p is in some edge region. Intersect with the edge capsule
+  //   else{
+  //
+  //   }
+  // }
 }
 
 struct CollisionResult narrow_phase_AABB_plane(struct PhysicsBody *body_AABB, struct PhysicsBody *body_plane, float delta_time){
@@ -264,4 +342,45 @@ struct CollisionResult narrow_phase_sphere_plane(struct PhysicsBody *body_sphere
   }
 
   return result;
+}
+
+
+// HELPERS
+bool ray_intersect_AABB(vec3 p, vec3 d, struct AABB *aabb, float *hit_time, float end_time){
+  *hit_time = 0.0f;
+  float t_max = end_time;
+
+  // Get min and max
+  vec3 box_min, box_max;
+  glm_vec3_sub(aabb->center, aabb->extents, box_min);
+  glm_vec3_add(aabb->center, aabb->extents, box_max);
+
+  // Three slabs (pairs of parallel box faces)
+  for(int i = 0; i < 3; i++){
+    // Relative velocity on this axis is parallel to its slab.
+    // If it doesn't intersect on this axis, it doesn't intersect
+    if (fabsf(d[i]) < EPSILON){
+      if (p[i] < box_min[i] || p[i] > box_max[i]) return false;
+    }
+    else{
+      // t1: time to intersect the closer end of this slab
+      // t2: time to intersect the farther end of this slab
+      float t1 = (box_min[i] - p[i]) / d[i];
+      float t2 = (box_max[i] - p[i]) / d[i];
+      if (t1 > t2){
+        float temp = t1;
+        t1 = t2;
+        t2 = temp;
+      }
+
+      // Intersection of slab intersection intervals:
+      // The segment between the farthest entry point and the nearest exit point
+      if (t1 > *hit_time) *hit_time = t1;
+      if (t2 < t_max) t_max = t2;
+      // If we ever exit before entering another slab, we don't pass through the intersecting volume
+      if (*hit_time > t_max) return 0;
+    }
+  }
+  // The ray intersects all 3 slabs
+  return true;
 }
