@@ -97,8 +97,8 @@ void physics_debug_render(struct PhysicsWorld *physics_world, struct RenderConte
         glm_translate(model, translation);
         // glm_translate(model, body->position);
         // Spheres are invariant to rotation
-        // glm_rotate_y(model, glm_rad(body->rotation[1]), model);
         // glm_rotate_x(model, glm_rad(body->rotation[0]), model);
+        // glm_rotate_y(model, glm_rad(body->rotation[1]), model);
         // glm_rotate_z(model, glm_rad(body->rotation[2]), model);
         glm_scale(model, body->scale);
 

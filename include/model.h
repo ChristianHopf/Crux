@@ -33,12 +33,11 @@ struct Model {
   unsigned int num_meshes;
   unsigned int num_materials;
   char *directory;
-  struct AABB aabb;
 };
 
 bool model_load(struct Model *model, const char *path);
-struct AABB model_process_node(struct Model *model, struct aiNode *node, const struct aiScene *scene, struct aiMatrix4x4 parent_transform, unsigned int *index);
-struct AABB model_process_mesh(struct aiMesh *ai_mesh, const struct aiScene *scene, struct aiMatrix4x4 node_transform, Mesh *dest_mesh);
+void model_process_node(struct Model *model, struct aiNode *node, const struct aiScene *scene, struct aiMatrix4x4 parent_transform, unsigned int *index);
+void model_process_mesh(struct aiMesh *ai_mesh, const struct aiScene *scene, struct aiMatrix4x4 node_transform, Mesh *dest_mesh);
 void model_draw(struct Model *model, Shader *shader);
 void model_free(struct Model *model);
 GLuint model_load_texture_type(struct Model *model, const struct aiMaterial *material, const struct aiScene *scene, enum aiTextureType type);
