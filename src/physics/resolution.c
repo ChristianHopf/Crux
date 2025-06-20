@@ -43,18 +43,31 @@ void resolve_collision_AABB_sphere(struct PhysicsBody *body_A, struct PhysicsBod
   glm_vec3_add(sphere->center, body_B->position, world_sphere.center);
   world_sphere.radius = sphere->radius * body_B->scale[0];
 
-  // If the sum of the projection of the extents onto the vector between centers and the sphere's radius
-  // is greater than the distance between centers, the bodies are penetrating
+  // Get closest point on AABB to sphere center
+  vec3 closest;
+  for(int i = 0; i < 3; i++){
+    float min = world_AABB.center[i] - world_AABB.extents[i];
+    float max = world_AABB.center[i] + world_AABB.extents[i];
+    if (min > world_sphere.center[i]){
+      closest[i] = min;
+    }
+    else if (max > world_sphere.center[i]){
+      closest[i] = world_sphere.center[i];
+    }
+    else{
+      closest[i] = max;
+    }
+  }
+
   vec3 difference, contact_normal;
-  glm_vec3_sub(world_AABB.center, world_sphere.center, difference);
+  glm_vec3_sub(world_sphere.center, closest, difference);
   float s = glm_vec3_norm(difference);
-  float r = glm_dot(world_AABB.extents, difference) + world_sphere.radius;
-  float penetration = (s < r) ? (r - s) + 0.001 : 0.0f;
+  float penetration = (s < world_sphere.radius) ? (world_sphere.radius - s) + 0.001 : 0.0f;
   glm_vec3_copy(difference, contact_normal);
   glm_vec3_normalize(contact_normal);
   if (penetration > 0.0f){
-    glm_vec3_muladds(contact_normal, (penetration / 2), body_A->position);
-    glm_vec3_mulsubs(contact_normal, (penetration / 2), body_B->position);
+    glm_vec3_muladds(contact_normal, (penetration / 2), body_B->position);
+    glm_vec3_mulsubs(contact_normal, (penetration / 2), body_A->position);
   }
 
   // Reflect velocities
