@@ -113,8 +113,6 @@ struct CollisionResult narrow_phase_AABB_plane(struct PhysicsBody *body_AABB, st
   glm_vec3_copy(body_AABB->scale, scaleA);
   struct AABB worldAABB_A = {0};
   AABB_update(box, rotationA, translationA, scaleA, &worldAABB_A);
-  printf("NARROW PHASE WORLD SPACE AABB\n");
-  print_aabb(&worldAABB_A);
 
   // Get relative velocity
   vec3 rel_v;
@@ -160,7 +158,6 @@ struct CollisionResult narrow_phase_AABB_plane(struct PhysicsBody *body_AABB, st
     // Moving towards plane
     if (n_dot_v < 0){
       result.hit_time = (r - s) / -n_dot_v;
-      printf("Moving toward plane, result hit time (towards plane)%f\n", result.hit_time);
       result.colliding = (result.hit_time >= 0 && result.hit_time <= delta_time);
     }
     // Moving away from plane
@@ -273,10 +270,7 @@ struct CollisionResult narrow_phase_sphere_sphere(struct PhysicsBody *body_spher
     result.hit_time = (-b - sqrt(d)) / a;
     result.colliding = true;
   }
-  
-  if (result.colliding){
-    printf("SPHERE COLLISION\n");
-  }
+
   return result;
 }
 

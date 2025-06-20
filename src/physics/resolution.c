@@ -15,7 +15,66 @@ void resolve_collision_AABB_AABB(struct PhysicsBody *body_A, struct PhysicsBody 
 }
 
 void resolve_collision_AABB_sphere(struct PhysicsBody *body_A, struct PhysicsBody *body_B, struct CollisionResult result, float delta_time){
+  struct AABB *box = &body_A->collider.data.aabb;
+  struct Sphere *sphere = &body_B->collider.data.sphere;
 
+  // Move bodies according to velocity
+  float gravity = 9.8f;
+  vec3 velocity_before_A, velocity_before_B;
+  glm_vec3_copy(body_A->velocity, velocity_before_A);
+  glm_vec3_copy(body_B->velocity, velocity_before_B);
+  velocity_before_A[1] -= gravity * result.hit_time;
+  velocity_before_B[1] -= gravity * result.hit_time;
+  glm_vec3_muladds(velocity_before_A, result.hit_time, body_A->position);
+  glm_vec3_muladds(velocity_before_B, result.hit_time, body_B->position);
+
+  // Get world space bodies for penetration correction
+  struct AABB world_AABB = {0};
+  mat4 eulerA;
+  mat3 rotationA;
+  vec3 translationA, scaleA;
+  glm_euler_xyz(body_A->rotation, eulerA);
+  glm_mat4_pick3(eulerA, rotationA);
+  glm_vec3_copy(body_A->position, translationA);
+  glm_vec3_copy(body_A->scale, scaleA);
+  AABB_update(box, rotationA, translationA, scaleA, &world_AABB);
+
+  struct Sphere world_sphere = {0};
+  glm_vec3_add(sphere->center, body_B->position, world_sphere.center);
+  world_sphere.radius = sphere->radius * body_B->scale[0];
+
+  // If the sum of the projection of the extents onto the vector between centers and the sphere's radius
+  // is greater than the distance between centers, the bodies are penetrating
+  vec3 difference, contact_normal;
+  glm_vec3_sub(world_AABB.center, world_sphere.center, difference);
+  float s = glm_vec3_norm(difference);
+  float r = glm_dot(world_AABB.extents, difference) + world_sphere.radius;
+  float penetration = (s < r) ? (r - s) + 0.001 : 0.0f;
+  glm_vec3_copy(difference, contact_normal);
+  glm_vec3_normalize(contact_normal);
+  if (penetration > 0.0f){
+    glm_vec3_muladds(contact_normal, (penetration / 2), body_A->position);
+    glm_vec3_mulsubs(contact_normal, (penetration / 2), body_B->position);
+  }
+
+  // Reflect velocities
+  float restitution = 1.0f;
+  float rest_velocity_threshold = 0.1f;
+  float v_dot_n_A = glm_dot(velocity_before_A, contact_normal);
+  float v_dot_n_B = glm_dot(velocity_before_B, contact_normal);
+  vec3 reflection_A;
+  vec3 reflection_B;
+  glm_vec3_scale(contact_normal, -2.0f * v_dot_n_A * restitution, reflection_A);
+  glm_vec3_scale(contact_normal, -2.0f * v_dot_n_B * restitution, reflection_B);
+  glm_vec3_add(velocity_before_A, reflection_A, body_A->velocity);
+  glm_vec3_add(velocity_before_B, reflection_B, body_B->velocity);
+
+  v_dot_n_A = glm_dot(contact_normal, body_A->velocity);
+  v_dot_n_B = glm_dot(contact_normal, body_B->velocity);
+  if (v_dot_n_A < 0.5 && glm_dot(contact_normal, (vec3){0.0f, -1.0f, 0.0f}) == -1){
+    glm_vec3_zero(body_A->velocity);
+    body_A->at_rest = true;
+  }
 }
 
 void resolve_collision_AABB_plane(struct PhysicsBody *body_A, struct PhysicsBody *body_B, struct CollisionResult result, float delta_time){
@@ -32,13 +91,13 @@ void resolve_collision_AABB_plane(struct PhysicsBody *body_A, struct PhysicsBody
   struct AABB worldAABB = {0};
   mat4 eulerA;
   mat3 rotationA;
+  vec3 translationA, scaleA;
   glm_euler_xyz(body_A->rotation, eulerA);
   glm_mat4_pick3(eulerA, rotationA);
-
-  vec3 translationA, scaleA;
   glm_vec3_copy(body_A->position, translationA);
   glm_vec3_copy(body_A->scale, scaleA);
   AABB_update(box, rotationA, translationA, scaleA, &worldAABB);
+
   vec3 normal;
   glm_vec3_copy(plane->normal, normal);
   float r = worldAABB.extents[0] * fabsf(normal[0]) +
@@ -134,7 +193,6 @@ void resolve_collision_sphere_sphere(struct PhysicsBody *body_A, struct PhysicsB
   // I don't know
   v_dot_n_B = glm_dot(contact_normal, body_B->velocity);
   if (v_dot_n_A < 0.5 && glm_dot(contact_normal, (vec3){0.0f, -1.0f, 0.0f}) == -1){
-    // float distance_to_plane = glm_dot(body_A->position, normal) - plane->distance;
     glm_vec3_zero(body_A->velocity);
     body_A->at_rest = true;
   }
@@ -163,7 +221,6 @@ void resolve_collision_sphere_plane(struct PhysicsBody *body_A, struct PhysicsBo
   float n_dot_v = glm_dot(body_A->velocity, plane->normal);
   float penetration = (s < world_sphere.radius) ? (world_sphere.radius - s) + 0.001 : 0.0f;
   if (penetration > 0.0f) {
-    printf("Penetration of %f with s %f, sphere radius %f\n", penetration, s, world_sphere.radius);
     vec3 correction;
     glm_vec3_scale(plane->normal, penetration, correction);
     glm_vec3_add(body_A->position, correction, body_A->position);
