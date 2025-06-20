@@ -44,7 +44,7 @@ float min_dist_at_time_AABB_sphere(struct PhysicsBody *body_A, struct PhysicsBod
     float max_extent = world_AABB.center[i] + world_AABB.extents[i];
 
     if (v < min_extent) distance_squared += (min_extent - v) * (min_extent - v);
-    if (v > min_extent) distance_squared += (v - min_extent) * (v - min_extent);
+    if (v > max_extent) distance_squared += (v - max_extent) * (v - max_extent);
   }
 
   // Return 0 or sqrt like with sphere-sphere

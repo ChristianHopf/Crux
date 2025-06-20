@@ -41,7 +41,7 @@ struct CollisionResult narrow_phase_AABB_sphere(struct PhysicsBody *body_AABB, s
   glm_vec3_adds(e.extents, world_sphere.radius, e.extents);
 
   vec3 rel_v;
-  glm_vec3_sub(body_AABB->velocity, body_sphere->velocity, rel_v);
+  glm_vec3_sub(body_sphere->velocity, body_AABB->velocity, rel_v);
 
   // LAZY VERSION: Assume sphere direction ray intersection with the bounding AABB e an intersection with the world AABB.
   // Come back to this later for more precise edge and corner testing and point of contact.
