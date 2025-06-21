@@ -3,6 +3,11 @@
 #include <iso646.h>
 #include "text.h"
 
+static struct Character characters[128];
+static unsigned int VAO, VBO;
+static Shader *textShader;
+
+
 void load_font_face(){
   // Init FreeType library, face
   FT_Library  library;

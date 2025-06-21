@@ -12,9 +12,7 @@ struct Character {
   vec2 bearing;
   unsigned int advance;
 };
-static struct Character characters[128];
-static unsigned int VAO, VBO;
-static Shader *textShader;
+
 
 void load_font_face();
 void text_render(char *text, float x, float y, float scale, vec3 color);

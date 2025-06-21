@@ -6,6 +6,11 @@
 #include <stb_image/stb_image.h>
 #include "material.h"
 
+#define MAX_TEXTURES 128
+static TextureEntry loaded_textures[MAX_TEXTURES];
+static int num_loaded_textures = 0;
+
+
 void material_load_textures(struct Material *mat, struct aiMaterial *ai_mat, const struct aiScene *scene, const char *directory){
   // Get number of texture properties to allocate this material's struct Textures
   unsigned int num_texture_properties = 0;
@@ -115,7 +120,7 @@ GLuint material_load_texture(const char *path, enum aiTextureType type){
   GLenum internal_format, pixel_format;
 
   if (channels == 4){
-    if (type == aiTextureType_DIFFUSE | type == aiTextureType_BASE_COLOR){
+    if ((type == aiTextureType_DIFFUSE) || (type == aiTextureType_BASE_COLOR)){
       internal_format = GL_SRGB_ALPHA;
     }
     else{
@@ -124,7 +129,7 @@ GLuint material_load_texture(const char *path, enum aiTextureType type){
     pixel_format = GL_RGBA;
   }
   else if (channels == 3){
-    if (type == aiTextureType_DIFFUSE | type == aiTextureType_BASE_COLOR){
+    if ((type == aiTextureType_DIFFUSE) || (type == aiTextureType_BASE_COLOR)){
       internal_format = GL_SRGB;
     }
     else{
@@ -159,7 +164,7 @@ GLuint material_load_embedded_texture(const char *path, const struct aiScene *sc
 
   // Load with aitexture pcData, mWidth, mHeight (texture.h)
   int width, height, channels;
-  unsigned char *data = stbi_load_from_memory((char *)tex->pcData, tex->mWidth, &width, &height, &channels, 0);
+  unsigned char *data = stbi_load_from_memory((unsigned char *)tex->pcData, tex->mWidth, &width, &height, &channels, 0);
 
   // Generate GL textures
   GLenum format;

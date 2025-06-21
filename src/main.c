@@ -16,7 +16,7 @@
 
 typedef struct {
   GLFWwindow *window;
-  Scene *active_scene;
+  struct Scene *active_scene;
   // Timing
   float deltaTime;
   float lastFrame;
@@ -34,8 +34,8 @@ const unsigned int SCREEN_HEIGHT = 768;
 
 // Mouse
 bool firstMouse = true;
-float lastX = 400.0f;
-float lastY = 300.0f;
+float lastX = 512.0f;
+float lastY = 384.0f;
 
 // Lighting
 vec3 lightPos = {1.2f, 0.5f, 2.0f};
@@ -118,7 +118,7 @@ void scroll_callback(GLFWwindow *window, double xoffset, double yoffset){
 }
 
 void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods){
-  Scene *active_scene = ((Engine *)glfwGetWindowUserPointer(window))->active_scene;
+  struct Scene *active_scene = ((Engine *)glfwGetWindowUserPointer(window))->active_scene;
 
   // Pause
   if (key == GLFW_KEY_P && action == GLFW_PRESS){
@@ -127,7 +127,7 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
 }
 
 Engine *engine_create(){
-  Engine *engine = (Engine *)malloc(sizeof(Engine));
+  Engine *engine = (Engine *)calloc(1, sizeof(Engine));
   if (!engine){
     printf("Error: failed to allocate Engine\n");
     return NULL;
@@ -181,7 +181,8 @@ Engine *engine_create(){
   //glEnable(GL_STENCIL_TEST);
   //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
-  engine->active_scene = scene_create();
+  // engine->active_scene = scene_create(true);
+  engine->active_scene = scene_init("scenes/bouncehouse2.json");
   if (!engine->active_scene){
     printf("Error: failed to create scene\n");
     free(engine);

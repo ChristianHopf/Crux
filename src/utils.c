@@ -2,6 +2,7 @@
 #include <assimp/material.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include "physics/utils.h"
 #include "utils.h"
 
 // Helper to read from file to string
@@ -31,6 +32,25 @@ unsigned char *read_file(const char *path){
 	buffer[read_size] = '\0';
 	fclose(file);
 	return buffer;
+}
+
+void print_glm_mat4(mat4 matrix, const char* name) {
+  // printf("%s: [%.2f %.2f %.2f %.2f ]\n[%.2f %.2f %.2f %.2f | %.2f %.2f %.2f %.2f | %.2f %.2f %.2f %.2f]\n", 
+  //    name ? name : "Matrix",
+  //    matrix[0][0], matrix[1][0], matrix[2][0], matrix[3][0],
+  //    matrix[0][1], matrix[1][1], matrix[2][1], matrix[3][1], 
+  //    matrix[0][2], matrix[1][2], matrix[2][2], matrix[3][2],
+  //    matrix[0][3], matrix[1][3], matrix[2][3], matrix[3][3]);
+  printf("%s:\n", name);
+    for (int i = 0; i < 4; i++) {
+        printf("  [");
+        for (int j = 0; j < 4; j++) {
+            printf("%9.4f", matrix[i][j]); // Format with 4 decimal places
+            if (j < 3) printf(", ");
+        }
+        printf("]\n");
+    }
+    printf("\n");
 }
 
 void print_glm_vec3(float *vector, char *name){
@@ -73,3 +93,4 @@ void aiMatrix4x4_to_mat4(struct aiMatrix4x4 *src, mat4 dest) {
     dest[0][2] = src->c1; dest[1][2] = src->c2; dest[2][2] = src->c3; dest[3][2] = src->c4;
     dest[0][3] = src->d1; dest[1][3] = src->d2; dest[2][3] = src->d3; dest[3][3] = src->d4;
 }
+

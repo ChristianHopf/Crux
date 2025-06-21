@@ -1,6 +1,63 @@
 #include "skybox.h"
 
-struct Skybox *skybox_create(){
+// A cubemap skybox doesn't need a Model, or meshes,
+// just the vertices of a unit cube
+static float cubemapVertices[] = {
+    // positions          
+    -1.0f,  1.0f, -1.0f,
+    -1.0f, -1.0f, -1.0f,
+     1.0f, -1.0f, -1.0f,
+     1.0f, -1.0f, -1.0f,
+     1.0f,  1.0f, -1.0f,
+    -1.0f,  1.0f, -1.0f,
+
+    -1.0f, -1.0f,  1.0f,
+    -1.0f, -1.0f, -1.0f,
+    -1.0f,  1.0f, -1.0f,
+    -1.0f,  1.0f, -1.0f,
+    -1.0f,  1.0f,  1.0f,
+    -1.0f, -1.0f,  1.0f,
+
+     1.0f, -1.0f, -1.0f,
+     1.0f, -1.0f,  1.0f,
+     1.0f,  1.0f,  1.0f,
+     1.0f,  1.0f,  1.0f,
+     1.0f,  1.0f, -1.0f,
+     1.0f, -1.0f, -1.0f,
+
+    -1.0f, -1.0f,  1.0f,
+    -1.0f,  1.0f,  1.0f,
+     1.0f,  1.0f,  1.0f,
+     1.0f,  1.0f,  1.0f,
+     1.0f, -1.0f,  1.0f,
+    -1.0f, -1.0f,  1.0f,
+
+    -1.0f,  1.0f, -1.0f,
+     1.0f,  1.0f, -1.0f,
+     1.0f,  1.0f,  1.0f,
+     1.0f,  1.0f,  1.0f,
+    -1.0f,  1.0f,  1.0f,
+    -1.0f,  1.0f, -1.0f,
+
+    -1.0f, -1.0f, -1.0f,
+    -1.0f, -1.0f,  1.0f,
+     1.0f, -1.0f, -1.0f,
+     1.0f, -1.0f, -1.0f,
+    -1.0f, -1.0f,  1.0f,
+     1.0f, -1.0f,  1.0f
+  };
+
+static char *cubemapFaces[] = {
+  "right.jpg",
+  "left.jpg",
+  "top.jpg",
+  "bottom.jpg",
+  "front.jpg",
+  "back.jpg"
+};
+
+
+struct Skybox *skybox_create(char *directory){
 
   // Allocate struct Skybox
   struct Skybox *skybox = (struct Skybox *)malloc(sizeof(struct Skybox));
@@ -37,7 +94,7 @@ struct Skybox *skybox_create(){
 
     // Build path string for each face texture
     char facePath[32];
-    snprintf(facePath, sizeof(facePath), "resources/skybox/%s", cubemapFaces[i]);
+    snprintf(facePath, sizeof(facePath), "%s/%s", directory, cubemapFaces[i]);
 
     unsigned char *data = stbi_load(facePath, &width, &height, &channels, 0);
     if (!data){
