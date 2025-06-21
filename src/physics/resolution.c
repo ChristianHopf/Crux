@@ -11,7 +11,90 @@ ResolutionFunction resolution_functions[NUM_COLLIDER_TYPES][NUM_COLLIDER_TYPES] 
 
 
 void resolve_collision_AABB_AABB(struct PhysicsBody *body_A, struct PhysicsBody *body_B, struct CollisionResult result, float delta_time){
+  struct AABB *aabb_A = &body_A->collider.data.aabb;
+  struct AABB *aabb_B = &body_B->collider.data.aabb;
 
+  // Move bodies according to velocity
+  float gravity = 9.8f;
+  vec3 velocity_before_A, velocity_before_B;
+  glm_vec3_copy(body_A->velocity, velocity_before_A);
+  glm_vec3_copy(body_B->velocity, velocity_before_B);
+  velocity_before_A[1] -= gravity * result.hit_time;
+  velocity_before_B[1] -= gravity * result.hit_time;
+  glm_vec3_muladds(velocity_before_A, result.hit_time, body_A->position);
+  glm_vec3_muladds(velocity_before_B, result.hit_time, body_B->position);
+
+  // Get world space bodies
+  mat4 eulerA;
+  mat3 rotationA;
+  glm_euler_xyz(body_A->rotation, eulerA);
+  glm_mat4_pick3(eulerA, rotationA);
+  vec3 translationA;
+  glm_vec3_copy(body_A->position, translationA);
+  vec3 scaleA;
+  glm_vec3_copy(body_A->scale, scaleA);
+  struct AABB world_AABB_A = {0};
+  AABB_update(aabb_A, rotationA, translationA, scaleA, &world_AABB_A);
+
+  // Get world space bodies
+  mat4 eulerB;
+  mat3 rotationB;
+  glm_euler_xyz(body_B->rotation, eulerB);
+  glm_mat4_pick3(eulerB, rotationB);
+  vec3 translationB;
+  glm_vec3_copy(body_B->position, translationB);
+  vec3 scaleB;
+  glm_vec3_copy(body_B->scale, scaleB);
+  struct AABB world_AABB_B = {0};
+  AABB_update(aabb_B, rotationB, translationB, scaleB, &world_AABB_B);
+
+  // Find the axis with minimum penetration:
+  // - get vector from center A to center B
+  // - s = distance between centers on this axis
+  // - r = sum of extents on this axis
+  // - track the minimum value of r - s on each axis
+  // If min_penetration is positive, perform correction for each AABB
+  // by the center difference vector, scaled by half the penetration.
+  // The contact normal is based on the axis of minimum penetration.
+  vec3 center_difference, contact_normal;
+  glm_vec3_sub(world_AABB_B.center, world_AABB_A.center, center_difference);
+  glm_vec3_zero(contact_normal);
+  float min_penetration = FLT_MAX;
+  int contact_axis = 0;
+  for(int i = 0; i < 3; i++){
+    float s = fabs(center_difference[i]);
+    float r = world_AABB_A.extents[i] + world_AABB_B.extents[i];
+    float penetration = r - s;
+    // This won't handle an exact corner collision perfectly
+    if (penetration < min_penetration){
+      min_penetration = penetration;
+      contact_axis = i;
+    }
+  }
+  contact_normal[contact_axis] = center_difference[contact_axis] < 0 ? -1.0f : 1.0f;
+  if (min_penetration > 0.0f){
+    glm_vec3_muladds(center_difference, (min_penetration / 2), body_B->position);
+    glm_vec3_mulsubs(center_difference, (min_penetration / 2), body_A->position);
+  }
+
+  // Reflect velocities over contact normal
+  float restitution = 1.0f;
+  float rest_velocity_threshold = 0.5f;
+  float v_dot_n_A = glm_dot(velocity_before_A, contact_normal);
+  float v_dot_n_B = glm_dot(velocity_before_B, contact_normal);
+  vec3 reflection_A;
+  vec3 reflection_B;
+  glm_vec3_scale(contact_normal, -2.0f * v_dot_n_A * restitution, reflection_A);
+  glm_vec3_scale(contact_normal, -2.0f * v_dot_n_B * restitution, reflection_B);
+  glm_vec3_add(velocity_before_A, reflection_A, body_A->velocity);
+  glm_vec3_add(velocity_before_B, reflection_B, body_B->velocity);
+
+  v_dot_n_A = glm_dot(contact_normal, body_A->velocity);
+  v_dot_n_B = glm_dot(contact_normal, body_B->velocity);
+  if (v_dot_n_A < rest_velocity_threshold && glm_dot(contact_normal, (vec3){0.0f, -1.0f, 0.0f}) == 1){
+    glm_vec3_zero(body_A->velocity);
+    body_A->at_rest = true;
+  }
 }
 
 void resolve_collision_AABB_sphere(struct PhysicsBody *body_A, struct PhysicsBody *body_B, struct CollisionResult result, float delta_time){
@@ -193,9 +276,6 @@ void resolve_collision_sphere_sphere(struct PhysicsBody *body_A, struct PhysicsB
   glm_vec3_scale(contact_normal, -2.0f * v_dot_n_B * restitution, reflection_B);
   glm_vec3_add(velocity_before_A, reflection_A, body_A->velocity);
   glm_vec3_add(velocity_before_B, reflection_B, body_B->velocity);
-
-  print_glm_vec3(body_A->velocity, "REFLECTED SPHERE A VELOCITY");
-  print_glm_vec3(body_B->velocity, "REFLECTED SPHERE B VELOCITY");
 
   // If velocity along the normal is very small,
   // AND the sphere is perfectly atop the other,

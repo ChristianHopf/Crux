@@ -12,7 +12,100 @@ NarrowPhaseFunction narrow_phase_functions[NUM_COLLIDER_TYPES][NUM_COLLIDER_TYPE
 };
 
 struct CollisionResult narrow_phase_AABB_AABB(struct PhysicsBody *body_AABB_A, struct PhysicsBody *body_AABB_B, float delta_time){
+  struct AABB *aabb_A = &body_AABB_A->collider.data.aabb;
+  struct AABB *aabb_B = &body_AABB_B->collider.data.aabb;
+  struct CollisionResult result = {0};
 
+  // Get world space bodies
+  mat4 eulerA;
+  mat3 rotationA;
+  glm_euler_xyz(body_AABB_A->rotation, eulerA);
+  glm_mat4_pick3(eulerA, rotationA);
+  vec3 translationA;
+  glm_vec3_copy(body_AABB_A->position, translationA);
+  vec3 scaleA;
+  glm_vec3_copy(body_AABB_A->scale, scaleA);
+  struct AABB world_AABB_A = {0};
+  AABB_update(aabb_A, rotationA, translationA, scaleA, &world_AABB_A);
+
+  // Get world space bodies
+  mat4 eulerB;
+  mat3 rotationB;
+  glm_euler_xyz(body_AABB_B->rotation, eulerB);
+  glm_mat4_pick3(eulerB, rotationB);
+  vec3 translationB;
+  glm_vec3_copy(body_AABB_B->position, translationB);
+  vec3 scaleB;
+  glm_vec3_copy(body_AABB_B->scale, scaleB);
+  struct AABB world_AABB_B = {0};
+  AABB_update(aabb_B, rotationB, translationB, scaleB, &world_AABB_B);
+
+  // If already intersecting, they're already colliding
+  if (AABB_intersect_AABB(&world_AABB_A, &world_AABB_B)){
+    result.hit_time = 0;
+    result.colliding = true;
+    return result;
+  }
+  else{
+    vec3 rel_v;
+    glm_vec3_sub(body_AABB_A->velocity, body_AABB_B->velocity, rel_v);
+
+    vec3 min_A, max_A;
+    vec3 min_B, max_B;
+    glm_vec3_sub(world_AABB_A.center, world_AABB_A.extents, min_A);
+    glm_vec3_add(world_AABB_A.center, world_AABB_A.extents, max_A);
+    glm_vec3_sub(world_AABB_B.center, world_AABB_B.extents, min_B);
+    glm_vec3_add(world_AABB_B.center, world_AABB_B.extents, max_B);
+
+    float t_first = 0.0f;
+    float t_last = delta_time;
+
+    // Find first and last times of contact on each axis
+    for (int i = 0; i < 3; i++){
+      if (rel_v[i] < 0.0f){
+        // If rel_v is negative, and a is already past b on this axis, exit
+        if (max_A[i] < min_B[i]){
+          result.hit_time = -1;
+          result.colliding = false;
+          return result;
+        }
+        if (min_A[i] > max_B[i]){
+          t_first = fmaxf((max_B[i] - min_A[i]) / rel_v[i], t_first);
+        }
+        if(max_A[i] > min_B[i]){
+          t_last = fminf((min_B[i] - max_A[i]) / rel_v[i], t_last);
+        }
+      }
+      if (rel_v[i] > 0.0f){
+        // If rel_v is positive, and a is already past b on this axis, exit
+        if (min_A[i] > max_B[i]){
+          result.hit_time = -1;
+          result.colliding = false;
+          return result;
+        }
+        if (max_A[i] < min_B[i]){
+          t_first = fmaxf((min_B[i] - max_A[i]) / rel_v[i], t_first);
+        }
+        if(min_A[i] < max_B[i]){
+          t_last = fminf((max_B[i] - min_A[i]) / rel_v[i], t_last);
+        }
+      }
+
+      // If the greatest time of first contact occurs after the smallest time of last contact,
+      // then we have to leave a slab to enter another, which means we don't collide with
+      // the intersecting volume.
+      if (t_first > t_last){
+        result.hit_time = -1;
+        result.colliding = false;
+        return result;
+      }
+    }
+    
+    // Intersection confirmed on all 3 axes
+    result.hit_time = t_first;
+    result.colliding = true;
+    return result;
+  }
 }
 
 struct CollisionResult narrow_phase_AABB_sphere(struct PhysicsBody *body_AABB, struct PhysicsBody *body_sphere, float delta_time){
@@ -51,12 +144,10 @@ struct CollisionResult narrow_phase_AABB_sphere(struct PhysicsBody *body_AABB, s
   if (!intersect || t_min > delta_time){
     result.hit_time = -1;
     result.colliding = false;
-    printf("NO AABB SPHERE COLLISION\n");
   }
   else{
     result.hit_time = t_min;
     result.colliding = true;
-    printf("AABB SPHERE COLLISION\n");
   }
 
   return result;

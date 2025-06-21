@@ -9,8 +9,54 @@ DistanceFunction distance_functions[NUM_COLLIDER_TYPES][NUM_COLLIDER_TYPES] = {
   [COLLIDER_SPHERE][COLLIDER_PLANE] = min_dist_at_time_sphere_plane,
   // [COLLIDER_PLANE][COLLIDER_SPHERE] = min_dist_at_time_sphere_plane,
 };
-float min_dist_at_time_AABB_AABB(struct PhysicsBody *body_A, struct PhysicsBody *body_B, float time){
 
+
+float min_dist_at_time_AABB_AABB(struct PhysicsBody *body_A, struct PhysicsBody *body_B, float time){
+  struct AABB *aabb_A = &body_A->collider.data.aabb;
+  struct AABB *aabb_B = &body_B->collider.data.aabb;
+
+  // Get world space bodies
+  mat4 eulerA;
+  mat3 rotationA;
+  glm_euler_xyz(body_A->rotation, eulerA);
+  glm_mat4_pick3(eulerA, rotationA);
+  vec3 translationA;
+  glm_vec3_copy(body_A->position, translationA);
+  vec3 scaleA;
+  glm_vec3_copy(body_A->scale, scaleA);
+  struct AABB world_AABB_A = {0};
+  AABB_update(aabb_A, rotationA, translationA, scaleA, &world_AABB_A);
+
+  // Get world space bodies
+  mat4 eulerB;
+  mat3 rotationB;
+  glm_euler_xyz(body_B->rotation, eulerB);
+  glm_mat4_pick3(eulerB, rotationB);
+  vec3 translationB;
+  glm_vec3_copy(body_B->position, translationB);
+  vec3 scaleB;
+  glm_vec3_copy(body_B->scale, scaleB);
+  struct AABB world_AABB_B = {0};
+  AABB_update(aabb_B, rotationB, translationB, scaleB, &world_AABB_B);
+
+  // Find squared distance on all 3 axes
+  float distance_squared = 0.0f;
+  vec3 min_A, max_A;
+  vec3 min_B, max_B;
+  glm_vec3_sub(world_AABB_A.center, world_AABB_A.extents, min_A);
+  glm_vec3_add(world_AABB_A.center, world_AABB_A.extents, max_A);
+  glm_vec3_sub(world_AABB_B.center, world_AABB_B.extents, min_B);
+  glm_vec3_add(world_AABB_B.center, world_AABB_B.extents, max_B);
+  for(int i = 0; i < 3; i++){
+    if (min_B[i] > max_A[i]){
+      distance_squared += (min_B[i] - max_A[i]) * (min_B[i] - max_A[i]);
+    }
+    else if (max_B[i] < min_A[i]){
+      distance_squared += (min_A[i] - max_B[i]) * (min_A[i] - max_B[i]);
+    }
+  }
+
+  return sqrt(distance_squared);
 }
 
 float min_dist_at_time_AABB_sphere(struct PhysicsBody *body_A, struct PhysicsBody *body_B, float time){

@@ -72,6 +72,7 @@ void physics_debug_render(struct PhysicsWorld *physics_world, struct RenderConte
         glm_euler_xyz(rotation_rad, eulerA);
         glm_mat4_pick3(eulerA, rotationA);
         vec3 translationA, scaleA;
+        // glm_vec3_sub(box->center, body->position, translationA);
         glm_vec3_copy(body->position, translationA); // Use body position
         glm_vec3_copy(body->scale, scaleA); // Use body scale
         AABB_update(box, rotationA, translationA, scaleA, &rotated_AABB);
