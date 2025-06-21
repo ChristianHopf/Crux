@@ -417,7 +417,6 @@ void scene_update(struct Scene *scene, float delta_time){
   static float total_time = 0.0f;
   total_time += delta_time;
 
-  float rotationSpeed = 100.0f;
   float lightSpeed = 1.0f;
 
   // Update player
@@ -479,7 +478,7 @@ void scene_render(struct Scene *scene){
   }
 
   // Render text
-  text_render("Crux Engine 0.1", 4.0f, 744.0f, 1.0f, (vec3){1.0f, 1.0f, 1.0f});
+  text_render("Crux Engine 0.2", 4.0f, 744.0f, 1.0f, (vec3){1.0f, 1.0f, 1.0f});
 }
 
 void scene_pause(struct Scene *scene){
