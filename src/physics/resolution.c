@@ -73,8 +73,8 @@ void resolve_collision_AABB_AABB(struct PhysicsBody *body_A, struct PhysicsBody 
   }
   separation[contact_axis] = (center_difference[contact_axis] < 0 ? -1.0f : 1.0f) * min_penetration;
   if (min_penetration > 0.0f){
-    glm_vec3_muladds(separation, (min_penetration / 2), body_B->position);
-    glm_vec3_mulsubs(separation, (min_penetration / 2), body_A->position);
+    glm_vec3_muladds(separation, (min_penetration / 2) + 0.001, body_B->position);
+    glm_vec3_mulsubs(separation, (min_penetration / 2) + 0.001, body_A->position);
   }
 
   // Reflect velocities over contact normal (normalized separation direction)
