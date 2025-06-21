@@ -56,9 +56,9 @@ void resolve_collision_AABB_AABB(struct PhysicsBody *body_A, struct PhysicsBody 
   // If min_penetration is positive, perform correction for each AABB
   // by the center difference vector, scaled by half the penetration.
   // The contact normal is based on the axis of minimum penetration.
-  vec3 center_difference, contact_normal;
+  vec3 center_difference, separation;
   glm_vec3_sub(world_AABB_B.center, world_AABB_A.center, center_difference);
-  glm_vec3_zero(contact_normal);
+  glm_vec3_zero(separation);
   float min_penetration = FLT_MAX;
   int contact_axis = 0;
   for(int i = 0; i < 3; i++){
@@ -71,13 +71,16 @@ void resolve_collision_AABB_AABB(struct PhysicsBody *body_A, struct PhysicsBody 
       contact_axis = i;
     }
   }
-  contact_normal[contact_axis] = center_difference[contact_axis] < 0 ? -1.0f : 1.0f;
+  separation[contact_axis] = (center_difference[contact_axis] < 0 ? -1.0f : 1.0f) * min_penetration;
   if (min_penetration > 0.0f){
-    glm_vec3_muladds(center_difference, (min_penetration / 2), body_B->position);
-    glm_vec3_mulsubs(center_difference, (min_penetration / 2), body_A->position);
+    glm_vec3_muladds(separation, (min_penetration / 2), body_B->position);
+    glm_vec3_mulsubs(separation, (min_penetration / 2), body_A->position);
   }
 
-  // Reflect velocities over contact normal
+  // Reflect velocities over contact normal (normalized separation direction)
+  vec3 contact_normal;
+  glm_vec3_copy(separation, contact_normal);
+  glm_vec3_normalize(contact_normal);
   float restitution = 1.0f;
   float rest_velocity_threshold = 0.5f;
   float v_dot_n_A = glm_dot(velocity_before_A, contact_normal);
@@ -89,12 +92,12 @@ void resolve_collision_AABB_AABB(struct PhysicsBody *body_A, struct PhysicsBody 
   glm_vec3_add(velocity_before_A, reflection_A, body_A->velocity);
   glm_vec3_add(velocity_before_B, reflection_B, body_B->velocity);
 
-  v_dot_n_A = glm_dot(contact_normal, body_A->velocity);
-  v_dot_n_B = glm_dot(contact_normal, body_B->velocity);
-  if (v_dot_n_A < rest_velocity_threshold && glm_dot(contact_normal, (vec3){0.0f, -1.0f, 0.0f}) == 1){
-    glm_vec3_zero(body_A->velocity);
-    body_A->at_rest = true;
-  }
+  // v_dot_n_A = glm_dot(contact_normal, body_A->velocity);
+  // v_dot_n_B = glm_dot(contact_normal, body_B->velocity);
+  // if (v_dot_n_A < rest_velocity_threshold && glm_dot(contact_normal, (vec3){0.0f, -1.0f, 0.0f}) == 1){
+  //   glm_vec3_zero(body_A->velocity);
+  //   body_A->at_rest = true;
+  // }
 }
 
 void resolve_collision_AABB_sphere(struct PhysicsBody *body_A, struct PhysicsBody *body_B, struct CollisionResult result, float delta_time){
