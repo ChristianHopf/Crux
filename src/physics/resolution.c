@@ -161,30 +161,41 @@ void resolve_collision_AABB_sphere(struct PhysicsBody *body_A, struct PhysicsBod
   glm_vec3_sub(world_sphere.center, closest, difference);
   float s = glm_vec3_norm(difference);
   float penetration = (s < world_sphere.radius) ? (world_sphere.radius - s) + 0.001 : 0.0f;
+
+  if (penetration <= 0) return;
+
+  // Get contact normal
   glm_vec3_copy(difference, contact_normal);
   glm_vec3_normalize(contact_normal);
-  if (penetration > 0.0f){
+
+  // Only correct positions and reflect velocities if the bodies aren't moving away from each other
+  vec3 rel_v;
+  glm_vec3_sub(velocity_before_B, velocity_before_A, rel_v);
+  float separating_v = glm_dot(rel_v, contact_normal);
+  if (separating_v < 0.0f){
     glm_vec3_muladds(contact_normal, (penetration / 2), body_B->position);
     glm_vec3_mulsubs(contact_normal, (penetration / 2), body_A->position);
+
+    float restitution = 1.0f;
+    float v_dot_n_A = glm_dot(velocity_before_A, contact_normal);
+    float v_dot_n_B = glm_dot(velocity_before_B, contact_normal);
+
+    // For a perfectly elastic collision,
+    // swap the bodies' velocities along the contact normal
+    vec3 normal_v_A, normal_v_B;
+    glm_vec3_scale(contact_normal, v_dot_n_A, normal_v_A);
+    glm_vec3_scale(contact_normal, v_dot_n_B, normal_v_B);
+
+    glm_vec3_sub(velocity_before_A, normal_v_A, body_A->velocity);
+    glm_vec3_add(body_A->velocity, normal_v_B, body_A->velocity);
+
+    glm_vec3_sub(velocity_before_B, normal_v_B, body_B->velocity);
+    glm_vec3_add(body_B->velocity, normal_v_A, body_B->velocity);
   }
-
-  // Reflect velocities
-  float restitution = 1.0f;
-  float rest_velocity_threshold = 0.1f;
-  float v_dot_n_A = glm_dot(velocity_before_A, contact_normal);
-  float v_dot_n_B = glm_dot(velocity_before_B, contact_normal);
-  vec3 reflection_A;
-  vec3 reflection_B;
-  glm_vec3_scale(contact_normal, -2.0f * v_dot_n_A * restitution, reflection_A);
-  glm_vec3_scale(contact_normal, -2.0f * v_dot_n_B * restitution, reflection_B);
-  glm_vec3_add(velocity_before_A, reflection_A, body_A->velocity);
-  glm_vec3_add(velocity_before_B, reflection_B, body_B->velocity);
-
-  v_dot_n_A = glm_dot(contact_normal, body_A->velocity);
-  v_dot_n_B = glm_dot(contact_normal, body_B->velocity);
-  if (v_dot_n_A < 0.5 && glm_dot(contact_normal, (vec3){0.0f, -1.0f, 0.0f}) == -1){
-    glm_vec3_zero(body_A->velocity);
-    body_A->at_rest = true;
+  else{
+    // Bodies are moving away from each other, don't change velocities
+    glm_vec3_copy(velocity_before_A, body_A->velocity);
+    glm_vec3_copy(velocity_before_B, body_B->velocity);
   }
 }
 
