@@ -65,32 +65,73 @@ void resolve_collision_AABB_AABB(struct PhysicsBody *body_A, struct PhysicsBody 
     float s = fabs(center_difference[i]);
     float r = world_AABB_A.extents[i] + world_AABB_B.extents[i];
     float penetration = r - s;
-    // This won't handle an exact corner collision perfectly
+    // This won't handle an exact corner collision perfectly realistically
     if (penetration < min_penetration){
       min_penetration = penetration;
       contact_axis = i;
     }
   }
-  separation[contact_axis] = (center_difference[contact_axis] < 0 ? -1.0f : 1.0f) * min_penetration;
+  // separation[contact_axis] = (center_difference[contact_axis] < 0 ? -1.0f : 1.0f) * min_penetration;
   if (min_penetration > 0.0f){
-    glm_vec3_muladds(separation, (min_penetration / 2) + 0.001, body_B->position);
-    glm_vec3_mulsubs(separation, (min_penetration / 2) + 0.001, body_A->position);
+
+    // Get contact normal
+    separation[contact_axis] = (center_difference[contact_axis] < 0 ? -1.0f : 1.0f);
+    vec3 contact_normal;
+    glm_vec3_copy(separation, contact_normal);
+    glm_vec3_normalize(contact_normal);
+
+    // Only correct positions and reflect velocities if the bodies aren't moving away from each other
+    vec3 rel_v;
+    glm_vec3_sub(velocity_before_B, velocity_before_A, rel_v);
+    float sep_v = glm_dot(rel_v, contact_normal);
+    if (sep_v <= 0.0f){
+      glm_vec3_muladds(separation, min_penetration * 0.5f, body_B->position);
+      glm_vec3_mulsubs(separation, min_penetration * 0.5f, body_A->position);
+
+      float restitution = 1.0f;
+      float v_dot_n_A = glm_dot(velocity_before_A, contact_normal);
+      float v_dot_n_B = glm_dot(velocity_before_B, contact_normal);
+
+      // Only reflect velocities if their relative velocity along the contact normal is negative
+      // (moving towards each other)
+      if (v_dot_n_A - v_dot_n_B < 0){
+        vec3 normal_v_A, normal_v_B;
+        glm_vec3_scale(contact_normal, v_dot_n_A, normal_v_A);
+        glm_vec3_scale(contact_normal, v_dot_n_B, normal_v_B);
+
+        glm_vec3_sub(velocity_before_A, normal_v_A, body_A->velocity);
+        glm_vec3_add(body_A->velocity, normal_v_B, body_A->velocity);
+
+        glm_vec3_sub(velocity_before_B, normal_v_B, body_B->velocity);
+        glm_vec3_add(body_B->velocity, normal_v_A, body_B->velocity);
+      }
+      else{
+        glm_vec3_copy(velocity_before_A, body_A->velocity);
+        glm_vec3_copy(velocity_before_B, body_B->velocity);
+      }
+      //vec3 reflection_A;
+      // vec3 reflection_B;
+      // glm_vec3_scale(contact_normal, -2.0f * v_dot_n_A * restitution, reflection_A);
+      // glm_vec3_scale(contact_normal, -2.0f * v_dot_n_B * restitution, reflection_B);
+      // glm_vec3_add(velocity_before_A, reflection_A, body_A->velocity);
+      // glm_vec3_add(velocity_before_B, reflection_B, body_B->velocity);
+    }
   }
 
   // Reflect velocities over contact normal (normalized separation direction)
-  vec3 contact_normal;
-  glm_vec3_copy(separation, contact_normal);
-  glm_vec3_normalize(contact_normal);
-  float restitution = 1.0f;
-  float rest_velocity_threshold = 0.5f;
-  float v_dot_n_A = glm_dot(velocity_before_A, contact_normal);
-  float v_dot_n_B = glm_dot(velocity_before_B, contact_normal);
-  vec3 reflection_A;
-  vec3 reflection_B;
-  glm_vec3_scale(contact_normal, -2.0f * v_dot_n_A * restitution, reflection_A);
-  glm_vec3_scale(contact_normal, -2.0f * v_dot_n_B * restitution, reflection_B);
-  glm_vec3_add(velocity_before_A, reflection_A, body_A->velocity);
-  glm_vec3_add(velocity_before_B, reflection_B, body_B->velocity);
+  // vec3 contact_normal;
+  // glm_vec3_copy(separation, contact_normal);
+  // glm_vec3_normalize(contact_normal);
+  // float restitution = 1.0f;
+  // float rest_velocity_threshold = 0.5f;
+  // float v_dot_n_A = glm_dot(velocity_before_A, contact_normal);
+  // float v_dot_n_B = glm_dot(velocity_before_B, contact_normal);
+  // vec3 reflection_A;
+  // vec3 reflection_B;
+  // glm_vec3_scale(contact_normal, -2.0f * v_dot_n_A * restitution, reflection_A);
+  // glm_vec3_scale(contact_normal, -2.0f * v_dot_n_B * restitution, reflection_B);
+  // glm_vec3_add(velocity_before_A, reflection_A, body_A->velocity);
+  // glm_vec3_add(velocity_before_B, reflection_B, body_B->velocity);
 
   // v_dot_n_A = glm_dot(contact_normal, body_A->velocity);
   // v_dot_n_B = glm_dot(contact_normal, body_B->velocity);
