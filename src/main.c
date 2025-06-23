@@ -25,6 +25,11 @@ typedef struct {
   // Timing
   float deltaTime;
   float lastFrame;
+  // Multithreading
+  pthread_mutex_t scene_mutex;
+  pthread_cond_t render_signal;
+  pthread_cond_t render_done_signal;
+  bool render_ready;
 } Engine;
 
 void framebuffer_size_callback(GLFWwindow *window, int width, int height);
@@ -176,8 +181,6 @@ Engine *engine_create(){
 	// Configure global OpenGL state
 	glEnable(GL_DEPTH_TEST);
   glEnable(GL_CULL_FACE);
-  // glEnable(GL_FRAMEBUFFER_SRGB);
-
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   //glBlendFunc(GL_ONE, GL_ONE); // additive blending
@@ -199,6 +202,15 @@ Engine *engine_create(){
   engine->deltaTime = 0.0f;
   engine->lastFrame = 0.0f;
 
+  // Release context for render thread to use it later
+  glfwMakeContextCurrent(NULL);
+
+  // Scene mutex
+  pthread_mutex_init(&engine->scene_mutex, NULL);
+  pthread_cond_init(&engine->render_signal, NULL);
+  pthread_cond_init(&engine->render_done_signal, NULL);
+  engine->render_ready = false;
+
   return engine;
 }
 
@@ -210,6 +222,8 @@ ALuint source;
 
 volatile int stop_audio = 0;
 
+
+// SEPARATE THREADS
 void *process_audio(void *arg){
   alcMakeContextCurrent(context);
   while (!stop_audio){
@@ -233,6 +247,32 @@ void *process_audio(void *arg){
     usleep(5000);
   }
   alcMakeContextCurrent(NULL);
+  return NULL;
+}
+
+void *render_thread(void *arg){
+  Engine *engine = (Engine *)arg;
+  glfwMakeContextCurrent(engine->window);
+  while (!glfwWindowShouldClose(engine->window)){
+    // Lock mutex
+    pthread_mutex_lock(&engine->scene_mutex);
+
+    // Wait for render signal
+    while (!engine->render_ready){
+      pthread_cond_wait(&engine->render_signal, &engine->scene_mutex);
+    }
+
+    // Render scene
+    scene_render(engine->active_scene);
+    glfwSwapBuffers(engine->window);
+
+    // Set render_ready back to false, signal rendering is done, unlock mutex
+    engine->render_ready = false;
+    pthread_cond_signal(&engine->render_done_signal);
+    pthread_mutex_unlock(&engine->scene_mutex);
+  }
+
+  glfwMakeContextCurrent(NULL);
   return NULL;
 }
 
@@ -337,7 +377,9 @@ int main(){
   alSourcePlay(source);
 
   pthread_t audio_thread;
+  pthread_t render_thread_id;
   pthread_create(&audio_thread, NULL, process_audio, NULL);
+  pthread_create(&render_thread_id, NULL, render_thread, engine);
 
   ALCint dev_samplerate;
   alcGetIntegerv(device, ALC_FREQUENCY, 1, &dev_samplerate);
@@ -350,18 +392,31 @@ int main(){
 	while (!glfwWindowShouldClose(engine->window)){
 		// Per-frame timing logic
 		float currentFrame = (float)(glfwGetTime());
+
+    // Lock scene mutex, do timing and updating
+    pthread_mutex_lock(&engine->scene_mutex);
 		engine->deltaTime = currentFrame - engine->lastFrame;
 		engine->lastFrame = currentFrame;
 
 		printf("FPS: %f\n", 1.0 / engine->deltaTime);
 
-		// Handle input, update, render
+		// Handle input, update
 		processInput(engine->window);
 		scene_update(engine->active_scene, engine->deltaTime);
-    scene_render(engine->active_scene);
+
+    // Set render_ready to true, signal render thread to work, 
+    engine->render_ready = true;
+    pthread_cond_signal(&engine->render_signal);
+    while(engine->render_ready){
+      pthread_cond_wait(&engine->render_done_signal, &engine->scene_mutex);
+    }
+    pthread_mutex_unlock(&engine->scene_mutex);
+
+
+		// scene_render(engine->active_scene);
 
 		// Check and call events, swap buffers
-		glfwSwapBuffers(engine->window);
+		// glfwSwapBuffers(engine->window);
 		glfwPollEvents();
   }
 
@@ -369,8 +424,12 @@ int main(){
   stop_audio = 1;
   alSourceStop(source);
   alDeleteSources(1, &source);
-  alDeleteBuffers(12, buffers);
+  alDeleteBuffers(4, buffers);
   pthread_join(audio_thread, NULL);
+  pthread_join(render_thread_id, NULL);
+  pthread_mutex_destroy(&engine->scene_mutex);
+  pthread_cond_destroy(&engine->render_signal);
+  pthread_cond_destroy(&engine->render_done_signal);
   alcMakeContextCurrent(NULL);
   alcDestroyContext(context);
   alcCloseDevice(device);

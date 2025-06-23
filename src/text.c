@@ -92,6 +92,7 @@ void load_font_face(){
 }
 
 void text_render(char *text, float x, float y, float scale, vec3 color){
+  printf("Text render time\n");
   // Use shader, set uniform, bind to texture and VAO
   shader_use(textShader);
   shader_set_vec3(textShader, "textColor", color);
