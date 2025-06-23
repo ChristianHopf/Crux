@@ -1,7 +1,7 @@
 # Compiler and flags
 CC = gcc
 CFLAGS = -Iinclude -Iinclude/physics $(addprefix -I,$(shell find third_party -type d)) $(shell pkg-config --cflags freetype2) -Wall -Wextra -g
-LDFLAGS = -L/usr/lib $(shell pkg-config --libs freetype2) -lglfw -lGL -lcglm -lm -ldl -lassimp -lopenal -lsndfile
+LDFLAGS = -L/usr/lib $(shell pkg-config --libs freetype2) -lglfw -lGL -lcglm -lm -ldl -lassimp -lopenal -lsndfile -pthread
 
 # Directories
 SRC_DIR = src

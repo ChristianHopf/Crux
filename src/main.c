@@ -202,6 +202,28 @@ Engine *engine_create(){
   return engine;
 }
 
+// Just slap everything down outside main and get the thread working
+ALCdevice *device;
+ALCcontext *context;
+ALuint buffer, source;
+
+void *process_audio(void *arg){
+  alcMakeContextCurrent(context);
+  while (1){
+    ALint state;
+    alGetSourcei(source, AL_SOURCE_STATE, &state);
+    if (state != AL_PLAYING){
+      break;
+    }
+    else{
+      alcProcessContext(context);
+      usleep(10000);
+    }
+  }
+  alcMakeContextCurrent(NULL);
+  return NULL;
+}
+
 int main(){
   Engine *engine = engine_create();
   if (!engine){
@@ -210,8 +232,8 @@ int main(){
   }
 
   // Init OpenAL device and context
-  ALCdevice *device;
-  ALCcontext *context;
+  // ALCdevice *device;
+  // ALCcontext *context;
 
   device = alcOpenDevice(NULL);
   if (!device){
@@ -227,9 +249,9 @@ int main(){
 
   // Load WAV with sndfile
   SF_INFO info;
-  SNDFILE *mp3_file = sf_open("resources/music/mookid.mp3", SFM_READ, &info);
+  SNDFILE *mp3_file = sf_open("resources/music/mookid1.mp3", SFM_READ, &info);
   if (!mp3_file){
-    fprintf(stderr, "Error: failed to open %s: %s\n", "resources/music/mookid.mp3", sf_strerror(NULL));
+    fprintf(stderr, "Error: failed to open %s: %s\n", "resources/music/mookid1.mp3", sf_strerror(NULL));
     return 0;
   }
 
@@ -251,7 +273,7 @@ int main(){
   }
 
   // Buffer audio and create a source
-  ALuint buffer, source;
+  // ALuint buffer, source;
   alGenBuffers(1, &buffer);
   alBufferData(buffer, format, mp3_data, info.frames * info.channels * sizeof(float), info.samplerate);
   free(mp3_data);
@@ -263,6 +285,14 @@ int main(){
   alSourcei(source, AL_LOOPING, AL_TRUE);
 
   alSourcePlay(source);
+
+  pthread_t audio_thread;
+  pthread_create(&audio_thread, NULL, process_audio, NULL);
+
+  ALCint dev_samplerate;
+  alcGetIntegerv(device, ALC_FREQUENCY, 1, &dev_samplerate);
+
+  printf("MP3 sample rate: %d, device sample rate: %d\n", info.samplerate, dev_samplerate);
 
   load_font_face();
 
@@ -289,10 +319,12 @@ int main(){
   alSourceStop(source);
   alDeleteSources(1, &source);
   alDeleteBuffers(1, &buffer);
+  pthread_join(audio_thread, NULL);
   alcMakeContextCurrent(NULL);
   alcDestroyContext(context);
   alcCloseDevice(device);
 
+  glfwDestroyWindow(engine->window);
 	glfwTerminate();
 	return 0;
 }
