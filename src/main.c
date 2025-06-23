@@ -205,7 +205,7 @@ Engine *engine_create(){
 // Just slap everything down outside main and get the thread working
 ALCdevice *device;
 ALCcontext *context;
-ALuint buffers[4];
+ALuint buffers[12];
 ALuint source;
 
 volatile int stop_audio = 0;
@@ -217,11 +217,13 @@ void *process_audio(void *arg){
     alGetSourcei(source, AL_SOURCE_STATE, &state);
     alGetSourcei(source, AL_BUFFERS_PROCESSED, &processed);
     if (processed > 0){
+      // printf("\n\n\nProcessed %d buffers, queuing next buffer\n\n\n", processed);
       ALuint buf;
       alSourceUnqueueBuffers(source, 1, &buf);
       alSourceQueueBuffers(source, 1, &buf);
     }
     if (state == AL_PLAYING){
+      printf("AUDIO PLAYING\n");
       alcProcessContext(context);
     }
     usleep(5000);
@@ -298,11 +300,11 @@ int main(){
   // Buffer audio and create a source
   // ALuint buffer, source;
   alGenBuffers(4, buffers);
-  sf_count_t frames_per_buffer = info.frames / 4;
-  for(int i = 0; i < 4; i++){
+  sf_count_t frames_per_buffer = info.frames / 12;
+  for(int i = 0; i < 12; i++){
     sf_count_t offset = i * frames_per_buffer * info.channels;
     sf_count_t size;
-    if (i == 3){
+    if (i == 11){
       size = (info.frames - offset / info.channels) * info.channels * sizeof(float);
     }
     else{
@@ -315,7 +317,7 @@ int main(){
   free(mp3_data);
 
   alGenSources(1, &source);
-  alSourceQueueBuffers(source, 4, buffers);
+  alSourceQueueBuffers(source, 12, buffers);
   alSourcef(source, AL_GAIN, 1.0f);
   alSourcef(source, AL_PITCH, 1.0f);
   alSourcei(source, AL_LOOPING, AL_TRUE);
@@ -355,7 +357,7 @@ int main(){
   stop_audio = 1;
   alSourceStop(source);
   alDeleteSources(1, &source);
-  alDeleteBuffers(4, buffers);
+  alDeleteBuffers(12, buffers);
   pthread_join(audio_thread, NULL);
   alcMakeContextCurrent(NULL);
   alcDestroyContext(context);
