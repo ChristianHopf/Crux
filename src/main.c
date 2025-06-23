@@ -1,6 +1,10 @@
 #include <cglm/cam.h>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+#include <AL/al.h>
+#include <AL/alc.h>
+#include <AL/alext.h>
+#include <sndfile.h>
 #include <ft2build.h>
 #include FT_FREETYPE_H
 #include <stdio.h>
@@ -13,6 +17,7 @@
 #include "scene.h"
 #include "player.h"
 #include "text.h"
+
 
 typedef struct {
   GLFWwindow *window;
@@ -29,8 +34,8 @@ void scroll_callback(GLFWwindow *window, double xoffset, double yoffset);
 void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods);
 
 // Screen settings
-const unsigned int SCREEN_WIDTH = 1024;
-const unsigned int SCREEN_HEIGHT = 768;
+const unsigned int SCREEN_WIDTH = 1280;
+const unsigned int SCREEN_HEIGHT = 720;
 
 // Mouse
 bool firstMouse = true;
@@ -140,7 +145,7 @@ Engine *engine_create(){
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
   // Create window
-	GLFWwindow *window = glfwCreateWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "LearnOpenGL", NULL, NULL);
+	GLFWwindow *window = glfwCreateWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Crux", NULL, NULL);
 	if (window == NULL){
 		printf("Failed to create GLFW window\n");
     free(engine);
@@ -204,6 +209,61 @@ int main(){
     return -1;
   }
 
+  // Init OpenAL device and context
+  ALCdevice *device;
+  ALCcontext *context;
+
+  device = alcOpenDevice(NULL);
+  if (!device){
+    fprintf(stderr, "Error: failed to open OpenAL device\n");
+    return 0;
+  }
+  context = alcCreateContext(device, NULL);
+  if (!context){
+    fprintf(stderr, "Error: failed to create OpenAL context\n");
+    return 0;
+  }
+  alcMakeContextCurrent(context);
+
+  // Load WAV with sndfile
+  SF_INFO info;
+  SNDFILE *mp3_file = sf_open("resources/music/mookid.mp3", SFM_READ, &info);
+  if (!mp3_file){
+    fprintf(stderr, "Error: failed to open %s: %s\n", "resources/music/mookid.mp3", sf_strerror(NULL));
+    return 0;
+  }
+
+  float *mp3_data = (float *)malloc(info.frames * info.channels * sizeof(float));
+  sf_count_t read_frames = sf_readf_float(mp3_file, mp3_data, info.frames);
+  sf_close(mp3_file);
+  if (read_frames != info.frames){
+    fprintf(stderr, "Error: failed to read correct number of frames into wav_data\n");
+    free(mp3_data);
+    return 0;
+  }
+
+  ALenum format;
+  if (info.channels == 1){
+    format = AL_FORMAT_MONO_FLOAT32;
+  }
+  else{
+    format = AL_FORMAT_STEREO_FLOAT32;
+  }
+
+  // Buffer audio and create a source
+  ALuint buffer, source;
+  alGenBuffers(1, &buffer);
+  alBufferData(buffer, format, mp3_data, info.frames * info.channels * sizeof(float), info.samplerate);
+  free(mp3_data);
+
+  alGenSources(1, &source);
+  alSourcei(source, AL_BUFFER, buffer);
+  alSourcef(source, AL_GAIN, 1.0f);
+  alSourcef(source, AL_PITCH, 1.0f);
+  alSourcei(source, AL_LOOPING, AL_TRUE);
+
+  alSourcePlay(source);
+
   load_font_face();
 
 	// Render loop
@@ -224,6 +284,14 @@ int main(){
 		glfwSwapBuffers(engine->window);
 		glfwPollEvents();
   }
+
+  // Clean up OpenAL
+  alSourceStop(source);
+  alDeleteSources(1, &source);
+  alDeleteBuffers(1, &buffer);
+  alcMakeContextCurrent(NULL);
+  alcDestroyContext(context);
+  alcCloseDevice(device);
 
 	glfwTerminate();
 	return 0;

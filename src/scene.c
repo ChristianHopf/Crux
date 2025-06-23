@@ -447,7 +447,7 @@ void scene_render(struct Scene *scene){
   mat4 view;
   mat4 projection;
   camera_get_view_matrix(scene->player.camera, view);
-  glm_perspective(glm_rad(scene->player.camera->fov), 800.0f / 600.0f, 0.1f, 100.0f, projection);
+  glm_perspective(glm_rad(scene->player.camera->fov), 1280.0f / 720.0f, 0.1f, 100.0f, projection);
 
   // Create a RenderContext, which is simply
   // a collection of parameters for rendering the Level and Entities
@@ -478,7 +478,7 @@ void scene_render(struct Scene *scene){
   }
 
   // Render text
-  text_render("Crux Engine 0.2", 4.0f, 744.0f, 1.0f, (vec3){1.0f, 1.0f, 1.0f});
+  text_render("Crux Engine 0.2", 4.0f, 696.0f, 1.0f, (vec3){1.0f, 1.0f, 1.0f});
 }
 
 void scene_pause(struct Scene *scene){

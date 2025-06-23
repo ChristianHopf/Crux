@@ -76,7 +76,7 @@ void load_font_face(){
   textShader = shader;
   shader_use(textShader);
   mat4 orthographic;
-  glm_ortho(0, 1024, 0, 768, -1.0f, 1.0f, orthographic);
+  glm_ortho(0, 1280, 0, 720, -1.0f, 1.0f, orthographic);
   shader_set_mat4(shader, "projection", orthographic);
 
   // VAO and VBO
