@@ -205,20 +205,26 @@ Engine *engine_create(){
 // Just slap everything down outside main and get the thread working
 ALCdevice *device;
 ALCcontext *context;
-ALuint buffer, source;
+ALuint buffers[4];
+ALuint source;
+
+volatile int stop_audio = 0;
 
 void *process_audio(void *arg){
   alcMakeContextCurrent(context);
-  while (1){
-    ALint state;
+  while (!stop_audio){
+    ALint state, processed;
     alGetSourcei(source, AL_SOURCE_STATE, &state);
-    if (state != AL_PLAYING){
-      break;
+    alGetSourcei(source, AL_BUFFERS_PROCESSED, &processed);
+    if (processed > 0){
+      ALuint buf;
+      alSourceUnqueueBuffers(source, 1, &buf);
+      alSourceQueueBuffers(source, 1, &buf);
     }
-    else{
+    if (state == AL_PLAYING){
       alcProcessContext(context);
-      usleep(10000);
     }
+    usleep(5000);
   }
   alcMakeContextCurrent(NULL);
   return NULL;
@@ -228,6 +234,7 @@ int main(){
   Engine *engine = engine_create();
   if (!engine){
     printf("Error: failed to create Engine\n");
+    glfwTerminate();
     return -1;
   }
 
@@ -237,12 +244,18 @@ int main(){
 
   device = alcOpenDevice(NULL);
   if (!device){
-    fprintf(stderr, "Error: failed to open OpenAL device\n");
+    ALCenum error = alcGetError(NULL);
+    fprintf(stderr, "Error: failed to open OpenAL device: %d\\n", error);
+    glfwTerminate();
+    free(engine);
     return 0;
   }
   context = alcCreateContext(device, NULL);
   if (!context){
     fprintf(stderr, "Error: failed to create OpenAL context\n");
+    alcCloseDevice(device);
+    glfwTerminate();
+    free(engine);
     return 0;
   }
   alcMakeContextCurrent(context);
@@ -252,6 +265,11 @@ int main(){
   SNDFILE *mp3_file = sf_open("resources/music/mookid1.mp3", SFM_READ, &info);
   if (!mp3_file){
     fprintf(stderr, "Error: failed to open %s: %s\n", "resources/music/mookid1.mp3", sf_strerror(NULL));
+    alcMakeContextCurrent(NULL);
+    alcDestroyContext(context);
+    alcCloseDevice(device);
+    glfwTerminate();
+    free(engine);
     return 0;
   }
 
@@ -261,6 +279,11 @@ int main(){
   if (read_frames != info.frames){
     fprintf(stderr, "Error: failed to read correct number of frames into wav_data\n");
     free(mp3_data);
+    alcMakeContextCurrent(NULL);
+    alcDestroyContext(context);
+    alcCloseDevice(device);
+    glfwTerminate();
+    free(engine);
     return 0;
   }
 
@@ -274,12 +297,25 @@ int main(){
 
   // Buffer audio and create a source
   // ALuint buffer, source;
-  alGenBuffers(1, &buffer);
-  alBufferData(buffer, format, mp3_data, info.frames * info.channels * sizeof(float), info.samplerate);
+  alGenBuffers(4, buffers);
+  sf_count_t frames_per_buffer = info.frames / 4;
+  for(int i = 0; i < 4; i++){
+    sf_count_t offset = i * frames_per_buffer * info.channels;
+    sf_count_t size;
+    if (i == 3){
+      size = (info.frames - offset / info.channels) * info.channels * sizeof(float);
+    }
+    else{
+      size = frames_per_buffer * info.channels * sizeof(float);
+    }
+    alBufferData(buffers[i], format, mp3_data + offset, size, info.samplerate);
+  }
+
+  // alBufferData(buffer, format, mp3_data, info.frames * info.channels * sizeof(float), info.samplerate);
   free(mp3_data);
 
   alGenSources(1, &source);
-  alSourcei(source, AL_BUFFER, buffer);
+  alSourceQueueBuffers(source, 4, buffers);
   alSourcef(source, AL_GAIN, 1.0f);
   alSourcef(source, AL_PITCH, 1.0f);
   alSourcei(source, AL_LOOPING, AL_TRUE);
@@ -316,9 +352,10 @@ int main(){
   }
 
   // Clean up OpenAL
+  stop_audio = 1;
   alSourceStop(source);
   alDeleteSources(1, &source);
-  alDeleteBuffers(1, &buffer);
+  alDeleteBuffers(4, buffers);
   pthread_join(audio_thread, NULL);
   alcMakeContextCurrent(NULL);
   alcDestroyContext(context);
@@ -326,5 +363,6 @@ int main(){
 
   glfwDestroyWindow(engine->window);
 	glfwTerminate();
+  free(engine);
 	return 0;
 }
