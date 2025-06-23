@@ -213,17 +213,21 @@ volatile int stop_audio = 0;
 void *process_audio(void *arg){
   alcMakeContextCurrent(context);
   while (!stop_audio){
-    ALint state, processed;
+    ALint state, processed, queued;
     alGetSourcei(source, AL_SOURCE_STATE, &state);
     alGetSourcei(source, AL_BUFFERS_PROCESSED, &processed);
+    alGetSourcei(source, AL_BUFFERS_QUEUED, &queued);
+    printf("Processed %d buffers\n", processed);
     if (processed > 0){
-      // printf("\n\n\nProcessed %d buffers, queuing next buffer\n\n\n", processed);
-      ALuint buf;
-      alSourceUnqueueBuffers(source, 1, &buf);
-      alSourceQueueBuffers(source, 1, &buf);
+      printf("Processed buffers: %d, queued buffers: %d\n", processed, queued);
+      for(int i = 0; i < processed; i++){
+        ALuint buf;
+        alSourceUnqueueBuffers(source, 1, &buf);
+        alSourceQueueBuffers(source, 1, &buf);
+      }
     }
     if (state == AL_PLAYING){
-      printf("AUDIO PLAYING\n");
+      // printf("AUDIO PLAYING\n");
       alcProcessContext(context);
     }
     usleep(5000);
@@ -300,27 +304,35 @@ int main(){
   // Buffer audio and create a source
   // ALuint buffer, source;
   alGenBuffers(4, buffers);
-  sf_count_t frames_per_buffer = info.frames / 12;
-  for(int i = 0; i < 12; i++){
+  alGetError();
+  sf_count_t frames_per_buffer = info.frames / 4;
+  for(int i = 0; i < 4; i++){
     sf_count_t offset = i * frames_per_buffer * info.channels;
     sf_count_t size;
-    if (i == 11){
+    if (i == 3){
       size = (info.frames - offset / info.channels) * info.channels * sizeof(float);
     }
     else{
       size = frames_per_buffer * info.channels * sizeof(float);
     }
     alBufferData(buffers[i], format, mp3_data + offset, size, info.samplerate);
+    ALenum buffer_error = alGetError();
+    if (buffer_error != AL_NO_ERROR){
+      fprintf(stderr, "Error: alGetError returned error %d for alBufferData with buffer %d\n", buffer_error, i);
+    }
   }
 
   // alBufferData(buffer, format, mp3_data, info.frames * info.channels * sizeof(float), info.samplerate);
   free(mp3_data);
 
   alGenSources(1, &source);
-  alSourceQueueBuffers(source, 12, buffers);
+  alSourceQueueBuffers(source, 4, buffers);
+  if (alGetError() != AL_NO_ERROR){
+    fprintf(stderr, "Error: alGetError returned error %d in alSourceQueueBuffers\n", alGetError());
+  }
   alSourcef(source, AL_GAIN, 1.0f);
   alSourcef(source, AL_PITCH, 1.0f);
-  alSourcei(source, AL_LOOPING, AL_TRUE);
+  // alSourcei(source, AL_LOOPING, AL_TRUE);
 
   alSourcePlay(source);
 
