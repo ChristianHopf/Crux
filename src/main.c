@@ -5,7 +5,9 @@
 #include <AL/alc.h>
 #include <AL/alext.h>
 #include <sndfile.h>
+#include "tinycthread/tinycthread.h"
 #include <ft2build.h>
+// #include <threads.h>
 #include FT_FREETYPE_H
 #include <stdio.h>
 #include <stdbool.h>
@@ -26,9 +28,12 @@ typedef struct {
   float deltaTime;
   float lastFrame;
   // Multithreading
-  pthread_mutex_t scene_mutex;
-  pthread_cond_t render_signal;
-  pthread_cond_t render_done_signal;
+  mtx_t scene_mutex;
+  cnd_t render_signal;
+  cnd_t render_done_signal;
+  // pthread_mutex_t scene_mutex;
+  // pthread_cond_t render_signal;
+  // pthread_cond_t render_done_signal;
   bool render_ready;
 } Engine;
 
@@ -202,13 +207,13 @@ Engine *engine_create(){
   engine->deltaTime = 0.0f;
   engine->lastFrame = 0.0f;
 
-  // Release context for render thread to use it later
-  glfwMakeContextCurrent(NULL);
-
   // Scene mutex
-  pthread_mutex_init(&engine->scene_mutex, NULL);
-  pthread_cond_init(&engine->render_signal, NULL);
-  pthread_cond_init(&engine->render_done_signal, NULL);
+  mtx_init(&engine->scene_mutex, mtx_plain);
+  cnd_init(&engine->render_signal);
+  cnd_init(&engine->render_done_signal);
+  // pthread_mutex_init(&engine->scene_mutex, NULL);
+  // pthread_cond_init(&engine->render_signal, NULL);
+  // pthread_cond_init(&engine->render_done_signal, NULL);
   engine->render_ready = false;
 
   return engine;
@@ -255,11 +260,13 @@ void *render_thread(void *arg){
   glfwMakeContextCurrent(engine->window);
   while (!glfwWindowShouldClose(engine->window)){
     // Lock mutex
-    pthread_mutex_lock(&engine->scene_mutex);
+    mtx_lock(&engine->scene_mutex);
+    // pthread_mutex_lock(&engine->scene_mutex);
 
     // Wait for render signal
     while (!engine->render_ready){
-      pthread_cond_wait(&engine->render_signal, &engine->scene_mutex);
+      cnd_wait(&engine->render_signal, &engine->scene_mutex);
+      // pthread_cond_wait(&engine->render_signal, &engine->scene_mutex);
     }
 
     // Render scene
@@ -268,8 +275,10 @@ void *render_thread(void *arg){
 
     // Set render_ready back to false, signal rendering is done, unlock mutex
     engine->render_ready = false;
-    pthread_cond_signal(&engine->render_done_signal);
-    pthread_mutex_unlock(&engine->scene_mutex);
+    cnd_signal(&engine->render_done_signal);
+    mtx_unlock(&engine->scene_mutex);
+    // pthread_cond_signal(&engine->render_done_signal);
+    // pthread_mutex_unlock(&engine->scene_mutex);
   }
 
   glfwMakeContextCurrent(NULL);
@@ -376,17 +385,26 @@ int main(){
 
   alSourcePlay(source);
 
-  pthread_t audio_thread;
-  pthread_t render_thread_id;
-  pthread_create(&audio_thread, NULL, process_audio, NULL);
-  pthread_create(&render_thread_id, NULL, render_thread, engine);
+  // Load font
+  load_font_face();
+
+  // Release context for render thread to use it later
+  glfwMakeContextCurrent(NULL);
+
+  thrd_t audio_thrd, render_thrd;
+  thrd_create(&audio_thrd, process_audio, NULL);
+  thrd_create(&render_thrd, render_thread, engine);
+
+  // pthread_t audio_thread;
+  // pthread_t render_thread_id;
+  // pthread_create(&audio_thread, NULL, process_audio, NULL);
+  // pthread_create(&render_thread_id, NULL, render_thread, engine);
 
   ALCint dev_samplerate;
   alcGetIntegerv(device, ALC_FREQUENCY, 1, &dev_samplerate);
 
   printf("MP3 sample rate: %d, device sample rate: %d\n", info.samplerate, dev_samplerate);
 
-  load_font_face();
 
 	// Render loop
 	while (!glfwWindowShouldClose(engine->window)){
@@ -394,7 +412,8 @@ int main(){
 		float currentFrame = (float)(glfwGetTime());
 
     // Lock scene mutex, do timing and updating
-    pthread_mutex_lock(&engine->scene_mutex);
+    mtx_lock(&engine->scene_mutex);
+    // pthread_mutex_lock(&engine->scene_mutex);
 		engine->deltaTime = currentFrame - engine->lastFrame;
 		engine->lastFrame = currentFrame;
 
@@ -406,11 +425,14 @@ int main(){
 
     // Set render_ready to true, signal render thread to work, 
     engine->render_ready = true;
-    pthread_cond_signal(&engine->render_signal);
+    cnd_signal(&engine->render_signal);
+    // pthread_cond_signal(&engine->render_signal);
     while(engine->render_ready){
-      pthread_cond_wait(&engine->render_done_signal, &engine->scene_mutex);
+      cnd_wait(&engine->render_done_signal, &engine->scene_mutex);
+      // pthread_cond_wait(&engine->render_done_signal, &engine->scene_mutex);
     }
-    pthread_mutex_unlock(&engine->scene_mutex);
+    mtx_unlock(&engine->scene_mutex);
+    // pthread_mutex_unlock(&engine->scene_mutex);
 
 
 		// scene_render(engine->active_scene);
@@ -425,11 +447,16 @@ int main(){
   alSourceStop(source);
   alDeleteSources(1, &source);
   alDeleteBuffers(4, buffers);
-  pthread_join(audio_thread, NULL);
-  pthread_join(render_thread_id, NULL);
-  pthread_mutex_destroy(&engine->scene_mutex);
-  pthread_cond_destroy(&engine->render_signal);
-  pthread_cond_destroy(&engine->render_done_signal);
+  thrd_join(audio_thrd, NULL);
+  thrd_join(render_thrd, NULL);
+  mtx_destroy(&engine->scene_mutex);
+  cnd_destroy(&engine->render_signal);
+  cnd_destroy(&engine->render_done_signal);
+  // pthread_join(audio_thread, NULL);
+  // pthread_join(render_thread_id, NULL);
+  // pthread_mutex_destroy(&engine->scene_mutex);
+  // pthread_cond_destroy(&engine->render_signal);
+  // pthread_cond_destroy(&engine->render_done_signal);
   alcMakeContextCurrent(NULL);
   alcDestroyContext(context);
   alcCloseDevice(device);
