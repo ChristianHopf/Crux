@@ -422,8 +422,14 @@ void scene_update(struct Scene *scene, float delta_time){
   // Update player
   player_update(&scene->player, delta_time);
 
+  float physics_start_time = glfwGetTime();
+
   // Perform collision detection
   physics_step(scene->physics_world, delta_time);
+
+
+  float physics_end_time = glfwGetTime();
+  printf("Time spent in physics_step: %.2f ms\n", (physics_end_time - physics_start_time) * 1000.0);
 
   // Match entity position with updated PhysicsBody position
   for(int i = 0; i < scene->num_dynamic_entities; i++){

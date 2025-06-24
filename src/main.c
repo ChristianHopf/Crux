@@ -20,6 +20,13 @@
 #include "player.h"
 #include "text.h"
 
+struct AudioStream {
+  SNDFILE *file;
+  SF_INFO info;
+  ALenum format;
+  ALuint buffers[4];
+  ALuint source;
+};
 
 typedef struct {
   GLFWwindow *window;
@@ -222,7 +229,7 @@ Engine *engine_create(){
 // Just slap everything down outside main and get the thread working
 ALCdevice *device;
 ALCcontext *context;
-ALuint buffers[12];
+ALuint buffers[4];
 ALuint source;
 
 volatile int stop_audio = 0;
@@ -249,7 +256,7 @@ void *process_audio(void *arg){
       // printf("AUDIO PLAYING\n");
       alcProcessContext(context);
     }
-    usleep(5000);
+    usleep(1000);
   }
   alcMakeContextCurrent(NULL);
   return NULL;
@@ -282,6 +289,64 @@ void *render_thread(void *arg){
   }
 
   glfwMakeContextCurrent(NULL);
+  return NULL;
+}
+
+void audio_stream_update(void *arg){
+  alcMakeContextCurrent(context);
+  while (!stop_audio){
+    struct AudioStream *stream = (struct AudioStream *)arg;
+
+    ALint processed = 0;
+    alGetSourcei(source, AL_BUFFERS_PROCESSED, &processed);
+    if (processed <= 0) return;
+
+    // For each buffer that's been processed,
+    // - unqueue a buffer
+    // - load new data
+    // - requeue
+    for(int i = 0; i < processed; i++){
+      // Unqueue
+      ALuint buffer;
+      alSourceUnqueueBuffers(stream->source, 1, &buffer);
+
+      // Load new data
+      float *new_data = malloc(4096 * stream->info.channels * sizeof(float));
+      sf_count_t read_frames = sf_readf_float(stream->file, new_data, 4096);
+      // If at end of file, seek to beginning and read frames
+      if (read_frames == 0){
+        sf_seek(stream->file, 0, SEEK_SET);
+        read_frames = sf_readf_float(stream->file, new_data, 4096);
+      }
+      // Else, buffer all the frames we just read
+      if (read_frames > 0){
+        size_t data_size = read_frames * stream->info.channels * sizeof(float);
+        alBufferData(buffer, stream->format, new_data, data_size, stream->info.samplerate);
+
+        // Check for error buffering data
+        ALenum error = alGetError();
+        if (error != AL_NO_ERROR){
+          fprintf(stderr, "Error: failed to load data with alBufferData in audio_stream_update: %d\n", error);
+          return;
+        }
+      }
+
+      // Requeue new buffer
+      alSourceQueueBuffers(stream->source, 1, &buffer);
+
+      ALint state;
+      alGetSourcei(stream->source, AL_SOURCE_STATE, &state);
+      if (state != AL_PLAYING){
+        ALint queued;
+        alGetSourcei(stream->source, AL_BUFFERS_QUEUED, &queued);
+        if (queued > 0){
+          alSourcePlay(stream->source);
+        }
+      }
+      usleep(1000);
+    }
+  }
+  alcMakeContextCurrent(NULL);
   return NULL;
 }
 
@@ -354,7 +419,10 @@ int main(){
   // ALuint buffer, source;
   alGenBuffers(4, buffers);
   alGetError();
-  sf_count_t frames_per_buffer = info.frames / 4;
+  sf_count_t frames_per_buffer = 4096;
+  // sf_count_t frames_per_buffer = info.frames / 4;
+  printf("Audio buffer size: %ld frames, %ld samples per buffer\n", 
+       info.frames, frames_per_buffer);
   for(int i = 0; i < 4; i++){
     sf_count_t offset = i * frames_per_buffer * info.channels;
     sf_count_t size;
@@ -391,14 +459,19 @@ int main(){
   // Release context for render thread to use it later
   glfwMakeContextCurrent(NULL);
 
-  thrd_t audio_thrd, render_thrd;
-  thrd_create(&audio_thrd, process_audio, NULL);
-  thrd_create(&render_thrd, render_thread, engine);
+  // Make AudioStream struct
+  struct AudioStream audio_stream = {
+    .file = mp3_file,
+    .info = info,
+    .format = format,
+    .buffers = buffers,
+    .source = source
+  };
 
-  // pthread_t audio_thread;
-  // pthread_t render_thread_id;
-  // pthread_create(&audio_thread, NULL, process_audio, NULL);
-  // pthread_create(&render_thread_id, NULL, render_thread, engine);
+  thrd_t audio_thrd, render_thrd;
+  thrd_create(&audio_thrd, audio_stream_update, &audio_stream);
+  // thrd_create(&audio_thrd, process_audio, NULL);
+  thrd_create(&render_thrd, render_thread, engine);
 
   ALCint dev_samplerate;
   alcGetIntegerv(device, ALC_FREQUENCY, 1, &dev_samplerate);
@@ -413,7 +486,6 @@ int main(){
 
     // Lock scene mutex, do timing and updating
     mtx_lock(&engine->scene_mutex);
-    // pthread_mutex_lock(&engine->scene_mutex);
 		engine->deltaTime = currentFrame - engine->lastFrame;
 		engine->lastFrame = currentFrame;
 
@@ -421,18 +493,19 @@ int main(){
 
 		// Handle input, update
 		processInput(engine->window);
+
+    float update_start_time = glfwGetTime();
 		scene_update(engine->active_scene, engine->deltaTime);
+    float update_end_time = glfwGetTime();
+    printf("scene update took %.2f ms\n", (update_end_time - update_start_time) * 1000.0);
 
     // Set render_ready to true, signal render thread to work, 
     engine->render_ready = true;
     cnd_signal(&engine->render_signal);
-    // pthread_cond_signal(&engine->render_signal);
     while(engine->render_ready){
       cnd_wait(&engine->render_done_signal, &engine->scene_mutex);
-      // pthread_cond_wait(&engine->render_done_signal, &engine->scene_mutex);
     }
     mtx_unlock(&engine->scene_mutex);
-    // pthread_mutex_unlock(&engine->scene_mutex);
 
 
 		// scene_render(engine->active_scene);
@@ -452,11 +525,6 @@ int main(){
   mtx_destroy(&engine->scene_mutex);
   cnd_destroy(&engine->render_signal);
   cnd_destroy(&engine->render_done_signal);
-  // pthread_join(audio_thread, NULL);
-  // pthread_join(render_thread_id, NULL);
-  // pthread_mutex_destroy(&engine->scene_mutex);
-  // pthread_cond_destroy(&engine->render_signal);
-  // pthread_cond_destroy(&engine->render_done_signal);
   alcMakeContextCurrent(NULL);
   alcDestroyContext(context);
   alcCloseDevice(device);
