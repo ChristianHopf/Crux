@@ -11,7 +11,6 @@ struct AudioStream *audio_stream_create(char *path){
     return NULL;
   }
 
-  printf("audio path: %s\n", path);
   // Open audio file with sndfile
   stream->file = sf_open(path, SFM_READ, &stream->info);
   if (!stream->file){
@@ -26,6 +25,15 @@ struct AudioStream *audio_stream_create(char *path){
   }
   else{
     stream->format = AL_FORMAT_STEREO_FLOAT32;
+  }
+
+  // Allocate temp buffer
+  stream->temp_buffer = malloc(BUFFER_FRAMES * stream->info.channels * sizeof(float));
+  if (!stream->temp_buffer){
+    fprintf(stderr, "Error: failed to allocate temp_buffer in audio_stream_create\n");
+    sf_close(stream->file);
+    free(stream);
+    return NULL;
   }
 
   // Generate and load buffers
@@ -112,7 +120,7 @@ void *audio_stream_update(void *arg){
     }
 
     // Sleep for 1 ms
-    usleep(1000);
+    usleep(5000);
   }
   alcMakeContextCurrent(NULL);
   return NULL;
@@ -120,19 +128,18 @@ void *audio_stream_update(void *arg){
 
 // HELPERS
 bool fill_buffer(struct AudioStream *stream, ALuint buffer){
-  float *new_data = malloc(4096 * stream->info.channels * sizeof(float));
-  sf_count_t read_frames = sf_readf_float(stream->file, new_data, 4096);
+  // float *new_data = malloc(BUFFER_FRAMES * stream->info.channels * sizeof(float));
+  sf_count_t read_frames = sf_readf_float(stream->file, stream->temp_buffer, BUFFER_FRAMES);
 
   // End of file, move to beginning of file first
   if (read_frames == 0){
     sf_seek(stream->file, 0, SEEK_SET);
-    read_frames = sf_readf_float(stream->file, new_data, 4096);
+    read_frames = sf_readf_float(stream->file, stream->temp_buffer, BUFFER_FRAMES);
   }
   // Buffer data normally
   if (read_frames > 0) {
     size_t data_size = read_frames * stream->info.channels * sizeof(float);
-    alBufferData(buffer, stream->format, new_data, data_size, stream->info.samplerate);
-    free(new_data);
+    alBufferData(buffer, stream->format, stream->temp_buffer, data_size, stream->info.samplerate);
 
     ALenum error = alGetError();
     if (error != AL_NO_ERROR){
@@ -144,6 +151,5 @@ bool fill_buffer(struct AudioStream *stream, ALuint buffer){
   }
 
   // Still read 0 frames after moving to beginning of file. Probably won't happen
-  free(new_data);
   return false;
 }

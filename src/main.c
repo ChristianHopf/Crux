@@ -216,8 +216,6 @@ Engine *engine_create(){
   // pthread_cond_init(&engine->render_done_signal, NULL);
   engine->render_ready = false;
 
-  glfwSwapInterval(1);
-
   return engine;
 }
 
@@ -279,6 +277,7 @@ int main(){
     free(engine);
     return 0;
   }
+  printf("OPENAL DEVICE: %s\n", alcGetString(NULL, ALC_DEVICE_SPECIFIER));
   audio_context = alcCreateContext(device, NULL);
   if (!audio_context){
     fprintf(stderr, "Error: failed to create OpenAL context\n");
@@ -296,6 +295,7 @@ int main(){
   glfwMakeContextCurrent(NULL);
 
   struct AudioStream *audio_stream = audio_stream_create("resources/music/mookid.wav");
+  alcMakeContextCurrent(NULL);
 
   thrd_t render_thrd;
   thrd_create(&render_thrd, render_thread, engine);
@@ -314,25 +314,25 @@ int main(){
 		processInput(engine->window);
 
     // Lock scene mutex to update and render
-    mtx_lock(&engine->scene_mutex);
-    float update_start_time = glfwGetTime();
-		scene_update(engine->active_scene, engine->deltaTime);
-    float update_end_time = glfwGetTime();
-    printf("scene update took %.2f ms\n", (update_end_time - update_start_time) * 1000.0);
+		  mtx_lock(&engine->scene_mutex);
+		  float update_start_time = glfwGetTime();
+		  scene_update(engine->active_scene, engine->deltaTime);
+		  float update_end_time = glfwGetTime();
+		  printf("scene update took %.2f ms\n", (update_end_time - update_start_time) * 1000.0);
 
-    // Set render_ready to true, signal render thread to work,
-    float render_start_time = glfwGetTime();
-    engine->render_ready = true;
-    cnd_signal(&engine->render_signal);
-    while(engine->render_ready){
-      cnd_wait(&engine->render_done_signal, &engine->scene_mutex);
-    }
-    mtx_unlock(&engine->scene_mutex);
+		  // Set render_ready to true, signal render thread to work,
+		  float render_start_time = glfwGetTime();
+		  engine->render_ready = true;
+		  cnd_signal(&engine->render_signal);
+		  while(engine->render_ready){
+		    cnd_wait(&engine->render_done_signal, &engine->scene_mutex);
+		  }
+		  mtx_unlock(&engine->scene_mutex);
 
-    float render_end_time = glfwGetTime();
-    printf("Render took %.2f ms\n", (render_end_time - render_start_time) * 1000.0);
+		  float render_end_time = glfwGetTime();
+		  printf("Render took %.2f ms\n", (render_end_time - render_start_time) * 1000.0);
 
-		// scene_render(engine->active_scene);
+		scene_render(engine->active_scene);
 
 		// Check and call events, swap buffers
 		// glfwSwapBuffers(engine->window);

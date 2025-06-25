@@ -9,6 +9,7 @@
 #include "tinycthread/tinycthread.h"
 
 #define NUM_BUFFERS 4
+#define BUFFER_FRAMES 8192
 
 struct AudioStream {
   SNDFILE *file;
@@ -16,6 +17,7 @@ struct AudioStream {
   ALenum format;
   ALuint buffers[NUM_BUFFERS];
   ALuint source;
+  float *temp_buffer;
 
   thrd_t audio_thread;
 
