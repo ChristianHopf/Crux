@@ -4,10 +4,8 @@
 #include <AL/al.h>
 #include <AL/alc.h>
 #include <AL/alext.h>
-#include <sndfile.h>
 #include "tinycthread/tinycthread.h"
 #include <ft2build.h>
-// #include <threads.h>
 #include FT_FREETYPE_H
 #include <stdio.h>
 #include <stdbool.h>
@@ -19,14 +17,7 @@
 #include "scene.h"
 #include "player.h"
 #include "text.h"
-
-struct AudioStream {
-  SNDFILE *file;
-  SF_INFO info;
-  ALenum format;
-  ALuint buffers[4];
-  ALuint source;
-};
+#include "audio_manager.h"
 
 typedef struct {
   GLFWwindow *window;
@@ -236,31 +227,31 @@ volatile int stop_audio = 0;
 
 
 // SEPARATE THREADS
-void *process_audio(void *arg){
-  alcMakeContextCurrent(context);
-  while (!stop_audio){
-    ALint state, processed, queued;
-    alGetSourcei(source, AL_SOURCE_STATE, &state);
-    alGetSourcei(source, AL_BUFFERS_PROCESSED, &processed);
-    alGetSourcei(source, AL_BUFFERS_QUEUED, &queued);
-    printf("Processed %d buffers\n", processed);
-    if (processed > 0){
-      printf("Processed buffers: %d, queued buffers: %d\n", processed, queued);
-      for(int i = 0; i < processed; i++){
-        ALuint buf;
-        alSourceUnqueueBuffers(source, 1, &buf);
-        alSourceQueueBuffers(source, 1, &buf);
-      }
-    }
-    if (state == AL_PLAYING){
-      // printf("AUDIO PLAYING\n");
-      alcProcessContext(context);
-    }
-    usleep(1000);
-  }
-  alcMakeContextCurrent(NULL);
-  return NULL;
-}
+// void *process_audio(void *arg){
+//   alcMakeContextCurrent(context);
+//   while (!stop_audio){
+//     ALint state, processed, queued;
+//     alGetSourcei(source, AL_SOURCE_STATE, &state);
+//     alGetSourcei(source, AL_BUFFERS_PROCESSED, &processed);
+//     alGetSourcei(source, AL_BUFFERS_QUEUED, &queued);
+//     printf("Processed %d buffers\n", processed);
+//     if (processed > 0){
+//       printf("Processed buffers: %d, queued buffers: %d\n", processed, queued);
+//       for(int i = 0; i < processed; i++){
+//         ALuint buf;
+//         alSourceUnqueueBuffers(source, 1, &buf);
+//         alSourceQueueBuffers(source, 1, &buf);
+//       }
+//     }
+//     if (state == AL_PLAYING){
+//       // printf("AUDIO PLAYING\n");
+//       alcProcessContext(context);
+//     }
+//     usleep(1000);
+//   }
+//   alcMakeContextCurrent(NULL);
+//   return NULL;
+// }
 
 void *render_thread(void *arg){
   Engine *engine = (Engine *)arg;
@@ -289,64 +280,6 @@ void *render_thread(void *arg){
   }
 
   glfwMakeContextCurrent(NULL);
-  return NULL;
-}
-
-void audio_stream_update(void *arg){
-  alcMakeContextCurrent(context);
-  while (!stop_audio){
-    struct AudioStream *stream = (struct AudioStream *)arg;
-
-    ALint processed = 0;
-    alGetSourcei(source, AL_BUFFERS_PROCESSED, &processed);
-    if (processed <= 0) return;
-
-    // For each buffer that's been processed,
-    // - unqueue a buffer
-    // - load new data
-    // - requeue
-    for(int i = 0; i < processed; i++){
-      // Unqueue
-      ALuint buffer;
-      alSourceUnqueueBuffers(stream->source, 1, &buffer);
-
-      // Load new data
-      float *new_data = malloc(4096 * stream->info.channels * sizeof(float));
-      sf_count_t read_frames = sf_readf_float(stream->file, new_data, 4096);
-      // If at end of file, seek to beginning and read frames
-      if (read_frames == 0){
-        sf_seek(stream->file, 0, SEEK_SET);
-        read_frames = sf_readf_float(stream->file, new_data, 4096);
-      }
-      // Else, buffer all the frames we just read
-      if (read_frames > 0){
-        size_t data_size = read_frames * stream->info.channels * sizeof(float);
-        alBufferData(buffer, stream->format, new_data, data_size, stream->info.samplerate);
-
-        // Check for error buffering data
-        ALenum error = alGetError();
-        if (error != AL_NO_ERROR){
-          fprintf(stderr, "Error: failed to load data with alBufferData in audio_stream_update: %d\n", error);
-          return;
-        }
-      }
-
-      // Requeue new buffer
-      alSourceQueueBuffers(stream->source, 1, &buffer);
-
-      ALint state;
-      alGetSourcei(stream->source, AL_SOURCE_STATE, &state);
-      if (state != AL_PLAYING){
-        ALint queued;
-        alGetSourcei(stream->source, AL_BUFFERS_QUEUED, &queued);
-        if (queued > 0){
-          alSourcePlay(stream->source);
-        }
-      }
-      usleep(1000);
-    }
-  }
-  alcMakeContextCurrent(NULL);
   return NULL;
 }
 
@@ -380,78 +313,78 @@ int main(){
   }
   alcMakeContextCurrent(context);
 
-  // Load WAV with sndfile
-  SF_INFO info;
-  SNDFILE *mp3_file = sf_open("resources/music/mookid1.mp3", SFM_READ, &info);
-  if (!mp3_file){
-    fprintf(stderr, "Error: failed to open %s: %s\n", "resources/music/mookid1.mp3", sf_strerror(NULL));
-    alcMakeContextCurrent(NULL);
-    alcDestroyContext(context);
-    alcCloseDevice(device);
-    glfwTerminate();
-    free(engine);
-    return 0;
-  }
-
-  float *mp3_data = (float *)malloc(info.frames * info.channels * sizeof(float));
-  sf_count_t read_frames = sf_readf_float(mp3_file, mp3_data, info.frames);
-  sf_close(mp3_file);
-  if (read_frames != info.frames){
-    fprintf(stderr, "Error: failed to read correct number of frames into wav_data\n");
-    free(mp3_data);
-    alcMakeContextCurrent(NULL);
-    alcDestroyContext(context);
-    alcCloseDevice(device);
-    glfwTerminate();
-    free(engine);
-    return 0;
-  }
-
-  ALenum format;
-  if (info.channels == 1){
-    format = AL_FORMAT_MONO_FLOAT32;
-  }
-  else{
-    format = AL_FORMAT_STEREO_FLOAT32;
-  }
-
-  // Buffer audio and create a source
-  // ALuint buffer, source;
-  alGenBuffers(4, buffers);
-  alGetError();
-  sf_count_t frames_per_buffer = 4096;
-  // sf_count_t frames_per_buffer = info.frames / 4;
-  printf("Audio buffer size: %ld frames, %ld samples per buffer\n", 
-       info.frames, frames_per_buffer);
-  for(int i = 0; i < 4; i++){
-    sf_count_t offset = i * frames_per_buffer * info.channels;
-    sf_count_t size;
-    if (i == 3){
-      size = (info.frames - offset / info.channels) * info.channels * sizeof(float);
-    }
-    else{
-      size = frames_per_buffer * info.channels * sizeof(float);
-    }
-    alBufferData(buffers[i], format, mp3_data + offset, size, info.samplerate);
-    ALenum buffer_error = alGetError();
-    if (buffer_error != AL_NO_ERROR){
-      fprintf(stderr, "Error: alGetError returned error %d for alBufferData with buffer %d\n", buffer_error, i);
-    }
-  }
+  // // Load WAV with sndfile
+  // SF_INFO info;
+  // SNDFILE *mp3_file = sf_open("resources/music/mookid.wav", SFM_READ, &info);
+  // if (!mp3_file){
+  //   fprintf(stderr, "Error: failed to open %s: %s\n", "resources/music/mookid.wav", sf_strerror(NULL));
+  //   alcMakeContextCurrent(NULL);
+  //   alcDestroyContext(context);
+  //   alcCloseDevice(device);
+  //   glfwTerminate();
+  //   free(engine);
+  //   return 0;
+  // }
+  //
+  // float *mp3_data = (float *)malloc(info.frames * info.channels * sizeof(float));
+  // sf_count_t read_frames = sf_readf_float(mp3_file, mp3_data, info.frames);
+  // // sf_close(mp3_file);
+  // if (read_frames != info.frames){
+  //   fprintf(stderr, "Error: failed to read correct number of frames into wav_data\n");
+  //   free(mp3_data);
+  //   alcMakeContextCurrent(NULL);
+  //   alcDestroyContext(context);
+  //   alcCloseDevice(device);
+  //   glfwTerminate();
+  //   free(engine);
+  //   return 0;
+  // }
+  //
+  // ALenum format;
+  // if (info.channels == 1){
+  //   format = AL_FORMAT_MONO_FLOAT32;
+  // }
+  // else{
+  //   format = AL_FORMAT_STEREO_FLOAT32;
+  // }
+  //
+  // // Buffer audio and create a source
+  // // ALuint buffer, source;
+  // alGenBuffers(4, buffers);
+  // alGetError();
+  // sf_count_t frames_per_buffer = 4096;
+  // // sf_count_t frames_per_buffer = info.frames / 4;
+  // printf("Audio buffer size: %ld frames, %ld samples per buffer\n", 
+  //      info.frames, frames_per_buffer);
+  // for(int i = 0; i < 4; i++){
+  //   sf_count_t offset = i * frames_per_buffer * info.channels;
+  //   sf_count_t size;
+  //   if (i == 3){
+  //     size = (info.frames - offset / info.channels) * info.channels * sizeof(float);
+  //   }
+  //   else{
+  //     size = frames_per_buffer * info.channels * sizeof(float);
+  //   }
+  //   alBufferData(buffers[i], format, mp3_data + offset, size, info.samplerate);
+  //   ALenum buffer_error = alGetError();
+  //   if (buffer_error != AL_NO_ERROR){
+  //     fprintf(stderr, "Error: alGetError returned error %d for alBufferData with buffer %d\n", buffer_error, i);
+  //   }
+  // }
 
   // alBufferData(buffer, format, mp3_data, info.frames * info.channels * sizeof(float), info.samplerate);
-  free(mp3_data);
-
-  alGenSources(1, &source);
-  alSourceQueueBuffers(source, 4, buffers);
-  if (alGetError() != AL_NO_ERROR){
-    fprintf(stderr, "Error: alGetError returned error %d in alSourceQueueBuffers\n", alGetError());
-  }
-  alSourcef(source, AL_GAIN, 1.0f);
-  alSourcef(source, AL_PITCH, 1.0f);
-  // alSourcei(source, AL_LOOPING, AL_TRUE);
-
-  alSourcePlay(source);
+  // free(mp3_data);
+  //
+  // alGenSources(1, &source);
+  // alSourceQueueBuffers(source, 4, buffers);
+  // if (alGetError() != AL_NO_ERROR){
+  //   fprintf(stderr, "Error: alGetError returned error %d in alSourceQueueBuffers\n", alGetError());
+  // }
+  // alSourcef(source, AL_GAIN, 1.0f);
+  // alSourcef(source, AL_PITCH, 1.0f);
+  // // alSourcei(source, AL_LOOPING, AL_TRUE);
+  //
+  // alSourcePlay(source);
 
   // Load font
   load_font_face();
@@ -459,25 +392,10 @@ int main(){
   // Release context for render thread to use it later
   glfwMakeContextCurrent(NULL);
 
-  // Make AudioStream struct
-  struct AudioStream audio_stream = {
-    .file = mp3_file,
-    .info = info,
-    .format = format,
-    .buffers = buffers,
-    .source = source
-  };
+  struct AudioStream *audio_stream = audio_stream_create("resources/music/mookid.wav");
 
-  thrd_t audio_thrd, render_thrd;
-  thrd_create(&audio_thrd, audio_stream_update, &audio_stream);
-  // thrd_create(&audio_thrd, process_audio, NULL);
+  thrd_t render_thrd;
   thrd_create(&render_thrd, render_thread, engine);
-
-  ALCint dev_samplerate;
-  alcGetIntegerv(device, ALC_FREQUENCY, 1, &dev_samplerate);
-
-  printf("MP3 sample rate: %d, device sample rate: %d\n", info.samplerate, dev_samplerate);
-
 
 	// Render loop
 	while (!glfwWindowShouldClose(engine->window)){
@@ -499,7 +417,8 @@ int main(){
     float update_end_time = glfwGetTime();
     printf("scene update took %.2f ms\n", (update_end_time - update_start_time) * 1000.0);
 
-    // Set render_ready to true, signal render thread to work, 
+    // Set render_ready to true, signal render thread to work,
+    float render_start_time = glfwGetTime();
     engine->render_ready = true;
     cnd_signal(&engine->render_signal);
     while(engine->render_ready){
@@ -507,6 +426,8 @@ int main(){
     }
     mtx_unlock(&engine->scene_mutex);
 
+    float render_end_time = glfwGetTime();
+    printf("Render took %.2f ms\n", (render_end_time - render_start_time) * 1000.0);
 
 		// scene_render(engine->active_scene);
 
@@ -515,12 +436,7 @@ int main(){
 		glfwPollEvents();
   }
 
-  // Clean up OpenAL
-  stop_audio = 1;
-  alSourceStop(source);
-  alDeleteSources(1, &source);
-  alDeleteBuffers(4, buffers);
-  thrd_join(audio_thrd, NULL);
+  audio_stream_destroy(audio_stream);
   thrd_join(render_thrd, NULL);
   mtx_destroy(&engine->scene_mutex);
   cnd_destroy(&engine->render_signal);
@@ -528,6 +444,8 @@ int main(){
   alcMakeContextCurrent(NULL);
   alcDestroyContext(context);
   alcCloseDevice(device);
+
+  // sf_close(mp3_file);
 
   glfwDestroyWindow(engine->window);
 	glfwTerminate();
