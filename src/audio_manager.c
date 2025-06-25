@@ -1,5 +1,6 @@
 #include "audio_manager.h"
 #include <AL/al.h>
+#include <locale.h>
 
 struct AudioStream *audio_stream_create(char *path){
 
@@ -78,7 +79,7 @@ void audio_stream_destroy(struct AudioStream *stream){
 
 void *audio_stream_update(void *arg){
   struct AudioStream *stream = (struct AudioStream *)arg;
-  // alcMakeContextCurrent(context);
+  alcMakeContextCurrent(audio_context);
   while (!stream->stop_audio){
 
     // Check for processed buffers
@@ -113,7 +114,7 @@ void *audio_stream_update(void *arg){
     // Sleep for 1 ms
     usleep(1000);
   }
-  // alcMakeContextCurrent(NULL);
+  alcMakeContextCurrent(NULL);
   return NULL;
 }
 
@@ -141,4 +142,8 @@ bool fill_buffer(struct AudioStream *stream, ALuint buffer){
 
     return true;
   }
+
+  // Still read 0 frames after moving to beginning of file. Probably won't happen
+  free(new_data);
+  return false;
 }

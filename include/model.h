@@ -1,7 +1,7 @@
 #ifndef MODEL_H
 #define MODEL_H
 
-#include <glad/glad.h>
+// #include <glad/glad.h>
 #include <cglm/cglm.h>
 #include <stdbool.h>
 #include <assimp/scene.h>

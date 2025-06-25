@@ -1,6 +1,6 @@
 #pragma once
 
-#include <glad/glad.h>
+// #include <glad/glad.h>
 #include <cJSON/cJSON.h>
 #include <stdbool.h>
 #include "physics/world.h"
@@ -25,6 +25,8 @@ struct Scene {
   struct Skybox *skybox;
   struct Player player;
   struct Light *lights;
+  // UBOs
+  unsigned int ubo_matrices;
   // Physics
   struct PhysicsWorld *physics_world;
   // Options

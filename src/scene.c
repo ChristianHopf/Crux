@@ -1,8 +1,9 @@
 //#include <GLFW/glfw3.h>
+// #include <GL/glext.h>
+#include <GLFW/glfw3.h>
 #include <cglm/euler.h>
 #include <cglm/mat4.h>
 #include <cglm/vec3.h>
-#include <glad/glad.h>
 #include <cglm/cglm.h>
 #include <cglm/mat3.h>
 #include "scene.h"
@@ -35,7 +36,7 @@ struct Scene *scene_init(char *scene_path){
   const cJSON *models_json;
   const cJSON *meshes;
   const cJSON *lights_json;
-  const cJSON *skybox_json;
+const cJSON *skybox_json;
 
   cJSON *scene_json = cJSON_Parse(scene_data);
   if (!scene_json){
@@ -79,6 +80,20 @@ struct Scene *scene_init(char *scene_path){
     printf("Loaded shader with id %d\n", shader->ID);
     index++;
   }
+
+  // Link shader uniform blocks to binding points
+  for (int i = 0; i < num_shaders; i++){
+    unsigned int uniform_block_index = glGetUniformBlockIndex(shaders[i]->ID, "Matrices");
+    glUniformBlockBinding(shaders[i]->ID, uniform_block_index, 0);
+  }
+  // Generate uniform buffer objects
+  unsigned int uboMatrices;
+  glGenBuffers(1, &uboMatrices);
+  glBindBuffer(GL_UNIFORM_BUFFER, uboMatrices);
+  glBufferData(GL_UNIFORM_BUFFER, 2 * sizeof(mat4), NULL, GL_STATIC_DRAW);
+  glBindBuffer(GL_UNIFORM_BUFFER, 0);
+  glBindBufferRange(GL_UNIFORM_BUFFER, 0, uboMatrices, 0, 2 * sizeof(mat4));
+  scene->ubo_matrices = uboMatrices;
 
   // Load models
   models_json = cJSON_GetObjectItemCaseSensitive(scene_json, "models");
@@ -464,16 +479,24 @@ void scene_render(struct Scene *scene){
     .camera_position_ptr = &scene->player.camera->position,
   };
 
-  // Draw level
-  // level_render(&scene->level, &context);
+  // Set view and projection matrices in matrices UBO
+  glBindBuffer(GL_UNIFORM_BUFFER, scene->ubo_matrices);
+  glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(mat4), view);
+  glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+  glBindBuffer(GL_UNIFORM_BUFFER, scene->ubo_matrices);
+  glBufferSubData(GL_UNIFORM_BUFFER, sizeof(mat4), sizeof(mat4), projection);
 
   // Draw entities
   for(int i = 0; i < scene->num_static_entities; i++){
     entity_render(&scene->static_entities[i], &context);
   }
+  float oiiai_start_time = glfwGetTime();
   for(int i = 0; i < scene->num_dynamic_entities; i++){
     entity_render(&scene->dynamic_entities[i], &context);
   }
+  glFinish();
+  printf("OIIAI RENDER TIME: %.2f ms\n", (glfwGetTime() - oiiai_start_time) * 1000.0);
 
   // Draw skybox
   skybox_render(scene->skybox, &context);
@@ -485,12 +508,14 @@ void scene_render(struct Scene *scene){
 
   // Render text
   text_render("Crux Engine 0.2", 4.0f, 696.0f, 1.0f, (vec3){1.0f, 1.0f, 1.0f});
+
 }
 
 void scene_pause(struct Scene *scene){
   bool prev = scene->paused;
   scene->paused = !prev;
 }
+
 //     // Rewrite this to actually free everything
 //     free(scene->entities);
 //     free(scene->player.camera);

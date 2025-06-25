@@ -129,6 +129,12 @@ void physics_debug_renderer_init(struct PhysicsWorld *physics_world){
     return;
   }
 
+  // Uniform block binding
+  unsigned int uniform_block_index_wireframe = glGetUniformBlockIndex(wireframeShader->ID, "Matrices");
+  unsigned int uniform_block_index_translucent = glGetUniformBlockIndex(translucentShader->ID, "Matrices");
+  glUniformBlockBinding(wireframeShader->ID, uniform_block_index_wireframe, 0);
+  glUniformBlockBinding(translucentShader->ID, uniform_block_index_translucent, 0);
+
   for (unsigned int i = 0; i < physics_world->num_static_bodies; i++){
     struct PhysicsBody *body = &physics_world->static_bodies[i];
     switch(body->collider.type){
@@ -329,8 +335,8 @@ void physics_debug_AABB_render(struct AABB *aabb, struct RenderContext *context,
   // Shader and uniforms
   shader_use(wireframeShader);
   shader_set_mat4(wireframeShader, "model", model);
-  shader_set_mat4(wireframeShader, "view", context->view_ptr);
-  shader_set_mat4(wireframeShader, "projection", context->projection_ptr);
+  // shader_set_mat4(wireframeShader, "view", context->view_ptr);
+  // shader_set_mat4(wireframeShader, "projection", context->projection_ptr);
 
   // Buffer new vertex data
   float vertices[24] = {

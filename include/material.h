@@ -1,7 +1,7 @@
 #ifndef MATERIAL_H
 #define MATERIAL_H
 
-#include <glad/glad.h>
+// #include <glad/glad.h>
 #include <cglm/cglm.h>
 #include <assimp/texture.h>
 #include <assimp/material.h>

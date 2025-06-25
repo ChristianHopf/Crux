@@ -42,11 +42,6 @@ void entity_render(struct Entity *entity, struct RenderContext *context){
 
   // Draw model
   model_draw(entity->model, entity->shader);
-
-  // Render the model's AABB
-  // if (context->physics_view_mode){
-  //   AABB_render(&entity->model->aabb, model, context->view_ptr, context->projection_ptr);
-  // }
 }
 
 void skybox_render(struct Skybox *skybox, struct RenderContext *context){

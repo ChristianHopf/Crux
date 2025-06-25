@@ -35,6 +35,8 @@ typedef struct {
   bool render_ready;
 } Engine;
 
+ALCcontext *audio_context = NULL;
+
 void framebuffer_size_callback(GLFWwindow *window, int width, int height);
 void processInput(GLFWwindow *window);
 void mouse_callback(GLFWwindow *window, double xpos, double ypos);
@@ -193,7 +195,7 @@ Engine *engine_create(){
   //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
   // engine->active_scene = scene_create(true);
-  engine->active_scene = scene_init("scenes/bouncehouse2.json");
+  engine->active_scene = scene_init("scenes/scene_sphere.json");
   if (!engine->active_scene){
     printf("Error: failed to create scene\n");
     free(engine);
@@ -214,44 +216,13 @@ Engine *engine_create(){
   // pthread_cond_init(&engine->render_done_signal, NULL);
   engine->render_ready = false;
 
+  glfwSwapInterval(1);
+
   return engine;
 }
 
 // Just slap everything down outside main and get the thread working
 ALCdevice *device;
-ALCcontext *context;
-ALuint buffers[4];
-ALuint source;
-
-volatile int stop_audio = 0;
-
-
-// SEPARATE THREADS
-// void *process_audio(void *arg){
-//   alcMakeContextCurrent(context);
-//   while (!stop_audio){
-//     ALint state, processed, queued;
-//     alGetSourcei(source, AL_SOURCE_STATE, &state);
-//     alGetSourcei(source, AL_BUFFERS_PROCESSED, &processed);
-//     alGetSourcei(source, AL_BUFFERS_QUEUED, &queued);
-//     printf("Processed %d buffers\n", processed);
-//     if (processed > 0){
-//       printf("Processed buffers: %d, queued buffers: %d\n", processed, queued);
-//       for(int i = 0; i < processed; i++){
-//         ALuint buf;
-//         alSourceUnqueueBuffers(source, 1, &buf);
-//         alSourceQueueBuffers(source, 1, &buf);
-//       }
-//     }
-//     if (state == AL_PLAYING){
-//       // printf("AUDIO PLAYING\n");
-//       alcProcessContext(context);
-//     }
-//     usleep(1000);
-//   }
-//   alcMakeContextCurrent(NULL);
-//   return NULL;
-// }
 
 void *render_thread(void *arg){
   Engine *engine = (Engine *)arg;
@@ -268,7 +239,12 @@ void *render_thread(void *arg){
     }
 
     // Render scene
+    // glFinish();
+    // float gpu_start_time = glfwGetTime();
     scene_render(engine->active_scene);
+    // glFinish();
+    // float gpu_end_time = glfwGetTime();
+    // printf("GPU time: %.2f ms\n", (gpu_end_time - gpu_start_time) * 1000.0);
     glfwSwapBuffers(engine->window);
 
     // Set render_ready back to false, signal rendering is done, unlock mutex
@@ -303,88 +279,15 @@ int main(){
     free(engine);
     return 0;
   }
-  context = alcCreateContext(device, NULL);
-  if (!context){
+  audio_context = alcCreateContext(device, NULL);
+  if (!audio_context){
     fprintf(stderr, "Error: failed to create OpenAL context\n");
     alcCloseDevice(device);
     glfwTerminate();
     free(engine);
     return 0;
   }
-  alcMakeContextCurrent(context);
-
-  // // Load WAV with sndfile
-  // SF_INFO info;
-  // SNDFILE *mp3_file = sf_open("resources/music/mookid.wav", SFM_READ, &info);
-  // if (!mp3_file){
-  //   fprintf(stderr, "Error: failed to open %s: %s\n", "resources/music/mookid.wav", sf_strerror(NULL));
-  //   alcMakeContextCurrent(NULL);
-  //   alcDestroyContext(context);
-  //   alcCloseDevice(device);
-  //   glfwTerminate();
-  //   free(engine);
-  //   return 0;
-  // }
-  //
-  // float *mp3_data = (float *)malloc(info.frames * info.channels * sizeof(float));
-  // sf_count_t read_frames = sf_readf_float(mp3_file, mp3_data, info.frames);
-  // // sf_close(mp3_file);
-  // if (read_frames != info.frames){
-  //   fprintf(stderr, "Error: failed to read correct number of frames into wav_data\n");
-  //   free(mp3_data);
-  //   alcMakeContextCurrent(NULL);
-  //   alcDestroyContext(context);
-  //   alcCloseDevice(device);
-  //   glfwTerminate();
-  //   free(engine);
-  //   return 0;
-  // }
-  //
-  // ALenum format;
-  // if (info.channels == 1){
-  //   format = AL_FORMAT_MONO_FLOAT32;
-  // }
-  // else{
-  //   format = AL_FORMAT_STEREO_FLOAT32;
-  // }
-  //
-  // // Buffer audio and create a source
-  // // ALuint buffer, source;
-  // alGenBuffers(4, buffers);
-  // alGetError();
-  // sf_count_t frames_per_buffer = 4096;
-  // // sf_count_t frames_per_buffer = info.frames / 4;
-  // printf("Audio buffer size: %ld frames, %ld samples per buffer\n", 
-  //      info.frames, frames_per_buffer);
-  // for(int i = 0; i < 4; i++){
-  //   sf_count_t offset = i * frames_per_buffer * info.channels;
-  //   sf_count_t size;
-  //   if (i == 3){
-  //     size = (info.frames - offset / info.channels) * info.channels * sizeof(float);
-  //   }
-  //   else{
-  //     size = frames_per_buffer * info.channels * sizeof(float);
-  //   }
-  //   alBufferData(buffers[i], format, mp3_data + offset, size, info.samplerate);
-  //   ALenum buffer_error = alGetError();
-  //   if (buffer_error != AL_NO_ERROR){
-  //     fprintf(stderr, "Error: alGetError returned error %d for alBufferData with buffer %d\n", buffer_error, i);
-  //   }
-  // }
-
-  // alBufferData(buffer, format, mp3_data, info.frames * info.channels * sizeof(float), info.samplerate);
-  // free(mp3_data);
-  //
-  // alGenSources(1, &source);
-  // alSourceQueueBuffers(source, 4, buffers);
-  // if (alGetError() != AL_NO_ERROR){
-  //   fprintf(stderr, "Error: alGetError returned error %d in alSourceQueueBuffers\n", alGetError());
-  // }
-  // alSourcef(source, AL_GAIN, 1.0f);
-  // alSourcef(source, AL_PITCH, 1.0f);
-  // // alSourcei(source, AL_LOOPING, AL_TRUE);
-  //
-  // alSourcePlay(source);
+  alcMakeContextCurrent(audio_context);
 
   // Load font
   load_font_face();
@@ -442,7 +345,7 @@ int main(){
   cnd_destroy(&engine->render_signal);
   cnd_destroy(&engine->render_done_signal);
   alcMakeContextCurrent(NULL);
-  alcDestroyContext(context);
+  alcDestroyContext(audio_context);
   alcCloseDevice(device);
 
   // sf_close(mp3_file);
