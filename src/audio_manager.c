@@ -20,12 +20,11 @@ struct AudioStream *audio_stream_create(char *path){
   }
 
   // Get format
-  ALenum format;
   if (stream->info.channels == 1){
-    format = AL_FORMAT_MONO_FLOAT32;
+    stream->format = AL_FORMAT_MONO_FLOAT32;
   }
   else{
-    format = AL_FORMAT_STEREO_FLOAT32;
+    stream->format = AL_FORMAT_STEREO_FLOAT32;
   }
 
   // Generate and load buffers
@@ -42,7 +41,7 @@ struct AudioStream *audio_stream_create(char *path){
   alSourcef(stream->source, AL_PITCH, 1.0f);
 
   // Queue buffers
-  alSourceQueueBuffers(&stream->source, 4, stream->buffers);
+  alSourceQueueBuffers(stream->source, NUM_BUFFERS, stream->buffers);
   if (alGetError() != AL_NO_ERROR){
     fprintf(stderr, "Error: alGetError returned error %d in alSourceQueueBuffers\n", alGetError());
   }
@@ -95,7 +94,7 @@ void *audio_stream_update(void *arg){
       ALuint buffer;
       alSourceUnqueueBuffers(stream->source, 1, &buffer);
 
-      if (fill_buffer(stream, &buffer)){
+      if (fill_buffer(stream, buffer)){
         alSourceQueueBuffers(stream->source, 1, &buffer);
       }
     }
@@ -129,7 +128,7 @@ bool fill_buffer(struct AudioStream *stream, ALuint buffer){
     read_frames = sf_readf_float(stream->file, new_data, 4096);
   }
   // Buffer data normally
-  else {
+  if (read_frames > 0) {
     size_t data_size = read_frames * stream->info.channels * sizeof(float);
     alBufferData(buffer, stream->format, new_data, data_size, stream->info.samplerate);
     free(new_data);
