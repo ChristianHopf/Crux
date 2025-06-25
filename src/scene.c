@@ -1,5 +1,6 @@
 //#include <GLFW/glfw3.h>
 // #include <GL/glext.h>
+// #include <GL/glext.h>
 #include <GLFW/glfw3.h>
 #include <cglm/euler.h>
 #include <cglm/mat4.h>
@@ -84,15 +85,18 @@ const cJSON *skybox_json;
   // Link shader uniform blocks to binding points
   for (int i = 0; i < num_shaders; i++){
     unsigned int uniform_block_index = glGetUniformBlockIndex(shaders[i]->ID, "Matrices");
-    glUniformBlockBinding(shaders[i]->ID, uniform_block_index, 0);
+    if (uniform_block_index != GL_INVALID_INDEX){
+      glUniformBlockBinding(shaders[i]->ID, uniform_block_index, 0);
+    }
   }
   // Generate uniform buffer objects
   unsigned int uboMatrices;
   glGenBuffers(1, &uboMatrices);
   glBindBuffer(GL_UNIFORM_BUFFER, uboMatrices);
   glBufferData(GL_UNIFORM_BUFFER, 2 * sizeof(mat4), NULL, GL_STATIC_DRAW);
-  glBindBuffer(GL_UNIFORM_BUFFER, 0);
+  
   glBindBufferRange(GL_UNIFORM_BUFFER, 0, uboMatrices, 0, 2 * sizeof(mat4));
+  glBindBuffer(GL_UNIFORM_BUFFER, 0);
   scene->ubo_matrices = uboMatrices;
 
   // Load models
@@ -482,10 +486,8 @@ void scene_render(struct Scene *scene){
   // Set view and projection matrices in matrices UBO
   glBindBuffer(GL_UNIFORM_BUFFER, scene->ubo_matrices);
   glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(mat4), view);
-  glBindBuffer(GL_UNIFORM_BUFFER, 0);
-
-  glBindBuffer(GL_UNIFORM_BUFFER, scene->ubo_matrices);
   glBufferSubData(GL_UNIFORM_BUFFER, sizeof(mat4), sizeof(mat4), projection);
+  glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
   // Draw entities
   for(int i = 0; i < scene->num_static_entities; i++){
