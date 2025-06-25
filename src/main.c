@@ -304,17 +304,17 @@ int main(){
 	while (!glfwWindowShouldClose(engine->window)){
 		// Per-frame timing logic
 		float currentFrame = (float)(glfwGetTime());
-
-    // Lock scene mutex, do timing and updating
-    mtx_lock(&engine->scene_mutex);
+    
 		engine->deltaTime = currentFrame - engine->lastFrame;
 		engine->lastFrame = currentFrame;
 
 		printf("FPS: %f\n", 1.0 / engine->deltaTime);
 
-		// Handle input, update
+		// Handle input
 		processInput(engine->window);
 
+    // Lock scene mutex to update and render
+    mtx_lock(&engine->scene_mutex);
     float update_start_time = glfwGetTime();
 		scene_update(engine->active_scene, engine->deltaTime);
     float update_end_time = glfwGetTime();

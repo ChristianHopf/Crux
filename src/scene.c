@@ -448,7 +448,7 @@ void scene_update(struct Scene *scene, float delta_time){
 
 
   float physics_end_time = glfwGetTime();
-  printf("Time spent in physics_step: %.2f ms\n", (physics_end_time - physics_start_time) * 1000.0);
+  // printf("Time spent in physics_step: %.2f ms\n", (physics_end_time - physics_start_time) * 1000.0);
 
   // Match entity position with updated PhysicsBody position
   for(int i = 0; i < scene->num_dynamic_entities; i++){
@@ -474,8 +474,6 @@ void scene_render(struct Scene *scene){
   camera_get_view_matrix(scene->player.camera, view);
   glm_perspective(glm_rad(scene->player.camera->fov), 1280.0f / 720.0f, 0.1f, 100.0f, projection);
 
-  print_glm_mat4(view, "NEW VIEW MATRIX");
-
   // Create a RenderContext, which is simply
   // a collection of parameters for rendering the Level and Entities
   struct RenderContext context = {
@@ -500,7 +498,7 @@ void scene_render(struct Scene *scene){
     entity_render(&scene->dynamic_entities[i], &context);
   }
   glFinish();
-  printf("OIIAI RENDER TIME: %.2f ms\n", (glfwGetTime() - oiiai_start_time) * 1000.0);
+  // printf("OIIAI RENDER TIME: %.2f ms\n", (glfwGetTime() - oiiai_start_time) * 1000.0);
 
   // Draw skybox
   skybox_render(scene->skybox, &context);
