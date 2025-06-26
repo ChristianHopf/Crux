@@ -39,7 +39,6 @@ struct PhysicsBody *body;
       body = &physics_world->dynamic_bodies[physics_world->num_dynamic_bodies++];
       body->collider = collider;
       glm_vec3_copy(entity->velocity, body->velocity);
-      printf("Added dynamic body of type %d\n", collider.type);
       break;
     case false:
       body = &physics_world->static_bodies[physics_world->num_static_bodies++];

@@ -1,7 +1,3 @@
-// #include <GLFW/glfw3.h>
-// #include <GL/glext.h>
-// #include <GL/glext.h>
-// #include <GLFW/glfw3.h>
 #include <cglm/euler.h>
 #include <cglm/mat4.h>
 #include <cglm/vec3.h>
@@ -16,6 +12,7 @@
 #include "physics/aabb.h"
 #include "physics/debug_renderer.h"
 #include "physics/utils.h"
+#include "audio_manager.h"
 #include "utils.h"
 
 struct Scene *scene_init(char *scene_path){
@@ -37,7 +34,7 @@ struct Scene *scene_init(char *scene_path){
   const cJSON *models_json;
   const cJSON *meshes;
   const cJSON *lights_json;
-const cJSON *skybox_json;
+  const cJSON *skybox_json;
 
   cJSON *scene_json = cJSON_Parse(scene_data);
   if (!scene_json){
@@ -172,7 +169,6 @@ const cJSON *skybox_json;
       fprintf(stderr, "Error: failed to get shader_index in static mesh at index %d, either invalid or does not exist\n", index);
       return NULL;
     }
-    printf("Model index is %d\n", (int)cJSON_GetNumberValue(model_index_json));
 
     entity->model = models[(int)cJSON_GetNumberValue(model_index_json)];
     entity->shader = shaders[(int)cJSON_GetNumberValue(shader_index_json)];
@@ -246,15 +242,6 @@ const cJSON *skybox_json;
       default:
         break;
     }
-    printf("Added Entity to scene->static_entities at index %d:\n", index);
-    printf("Shader id: %d, model index: %d\n", (int)cJSON_GetNumberValue(shader_index_json), (int)cJSON_GetNumberValue(model_index_json));
-    printf("Model directory: %s\n", entity->model->directory);
-    print_glm_vec3(entity->position, "Entity position");
-    print_glm_vec3(entity->rotation, "Entity rotation");
-    print_glm_vec3(entity->scale, "Entity scale");
-    print_glm_vec3(collider.data.plane.normal, "Plane normal");
-    printf("Plane distance: %f\n", collider.data.plane.distance);
-
     entity->physics_body = physics_add_body(scene->physics_world, entity, collider, false);
     index++;
   }
@@ -318,14 +305,11 @@ const cJSON *skybox_json;
 
         collider.type = type;
         collider.data.aabb = aabb;
-        printf("OIIAI has collider type %d\n", type);
-        print_aabb(&collider.data.aabb);
         break;
       case COLLIDER_SPHERE:
         struct Sphere sphere;
 
         scene_process_vec3_json(cJSON_GetObjectItemCaseSensitive(collider_data_json, "center"), sphere.center);
-        // glm_vec3_sub(sphere.center, entity->position, sphere.center);
 
         cJSON *radius = cJSON_GetObjectItemCaseSensitive(collider_data_json, "radius");
         if(!cJSON_IsNumber(radius)){
@@ -340,7 +324,6 @@ const cJSON *skybox_json;
       case COLLIDER_PLANE:
         struct Plane plane;
 
-        // vec3 normal;
         scene_process_vec3_json(cJSON_GetObjectItemCaseSensitive(collider_data_json, "normal"), plane.normal);
 
         cJSON *distance = cJSON_GetObjectItemCaseSensitive(collider_data_json, "distance");
@@ -358,6 +341,9 @@ const cJSON *skybox_json;
         break;
     }
     entity->physics_body = physics_add_body(scene->physics_world, entity, collider, true);
+
+    
+
     index++;
   }
   scene->max_entities = 64;
@@ -423,6 +409,54 @@ const cJSON *skybox_json;
   char *skybox_dir = cJSON_GetStringValue(skybox_json);
   scene->skybox = skybox_create(skybox_dir);
 
+  // Init OpenAL
+  audio_device = alcOpenDevice(NULL);
+  if (!audio_device){
+    ALCenum error = alcGetError(NULL);
+    fprintf(stderr, "Error: failed to open OpenAL device: %d\\n", error);
+    return NULL;
+  }
+  printf("OPENAL DEVICE: %s\n", alcGetString(NULL, ALC_DEVICE_SPECIFIER));
+  audio_context = alcCreateContext(audio_device, NULL);
+  if (!audio_context){
+    fprintf(stderr, "Error: failed to create OpenAL context\n");
+    alcCloseDevice(audio_device);
+    return NULL;
+  }
+  alcMakeContextCurrent(audio_context);
+
+  // Load sound effects
+  SF_INFO vb_info;
+  SNDFILE *vb_file = sf_open("resources/sfx/vineboom.wav", SFM_READ, &vb_info);
+  if (!vb_file){
+    fprintf(stderr, "Error: failed to open %s: %s\n", "resources/sfx/vineboom.wav", sf_strerror(NULL));
+    return NULL;
+  }
+  ALenum format;
+  if (vb_info.channels == 1){
+    format = AL_FORMAT_MONO_FLOAT32;
+  }
+  else{
+    format = AL_FORMAT_STEREO_FLOAT32;
+  }
+  float *vb_data = malloc(vb_info.frames * vb_info.channels * sizeof(float));
+  sf_count_t read_frames = sf_readf_float(vb_file, vb_data, vb_info.frames);
+  ALuint vb_buffer;
+  alGenBuffers(1, &vb_buffer);
+  alBufferData(vb_buffer, format, vb_data, vb_info.frames * vb_info.channels * sizeof(float), vb_info.samplerate);
+  ALenum vb_error = alGetError();
+  if (vb_error != AL_NO_ERROR){
+    fprintf(stderr, "Error buffering vine boom data: %d\n", vb_error);
+  }
+  struct SoundEffect vine_boom = {
+    "vine_boom",
+    vb_buffer
+  };
+  sound_effects[num_sound_effects++] = vine_boom;
+  // Add audio source (hardcode vine boom for now)
+  alSourcei(scene->dynamic_entities[0].audio_source, AL_BUFFER, sound_effects[0].buffer);
+  alSourcePlay(scene->dynamic_entities[0].audio_source);
+
   return scene;
 }
 
@@ -441,14 +475,8 @@ void scene_update(struct Scene *scene, float delta_time){
   // Update player
   player_update(&scene->player, delta_time);
 
-  float physics_start_time = glfwGetTime();
-
   // Perform collision detection
   physics_step(scene->physics_world, delta_time);
-
-
-  float physics_end_time = glfwGetTime();
-  // printf("Time spent in physics_step: %.2f ms\n", (physics_end_time - physics_start_time) * 1000.0);
 
   // Match entity position with updated PhysicsBody position
   for(int i = 0; i < scene->num_dynamic_entities; i++){
@@ -509,7 +537,6 @@ void scene_render(struct Scene *scene){
 
   // Render text
   text_render("Crux Engine 0.2", 4.0f, 1058.0f, 1.0f, (vec3){1.0f, 1.0f, 1.0f});
-
 }
 
 void scene_pause(struct Scene *scene){

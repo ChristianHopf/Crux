@@ -176,7 +176,6 @@ void physics_debug_AABB_init(struct PhysicsBody *body){
   }
 
   struct AABB *aabb = &body->collider.data.aabb;
-  print_aabb(aabb);
 
   // Define vertices and indices for the box, based on min and max
   float vertices[24] = {

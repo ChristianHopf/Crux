@@ -29,13 +29,8 @@ typedef struct {
   mtx_t scene_mutex;
   cnd_t render_signal;
   cnd_t render_done_signal;
-  // pthread_mutex_t scene_mutex;
-  // pthread_cond_t render_signal;
-  // pthread_cond_t render_done_signal;
   bool render_ready;
 } Engine;
-
-ALCcontext *audio_context = NULL;
 
 void framebuffer_size_callback(GLFWwindow *window, int width, int height);
 void processInput(GLFWwindow *window);
@@ -196,7 +191,7 @@ Engine *engine_create(){
   //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
   // engine->active_scene = scene_create(true);
-  engine->active_scene = scene_init("scenes/bouncehouse2.json");
+  engine->active_scene = scene_init("scenes/scene_sphere.json");
   if (!engine->active_scene){
     printf("Error: failed to create scene\n");
     free(engine);
@@ -258,24 +253,24 @@ int main(){
   // ALCdevice *device;
   // ALCcontext *context;
 
-  device = alcOpenDevice(NULL);
-  if (!device){
-    ALCenum error = alcGetError(NULL);
-    fprintf(stderr, "Error: failed to open OpenAL device: %d\\n", error);
-    glfwTerminate();
-    free(engine);
-    return 0;
-  }
-  printf("OPENAL DEVICE: %s\n", alcGetString(NULL, ALC_DEVICE_SPECIFIER));
-  audio_context = alcCreateContext(device, NULL);
-  if (!audio_context){
-    fprintf(stderr, "Error: failed to create OpenAL context\n");
-    alcCloseDevice(device);
-    glfwTerminate();
-    free(engine);
-    return 0;
-  }
-  alcMakeContextCurrent(audio_context);
+  // device = alcOpenDevice(NULL);
+  // if (!device){
+  //   ALCenum error = alcGetError(NULL);
+  //   fprintf(stderr, "Error: failed to open OpenAL device: %d\\n", error);
+  //   glfwTerminate();
+  //   free(engine);
+  //   return 0;
+  // }
+  // printf("OPENAL DEVICE: %s\n", alcGetString(NULL, ALC_DEVICE_SPECIFIER));
+  // audio_context = alcCreateContext(device, NULL);
+  // if (!audio_context){
+  //   fprintf(stderr, "Error: failed to create OpenAL context\n");
+  //   alcCloseDevice(device);
+  //   glfwTerminate();
+  //   free(engine);
+  //   return 0;
+  // }
+  // alcMakeContextCurrent(audio_context);
 
   // Load font
   load_font_face();

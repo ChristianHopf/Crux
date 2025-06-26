@@ -3,6 +3,12 @@
 #include <locale.h>
 #include <time.h>
 
+ALCdevice *audio_device = NULL;
+ALCcontext *audio_context = NULL;
+
+struct SoundEffect sound_effects[MAX_SOUND_EFFECTS];
+int num_sound_effects = 0;
+
 struct AudioStream *audio_stream_create(char *path){
 
   // Allocate AudioStream

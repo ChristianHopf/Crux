@@ -11,6 +11,8 @@
 #define NUM_BUFFERS 4
 #define BUFFER_FRAMES 8192
 
+#define MAX_SOUND_EFFECTS 128
+
 struct AudioStream {
   SNDFILE *file;
   SF_INFO info;
@@ -24,8 +26,16 @@ struct AudioStream {
   bool stop_audio;
 };
 
-// Audio context from main
+struct SoundEffect {
+  char *name;
+  ALuint buffer;
+};
+
+// Extern vars
+extern ALCdevice *audio_device;
 extern ALCcontext *audio_context;
+extern struct SoundEffect sound_effects[MAX_SOUND_EFFECTS];
+extern int num_sound_effects;
 
 struct AudioStream *audio_stream_create(char *path);
 void audio_stream_destroy(struct AudioStream *stream);
