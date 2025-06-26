@@ -497,7 +497,6 @@ void scene_render(struct Scene *scene){
   for(int i = 0; i < scene->num_dynamic_entities; i++){
     entity_render(&scene->dynamic_entities[i], &context);
   }
-  glFinish();
   // printf("OIIAI RENDER TIME: %.2f ms\n", (glfwGetTime() - oiiai_start_time) * 1000.0);
 
   // Draw skybox

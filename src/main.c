@@ -23,8 +23,8 @@ typedef struct {
   GLFWwindow *window;
   struct Scene *active_scene;
   // Timing
-  float deltaTime;
-  float lastFrame;
+  float delta_time;
+  float last_frame;
   // Multithreading
   mtx_t scene_mutex;
   cnd_t render_signal;
@@ -72,26 +72,25 @@ void processInput(GLFWwindow *window){
 
   // Camera movement
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS){
-    camera_process_keyboard_input(camera, CAMERA_FORWARD, engine->deltaTime);
+    camera_process_keyboard_input(camera, CAMERA_FORWARD, engine->delta_time);
 	}
 	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS){
-    camera_process_keyboard_input(camera, CAMERA_BACKWARD, engine->deltaTime);
+    camera_process_keyboard_input(camera, CAMERA_BACKWARD, engine->delta_time);
 	}
 	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS){
-    camera_process_keyboard_input(camera, CAMERA_LEFT, engine->deltaTime);
+    camera_process_keyboard_input(camera, CAMERA_LEFT, engine->delta_time);
   }
 	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS){
-    camera_process_keyboard_input(camera, CAMERA_RIGHT, engine->deltaTime);
+    camera_process_keyboard_input(camera, CAMERA_RIGHT, engine->delta_time);
 	}
 	if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS){
-    camera_process_keyboard_input(camera, CAMERA_DOWN, engine->deltaTime);
+    camera_process_keyboard_input(camera, CAMERA_DOWN, engine->delta_time);
   }
 
   // Only process these inputs a single time per press
   int space_state = glfwGetKey(window, GLFW_KEY_SPACE);
 	if (space_state == GLFW_PRESS && last_space_state == GLFW_RELEASE){
     player_jump(&engine->active_scene->player);
-    //camera_process_keyboard_input(camera, CAMERA_UP, engine->deltaTime);
   }
   last_space_state = space_state;
 }
@@ -206,16 +205,13 @@ Engine *engine_create(){
   }
 
   // Timing
-  engine->deltaTime = 0.0f;
-  engine->lastFrame = 0.0f;
+  engine->delta_time = 0.0f;
+  engine->last_frame = 0.0f;
 
   // Scene mutex
   mtx_init(&engine->scene_mutex, mtx_plain);
   cnd_init(&engine->render_signal);
   cnd_init(&engine->render_done_signal);
-  // pthread_mutex_init(&engine->scene_mutex, NULL);
-  // pthread_cond_init(&engine->render_signal, NULL);
-  // pthread_cond_init(&engine->render_done_signal, NULL);
   engine->render_ready = false;
 
   return engine;
@@ -230,29 +226,20 @@ int render_thread(void *arg){
   while (!glfwWindowShouldClose(engine->window)){
     // Lock mutex
     mtx_lock(&engine->scene_mutex);
-    // pthread_mutex_lock(&engine->scene_mutex);
 
     // Wait for render signal
     while (!engine->render_ready){
       cnd_wait(&engine->render_signal, &engine->scene_mutex);
-      // pthread_cond_wait(&engine->render_signal, &engine->scene_mutex);
     }
 
     // Render scene
-    // glFinish();
-    // float gpu_start_time = glfwGetTime();
     scene_render(engine->active_scene);
-    // glFinish();
-    // float gpu_end_time = glfwGetTime();
-    // printf("GPU time: %.2f ms\n", (gpu_end_time - gpu_start_time) * 1000.0);
     glfwSwapBuffers(engine->window);
 
     // Set render_ready back to false, signal rendering is done, unlock mutex
     engine->render_ready = false;
     cnd_signal(&engine->render_done_signal);
     mtx_unlock(&engine->scene_mutex);
-    // pthread_cond_signal(&engine->render_done_signal);
-    // pthread_mutex_unlock(&engine->scene_mutex);
   }
 
   glfwMakeContextCurrent(NULL);
@@ -307,37 +294,33 @@ int main(){
 		// Per-frame timing logic
 		float currentFrame = (float)(glfwGetTime());
     
-		engine->deltaTime = currentFrame - engine->lastFrame;
-		engine->lastFrame = currentFrame;
-
-		printf("FPS: %f\n", 1.0 / engine->deltaTime);
+		engine->delta_time = currentFrame - engine->last_frame;
+		engine->last_frame = currentFrame;
+		printf("FPS: %f\n", 1.0 / engine->delta_time);
 
 		// Handle input
 		processInput(engine->window);
 
     // Lock scene mutex to update and render
-		  mtx_lock(&engine->scene_mutex);
-		  float update_start_time = glfwGetTime();
-		  scene_update(engine->active_scene, engine->deltaTime);
-		  float update_end_time = glfwGetTime();
-		  printf("scene update took %.2f ms\n", (update_end_time - update_start_time) * 1000.0);
+    mtx_lock(&engine->scene_mutex);
+    float update_start_time = glfwGetTime();
+    scene_update(engine->active_scene, engine->delta_time);
+    float update_end_time = glfwGetTime();
+    printf("scene update took %.2f ms\n", (update_end_time - update_start_time) * 1000.0);
 
-		  // Set render_ready to true, signal render thread to work,
-		  float render_start_time = glfwGetTime();
-		  engine->render_ready = true;
-		  cnd_signal(&engine->render_signal);
-		  while(engine->render_ready){
-		    cnd_wait(&engine->render_done_signal, &engine->scene_mutex);
-		  }
-		  mtx_unlock(&engine->scene_mutex);
+    // Set render_ready to true, signal render thread to work
+    float render_start_time = glfwGetTime();
+    engine->render_ready = true;
+    cnd_signal(&engine->render_signal);
+    while(engine->render_ready){
+      cnd_wait(&engine->render_done_signal, &engine->scene_mutex);
+    }
+    mtx_unlock(&engine->scene_mutex);
 
-		  float render_end_time = glfwGetTime();
-		  printf("Render took %.2f ms\n", (render_end_time - render_start_time) * 1000.0);
+    float render_end_time = glfwGetTime();
+    printf("Render took %.2f ms\n", (render_end_time - render_start_time) * 1000.0);
 
-		scene_render(engine->active_scene);
-
-		// Check and call events, swap buffers
-		// glfwSwapBuffers(engine->window);
+		// Check and call events
 		glfwPollEvents();
   }
 
@@ -349,8 +332,6 @@ int main(){
   alcMakeContextCurrent(NULL);
   alcDestroyContext(audio_context);
   alcCloseDevice(device);
-
-  // sf_close(mp3_file);
 
   glfwDestroyWindow(engine->window);
 	glfwTerminate();
