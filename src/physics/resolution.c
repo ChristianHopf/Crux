@@ -1,5 +1,7 @@
 #include "resolution.h"
 #include "collider.h"
+#include "audio_manager.h"
+#include "entity.h"
 
 ResolutionFunction resolution_functions[NUM_COLLIDER_TYPES][NUM_COLLIDER_TYPES] = {
   [COLLIDER_AABB][COLLIDER_AABB] = resolve_collision_AABB_AABB,
@@ -360,5 +362,11 @@ void resolve_collision_sphere_plane(struct PhysicsBody *body_A, struct PhysicsBo
     float distance_to_plane = glm_dot(body_A->position, plane->normal) - plane->distance;
     glm_vec3_zero(body_A->velocity);
     body_A->at_rest = true;
+  }
+  if (body_A->entity != NULL){
+    fprintf(stderr, "body_A->entity: %p\n", &body_A->entity);
+    printf("Resolution entity audio source: %d\n", body_A->entity->audio_source);
+    printf("sound_effects[0]: path %s, ALuint %d\n", sound_effects[0].name, sound_effects[0].buffer);
+    entity_play_sound_effect(body_A->entity, &sound_effects[0]);
   }
 }

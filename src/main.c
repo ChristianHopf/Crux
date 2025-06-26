@@ -212,9 +212,6 @@ Engine *engine_create(){
   return engine;
 }
 
-// Just slap everything down outside main and get the thread working
-ALCdevice *device;
-
 int render_thread(void *arg){
   Engine *engine = (Engine *)arg;
   glfwMakeContextCurrent(engine->window);
@@ -249,29 +246,6 @@ int main(){
     return -1;
   }
 
-  // Init OpenAL device and context
-  // ALCdevice *device;
-  // ALCcontext *context;
-
-  // device = alcOpenDevice(NULL);
-  // if (!device){
-  //   ALCenum error = alcGetError(NULL);
-  //   fprintf(stderr, "Error: failed to open OpenAL device: %d\\n", error);
-  //   glfwTerminate();
-  //   free(engine);
-  //   return 0;
-  // }
-  // printf("OPENAL DEVICE: %s\n", alcGetString(NULL, ALC_DEVICE_SPECIFIER));
-  // audio_context = alcCreateContext(device, NULL);
-  // if (!audio_context){
-  //   fprintf(stderr, "Error: failed to create OpenAL context\n");
-  //   alcCloseDevice(device);
-  //   glfwTerminate();
-  //   free(engine);
-  //   return 0;
-  // }
-  // alcMakeContextCurrent(audio_context);
-
   // Load font
   load_font_face();
 
@@ -279,7 +253,7 @@ int main(){
   glfwMakeContextCurrent(NULL);
 
   struct AudioStream *audio_stream = audio_stream_create("resources/music/mookid.wav");
-  alcMakeContextCurrent(NULL);
+  // alcMakeContextCurrent(NULL);
 
   thrd_t render_thrd;
   thrd_create(&render_thrd, render_thread, engine);
@@ -326,7 +300,7 @@ int main(){
   cnd_destroy(&engine->render_done_signal);
   alcMakeContextCurrent(NULL);
   alcDestroyContext(audio_context);
-  alcCloseDevice(device);
+  alcCloseDevice(audio_device);
 
   glfwDestroyWindow(engine->window);
 	glfwTerminate();

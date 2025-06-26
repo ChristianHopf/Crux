@@ -11,6 +11,8 @@ int num_sound_effects = 0;
 
 struct AudioStream *audio_stream_create(char *path){
 
+  alcMakeContextCurrent(audio_context);
+
   // Allocate AudioStream
   struct AudioStream *stream = calloc(1, sizeof(struct AudioStream));
   if (!stream){
@@ -42,7 +44,6 @@ struct AudioStream *audio_stream_create(char *path){
     free(stream);
     return NULL;
   }
-
   // Generate and load buffers
   alGenBuffers(NUM_BUFFERS, stream->buffers);
   for(int i = 0; i < NUM_BUFFERS; i++){
@@ -135,7 +136,6 @@ int audio_stream_update(void *arg){
   return 0;
 }
 
-// HELPERS
 bool fill_buffer(struct AudioStream *stream, ALuint buffer){
   // float *new_data = malloc(BUFFER_FRAMES * stream->info.channels * sizeof(float));
   sf_count_t read_frames = sf_readf_float(stream->file, stream->temp_buffer, BUFFER_FRAMES);
@@ -161,4 +161,12 @@ bool fill_buffer(struct AudioStream *stream, ALuint buffer){
 
   // Still read 0 frames after moving to beginning of file. Probably won't happen
   return false;
+}
+
+void audio_play_sound_effect(struct SoundEffect *sound_effect){
+  ALuint source;
+  alGenSources(1, &source);
+  alSourcei(source, AL_BUFFER, sound_effect->buffer);
+  alSourcePlay(source);
+  alDeleteSources(1, &source);
 }

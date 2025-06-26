@@ -255,6 +255,7 @@ struct Scene *scene_init(char *scene_path){
   cJSON_ArrayForEach(mesh_json, dynamic_meshes){
     // Create Entity
     struct Entity *entity = &scene->dynamic_entities[index];
+    printf("ENTITY ADDRESS %p\n", entity);
 
     cJSON *model_index_json = cJSON_GetObjectItemCaseSensitive(mesh_json, "model_index");
     cJSON *shader_index_json = cJSON_GetObjectItemCaseSensitive(mesh_json, "shader_index");
@@ -341,9 +342,7 @@ struct Scene *scene_init(char *scene_path){
         break;
     }
     entity->physics_body = physics_add_body(scene->physics_world, entity, collider, true);
-
-    
-
+    printf("CALLED PHYSICS_ADD_BODY WITH ENTITY AT %p\n", entity);
     index++;
   }
   scene->max_entities = 64;
@@ -448,14 +447,22 @@ struct Scene *scene_init(char *scene_path){
   if (vb_error != AL_NO_ERROR){
     fprintf(stderr, "Error buffering vine boom data: %d\n", vb_error);
   }
+  free(vb_data);
   struct SoundEffect vine_boom = {
     "vine_boom",
     vb_buffer
   };
   sound_effects[num_sound_effects++] = vine_boom;
+  printf("sound_effects[0]: path %s, ALuint %d\n", sound_effects[0].name, sound_effects[0].buffer);
   // Add audio source (hardcode vine boom for now)
-  alSourcei(scene->dynamic_entities[0].audio_source, AL_BUFFER, sound_effects[0].buffer);
-  alSourcePlay(scene->dynamic_entities[0].audio_source);
+  alGenSources(1, &scene->dynamic_entities[0].audio_source);
+
+  printf("Entity audio source in scene_init: %d\n", scene->dynamic_entities[0].audio_source);
+  printf("Audio source generated for entity at %p\n", &scene->dynamic_entities[0]);
+  vb_error = alGetError();
+  if (vb_error != AL_NO_ERROR){
+    fprintf(stderr, "Error assigning buffer to source in scene_init: %d\n", vb_error);
+  }
 
   return scene;
 }
@@ -484,6 +491,12 @@ void scene_update(struct Scene *scene, float delta_time){
     glm_vec3_copy(entity->physics_body->position, scene->dynamic_entities[i].position);
     glm_vec3_copy(entity->physics_body->rotation, scene->dynamic_entities[i].rotation);
   }
+  // static float last_update_time = 0;
+  // float current_update_time = glfwGetTime();
+  // if (current_update_time - last_update_time >= 1){
+  //   last_update_time = current_update_time;
+  //   entity_play_sound_effect(&scene->dynamic_entities[0], &sound_effects[0]);
+  // }
 
   // Update light
   scene->lights[0].direction[0] = (float)sin(lightSpeed * total_time);

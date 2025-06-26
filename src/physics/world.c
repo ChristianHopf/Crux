@@ -56,6 +56,8 @@ struct PhysicsBody *body;
   glm_vec3_copy(entity->position, body->position);
   glm_vec3_copy(entity->rotation, body->rotation);
   glm_vec3_copy(entity->scale, body->scale);
+  body->entity = entity;
+  printf("ASSIGNED ENTITY WITH ADDRESS %p TO BODY\n", body->entity);
 
   return body;
 }
@@ -65,9 +67,14 @@ void physics_step(struct PhysicsWorld *physics_world, float delta_time){
     delta_time = MAX_DELTA_TIME;
   }
 
-  // Naive algorithm: check all (dynamic) bodies against all other bodies
+  // printf("PHYSICS_STEP: Dynamic body 0 has entity address %p\n", &physics_world->dynamic_bodies[0]);
   for(unsigned int i = 0; i < physics_world->num_dynamic_bodies; i++){
+    // printf("i == %d\n", i);
+    //
+    // printf("PHYSICS_STEP: Dynamic body 0 still has entity address %p\n", &physics_world->dynamic_bodies[0]);
     struct PhysicsBody *body_A = &physics_world->dynamic_bodies[i];
+    printf("DYNAMIC BODY AT INDEX I = 0 HAS ENTITY WITH ADDRESS %p\n", physics_world->dynamic_bodies[i].entity);
+    printf("BODY_A HAS ENTITY WITH ADDRESS %p\n", body_A->entity);
 
     // Collision detection will be off sometimes with AABBs.
     // I think this is because of angular velocity not being considered.

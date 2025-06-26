@@ -9,6 +9,7 @@
 #include "entity.h"
 
 struct PhysicsBody {
+  // Collision
   struct Collider collider;
   vec3 position;
   vec3 rotation;
@@ -16,6 +17,10 @@ struct PhysicsBody {
   vec3 velocity;
   bool at_rest;
 
+  // Associated entity
+  struct Entity *entity;
+
+  // Debug rendering
   GLuint VAO, VBO, EBO;
 };
 
