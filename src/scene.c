@@ -482,6 +482,7 @@ void scene_update(struct Scene *scene, float delta_time){
   // Update player
   player_update(&scene->player, delta_time);
 
+  printf("BEFORE PHYSICS_STEP: DYNAMIC BODY AT INDEX 0 HAS ENTITY ADDRESS %p\n", scene->physics_world->dynamic_bodies[0].entity);
   // Perform collision detection
   physics_step(scene->physics_world, delta_time);
 
