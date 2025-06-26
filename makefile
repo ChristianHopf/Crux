@@ -1,3 +1,6 @@
+# Makefile variables
+ALSOFT_DRIVERS ?= pulse,pipewire,alsa
+
 # Compiler and flags
 CC = gcc
 CFLAGS = -Iinclude -Iinclude/physics $(addprefix -I,$(shell find third_party -type d)) $(shell pkg-config --cflags freetype2) -Wall -Wextra -g

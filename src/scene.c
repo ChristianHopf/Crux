@@ -509,7 +509,7 @@ void scene_render(struct Scene *scene){
   }
 
   // Render text
-  text_render("Crux Engine 0.2", 4.0f, 1000.0f, 1.0f, (vec3){1.0f, 1.0f, 1.0f});
+  text_render("Crux Engine 0.2", 4.0f, 1058.0f, 1.0f, (vec3){1.0f, 1.0f, 1.0f});
 
 }
 
