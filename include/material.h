@@ -1,5 +1,4 @@
-#ifndef MATERIAL_H
-#define MATERIAL_H
+#pragma once
 
 // #include <glad/glad.h>
 #include <cglm/cglm.h>
@@ -32,5 +31,3 @@ GLuint material_load_texture(const char *path, enum aiTextureType type);
 GLuint material_load_embedded_texture(const char *path, const struct aiScene *scene);
 GLuint check_loaded_texture(const char *path);
 void add_loaded_texture(const char *path, GLuint texture_id);
-
-#endif
