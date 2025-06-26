@@ -29,7 +29,7 @@ extern ALCcontext *audio_context;
 
 struct AudioStream *audio_stream_create(char *path);
 void audio_stream_destroy(struct AudioStream *stream);
-void *audio_stream_update(void *arg);
+int audio_stream_update(void *arg);
 
 // HELPERS
 bool fill_buffer(struct AudioStream *stream, ALuint buffer);

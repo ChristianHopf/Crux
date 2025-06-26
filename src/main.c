@@ -44,13 +44,15 @@ void scroll_callback(GLFWwindow *window, double xoffset, double yoffset);
 void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods);
 
 // Screen settings
-const unsigned int SCREEN_WIDTH = 1280;
-const unsigned int SCREEN_HEIGHT = 720;
+const unsigned int SCREEN_WIDTH = 1920;
+const unsigned int SCREEN_HEIGHT = 1080;
 
 // Mouse
 bool firstMouse = true;
-float lastX = 512.0f;
-float lastY = 384.0f;
+float lastX = 960.0f;
+float lastY = 540.0f;
+// float lastX = 512.0f;
+// float lastY = 384.0f;
 
 // Lighting
 vec3 lightPos = {1.2f, 0.5f, 2.0f};
@@ -195,7 +197,7 @@ Engine *engine_create(){
   //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
   // engine->active_scene = scene_create(true);
-  engine->active_scene = scene_init("scenes/scene_sphere.json");
+  engine->active_scene = scene_init("scenes/bouncehouse2.json");
   if (!engine->active_scene){
     printf("Error: failed to create scene\n");
     free(engine);
@@ -222,7 +224,7 @@ Engine *engine_create(){
 // Just slap everything down outside main and get the thread working
 ALCdevice *device;
 
-void *render_thread(void *arg){
+int render_thread(void *arg){
   Engine *engine = (Engine *)arg;
   glfwMakeContextCurrent(engine->window);
   while (!glfwWindowShouldClose(engine->window)){
@@ -254,7 +256,7 @@ void *render_thread(void *arg){
   }
 
   glfwMakeContextCurrent(NULL);
-  return NULL;
+  return 0;
 }
 
 int main(){

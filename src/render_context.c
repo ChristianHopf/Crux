@@ -38,7 +38,7 @@ void entity_render(struct Entity *entity, struct RenderContext *context){
   shader_set_vec3(entity->shader, "dirLight.specular", context->light_ptr->specular);
 
   // Set camera position as viewPos in the fragment shader
-  shader_set_vec3(entity->shader, "viewPos", context->camera_position_ptr);
+  shader_set_vec3(entity->shader, "viewPos", *context->camera_position_ptr);
 
   // Draw model
   model_draw(entity->model, entity->shader);

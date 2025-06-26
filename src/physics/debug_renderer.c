@@ -281,7 +281,7 @@ void physics_debug_sphere_init(struct PhysicsBody *body){
   }
 
   // Indices
-  unsigned int *indices = (float *)malloc(num_indices * sizeof(float));
+  unsigned int *indices = (unsigned int *)malloc(num_indices * sizeof(float));
   if (!indices){
     fprintf(stderr, "Error: failed to allocate sphere indices in physics_debug_sphere_init\n");
     return;
@@ -366,8 +366,8 @@ void physics_debug_sphere_render(struct Sphere *sphere, struct RenderContext *co
   // Shader and uniforms
   shader_use(translucentShader);
   shader_set_mat4(translucentShader, "model", model);
-  shader_set_mat4(translucentShader, "view", context->view_ptr);
-  shader_set_mat4(translucentShader, "projection", context->projection_ptr);
+  // shader_set_mat4(translucentShader, "view", context->view_ptr);
+  // shader_set_mat4(translucentShader, "projection", context->projection_ptr);
 
   // Draw triangles
   glDrawElements(GL_TRIANGLES, 2280, GL_UNSIGNED_INT, (void*)0);

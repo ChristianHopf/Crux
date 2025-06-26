@@ -1,7 +1,7 @@
-//#include <GLFW/glfw3.h>
+// #include <GLFW/glfw3.h>
 // #include <GL/glext.h>
 // #include <GL/glext.h>
-#include <GLFW/glfw3.h>
+// #include <GLFW/glfw3.h>
 #include <cglm/euler.h>
 #include <cglm/mat4.h>
 #include <cglm/vec3.h>
@@ -472,7 +472,7 @@ void scene_render(struct Scene *scene){
   mat4 view;
   mat4 projection;
   camera_get_view_matrix(scene->player.camera, view);
-  glm_perspective(glm_rad(scene->player.camera->fov), 1280.0f / 720.0f, 0.1f, 100.0f, projection);
+  glm_perspective(glm_rad(scene->player.camera->fov), 1920.0f / 1080.0f, 0.1f, 100.0f, projection);
 
   // Create a RenderContext, which is simply
   // a collection of parameters for rendering the Level and Entities
@@ -509,7 +509,7 @@ void scene_render(struct Scene *scene){
   }
 
   // Render text
-  text_render("Crux Engine 0.2", 4.0f, 696.0f, 1.0f, (vec3){1.0f, 1.0f, 1.0f});
+  text_render("Crux Engine 0.2", 4.0f, 1000.0f, 1.0f, (vec3){1.0f, 1.0f, 1.0f});
 
 }
 

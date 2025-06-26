@@ -1,6 +1,7 @@
 #include "audio_manager.h"
 #include <AL/al.h>
 #include <locale.h>
+#include <time.h>
 
 struct AudioStream *audio_stream_create(char *path){
 
@@ -85,7 +86,7 @@ void audio_stream_destroy(struct AudioStream *stream){
   free(stream);
 }
 
-void *audio_stream_update(void *arg){
+int audio_stream_update(void *arg){
   struct AudioStream *stream = (struct AudioStream *)arg;
   alcMakeContextCurrent(audio_context);
   while (!stream->stop_audio){
@@ -119,11 +120,13 @@ void *audio_stream_update(void *arg){
       }
     }
 
-    // Sleep for 1 ms
-    usleep(5000);
+    // Sleep for 5 ms
+    const struct timespec req = {0, 5000};
+    const struct timespec rem;
+    nanosleep(&req, &rem);
   }
   alcMakeContextCurrent(NULL);
-  return NULL;
+  return 0;
 }
 
 // HELPERS
