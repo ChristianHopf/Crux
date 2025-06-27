@@ -191,7 +191,7 @@ Engine *engine_create(){
   //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
   // engine->active_scene = scene_create(true);
-  engine->active_scene = scene_init("scenes/scene_sphere.json");
+  engine->active_scene = scene_init("scenes/bouncehouse.json");
   if (!engine->active_scene){
     printf("Error: failed to create scene\n");
     free(engine);

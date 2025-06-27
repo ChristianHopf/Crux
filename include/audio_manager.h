@@ -12,6 +12,9 @@
 #define BUFFER_FRAMES 8192
 #define MAX_SOUND_EFFECTS 128
 
+// Forward declarations
+struct Player;
+
 struct AudioStream {
   SNDFILE *file;
   SF_INFO info;
@@ -46,3 +49,6 @@ bool fill_buffer(struct AudioStream *stream, ALuint buffer);
 // One shot sound functions
 void audio_sound_effect_create(char *path, char *name);
 void audio_sound_effect_play(struct SoundEffect *sound_effect);
+
+// Listener
+void audio_listener_update(struct Player *player);

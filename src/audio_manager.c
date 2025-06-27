@@ -1,4 +1,5 @@
 #include "audio_manager.h"
+#include "player.h"
 #include <AL/al.h>
 #include <locale.h>
 #include <time.h>
@@ -227,4 +228,35 @@ void audio_sound_effect_play(struct SoundEffect *sound_effect){
   alSourcei(source, AL_BUFFER, sound_effect->buffer);
   alSourcePlay(source);
   // alDeleteSources(1, &source);
+}
+
+void audio_listener_update(struct Player *player){
+  // Update listener position and orientation
+  struct Camera *camera = player->camera;
+
+  alcMakeContextCurrent(audio_context);
+  ALenum player_error = alGetError();
+  if (player_error != AL_NO_ERROR){
+    fprintf(stderr, "Error: failed to set audio context in player_init\n");
+  }
+  alListenerfv(AL_POSITION, camera->position);
+  player_error = alGetError();
+  if (player_error != AL_NO_ERROR){
+    fprintf(stderr, "Error: failed to set audio context in player_init\n");
+  }
+
+  // Set listener orientation
+  float orientation[6];
+  orientation[0] = camera->front[0];
+  orientation[1] = camera->front[1];
+  orientation[2] = camera->front[2];
+  orientation[3] = camera->up[0];
+  orientation[4] = camera->up[1];
+  orientation[5] = camera->up[2];
+
+  alListenerfv(AL_ORIENTATION, orientation);
+  player_error = alGetError();
+  if (player_error != AL_NO_ERROR){
+    fprintf(stderr, "Error: failed to set audio context in player_init\n");
+  }
 }

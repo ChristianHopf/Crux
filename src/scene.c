@@ -145,6 +145,9 @@ struct Scene *scene_init(char *scene_path){
   }
   alcMakeContextCurrent(audio_context);
 
+  // Global configuration
+  alDistanceModel(AL_INVERSE_DISTANCE_CLAMPED);
+
   // Load music
   sounds_json = cJSON_GetObjectItemCaseSensitive(scene_json, "sounds");
   if (!sounds_json){
@@ -302,12 +305,18 @@ void scene_update(struct Scene *scene, float delta_time){
   // Perform collision detection
   physics_step(scene->physics_world, delta_time);
 
-  // Match entity position with updated PhysicsBody position
+  // Match entity audio source and PhysicsBody positions with entity position
   for(int i = 0; i < scene->num_dynamic_entities; i++){
     struct Entity *entity = &scene->dynamic_entities[i];
     glm_vec3_copy(entity->physics_body->position, scene->dynamic_entities[i].position);
     glm_vec3_copy(entity->physics_body->rotation, scene->dynamic_entities[i].rotation);
+    alSource3f(entity->audio_source, AL_POSITION, entity->position[0], entity->position[1], entity->position[2]);
+    ALenum position_error = alGetError();
+    if (position_error != AL_NO_ERROR){
+      fprintf(stderr, "Error matching Entity audio_source position with entity position in scene_update: %d\n", position_error);
+    }
   }
+
   // static float last_update_time = 0;
   // float current_update_time = glfwGetTime();
   // if (current_update_time - last_update_time >= 1){
@@ -480,10 +489,26 @@ void scene_process_meshes_json(cJSON *meshes, struct Model **models, Shader **sh
     entity->physics_body = physics_add_body(physics_world, entity, collider, dynamic);
     index++;
 
+    // Generate source
     alGenSources(1, &entity->audio_source);
     ALenum audio_source_error = alGetError();
     if (audio_source_error != AL_NO_ERROR){
-      fprintf(stderr, "Error generating Entity audio_source in scene_init: %d\n", audio_source_error);
+      fprintf(stderr, "Error generating Entity audio_source in scene_process_meshes_json: %d\n", audio_source_error);
+    }
+
+    // Set source position and options for spatial audio
+    alSource3f(entity->audio_source, AL_POSITION, entity->position[0], entity->position[1], entity->position[2]);
+    audio_source_error = alGetError();
+    if (audio_source_error != AL_NO_ERROR){
+      fprintf(stderr, "Error setting Entity audio_source position in scene_process_meshes_json: %d\n", audio_source_error);
+    }
+    alSourcef(entity->audio_source, AL_REFERENCE_DISTANCE, 5.0f);
+    alSourcef(entity->audio_source, AL_MAX_DISTANCE, 50.0f);
+    alSourcef(entity->audio_source, AL_ROLLOFF_FACTOR, 1.0f);
+    alSourcei(entity->audio_source, AL_SOURCE_RELATIVE, AL_FALSE);
+    audio_source_error = alGetError();
+    if (audio_source_error != AL_NO_ERROR){
+      fprintf(stderr, "Error setting Entity audio_source spatial audio options in scene_process_meshes_json: %d\n", audio_source_error);
     }
   }
 }
