@@ -129,6 +129,51 @@ struct Scene *scene_init(char *scene_path){
     index++;
   }
 
+  // Init OpenAL
+  audio_device = alcOpenDevice(NULL);
+  if (!audio_device){
+    ALCenum error = alcGetError(NULL);
+    fprintf(stderr, "Error: failed to open OpenAL device: %d\\n", error);
+    return NULL;
+  }
+  audio_context = alcCreateContext(audio_device, NULL);
+  if (!audio_context){
+    fprintf(stderr, "Error: failed to create OpenAL context\n");
+    alcCloseDevice(audio_device);
+    return NULL;
+  }
+  alcMakeContextCurrent(audio_context);
+
+  // Load sound effects
+  SF_INFO vb_info;
+  SNDFILE *vb_file = sf_open("resources/sfx/vineboom.wav", SFM_READ, &vb_info);
+  if (!vb_file){
+    fprintf(stderr, "Error: failed to open %s: %s\n", "resources/sfx/vineboom.wav", sf_strerror(NULL));
+    return NULL;
+  }
+  ALenum format;
+  if (vb_info.channels == 1){
+    format = AL_FORMAT_MONO_FLOAT32;
+  }
+  else{
+    format = AL_FORMAT_STEREO_FLOAT32;
+  }
+  float *vb_data = malloc(vb_info.frames * vb_info.channels * sizeof(float));
+  sf_count_t read_frames = sf_readf_float(vb_file, vb_data, vb_info.frames);
+  ALuint vb_buffer;
+  alGenBuffers(1, &vb_buffer);
+  alBufferData(vb_buffer, format, vb_data, vb_info.frames * vb_info.channels * sizeof(float), vb_info.samplerate);
+  ALenum vb_error = alGetError();
+  if (vb_error != AL_NO_ERROR){
+    fprintf(stderr, "Error buffering vine boom data: %d\n", vb_error);
+  }
+  free(vb_data);
+  struct SoundEffect vine_boom = {
+    "vine_boom",
+    vb_buffer
+  };
+  sound_effects[num_sound_effects++] = vine_boom;
+
   // Create entities and populate PhysicsWorld
   meshes = cJSON_GetObjectItemCaseSensitive(scene_json, "meshes");
   if (!meshes){
@@ -150,7 +195,7 @@ struct Scene *scene_init(char *scene_path){
 
   // Process static meshes
   int num_static_meshes = cJSON_GetArraySize(static_meshes);
-  scene->static_entities = (struct Entity *)malloc(num_static_meshes * sizeof(struct Entity));
+  scene->static_entities = (struct Entity *)calloc(num_static_meshes, sizeof(struct Entity));
   scene->num_static_entities = num_static_meshes;
   
   index = 0;
@@ -248,14 +293,13 @@ struct Scene *scene_init(char *scene_path){
 
   // Process dynamic meshes
   int num_dynamic_meshes = cJSON_GetArraySize(dynamic_meshes);
-  scene->dynamic_entities = (struct Entity *)malloc(num_dynamic_meshes * sizeof(struct Entity));
+  scene->dynamic_entities = (struct Entity *)calloc(num_dynamic_meshes, sizeof(struct Entity));
   scene->num_dynamic_entities = num_dynamic_meshes;
 
   index = 0;
   cJSON_ArrayForEach(mesh_json, dynamic_meshes){
     // Create Entity
     struct Entity *entity = &scene->dynamic_entities[index];
-    printf("ENTITY ADDRESS %p\n", entity);
 
     cJSON *model_index_json = cJSON_GetObjectItemCaseSensitive(mesh_json, "model_index");
     cJSON *shader_index_json = cJSON_GetObjectItemCaseSensitive(mesh_json, "shader_index");
@@ -342,8 +386,13 @@ struct Scene *scene_init(char *scene_path){
         break;
     }
     entity->physics_body = physics_add_body(scene->physics_world, entity, collider, true);
-    printf("CALLED PHYSICS_ADD_BODY WITH ENTITY AT %p\n", entity);
     index++;
+
+    alGenSources(1, &entity->audio_source);
+    ALenum audio_source_error = alGetError();
+    if (audio_source_error != AL_NO_ERROR){
+      fprintf(stderr, "Error generating Entity audio_source in scene_init: %d\n", audio_source_error);
+    }
   }
   scene->max_entities = 64;
 
@@ -408,62 +457,6 @@ struct Scene *scene_init(char *scene_path){
   char *skybox_dir = cJSON_GetStringValue(skybox_json);
   scene->skybox = skybox_create(skybox_dir);
 
-  // Init OpenAL
-  audio_device = alcOpenDevice(NULL);
-  if (!audio_device){
-    ALCenum error = alcGetError(NULL);
-    fprintf(stderr, "Error: failed to open OpenAL device: %d\\n", error);
-    return NULL;
-  }
-  printf("OPENAL DEVICE: %s\n", alcGetString(NULL, ALC_DEVICE_SPECIFIER));
-  audio_context = alcCreateContext(audio_device, NULL);
-  if (!audio_context){
-    fprintf(stderr, "Error: failed to create OpenAL context\n");
-    alcCloseDevice(audio_device);
-    return NULL;
-  }
-  alcMakeContextCurrent(audio_context);
-
-  // Load sound effects
-  SF_INFO vb_info;
-  SNDFILE *vb_file = sf_open("resources/sfx/vineboom.wav", SFM_READ, &vb_info);
-  if (!vb_file){
-    fprintf(stderr, "Error: failed to open %s: %s\n", "resources/sfx/vineboom.wav", sf_strerror(NULL));
-    return NULL;
-  }
-  ALenum format;
-  if (vb_info.channels == 1){
-    format = AL_FORMAT_MONO_FLOAT32;
-  }
-  else{
-    format = AL_FORMAT_STEREO_FLOAT32;
-  }
-  float *vb_data = malloc(vb_info.frames * vb_info.channels * sizeof(float));
-  sf_count_t read_frames = sf_readf_float(vb_file, vb_data, vb_info.frames);
-  ALuint vb_buffer;
-  alGenBuffers(1, &vb_buffer);
-  alBufferData(vb_buffer, format, vb_data, vb_info.frames * vb_info.channels * sizeof(float), vb_info.samplerate);
-  ALenum vb_error = alGetError();
-  if (vb_error != AL_NO_ERROR){
-    fprintf(stderr, "Error buffering vine boom data: %d\n", vb_error);
-  }
-  free(vb_data);
-  struct SoundEffect vine_boom = {
-    "vine_boom",
-    vb_buffer
-  };
-  sound_effects[num_sound_effects++] = vine_boom;
-  printf("sound_effects[0]: path %s, ALuint %d\n", sound_effects[0].name, sound_effects[0].buffer);
-  // Add audio source (hardcode vine boom for now)
-  alGenSources(1, &scene->dynamic_entities[0].audio_source);
-
-  printf("Entity audio source in scene_init: %d\n", scene->dynamic_entities[0].audio_source);
-  printf("Audio source generated for entity at %p\n", &scene->dynamic_entities[0]);
-  vb_error = alGetError();
-  if (vb_error != AL_NO_ERROR){
-    fprintf(stderr, "Error assigning buffer to source in scene_init: %d\n", vb_error);
-  }
-
   return scene;
 }
 
@@ -482,7 +475,6 @@ void scene_update(struct Scene *scene, float delta_time){
   // Update player
   player_update(&scene->player, delta_time);
 
-  printf("BEFORE PHYSICS_STEP: DYNAMIC BODY AT INDEX 0 HAS ENTITY ADDRESS %p\n", scene->physics_world->dynamic_bodies[0].entity);
   // Perform collision detection
   physics_step(scene->physics_world, delta_time);
 

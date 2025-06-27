@@ -66,15 +66,9 @@ void physics_step(struct PhysicsWorld *physics_world, float delta_time){
   if (delta_time > MAX_DELTA_TIME){
     delta_time = MAX_DELTA_TIME;
   }
-printf("NUM_DYNAMIC_BODIES: %d\n", physics_world->num_dynamic_bodies);
   // printf("PHYSICS_STEP: Dynamic body 0 has entity address %p\n", &physics_world->dynamic_bodies[0]);
   for(unsigned int i = 0; i < physics_world->num_dynamic_bodies; i++){
-    // printf("i == %d\n", i);
-    printf("Body %d entity address: %p\n", i, physics_world->dynamic_bodies[i].entity);
-    // printf("PHYSICS_STEP: Dynamic body 0 still has entity address %p\n", &physics_world->dynamic_bodies[0]);
     struct PhysicsBody *body_A = &physics_world->dynamic_bodies[i];
-    printf("DYNAMIC BODY AT INDEX I = 0 HAS ENTITY WITH ADDRESS %p\n", physics_world->dynamic_bodies[i].entity);
-    printf("BODY_A HAS ENTITY WITH ADDRESS %p\n", body_A->entity);
 
     // Collision detection will be off sometimes with AABBs.
     // I think this is because of angular velocity not being considered.

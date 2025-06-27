@@ -34,18 +34,6 @@ struct Scene {
   bool physics_debug_mode;
 };
 
-// typedef struct {
-//   struct Entity *entities;
-//   int num_entities;
-//   int max_entities;
-//   struct Level level;
-//   struct PhysicsWorld *physics_world;
-//   struct Skybox *skybox;
-//   struct Player player;
-//   struct Light *light;
-//   bool paused;
-//   bool physics_view_mode;
-// } Scene;
 
 struct Scene *scene_init(char *scene_path);
 struct Scene *scene_create(bool physics_view_mode);

@@ -98,9 +98,15 @@ int audio_stream_update(void *arg){
   alcMakeContextCurrent(audio_context);
   while (!stream->stop_audio){
 
+
     // Check for processed buffers
     ALint processed = 0;
     alGetSourcei(stream->source, AL_BUFFERS_PROCESSED, &processed);
+    ALenum error = alGetError();
+    if (error != AL_NO_ERROR) {
+      fprintf(stderr, "Error checking processed buffers: %d\n", error);
+      return -1;
+    }
     if (processed <= 0) continue;
 
     // For each buffer that's been processed,
@@ -110,9 +116,24 @@ int audio_stream_update(void *arg){
     for(int i = 0; i < processed; i++){
       ALuint buffer;
       alSourceUnqueueBuffers(stream->source, 1, &buffer);
+      error = alGetError();
+      if (error != AL_NO_ERROR) {
+        fprintf(stderr, "Error unqueuing buffer: %d\n", error);
+        return -1;
+      }
 
       if (fill_buffer(stream, buffer)){
         alSourceQueueBuffers(stream->source, 1, &buffer);
+        error = alGetError();
+        if (error != AL_NO_ERROR) {
+          fprintf(stderr, "Error requeuing buffer %u: %d\n", buffer, error);
+          return -1;
+        }
+      }
+      else {
+        fprintf(stderr, "Error: fill_buffer failed for buffer %u\n", buffer);
+        // Optionally continue instead of exiting
+        return -1;
       }
     }
 
@@ -128,7 +149,7 @@ int audio_stream_update(void *arg){
     }
 
     // Sleep for 5 ms
-    const struct timespec req = {0, 5000};
+    const struct timespec req = {0, 5000000};
     const struct timespec rem;
     nanosleep(&req, &rem);
   }

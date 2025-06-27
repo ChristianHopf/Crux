@@ -364,9 +364,6 @@ void resolve_collision_sphere_plane(struct PhysicsBody *body_A, struct PhysicsBo
     body_A->at_rest = true;
   }
   if (body_A->entity != NULL){
-    fprintf(stderr, "body_A->entity: %p\n", &body_A->entity);
-    printf("Resolution entity audio source: %d\n", body_A->entity->audio_source);
-    printf("sound_effects[0]: path %s, ALuint %d\n", sound_effects[0].name, sound_effects[0].buffer);
     entity_play_sound_effect(body_A->entity, &sound_effects[0]);
   }
 }
