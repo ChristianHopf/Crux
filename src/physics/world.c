@@ -57,7 +57,6 @@ struct PhysicsBody *body;
   glm_vec3_copy(entity->rotation, body->rotation);
   glm_vec3_copy(entity->scale, body->scale);
   body->entity = entity;
-  printf("DYNAMIC BODY AT INDEX 0 HAS ENTITY WITH ADDRESS %p\n", physics_world->dynamic_bodies[0].entity);
 
   return body;
 }

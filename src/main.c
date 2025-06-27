@@ -252,7 +252,7 @@ int main(){
   // Release context for render thread to use it later
   glfwMakeContextCurrent(NULL);
 
-  struct AudioStream *audio_stream = audio_stream_create("resources/music/mookid.wav");
+  // struct AudioStream *audio_stream = audio_stream_create("resources/music/mookid.wav");
   // alcMakeContextCurrent(NULL);
 
   thrd_t render_thrd;
@@ -293,7 +293,7 @@ int main(){
 		glfwPollEvents();
   }
 
-  audio_stream_destroy(audio_stream);
+  audio_stream_destroy(engine->active_scene->music_stream);
   thrd_join(render_thrd, NULL);
   mtx_destroy(&engine->scene_mutex);
   cnd_destroy(&engine->render_signal);

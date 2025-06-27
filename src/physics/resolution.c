@@ -317,6 +317,9 @@ void resolve_collision_sphere_sphere(struct PhysicsBody *body_A, struct PhysicsB
     glm_vec3_zero(body_A->velocity);
     body_A->at_rest = true;
   }
+  if (body_A->entity != NULL){
+    entity_play_sound_effect(body_A->entity, &sound_effects[0]);
+  }
 }
 
 void resolve_collision_sphere_plane(struct PhysicsBody *body_A, struct PhysicsBody *body_B, struct CollisionResult result, float delta_time){

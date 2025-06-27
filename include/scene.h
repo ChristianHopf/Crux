@@ -29,6 +29,8 @@ struct Scene {
   unsigned int ubo_matrices;
   // Physics
   struct PhysicsWorld *physics_world;
+  // Audio
+  struct AudioStream *music_stream;
   // Options
   bool paused;
   bool physics_debug_mode;
@@ -44,4 +46,6 @@ void scene_pause(struct Scene *scene);
 void scene_free(struct Scene *scene);
 
 // JSON processing helpers
+void scene_process_meshes_json(cJSON *meshes, struct Model **models, Shader **shaders, struct Entity *entities, struct PhysicsWorld *physics_world, bool dynamic);
+void scene_process_light_json(cJSON *light_json, struct Light *light);
 void scene_process_vec3_json(cJSON *vec3_json, vec3 dest);

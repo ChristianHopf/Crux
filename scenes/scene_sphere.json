@@ -9,6 +9,12 @@
 		"resources/basic/grass_plane/grass_plane.gltf",
 		"resources/objects/oiiai/scene.gltf"
 	],
+  "sounds": {
+    "music": "resources/music/mookid.wav",
+    "effects": [
+      "resources/sfx/vineboom.wav"
+    ]
+  },
 	"meshes": {
 		"static": [
 			{
