@@ -1,7 +1,9 @@
-#ifndef PLAYER_H
-#define PLAYER_H
+#pragma once
 
 #include <stdbool.h>
+#include <AL/al.h>
+#include <AL/alc.h>
+#include "audio_manager.h"
 #include "camera.h"
 
 struct Player {
@@ -13,5 +15,3 @@ struct Player {
 void player_init(struct Player *player);
 void player_jump(struct Player *player);
 void player_update(struct Player *player, float delta_time);
-
-#endif

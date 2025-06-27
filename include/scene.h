@@ -25,25 +25,17 @@ struct Scene {
   struct Skybox *skybox;
   struct Player player;
   struct Light *lights;
+  // UBOs
+  unsigned int ubo_matrices;
   // Physics
   struct PhysicsWorld *physics_world;
+  // Audio
+  struct AudioStream *music_stream;
   // Options
   bool paused;
   bool physics_debug_mode;
 };
 
-// typedef struct {
-//   struct Entity *entities;
-//   int num_entities;
-//   int max_entities;
-//   struct Level level;
-//   struct PhysicsWorld *physics_world;
-//   struct Skybox *skybox;
-//   struct Player player;
-//   struct Light *light;
-//   bool paused;
-//   bool physics_view_mode;
-// } Scene;
 
 struct Scene *scene_init(char *scene_path);
 struct Scene *scene_create(bool physics_view_mode);
@@ -54,4 +46,6 @@ void scene_pause(struct Scene *scene);
 void scene_free(struct Scene *scene);
 
 // JSON processing helpers
+void scene_process_meshes_json(cJSON *meshes, struct Model **models, Shader **shaders, struct Entity *entities, struct PhysicsWorld *physics_world, bool dynamic);
+void scene_process_light_json(cJSON *light_json, struct Light *light);
 void scene_process_vec3_json(cJSON *vec3_json, vec3 dest);

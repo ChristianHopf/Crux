@@ -1,8 +1,6 @@
-//#include <GLFW/glfw3.h>
 #include <cglm/euler.h>
 #include <cglm/mat4.h>
 #include <cglm/vec3.h>
-#include <glad/glad.h>
 #include <cglm/cglm.h>
 #include <cglm/mat3.h>
 #include "scene.h"
@@ -14,6 +12,7 @@
 #include "physics/aabb.h"
 #include "physics/debug_renderer.h"
 #include "physics/utils.h"
+#include "audio_manager.h"
 #include "utils.h"
 
 struct Scene *scene_init(char *scene_path){
@@ -33,6 +32,7 @@ struct Scene *scene_init(char *scene_path){
 
   const cJSON *shaders_json;
   const cJSON *models_json;
+  const cJSON *sounds_json;
   const cJSON *meshes;
   const cJSON *lights_json;
   const cJSON *skybox_json;
@@ -80,6 +80,23 @@ struct Scene *scene_init(char *scene_path){
     index++;
   }
 
+  // Link shader uniform blocks to binding points
+  for (int i = 0; i < num_shaders; i++){
+    unsigned int uniform_block_index = glGetUniformBlockIndex(shaders[i]->ID, "Matrices");
+    if (uniform_block_index != GL_INVALID_INDEX){
+      glUniformBlockBinding(shaders[i]->ID, uniform_block_index, 0);
+    }
+  }
+  // Generate uniform buffer objects
+  unsigned int uboMatrices;
+  glGenBuffers(1, &uboMatrices);
+  glBindBuffer(GL_UNIFORM_BUFFER, uboMatrices);
+  glBufferData(GL_UNIFORM_BUFFER, 2 * sizeof(mat4), NULL, GL_STATIC_DRAW);
+  
+  glBindBufferRange(GL_UNIFORM_BUFFER, 0, uboMatrices, 0, 2 * sizeof(mat4));
+  glBindBuffer(GL_UNIFORM_BUFFER, 0);
+  scene->ubo_matrices = uboMatrices;
+
   // Load models
   models_json = cJSON_GetObjectItemCaseSensitive(scene_json, "models");
   if (!cJSON_IsArray(models_json)){
@@ -113,6 +130,82 @@ struct Scene *scene_init(char *scene_path){
     index++;
   }
 
+  // Init OpenAL
+  audio_device = alcOpenDevice(NULL);
+  if (!audio_device){
+    ALCenum error = alcGetError(NULL);
+    fprintf(stderr, "Error: failed to open OpenAL device: %d\\n", error);
+    return NULL;
+  }
+  audio_context = alcCreateContext(audio_device, NULL);
+  if (!audio_context){
+    fprintf(stderr, "Error: failed to create OpenAL context\n");
+    alcCloseDevice(audio_device);
+    return NULL;
+  }
+  alcMakeContextCurrent(audio_context);
+
+  // Global configuration
+  alDistanceModel(AL_INVERSE_DISTANCE_CLAMPED);
+
+  // Load music
+  sounds_json = cJSON_GetObjectItemCaseSensitive(scene_json, "sounds");
+  if (!sounds_json){
+    fprintf(stderr, "Error: failed to get sounds object in scene_init, sounds is either invalid or does not exist\n");
+    return NULL;
+  }
+  cJSON *music_json = cJSON_GetObjectItemCaseSensitive(sounds_json, "music");
+  if (!music_json){
+    fprintf(stderr, "Error: failed to get music in sounds object in scene_init, music is either inavlid or does not exist\n");
+    return NULL;
+  }
+  // Only one music stream for now, could later start multiple streams for other ambient loops
+  char *music_path = cJSON_GetStringValue(music_json);
+  scene->music_stream = audio_stream_create(music_path);
+
+  // Load sound effects
+  cJSON *sound_effects_json = cJSON_GetObjectItemCaseSensitive(sounds_json, "effects");
+  if (!cJSON_IsArray(sound_effects_json)){
+    fprintf(stderr, "Error: failed to get effects array in sounds object in scene_init, effects is either invalid or does not exist\n");
+    return NULL;
+  }
+  // num_sound_effects = cJSON_GetArraySize(sound_effects_json);
+  const cJSON *effect_json = NULL;
+  cJSON_ArrayForEach(effect_json, sound_effects_json){
+    cJSON *path;
+    cJSON *name;
+    audio_sound_effect_create("resources/sfx/vineboom.wav", "vine_boom");
+  }
+
+  // SF_INFO vb_info;
+  // SNDFILE *vb_file = sf_open("resources/sfx/vineboom.wav", SFM_READ, &vb_info);
+  // if (!vb_file){
+  //   fprintf(stderr, "Error: failed to open %s: %s\n", "resources/sfx/vineboom.wav", sf_strerror(NULL));
+  //   return NULL;
+  // }
+  // ALenum format;
+  // if (vb_info.channels == 1){
+  //   format = AL_FORMAT_MONO_FLOAT32;
+  // }
+  // else{
+  //   format = AL_FORMAT_STEREO_FLOAT32;
+  // }
+  // float *vb_data = malloc(vb_info.frames * vb_info.channels * sizeof(float));
+  // sf_count_t read_frames = sf_readf_float(vb_file, vb_data, vb_info.frames);
+  // ALuint vb_buffer;
+  // alGenBuffers(1, &vb_buffer);
+  // alBufferData(vb_buffer, format, vb_data, vb_info.frames * vb_info.channels * sizeof(float), vb_info.samplerate);
+  // ALenum vb_error = alGetError();
+  // if (vb_error != AL_NO_ERROR){
+  //   fprintf(stderr, "Error buffering vine boom data: %d\n", vb_error);
+  // }
+  // free(vb_data);
+  // struct SoundEffect vine_boom = {
+  //   "vine_boom",
+  //   vb_buffer
+  // };
+  // sound_effects[num_sound_effects++] = vine_boom;
+
   // Create entities and populate PhysicsWorld
   meshes = cJSON_GetObjectItemCaseSensitive(scene_json, "meshes");
   if (!meshes){
@@ -134,213 +227,18 @@ struct Scene *scene_init(char *scene_path){
 
   // Process static meshes
   int num_static_meshes = cJSON_GetArraySize(static_meshes);
-  scene->static_entities = (struct Entity *)malloc(num_static_meshes * sizeof(struct Entity));
+  scene->static_entities = (struct Entity *)calloc(num_static_meshes, sizeof(struct Entity));
   scene->num_static_entities = num_static_meshes;
-  
-  index = 0;
-  cJSON *mesh_json;
-  cJSON_ArrayForEach(mesh_json, static_meshes){
-    // Create Entity
-    struct Entity *entity = &scene->static_entities[index];
 
-    cJSON *model_index_json = cJSON_GetObjectItemCaseSensitive(mesh_json, "model_index");
-    cJSON *shader_index_json = cJSON_GetObjectItemCaseSensitive(mesh_json, "shader_index");
-    if(!cJSON_IsNumber(model_index_json)){
-      fprintf(stderr, "Error: failed to get model_index in static mesh at index %d, either invalid or does not exist\n", index);
-      return NULL;
-    }
-    if(!cJSON_IsNumber(shader_index_json)){
-      fprintf(stderr, "Error: failed to get shader_index in static mesh at index %d, either invalid or does not exist\n", index);
-      return NULL;
-    }
-    printf("Model index is %d\n", (int)cJSON_GetNumberValue(model_index_json));
-
-    entity->model = models[(int)cJSON_GetNumberValue(model_index_json)];
-    entity->shader = shaders[(int)cJSON_GetNumberValue(shader_index_json)];
-
-    scene_process_vec3_json(cJSON_GetObjectItemCaseSensitive(mesh_json, "position"), entity->position);
-    scene_process_vec3_json(cJSON_GetObjectItemCaseSensitive(mesh_json, "rotation"), entity->rotation);
-    scene_process_vec3_json(cJSON_GetObjectItemCaseSensitive(mesh_json, "scale"), entity->scale);
-
-    // Process mesh collider
-    cJSON *collider_json = cJSON_GetObjectItemCaseSensitive(mesh_json, "collider");
-    if (!collider_json){
-      fprintf(stderr, "Error: failed to get collider object in mesh at index %d, either invalid or does not exist\n", index);
-      return NULL;
-    }
-    cJSON *collider_type = cJSON_GetObjectItemCaseSensitive(collider_json, "type");
-    if (!cJSON_IsNumber(collider_type)){
-      fprintf(stderr, "Error: failed to get type in collider object in mesh at index %d, either invalid or does not exist\n", index);
-      return NULL;
-    }
-    cJSON *collider_data_json = cJSON_GetObjectItemCaseSensitive(collider_json, "data");
-    if (!collider_data_json){
-      fprintf(stderr, "Error: failed to get data in collider object in mesh at index %d, either invalid or does not exist\n", index);
-      return NULL;
-    }
-
-    ColliderType type = cJSON_GetNumberValue(collider_type);
-    struct Collider collider;
-    switch(type){
-      case COLLIDER_AABB:
-        struct AABB aabb;
-
-        scene_process_vec3_json(cJSON_GetObjectItemCaseSensitive(collider_data_json, "center"), aabb.center);
-        scene_process_vec3_json(cJSON_GetObjectItemCaseSensitive(collider_data_json, "extents"), aabb.extents);
-
-        aabb.initialized = true;
-
-        collider.type = type;
-        collider.data.aabb = aabb;
-        break;
-      case COLLIDER_SPHERE:
-        struct Sphere sphere;
-
-        scene_process_vec3_json(cJSON_GetObjectItemCaseSensitive(collider_data_json, "center"), sphere.center);
-
-        cJSON *radius = cJSON_GetObjectItemCaseSensitive(collider_data_json, "radius");
-        if(!cJSON_IsNumber(radius)){
-          fprintf(stderr, "Error: failed to get radius in collider object in static mesh at index %d, either invalid or does not exist\n", index);
-          return NULL;
-        }
-        sphere.radius = cJSON_GetNumberValue(radius);
-
-        collider.type = type;
-        collider.data.sphere = sphere;
-        break;
-      case COLLIDER_PLANE:
-        struct Plane plane;
-
-        scene_process_vec3_json(cJSON_GetObjectItemCaseSensitive(collider_data_json, "normal"), plane.normal);
-
-        cJSON *distance = cJSON_GetObjectItemCaseSensitive(collider_data_json, "distance");
-        if(!cJSON_IsNumber(distance)){
-          fprintf(stderr, "Error: failed to get distance in collider object in static mesh at index %d, either invalid or does not exist\n", index);
-          return NULL;
-        }
-
-        plane.distance = cJSON_GetNumberValue(distance);
-
-        collider.type = type;
-        collider.data.plane = plane;
-        break;
-      default:
-        break;
-    }
-    printf("Added Entity to scene->static_entities at index %d:\n", index);
-    printf("Shader id: %d, model index: %d\n", (int)cJSON_GetNumberValue(shader_index_json), (int)cJSON_GetNumberValue(model_index_json));
-    printf("Model directory: %s\n", entity->model->directory);
-    print_glm_vec3(entity->position, "Entity position");
-    print_glm_vec3(entity->rotation, "Entity rotation");
-    print_glm_vec3(entity->scale, "Entity scale");
-    print_glm_vec3(collider.data.plane.normal, "Plane normal");
-    printf("Plane distance: %f\n", collider.data.plane.distance);
-
-    entity->physics_body = physics_add_body(scene->physics_world, entity, collider, false);
-    index++;
-  }
+  scene_process_meshes_json(static_meshes, models, shaders, scene->static_entities, scene->physics_world, false);
 
   // Process dynamic meshes
   int num_dynamic_meshes = cJSON_GetArraySize(dynamic_meshes);
-  scene->dynamic_entities = (struct Entity *)malloc(num_dynamic_meshes * sizeof(struct Entity));
+  scene->dynamic_entities = (struct Entity *)calloc(num_dynamic_meshes, sizeof(struct Entity));
   scene->num_dynamic_entities = num_dynamic_meshes;
 
-  index = 0;
-  cJSON_ArrayForEach(mesh_json, dynamic_meshes){
-    // Create Entity
-    struct Entity *entity = &scene->dynamic_entities[index];
+  scene_process_meshes_json(dynamic_meshes, models, shaders, scene->dynamic_entities, scene->physics_world, true);
 
-    cJSON *model_index_json = cJSON_GetObjectItemCaseSensitive(mesh_json, "model_index");
-    cJSON *shader_index_json = cJSON_GetObjectItemCaseSensitive(mesh_json, "shader_index");
-    if(!cJSON_IsNumber(model_index_json)){
-      fprintf(stderr, "Error: failed to get model_index in dynamic mesh at index %d, either invalid or does not exist\n", index);
-      return NULL;
-    }
-    if(!cJSON_IsNumber(shader_index_json)){
-      fprintf(stderr, "Error: failed to get shader_index in dynamic mesh at index %d, either invalid or does not exist\n", index);
-      return NULL;
-    }
-
-    entity->model = models[(int)cJSON_GetNumberValue(model_index_json)];
-    entity->shader = shaders[(int)cJSON_GetNumberValue(shader_index_json)];
-
-    scene_process_vec3_json(cJSON_GetObjectItemCaseSensitive(mesh_json, "position"), entity->position);
-    scene_process_vec3_json(cJSON_GetObjectItemCaseSensitive(mesh_json, "rotation"), entity->rotation);
-    scene_process_vec3_json(cJSON_GetObjectItemCaseSensitive(mesh_json, "scale"), entity->scale);
-    scene_process_vec3_json(cJSON_GetObjectItemCaseSensitive(mesh_json, "velocity"), entity->velocity);
-
-    // Process mesh collider
-    cJSON *collider_json = cJSON_GetObjectItemCaseSensitive(mesh_json, "collider");
-    if (!collider_json){
-      fprintf(stderr, "Error: failed to get collider object in dynamic mesh at index %d, either invalid or does not exist\n", index);
-      return NULL;
-    }
-    cJSON *collider_type = cJSON_GetObjectItemCaseSensitive(collider_json, "type");
-    if (!cJSON_IsNumber(collider_type)){
-      fprintf(stderr, "Error: failed to get type in collider object in dynamic mesh at index %d, either invalid or does not exist\n", index);
-      return NULL;
-    }
-    cJSON *collider_data_json = cJSON_GetObjectItemCaseSensitive(collider_json, "data");
-    if (!collider_data_json){
-      fprintf(stderr, "Error: failed to get data in collider object in dynamic mesh at index %d, either invalid or does not exist\n", index);
-      return NULL;
-    }
-
-    ColliderType type = cJSON_GetNumberValue(collider_type);
-    struct Collider collider;
-    switch(type){
-      case COLLIDER_AABB:
-        struct AABB aabb;
-
-        scene_process_vec3_json(cJSON_GetObjectItemCaseSensitive(collider_data_json, "center"), aabb.center);
-        scene_process_vec3_json(cJSON_GetObjectItemCaseSensitive(collider_data_json, "extents"), aabb.extents);
-
-        aabb.initialized = true;
-
-        collider.type = type;
-        collider.data.aabb = aabb;
-        printf("OIIAI has collider type %d\n", type);
-        print_aabb(&collider.data.aabb);
-        break;
-      case COLLIDER_SPHERE:
-        struct Sphere sphere;
-
-        scene_process_vec3_json(cJSON_GetObjectItemCaseSensitive(collider_data_json, "center"), sphere.center);
-        // glm_vec3_sub(sphere.center, entity->position, sphere.center);
-
-        cJSON *radius = cJSON_GetObjectItemCaseSensitive(collider_data_json, "radius");
-        if(!cJSON_IsNumber(radius)){
-          fprintf(stderr, "Error: failed to get radius in collider object in static mesh at index %d, either invalid or does not exist\n", index);
-          return NULL;
-        }
-        sphere.radius = cJSON_GetNumberValue(radius);
-
-        collider.type = type;
-        collider.data.sphere = sphere;
-        break;
-      case COLLIDER_PLANE:
-        struct Plane plane;
-
-        // vec3 normal;
-        scene_process_vec3_json(cJSON_GetObjectItemCaseSensitive(collider_data_json, "normal"), plane.normal);
-
-        cJSON *distance = cJSON_GetObjectItemCaseSensitive(collider_data_json, "distance");
-        if(!cJSON_IsNumber(distance)){
-          fprintf(stderr, "Error: failed to get distance in collider object in static mesh at index %d, either invalid or does not exist\n", index);
-          return NULL;
-        }
-
-        plane.distance = cJSON_GetNumberValue(distance);
-
-        collider.type = type;
-        collider.data.plane = plane;
-        break;
-      default:
-        break;
-    }
-    entity->physics_body = physics_add_body(scene->physics_world, entity, collider, true);
-    index++;
-  }
   scene->max_entities = 64;
 
   // Init physics debug renderer
@@ -366,25 +264,7 @@ struct Scene *scene_init(char *scene_path){
   cJSON *light_json;
   cJSON_ArrayForEach(light_json, lights_json){
     struct Light *light = &scene->lights[index];
-
-    // Get data (direction, ambient, diffuse, specular)
-    cJSON *light_data_json = cJSON_GetObjectItemCaseSensitive(light_json, "data");
-    if (!light_data_json){
-      fprintf(stderr, "Error: failed to get data object in light at index %d, either invalid or does not exist\n", index);
-      return NULL;
-    }
-
-    vec3 direction, ambient, diffuse, specular;
-    scene_process_vec3_json(cJSON_GetObjectItemCaseSensitive(light_data_json, "direction"), direction);
-    scene_process_vec3_json(cJSON_GetObjectItemCaseSensitive(light_data_json, "ambient"), ambient);
-    scene_process_vec3_json(cJSON_GetObjectItemCaseSensitive(light_data_json, "diffuse"), diffuse);
-    scene_process_vec3_json(cJSON_GetObjectItemCaseSensitive(light_data_json, "specular"), specular);
-
-    glm_vec3_copy(direction, light->direction);
-    glm_vec3_copy(ambient, light->ambient);
-    glm_vec3_copy(diffuse, light->diffuse);
-    glm_vec3_copy(specular, light->specular);
-
+    scene_process_light_json(light_json, light);
     index++;
   }
 
@@ -425,12 +305,24 @@ void scene_update(struct Scene *scene, float delta_time){
   // Perform collision detection
   physics_step(scene->physics_world, delta_time);
 
-  // Match entity position with updated PhysicsBody position
+  // Match entity audio source and PhysicsBody positions with entity position
   for(int i = 0; i < scene->num_dynamic_entities; i++){
     struct Entity *entity = &scene->dynamic_entities[i];
     glm_vec3_copy(entity->physics_body->position, scene->dynamic_entities[i].position);
     glm_vec3_copy(entity->physics_body->rotation, scene->dynamic_entities[i].rotation);
+    alSource3f(entity->audio_source, AL_POSITION, entity->position[0], entity->position[1], entity->position[2]);
+    ALenum position_error = alGetError();
+    if (position_error != AL_NO_ERROR){
+      fprintf(stderr, "Error matching Entity audio_source position with entity position in scene_update: %d\n", position_error);
+    }
   }
+
+  // static float last_update_time = 0;
+  // float current_update_time = glfwGetTime();
+  // if (current_update_time - last_update_time >= 1){
+  //   last_update_time = current_update_time;
+  //   entity_play_sound_effect(&scene->dynamic_entities[0], &sound_effects[0]);
+  // }
 
   // Update light
   scene->lights[0].direction[0] = (float)sin(lightSpeed * total_time);
@@ -447,7 +339,7 @@ void scene_render(struct Scene *scene){
   mat4 view;
   mat4 projection;
   camera_get_view_matrix(scene->player.camera, view);
-  glm_perspective(glm_rad(scene->player.camera->fov), 800.0f / 600.0f, 0.1f, 100.0f, projection);
+  glm_perspective(glm_rad(scene->player.camera->fov), 1920.0f / 1080.0f, 0.1f, 100.0f, projection);
 
   // Create a RenderContext, which is simply
   // a collection of parameters for rendering the Level and Entities
@@ -458,16 +350,21 @@ void scene_render(struct Scene *scene){
     .camera_position_ptr = &scene->player.camera->position,
   };
 
-  // Draw level
-  // level_render(&scene->level, &context);
+  // Set view and projection matrices in matrices UBO
+  glBindBuffer(GL_UNIFORM_BUFFER, scene->ubo_matrices);
+  glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(mat4), view);
+  glBufferSubData(GL_UNIFORM_BUFFER, sizeof(mat4), sizeof(mat4), projection);
+  glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
   // Draw entities
   for(int i = 0; i < scene->num_static_entities; i++){
     entity_render(&scene->static_entities[i], &context);
   }
+  float oiiai_start_time = glfwGetTime();
   for(int i = 0; i < scene->num_dynamic_entities; i++){
     entity_render(&scene->dynamic_entities[i], &context);
   }
+  // printf("OIIAI RENDER TIME: %.2f ms\n", (glfwGetTime() - oiiai_start_time) * 1000.0);
 
   // Draw skybox
   skybox_render(scene->skybox, &context);
@@ -478,13 +375,14 @@ void scene_render(struct Scene *scene){
   }
 
   // Render text
-  text_render("Crux Engine 0.2", 4.0f, 744.0f, 1.0f, (vec3){1.0f, 1.0f, 1.0f});
+  text_render("Crux Engine 0.2", 4.0f, 1058.0f, 1.0f, (vec3){1.0f, 1.0f, 1.0f});
 }
 
 void scene_pause(struct Scene *scene){
   bool prev = scene->paused;
   scene->paused = !prev;
 }
+
 //     // Rewrite this to actually free everything
 //     free(scene->entities);
 //     free(scene->player.camera);
@@ -495,12 +393,144 @@ void scene_pause(struct Scene *scene){
 //   }
 // }
 
-void scene_process_static_meshes(){
+void scene_process_meshes_json(cJSON *meshes, struct Model **models, Shader **shaders, struct Entity *entities, struct PhysicsWorld *physics_world, bool dynamic){
+  int index = 0;
+  cJSON *mesh_json;
+  cJSON_ArrayForEach(mesh_json, meshes){
+    // Create Entity
+    struct Entity *entity = &entities[index];
 
+    cJSON *model_index_json = cJSON_GetObjectItemCaseSensitive(mesh_json, "model_index");
+    cJSON *shader_index_json = cJSON_GetObjectItemCaseSensitive(mesh_json, "shader_index");
+    if(!cJSON_IsNumber(model_index_json)){
+      fprintf(stderr, "Error: failed to get model_index in mesh at index %d, either invalid or does not exist\n", index);
+      return;
+    }
+    if(!cJSON_IsNumber(shader_index_json)){
+      fprintf(stderr, "Error: failed to get shader_index in mesh at index %d, either invalid or does not exist\n", index);
+      return;
+    }
+
+    entity->model = models[(int)cJSON_GetNumberValue(model_index_json)];
+    entity->shader = shaders[(int)cJSON_GetNumberValue(shader_index_json)];
+
+    scene_process_vec3_json(cJSON_GetObjectItemCaseSensitive(mesh_json, "position"), entity->position);
+    scene_process_vec3_json(cJSON_GetObjectItemCaseSensitive(mesh_json, "rotation"), entity->rotation);
+    scene_process_vec3_json(cJSON_GetObjectItemCaseSensitive(mesh_json, "scale"), entity->scale);
+    if (dynamic){
+      scene_process_vec3_json(cJSON_GetObjectItemCaseSensitive(mesh_json, "velocity"), entity->velocity);
+    }
+
+    // Process mesh collider
+    cJSON *collider_json = cJSON_GetObjectItemCaseSensitive(mesh_json, "collider");
+    if (!collider_json){
+      fprintf(stderr, "Error: failed to get collider object in mesh at index %d, either invalid or does not exist\n", index);
+      return;
+    }
+    cJSON *collider_type = cJSON_GetObjectItemCaseSensitive(collider_json, "type");
+    if (!cJSON_IsNumber(collider_type)){
+      fprintf(stderr, "Error: failed to get type in collider object in mesh at index %d, either invalid or does not exist\n", index);
+      return;
+    }
+    cJSON *collider_data_json = cJSON_GetObjectItemCaseSensitive(collider_json, "data");
+    if (!collider_data_json){
+      fprintf(stderr, "Error: failed to get data in collider object in mesh at index %d, either invalid or does not exist\n", index);
+      return;
+    }
+
+    ColliderType type = cJSON_GetNumberValue(collider_type);
+    struct Collider collider;
+    switch(type){
+      case COLLIDER_AABB:
+        struct AABB aabb;
+
+        scene_process_vec3_json(cJSON_GetObjectItemCaseSensitive(collider_data_json, "center"), aabb.center);
+        scene_process_vec3_json(cJSON_GetObjectItemCaseSensitive(collider_data_json, "extents"), aabb.extents);
+
+        aabb.initialized = true;
+
+        collider.type = type;
+        collider.data.aabb = aabb;
+        break;
+      case COLLIDER_SPHERE:
+        struct Sphere sphere;
+
+        scene_process_vec3_json(cJSON_GetObjectItemCaseSensitive(collider_data_json, "center"), sphere.center);
+
+        cJSON *radius = cJSON_GetObjectItemCaseSensitive(collider_data_json, "radius");
+        if(!cJSON_IsNumber(radius)){
+          fprintf(stderr, "Error: failed to get radius in collider object in static mesh at index %d, either invalid or does not exist\n", index);
+          return;
+        }
+        sphere.radius = cJSON_GetNumberValue(radius);
+
+        collider.type = type;
+        collider.data.sphere = sphere;
+        break;
+      case COLLIDER_PLANE:
+        struct Plane plane;
+
+        scene_process_vec3_json(cJSON_GetObjectItemCaseSensitive(collider_data_json, "normal"), plane.normal);
+
+        cJSON *distance = cJSON_GetObjectItemCaseSensitive(collider_data_json, "distance");
+        if(!cJSON_IsNumber(distance)){
+          fprintf(stderr, "Error: failed to get distance in collider object in static mesh at index %d, either invalid or does not exist\n", index);
+          return;
+        }
+
+        plane.distance = cJSON_GetNumberValue(distance);
+
+        collider.type = type;
+        collider.data.plane = plane;
+        break;
+      default:
+        break;
+    }
+    entity->physics_body = physics_add_body(physics_world, entity, collider, dynamic);
+    index++;
+
+    // Generate source
+    alGenSources(1, &entity->audio_source);
+    ALenum audio_source_error = alGetError();
+    if (audio_source_error != AL_NO_ERROR){
+      fprintf(stderr, "Error generating Entity audio_source in scene_process_meshes_json: %d\n", audio_source_error);
+    }
+
+    // Set source position and options for spatial audio
+    alSource3f(entity->audio_source, AL_POSITION, entity->position[0], entity->position[1], entity->position[2]);
+    audio_source_error = alGetError();
+    if (audio_source_error != AL_NO_ERROR){
+      fprintf(stderr, "Error setting Entity audio_source position in scene_process_meshes_json: %d\n", audio_source_error);
+    }
+    alSourcef(entity->audio_source, AL_REFERENCE_DISTANCE, 5.0f);
+    alSourcef(entity->audio_source, AL_MAX_DISTANCE, 50.0f);
+    alSourcef(entity->audio_source, AL_ROLLOFF_FACTOR, 1.0f);
+    alSourcei(entity->audio_source, AL_SOURCE_RELATIVE, AL_FALSE);
+    audio_source_error = alGetError();
+    if (audio_source_error != AL_NO_ERROR){
+      fprintf(stderr, "Error setting Entity audio_source spatial audio options in scene_process_meshes_json: %d\n", audio_source_error);
+    }
+  }
 }
 
-void scene_process_dynamic_meshes(){
+void scene_process_light_json(cJSON *light_json, struct Light *light){
+  // Get data (direction, ambient, diffuse, specular)
+  cJSON *light_data_json = cJSON_GetObjectItemCaseSensitive(light_json, "data");
+  if (!light_data_json){
+    fprintf(stderr, "Error: failed to get data object in light at index %d, either invalid or does not exist\n", index);
+    return;
+  }
 
+  vec3 direction, ambient, diffuse, specular;
+  scene_process_vec3_json(cJSON_GetObjectItemCaseSensitive(light_data_json, "direction"), direction);
+  scene_process_vec3_json(cJSON_GetObjectItemCaseSensitive(light_data_json, "ambient"), ambient);
+  scene_process_vec3_json(cJSON_GetObjectItemCaseSensitive(light_data_json, "diffuse"), diffuse);
+  scene_process_vec3_json(cJSON_GetObjectItemCaseSensitive(light_data_json, "specular"), specular);
+
+  glm_vec3_copy(direction, light->direction);
+  glm_vec3_copy(ambient, light->ambient);
+  glm_vec3_copy(diffuse, light->diffuse);
+  glm_vec3_copy(specular, light->specular);
 }
 
 void scene_process_vec3_json(cJSON *vec3_json, vec3 dest){

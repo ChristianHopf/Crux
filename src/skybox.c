@@ -121,6 +121,10 @@ struct Skybox *skybox_create(char *directory){
     return NULL;
   }
 
+  // Uniform block binding
+  unsigned int uniform_block_index = glGetUniformBlockIndex(skyboxShader->ID, "Matrices");
+  glUniformBlockBinding(skyboxShader->ID, uniform_block_index, 0);
+
   skybox->cubemap_texture_id = cubemap_texture_id;
   skybox->cubemapVAO = cubemapVAO;
   skybox->cubemapVBO = cubemapVBO;

@@ -39,7 +39,6 @@ struct PhysicsBody *body;
       body = &physics_world->dynamic_bodies[physics_world->num_dynamic_bodies++];
       body->collider = collider;
       glm_vec3_copy(entity->velocity, body->velocity);
-      printf("Added dynamic body of type %d\n", collider.type);
       break;
     case false:
       body = &physics_world->static_bodies[physics_world->num_static_bodies++];
@@ -57,6 +56,7 @@ struct PhysicsBody *body;
   glm_vec3_copy(entity->position, body->position);
   glm_vec3_copy(entity->rotation, body->rotation);
   glm_vec3_copy(entity->scale, body->scale);
+  body->entity = entity;
 
   return body;
 }
@@ -65,8 +65,7 @@ void physics_step(struct PhysicsWorld *physics_world, float delta_time){
   if (delta_time > MAX_DELTA_TIME){
     delta_time = MAX_DELTA_TIME;
   }
-
-  // Naive algorithm: check all (dynamic) bodies against all other bodies
+  // printf("PHYSICS_STEP: Dynamic body 0 has entity address %p\n", &physics_world->dynamic_bodies[0]);
   for(unsigned int i = 0; i < physics_world->num_dynamic_bodies; i++){
     struct PhysicsBody *body_A = &physics_world->dynamic_bodies[i];
 
@@ -75,16 +74,16 @@ void physics_step(struct PhysicsWorld *physics_world, float delta_time){
     // This should work fine with spheres, though.
     // body_A->rotation[0] += 100.0f * delta_time;
     // body_A->rotation[0] = fmodf(body_A->rotation[0], 360);
-    // body_A->rotation[1] += 100.0f * delta_time;
-    // body_A->rotation[1] = fmodf(body_A->rotation[1], 360);
+    body_A->rotation[1] += 100.0f * delta_time;
+    body_A->rotation[1] = fmodf(body_A->rotation[1], 360);
     // body_A->rotation[2] += 100.0f * delta_time;
     // body_A->rotation[2] = fmodf(body_A->rotation[2], 360);
     // if (body_A->rotation[0] < 0.0f){
     //   body_A->rotation[0] += 360;
     // }
-    // if (body_A->rotation[1] < 0.0f){
-    //   body_A->rotation[1] += 360;
-    // }
+    if (body_A->rotation[1] < 0.0f){
+      body_A->rotation[1] += 360;
+    }
     // if (body_A->rotation[2] < 0.0f){
     //   body_A->rotation[2] += 360;
     // }

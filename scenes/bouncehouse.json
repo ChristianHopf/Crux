@@ -9,6 +9,15 @@
 		"resources/basic/grass_plane/grass_plane.gltf",
 		"resources/objects/oiiai/scene.gltf"
 	],
+  "sounds": {
+    "music": "resources/music/mookid.wav",
+    "effects": [
+      {
+        "path": "resources/sfx/vineboom.wav",
+        "name": "vine_boom"
+      }
+    ]
+  },
 	"meshes": {
 		"static": [
 			{
@@ -43,7 +52,7 @@
 				"model_index": 0,
 				"shader_index": 0,
 				"position": [-5.0, 5.0, 0.0],
-				"rotation": [0.0, 0.0, 90.0],
+				"rotation": [0.0, 0.0, -90.0],
 				"scale": [0.5, 0.5, 0.5],
 				"collider": {
 					"type": 2,
@@ -57,7 +66,7 @@
 				"model_index": 0,
 				"shader_index": 0,
 				"position": [5.0, 5.0, 0.0],
-				"rotation": [0.0, 0.0, -90.0],
+				"rotation": [0.0, 0.0, 90.0],
 				"scale": [0.5, 0.5, 0.5],
 				"collider": {
 					"type": 2,
@@ -71,7 +80,7 @@
 				"model_index": 0,
 				"shader_index": 0,
 				"position": [0.0, 5.0, -5.0],
-				"rotation": [-90.0, 0.0, 0.0],
+				"rotation": [90.0, 0.0, 0.0],
 				"scale": [0.5, 0.5, 0.5],
 				"collider": {
 					"type": 2,
@@ -85,7 +94,7 @@
 				"model_index": 0,
 				"shader_index": 0,
 				"position": [0.0, 5.0, 5.0],
-				"rotation": [90.0, 0.0, 0.0],
+				"rotation": [-90.0, 0.0, 0.0],
 				"scale": [0.5, 0.5, 0.5],
 				"collider": {
 					"type": 2,

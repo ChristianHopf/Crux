@@ -26,11 +26,13 @@ void camera_process_keyboard_input(struct Camera *camera, CameraDirection direct
   float velocity = (float)(camera->speed * deltaTime);
 	if (direction == CAMERA_FORWARD){
     vec3 forward = {camera->front[0], 0.0f, camera->front[2]};
+    glm_vec3_normalize(forward);
 		glm_vec3_scale(forward, velocity, forward);
 		glm_vec3_add(camera->position, forward, camera->position);
 	}
 	if (direction == CAMERA_BACKWARD){
     vec3 backward = {camera->front[0], 0.0f, camera->front[2]};
+    glm_vec3_normalize(backward);
 		glm_vec3_scale(backward, velocity, backward);
 		glm_vec3_sub(camera->position, backward, camera->position);
 	}

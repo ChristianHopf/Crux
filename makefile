@@ -1,7 +1,10 @@
+# Makefile variables
+ALSOFT_DRIVERS ?= pulse,pipewire,alsa
+
 # Compiler and flags
 CC = gcc
 CFLAGS = -Iinclude -Iinclude/physics $(addprefix -I,$(shell find third_party -type d)) $(shell pkg-config --cflags freetype2) -Wall -Wextra -g
-LDFLAGS = -L/usr/lib $(shell pkg-config --libs freetype2) -lglfw -lGL -lcglm -lm -ldl -lassimp
+LDFLAGS = -L/usr/lib $(shell pkg-config --libs freetype2) -lglfw -lGL -lcglm -lm -ldl -lassimp -lopenal -lsndfile
 
 # Directories
 SRC_DIR = src
@@ -22,7 +25,7 @@ TEST_OBJS = $(patsubst $(TEST_DIR)/%.c,$(OBJ_DIR)/test/%.o,$(TEST_FILES))
 UNITY_OBJ = $(OBJ_DIR)/unity.o
 
 # Output binaries
-MAIN_OUT = $(OUT_DIR)/bouncehouse2
+MAIN_OUT = $(OUT_DIR)/pausemenu1
 TEST_OUT = $(OUT_DIR)/test_runner
 
 # Default target

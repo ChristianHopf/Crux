@@ -129,6 +129,12 @@ void physics_debug_renderer_init(struct PhysicsWorld *physics_world){
     return;
   }
 
+  // Uniform block binding
+  unsigned int uniform_block_index_wireframe = glGetUniformBlockIndex(wireframeShader->ID, "Matrices");
+  unsigned int uniform_block_index_translucent = glGetUniformBlockIndex(translucentShader->ID, "Matrices");
+  glUniformBlockBinding(wireframeShader->ID, uniform_block_index_wireframe, 0);
+  glUniformBlockBinding(translucentShader->ID, uniform_block_index_translucent, 0);
+
   for (unsigned int i = 0; i < physics_world->num_static_bodies; i++){
     struct PhysicsBody *body = &physics_world->static_bodies[i];
     switch(body->collider.type){
@@ -170,7 +176,6 @@ void physics_debug_AABB_init(struct PhysicsBody *body){
   }
 
   struct AABB *aabb = &body->collider.data.aabb;
-  print_aabb(aabb);
 
   // Define vertices and indices for the box, based on min and max
   float vertices[24] = {
@@ -275,7 +280,7 @@ void physics_debug_sphere_init(struct PhysicsBody *body){
   }
 
   // Indices
-  unsigned int *indices = (float *)malloc(num_indices * sizeof(float));
+  unsigned int *indices = (unsigned int *)malloc(num_indices * sizeof(float));
   if (!indices){
     fprintf(stderr, "Error: failed to allocate sphere indices in physics_debug_sphere_init\n");
     return;
@@ -329,8 +334,8 @@ void physics_debug_AABB_render(struct AABB *aabb, struct RenderContext *context,
   // Shader and uniforms
   shader_use(wireframeShader);
   shader_set_mat4(wireframeShader, "model", model);
-  shader_set_mat4(wireframeShader, "view", context->view_ptr);
-  shader_set_mat4(wireframeShader, "projection", context->projection_ptr);
+  // shader_set_mat4(wireframeShader, "view", context->view_ptr);
+  // shader_set_mat4(wireframeShader, "projection", context->projection_ptr);
 
   // Buffer new vertex data
   float vertices[24] = {
@@ -360,8 +365,8 @@ void physics_debug_sphere_render(struct Sphere *sphere, struct RenderContext *co
   // Shader and uniforms
   shader_use(translucentShader);
   shader_set_mat4(translucentShader, "model", model);
-  shader_set_mat4(translucentShader, "view", context->view_ptr);
-  shader_set_mat4(translucentShader, "projection", context->projection_ptr);
+  // shader_set_mat4(translucentShader, "view", context->view_ptr);
+  // shader_set_mat4(translucentShader, "projection", context->projection_ptr);
 
   // Draw triangles
   glDrawElements(GL_TRIANGLES, 2280, GL_UNSIGNED_INT, (void*)0);
