@@ -18,6 +18,7 @@
 #include "player.h"
 #include "text.h"
 #include "audio_manager.h"
+#include "menu.h"
 
 typedef struct {
   GLFWwindow *window;
@@ -227,6 +228,7 @@ int render_thread(void *arg){
     // Render scene
     scene_render(engine->active_scene);
     glfwSwapBuffers(engine->window);
+    printf("RENDER THREAD STILL WORKING!\n");
 
     // Set render_ready back to false, signal rendering is done, unlock mutex
     engine->render_ready = false;
@@ -270,24 +272,52 @@ int main(){
 		// Handle input
 		processInput(engine->window);
 
-    // Lock scene mutex to update and render
-    mtx_lock(&engine->scene_mutex);
-    float update_start_time = glfwGetTime();
-    scene_update(engine->active_scene, engine->delta_time);
-    float update_end_time = glfwGetTime();
-    printf("scene update took %.2f ms\n", (update_end_time - update_start_time) * 1000.0);
-
-    // Set render_ready to true, signal render thread to work
-    float render_start_time = glfwGetTime();
-    engine->render_ready = true;
-    cnd_signal(&engine->render_signal);
-    while(engine->render_ready){
-      cnd_wait(&engine->render_done_signal, &engine->scene_mutex);
+    if (engine->active_scene->paused){
+      // Render pause menu
+      printf("paused!\n");
+      glfwMakeContextCurrent(engine->window);
+      pause_menu_render();
+      glfwSwapBuffers(engine->window);
     }
-    mtx_unlock(&engine->scene_mutex);
+    else{
+      // Lock scene mutex to update and render
+      mtx_lock(&engine->scene_mutex);
+      float update_start_time = glfwGetTime();
+      scene_update(engine->active_scene, engine->delta_time);
+      float update_end_time = glfwGetTime();
+      printf("scene update took %.2f ms\n", (update_end_time - update_start_time) * 1000.0);
 
-    float render_end_time = glfwGetTime();
-    printf("Render took %.2f ms\n", (render_end_time - render_start_time) * 1000.0);
+      // Set render_ready to true, signal render thread to work
+      float render_start_time = glfwGetTime();
+      engine->render_ready = true;
+      cnd_signal(&engine->render_signal);
+      while(engine->render_ready){
+        cnd_wait(&engine->render_done_signal, &engine->scene_mutex);
+      }
+      mtx_unlock(&engine->scene_mutex);
+
+      float render_end_time = glfwGetTime();
+      printf("Render took %.2f ms\n", (render_end_time - render_start_time) * 1000.0);
+    }
+
+    // // Lock scene mutex to update and render
+    // mtx_lock(&engine->scene_mutex);
+    // float update_start_time = glfwGetTime();
+    // scene_update(engine->active_scene, engine->delta_time);
+    // float update_end_time = glfwGetTime();
+    // printf("scene update took %.2f ms\n", (update_end_time - update_start_time) * 1000.0);
+    //
+    // // Set render_ready to true, signal render thread to work
+    // float render_start_time = glfwGetTime();
+    // engine->render_ready = true;
+    // cnd_signal(&engine->render_signal);
+    // while(engine->render_ready){
+    //   cnd_wait(&engine->render_done_signal, &engine->scene_mutex);
+    // }
+    // mtx_unlock(&engine->scene_mutex);
+    //
+    // float render_end_time = glfwGetTime();
+    // printf("Render took %.2f ms\n", (render_end_time - render_start_time) * 1000.0);
 
 		// Check and call events
 		glfwPollEvents();

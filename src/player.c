@@ -4,7 +4,7 @@
 void player_init(struct Player *player){
 
   // Init camera
-  vec3 cameraPos = {0.0f, 1.0f, 3.0f};
+  vec3 cameraPos = {0.0f, 1.0f, 50.0f};
   vec3 cameraUp = {0.0f, 1.0f, 0.0f};
   float yaw = -90.0f;
   float pitch = 0.0f;
