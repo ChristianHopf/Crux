@@ -213,32 +213,32 @@ Engine *engine_create(){
   return engine;
 }
 
-int render_thread(void *arg){
-  Engine *engine = (Engine *)arg;
-  glfwMakeContextCurrent(engine->window);
-  while (!glfwWindowShouldClose(engine->window)){
-    // Lock mutex
-    mtx_lock(&engine->scene_mutex);
-
-    // Wait for render signal
-    while (!engine->render_ready){
-      cnd_wait(&engine->render_signal, &engine->scene_mutex);
-    }
-
-    // Render scene
-    scene_render(engine->active_scene);
-    glfwSwapBuffers(engine->window);
-    printf("RENDER THREAD STILL WORKING!\n");
-
-    // Set render_ready back to false, signal rendering is done, unlock mutex
-    engine->render_ready = false;
-    cnd_signal(&engine->render_done_signal);
-    mtx_unlock(&engine->scene_mutex);
-  }
-
-  glfwMakeContextCurrent(NULL);
-  return 0;
-}
+// int render_thread(void *arg){
+//   Engine *engine = (Engine *)arg;
+//   glfwMakeContextCurrent(engine->window);
+//   while (!glfwWindowShouldClose(engine->window)){
+//     // Lock mutex
+//     mtx_lock(&engine->scene_mutex);
+//
+//     // Wait for render signal
+//     while (!engine->render_ready){
+//       cnd_wait(&engine->render_signal, &engine->scene_mutex);
+//     }
+//
+//     // Render scene
+//     scene_render(engine->active_scene);
+//     glfwSwapBuffers(engine->window);
+//     printf("RENDER THREAD STILL WORKING!\n");
+//
+//     // Set render_ready back to false, signal rendering is done, unlock mutex
+//     engine->render_ready = false;
+//     cnd_signal(&engine->render_done_signal);
+//     mtx_unlock(&engine->scene_mutex);
+//   }
+//
+//   glfwMakeContextCurrent(NULL);
+//   return 0;
+// }
 
 int main(){
   Engine *engine = engine_create();
@@ -251,14 +251,8 @@ int main(){
   // Load font
   load_font_face();
 
-  // Release context for render thread to use it later
-  glfwMakeContextCurrent(NULL);
-
-  // struct AudioStream *audio_stream = audio_stream_create("resources/music/mookid.wav");
-  // alcMakeContextCurrent(NULL);
-
-  thrd_t render_thrd;
-  thrd_create(&render_thrd, render_thread, engine);
+  // thrd_t render_thrd;
+  // thrd_create(&render_thrd, render_thread, engine);
 
 	// Render loop
 	while (!glfwWindowShouldClose(engine->window)){
@@ -280,51 +274,29 @@ int main(){
       glfwSwapBuffers(engine->window);
     }
     else{
-      // Lock scene mutex to update and render
-      mtx_lock(&engine->scene_mutex);
       float update_start_time = glfwGetTime();
+
       scene_update(engine->active_scene, engine->delta_time);
+
       float update_end_time = glfwGetTime();
       printf("scene update took %.2f ms\n", (update_end_time - update_start_time) * 1000.0);
 
-      // Set render_ready to true, signal render thread to work
+      // Render scene
       float render_start_time = glfwGetTime();
-      engine->render_ready = true;
-      cnd_signal(&engine->render_signal);
-      while(engine->render_ready){
-        cnd_wait(&engine->render_done_signal, &engine->scene_mutex);
-      }
-      mtx_unlock(&engine->scene_mutex);
 
+      scene_render(engine->active_scene);
+      glfwSwapBuffers(engine->window);
+      
       float render_end_time = glfwGetTime();
       printf("Render took %.2f ms\n", (render_end_time - render_start_time) * 1000.0);
     }
-
-    // // Lock scene mutex to update and render
-    // mtx_lock(&engine->scene_mutex);
-    // float update_start_time = glfwGetTime();
-    // scene_update(engine->active_scene, engine->delta_time);
-    // float update_end_time = glfwGetTime();
-    // printf("scene update took %.2f ms\n", (update_end_time - update_start_time) * 1000.0);
-    //
-    // // Set render_ready to true, signal render thread to work
-    // float render_start_time = glfwGetTime();
-    // engine->render_ready = true;
-    // cnd_signal(&engine->render_signal);
-    // while(engine->render_ready){
-    //   cnd_wait(&engine->render_done_signal, &engine->scene_mutex);
-    // }
-    // mtx_unlock(&engine->scene_mutex);
-    //
-    // float render_end_time = glfwGetTime();
-    // printf("Render took %.2f ms\n", (render_end_time - render_start_time) * 1000.0);
 
 		// Check and call events
 		glfwPollEvents();
   }
 
   audio_stream_destroy(engine->active_scene->music_stream);
-  thrd_join(render_thrd, NULL);
+  // thrd_join(render_thrd, NULL);
   mtx_destroy(&engine->scene_mutex);
   cnd_destroy(&engine->render_signal);
   cnd_destroy(&engine->render_done_signal);
