@@ -12,7 +12,10 @@
   "sounds": {
     "music": "resources/music/mookid.wav",
     "effects": [
-      "resources/sfx/vineboom.wav"
+      {
+        "path": "resources/sfx/vineboom.wav",
+        "name": "vine_boom"
+      }
     ]
   },
 	"meshes": {

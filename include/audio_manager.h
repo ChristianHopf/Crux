@@ -20,8 +20,8 @@ struct AudioStream {
   ALuint source;
   float *temp_buffer;
 
+  // Threading
   thrd_t audio_thread;
-
   bool stop_audio;
 };
 
@@ -37,11 +37,12 @@ extern struct SoundEffect sound_effects[MAX_SOUND_EFFECTS];
 extern int num_sound_effects;
 
 
-// Streaming
+// Streaming functions
 struct AudioStream *audio_stream_create(char *path);
 void audio_stream_destroy(struct AudioStream *stream);
 int audio_stream_update(void *arg);
 bool fill_buffer(struct AudioStream *stream, ALuint buffer);
 
-// One shot sounds
-void audio_play_sound_effect(struct SoundEffect *sound_effect);
+// One shot sound functions
+void audio_sound_effect_create(char *path, char *name);
+void audio_sound_effect_play(struct SoundEffect *sound_effect);

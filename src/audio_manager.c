@@ -184,10 +184,47 @@ bool fill_buffer(struct AudioStream *stream, ALuint buffer){
   return false;
 }
 
-void audio_play_sound_effect(struct SoundEffect *sound_effect){
+void audio_sound_effect_create(char *path, char *name){
+  // Open sound effect file
+  SF_INFO sfx_info;
+  SNDFILE *sfx_file = sf_open(path, SFM_READ, &sfx_info);
+  if (!sfx_file){
+    fprintf(stderr, "Error: failed to open %s: %s\n", path, sf_strerror(NULL));
+    return;
+  }
+
+  // Get format
+  ALenum format;
+  if (sfx_info.channels == 1){
+    format = AL_FORMAT_MONO_FLOAT32;
+  }
+  else{
+    format = AL_FORMAT_STEREO_FLOAT32;
+  }
+
+  // Load and buffer data, add to sound_effects
+  float *sfx_data = malloc(sfx_info.frames * sfx_info.channels * sizeof(float));
+  sf_count_t read_frames = sf_readf_float(sfx_file, sfx_data, sfx_info.frames);
+  ALuint sfx_buffer;
+  alGenBuffers(1, &sfx_buffer);
+  alBufferData(sfx_buffer, format, sfx_data, sfx_info.frames * sfx_info.channels * sizeof(float), sfx_info.samplerate);
+  ALenum sfx_error = alGetError();
+  if (sfx_error != AL_NO_ERROR){
+    fprintf(stderr, "Error buffering vine boom data: %d\n", sfx_error);
+  }
+  struct SoundEffect sound_effect = {
+    name,
+    sfx_buffer
+  };
+  sound_effects[num_sound_effects++] = sound_effect;
+
+  free(sfx_data);
+}
+
+void audio_sound_effect_play(struct SoundEffect *sound_effect){
   ALuint source;
   alGenSources(1, &source);
   alSourcei(source, AL_BUFFER, sound_effect->buffer);
   alSourcePlay(source);
-  alDeleteSources(1, &source);
+  // alDeleteSources(1, &source);
 }

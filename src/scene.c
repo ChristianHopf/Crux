@@ -161,34 +161,47 @@ struct Scene *scene_init(char *scene_path){
   scene->music_stream = audio_stream_create(music_path);
 
   // Load sound effects
-  SF_INFO vb_info;
-  SNDFILE *vb_file = sf_open("resources/sfx/vineboom.wav", SFM_READ, &vb_info);
-  if (!vb_file){
-    fprintf(stderr, "Error: failed to open %s: %s\n", "resources/sfx/vineboom.wav", sf_strerror(NULL));
+  cJSON *sound_effects_json = cJSON_GetObjectItemCaseSensitive(sounds_json, "effects");
+  if (!cJSON_IsArray(sound_effects_json)){
+    fprintf(stderr, "Error: failed to get effects array in sounds object in scene_init, effects is either invalid or does not exist\n");
     return NULL;
   }
-  ALenum format;
-  if (vb_info.channels == 1){
-    format = AL_FORMAT_MONO_FLOAT32;
+  // num_sound_effects = cJSON_GetArraySize(sound_effects_json);
+  const cJSON *effect_json = NULL;
+  cJSON_ArrayForEach(effect_json, sound_effects_json){
+    cJSON *path;
+    cJSON *name;
+    audio_sound_effect_create("resources/sfx/vineboom.wav", "vine_boom");
   }
-  else{
-    format = AL_FORMAT_STEREO_FLOAT32;
-  }
-  float *vb_data = malloc(vb_info.frames * vb_info.channels * sizeof(float));
-  sf_count_t read_frames = sf_readf_float(vb_file, vb_data, vb_info.frames);
-  ALuint vb_buffer;
-  alGenBuffers(1, &vb_buffer);
-  alBufferData(vb_buffer, format, vb_data, vb_info.frames * vb_info.channels * sizeof(float), vb_info.samplerate);
-  ALenum vb_error = alGetError();
-  if (vb_error != AL_NO_ERROR){
-    fprintf(stderr, "Error buffering vine boom data: %d\n", vb_error);
-  }
-  free(vb_data);
-  struct SoundEffect vine_boom = {
-    "vine_boom",
-    vb_buffer
-  };
-  sound_effects[num_sound_effects++] = vine_boom;
+
+  // SF_INFO vb_info;
+  // SNDFILE *vb_file = sf_open("resources/sfx/vineboom.wav", SFM_READ, &vb_info);
+  // if (!vb_file){
+  //   fprintf(stderr, "Error: failed to open %s: %s\n", "resources/sfx/vineboom.wav", sf_strerror(NULL));
+  //   return NULL;
+  // }
+  // ALenum format;
+  // if (vb_info.channels == 1){
+  //   format = AL_FORMAT_MONO_FLOAT32;
+  // }
+  // else{
+  //   format = AL_FORMAT_STEREO_FLOAT32;
+  // }
+  // float *vb_data = malloc(vb_info.frames * vb_info.channels * sizeof(float));
+  // sf_count_t read_frames = sf_readf_float(vb_file, vb_data, vb_info.frames);
+  // ALuint vb_buffer;
+  // alGenBuffers(1, &vb_buffer);
+  // alBufferData(vb_buffer, format, vb_data, vb_info.frames * vb_info.channels * sizeof(float), vb_info.samplerate);
+  // ALenum vb_error = alGetError();
+  // if (vb_error != AL_NO_ERROR){
+  //   fprintf(stderr, "Error buffering vine boom data: %d\n", vb_error);
+  // }
+  // free(vb_data);
+  // struct SoundEffect vine_boom = {
+  //   "vine_boom",
+  //   vb_buffer
+  // };
+  // sound_effects[num_sound_effects++] = vine_boom;
 
   // Create entities and populate PhysicsWorld
   meshes = cJSON_GetObjectItemCaseSensitive(scene_json, "meshes");
