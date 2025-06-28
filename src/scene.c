@@ -379,8 +379,17 @@ void scene_render(struct Scene *scene){
 }
 
 void scene_pause(struct Scene *scene){
-  bool prev = scene->paused;
-  scene->paused = !prev;
+  scene->paused = true;
+
+  // Pause audio
+  audio_pause();
+}
+
+void scene_unpause(struct Scene *scene){
+  scene->paused = false;
+
+  // Unpause audio
+  audio_unpause();
 }
 
 //     // Rewrite this to actually free everything

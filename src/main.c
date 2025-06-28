@@ -19,10 +19,12 @@
 #include "text.h"
 #include "audio_manager.h"
 #include "menu.h"
+#include "game_state.h"
 
 typedef struct {
   GLFWwindow *window;
   struct Scene *active_scene;
+  struct GameState game_state;
   // Timing
   float delta_time;
   float last_frame;
@@ -47,8 +49,6 @@ const unsigned int SCREEN_HEIGHT = 1080;
 bool firstMouse = true;
 float lastX = 960.0f;
 float lastY = 540.0f;
-// float lastX = 512.0f;
-// float lastY = 384.0f;
 
 // Lighting
 vec3 lightPos = {1.2f, 0.5f, 2.0f};
@@ -134,11 +134,18 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
 
   // Pause
   if (key == GLFW_KEY_P && action == GLFW_PRESS){
-    scene_pause(active_scene);
+    if (active_scene->paused){
+      game_pause();
+      // scene_unpause(active_scene);
+    } else {
+      game_unpause();
+      // scene_pause(active_scene);
+    }
   }
 }
 
 Engine *engine_create(){
+  // Allocate Engine struct
   Engine *engine = (Engine *)calloc(1, sizeof(Engine));
   if (!engine){
     printf("Error: failed to allocate Engine\n");
@@ -151,7 +158,7 @@ Engine *engine_create(){
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-  // Create window
+  // Create window and register callbacks
 	GLFWwindow *window = glfwCreateWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Crux", NULL, NULL);
 	if (window == NULL){
 		printf("Failed to create GLFW window\n");
@@ -186,12 +193,14 @@ Engine *engine_create(){
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   //glBlendFunc(GL_ONE, GL_ONE); // additive blending
-
   //glDepthFunc(GL_ALWAYS);
   //glEnable(GL_STENCIL_TEST);
   //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
-  // engine->active_scene = scene_create(true);
+  // Initialize game state
+  engine->game_state = game_state_init();
+
+  // Load scene
   engine->active_scene = scene_init("scenes/bouncehouse.json");
   if (!engine->active_scene){
     printf("Error: failed to create scene\n");

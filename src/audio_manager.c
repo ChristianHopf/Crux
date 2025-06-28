@@ -10,6 +10,14 @@ ALCcontext *audio_context = NULL;
 struct SoundEffect sound_effects[MAX_SOUND_EFFECTS];
 int num_sound_effects = 0;
 
+void audio_pause(){
+
+}
+
+void audio_unpause(){
+
+}
+
 struct AudioStream *audio_stream_create(char *path){
 
   alcMakeContextCurrent(audio_context);
@@ -259,4 +267,9 @@ void audio_listener_update(struct Player *player){
   if (player_error != AL_NO_ERROR){
     fprintf(stderr, "Error: failed to set audio context in player_init\n");
   }
+}
+
+void game_state_changed(void *instance, GameState *game_state){
+  // Check instance
+  // Handle game state (pause)
 }

@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include "tinycthread/tinycthread.h"
+#include "game_state_observer.h"
 
 #define NUM_BUFFERS 4
 #define BUFFER_FRAMES 8192
@@ -33,12 +34,21 @@ struct SoundEffect {
   ALuint buffer;
 };
 
+// struct AudioManager {
+//   struct AudioStream audio_stream;
+//
+// };
+
 // Extern vars
 extern ALCdevice *audio_device;
 extern ALCcontext *audio_context;
 extern struct SoundEffect sound_effects[MAX_SOUND_EFFECTS];
 extern int num_sound_effects;
 
+
+// Pause and unpause
+void audio_pause();
+void audio_unpause();
 
 // Streaming functions
 struct AudioStream *audio_stream_create(char *path);
@@ -52,3 +62,6 @@ void audio_sound_effect_play(struct SoundEffect *sound_effect);
 
 // Listener
 void audio_listener_update(struct Player *player);
+
+// Observing game state
+void game_state_changed(void *instance, GameState *game_state);

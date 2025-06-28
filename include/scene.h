@@ -43,6 +43,7 @@ struct Scene *scene_create(bool physics_view_mode);
 void scene_update(struct Scene *scene, float deltaTime);
 void scene_render(struct Scene *scene);
 void scene_pause(struct Scene *scene);
+void scene_unpause(struct Scene *scene);
 void scene_free(struct Scene *scene);
 
 // JSON processing helpers
