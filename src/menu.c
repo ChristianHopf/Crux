@@ -7,5 +7,6 @@ void pause_menu_render(){
 
   printf("rendering text\n");
   // Render text
-  text_render("PAUSED", 960.0f, 540.0f, 1.0f, (vec3){1.0f, 1.0f, 1.0f});
+  text_render("RESUME", 960.0f, 540.0f, 1.0f, (vec3){1.0f, 1.0f, 1.0f});
+  text_render("EXIT", 960.0f, 500.0f, 1.0f, (vec3){1.0f, 1.0f, 1.0f});
 }
