@@ -5,7 +5,7 @@
 #include <cglm/cglm.h>
 #include "text.h"
 
-#define MAX_MENUS 32
+#define MAX_MENU_DEPTH 32
 
 typedef enum {
   BUTTON_ACTION, // call some function
@@ -19,32 +19,43 @@ struct Button {
   ButtonType type;
   union {
     // ACTION (some function)
-    void (*action)(void);
+    void (*action)(void *arg);
     // FORWARD/BACK
     struct Menu *menu;
   } data;
+  float x;
+  float y;
 };
 
 struct Menu {
-  char *title
+  char *title;
   struct Button *buttons;
   int num_buttons;
   struct Menu *parent;
 };
 
-struct MenuStack {
-  struct Menu *menus[MAX_MENUS];
+struct MenuManager {
+  struct Menu *menu_stack[MAX_MENU_DEPTH];
   int current_depth;
+
+  struct Menu *pause_menu;
 };
 
 
-// Menu
-void menu_render(struct Menu *menu);
-void pause_menu_render();
-
-// Button (maybe make menu_stack a static variable in menu.c like the audio manager)
-void button_activate(struct MenuStack *menu_stack, struct Button *button);
+// MenuManager and Menus
+void menu_manager_init();
+void menu_manager_destroy();
+void menu_render();
+struct Menu *pause_menu_create();
+struct Menu *menu_manager_get_pause_menu();
 
 // Stack
-bool menu_stack_push(struct MenuStack *menu_stack, struct Menu *menu);
-bool menu_stack_pop(struct MenuStack *menu_stack);
+// void menu_stack_init();
+bool menu_stack_push(struct Menu *menu);
+bool menu_stack_pop();
+bool menu_stack_is_full();
+bool menu_stack_is_empty();
+
+// Button
+void button_activate(struct Button *button);
+void button_print_text(void *arg);

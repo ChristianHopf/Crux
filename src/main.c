@@ -210,6 +210,9 @@ Engine *engine_create(){
   }
   attach_observer(&engine->game_state, audio_game_state_observer);
 
+  // Initialize MenuManager
+  menu_manager_init();
+
   // Load scene
   engine->active_scene = scene_init("scenes/bouncehouse.json");
   if (!engine->active_scene){
@@ -289,7 +292,7 @@ int main(){
       // Render pause menu
       printf("paused!\n");
       glfwMakeContextCurrent(engine->window);
-      pause_menu_render();
+      menu_render();
       glfwSwapBuffers(engine->window);
     }
     else{

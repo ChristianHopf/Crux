@@ -12,11 +12,24 @@ struct GameState game_state_init(){
 
 // GameState modifiers
 void game_pause(struct GameState *game_state){
+  // Modify game state
   game_state->is_paused = true;
+
+  // Push pause menu to menu stack
+  struct Menu *pause_menu = menu_manager_get_pause_menu();
+  if (!pause_menu){
+    fprintf(stderr, "Error: failed to get pause_menu from menu_manager in game_pause\n");
+    return;
+  }
+  menu_stack_push(pause_menu);
 }
 
 void game_unpause(struct GameState *game_state){
+  // Modify game state
   game_state->is_paused = false;
+
+  // Pop from the menu stack
+  menu_stack_pop();
 }
 
 // GameState notification sender
