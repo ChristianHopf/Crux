@@ -37,6 +37,9 @@ void audio_manager_init(){
 
   // Sound effects
   global_audio_manager->num_sound_effects = 0;
+
+  // Options
+  global_audio_manager->paused = false;
 }
 
 struct AudioManager *audio_manager_get_global(){
@@ -46,6 +49,7 @@ struct AudioManager *audio_manager_get_global(){
 void audio_pause(){
   // If already paused, exit
   if (global_audio_manager->paused){
+    printf("hi\n");
     return;
   }
 
@@ -473,12 +477,15 @@ struct GameStateObserver *audio_game_state_observer_create(){
 
 void audio_game_state_changed(void *instance, GameState *game_state){
   // Check instance (some kind of observer type enum, just make it work for now)
+  printf("In audio_game_state_changed, game_state->is_paused is %s\n", game_state->is_paused ? "true" : "false");
 
   // Handle game state (pause)
   if (game_state->is_paused){
+    printf("Calling audio_pause\n");
     audio_pause();
   }
   else{
+    printf("Calling audio_unpause\n");
     audio_unpause();
   }
 }

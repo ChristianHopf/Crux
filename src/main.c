@@ -131,14 +131,15 @@ void scroll_callback(GLFWwindow *window, double xoffset, double yoffset){
 
 void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods){
   Engine *engine = (Engine *)glfwGetWindowUserPointer(window);
-  // struct Scene *active_scene = ((Engine *)glfwGetWindowUserPointer(window))->active_scene;
-
+  printf("Calling key_callback\n");
   // Pause
   if (key == GLFW_KEY_P && action == GLFW_PRESS){
-    if (engine->game_state.is_paused){
+    if (!engine->game_state.is_paused){
+      printf("Pausing the game!\n");
       game_pause(&engine->game_state);
       game_state_update(&engine->game_state);
     } else {
+      printf("Unpausing the game!\n");
       game_unpause(&engine->game_state);
       game_state_update(&engine->game_state);
     }
@@ -282,7 +283,7 @@ int main(){
     
 		engine->delta_time = currentFrame - engine->last_frame;
 		engine->last_frame = currentFrame;
-		printf("FPS: %f\n", 1.0 / engine->delta_time);
+		// printf("FPS: %f\n", 1.0 / engine->delta_time);
 
 		// Handle input
 		processInput(engine->window);
