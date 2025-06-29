@@ -29,8 +29,8 @@ struct Scene {
   unsigned int ubo_matrices;
   // Physics
   struct PhysicsWorld *physics_world;
-  // Audio
-  struct AudioStream *music_stream;
+  // // Audio
+  // struct AudioStream *music_stream;
   // Options
   bool paused;
   bool physics_debug_mode;

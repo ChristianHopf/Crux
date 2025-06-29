@@ -130,16 +130,17 @@ void scroll_callback(GLFWwindow *window, double xoffset, double yoffset){
 }
 
 void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods){
-  struct Scene *active_scene = ((Engine *)glfwGetWindowUserPointer(window))->active_scene;
+  Engine *engine = (Engine *)glfwGetWindowUserPointer(window);
+  // struct Scene *active_scene = ((Engine *)glfwGetWindowUserPointer(window))->active_scene;
 
   // Pause
   if (key == GLFW_KEY_P && action == GLFW_PRESS){
-    if (active_scene->paused){
-      game_pause();
-      // scene_unpause(active_scene);
+    if (engine->game_state.is_paused){
+      game_pause(&engine->game_state);
+      game_state_update(&engine->game_state);
     } else {
-      game_unpause();
-      // scene_pause(active_scene);
+      game_unpause(&engine->game_state);
+      game_state_update(&engine->game_state);
     }
   }
 }
@@ -197,8 +198,19 @@ Engine *engine_create(){
   //glEnable(GL_STENCIL_TEST);
   //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
+  // Initialize AudioManager
+  audio_manager_init();
+
   // Initialize game state
   engine->game_state = game_state_init();
+
+  // Add game state observers
+  struct GameStateObserver *audio_game_state_observer = audio_game_state_observer_create();
+  if (!audio_game_state_observer){
+    fprintf(stderr, "Error: failed to get audio_game_state_observer in engine_create\n");
+    return NULL;
+  }
+  attach_observer(&engine->game_state, audio_game_state_observer);
 
   // Load scene
   engine->active_scene = scene_init("scenes/bouncehouse.json");
@@ -283,35 +295,39 @@ int main(){
       glfwSwapBuffers(engine->window);
     }
     else{
-      float update_start_time = glfwGetTime();
+      // float update_start_time = glfwGetTime();
 
       scene_update(engine->active_scene, engine->delta_time);
 
-      float update_end_time = glfwGetTime();
-      printf("scene update took %.2f ms\n", (update_end_time - update_start_time) * 1000.0);
+      // float update_end_time = glfwGetTime();
+      // printf("scene update took %.2f ms\n", (update_end_time - update_start_time) * 1000.0);
 
       // Render scene
-      float render_start_time = glfwGetTime();
+      // float render_start_time = glfwGetTime();
 
       scene_render(engine->active_scene);
       glfwSwapBuffers(engine->window);
       
-      float render_end_time = glfwGetTime();
-      printf("Render took %.2f ms\n", (render_end_time - render_start_time) * 1000.0);
+      // float render_end_time = glfwGetTime();
+      // printf("Render took %.2f ms\n", (render_end_time - render_start_time) * 1000.0);
     }
 
 		// Check and call events
 		glfwPollEvents();
   }
 
-  audio_stream_destroy(engine->active_scene->music_stream);
   // thrd_join(render_thrd, NULL);
   mtx_destroy(&engine->scene_mutex);
   cnd_destroy(&engine->render_signal);
   cnd_destroy(&engine->render_done_signal);
+
+  // OpenAL
   alcMakeContextCurrent(NULL);
-  alcDestroyContext(audio_context);
-  alcCloseDevice(audio_device);
+  struct AudioManager *audio_manager = audio_manager_get_global();
+  audio_stream_destroy(audio_manager->audio_stream);
+  alcDestroyContext(audio_manager->context);
+  alcCloseDevice(audio_manager->device);
+  free(audio_manager);
 
   glfwDestroyWindow(engine->window);
 	glfwTerminate();

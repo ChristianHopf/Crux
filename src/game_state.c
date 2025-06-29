@@ -1,9 +1,52 @@
 #include "game_state.h"
 
-static void append_to_list(struct ListNode **linked_list, struct GameStateObserver *observer){
+struct GameState game_state_init(){
+  // Return a GameState with default values
+  struct GameState game_state = {
+    .is_paused = false,
+    .observers = NULL
+  };
+
+  return game_state;
+}
+
+// GameState modifiers
+void game_pause(struct GameState *game_state){
+  game_state->is_paused = true;
+  game_state_update(game_state);
+}
+
+void game_unpause(struct GameState *game_state){
+  game_state->is_paused = false;
+  game_state_update(game_state);
+}
+
+// GameState notification sender
+void game_state_update(struct GameState *game_state){
+  // Iterate through linked list of observers and call their GameStateNotification functions
+  struct ListNode *observer_node = game_state->observers;
+  while (observer_node != NULL){
+    struct GameStateObserver *current_observer = observer_node->observer;
+    GameStateNotification notification_function = current_observer->notification;
+    notification_function(current_observer->instance, game_state);
+    observer_node = observer_node->next;
+  }
+}
+
+void attach_observer(struct GameState *game_state, struct GameStateObserver *observer){
+  // Append observer to this GameState's linked list
+  append_to_list(&game_state->observers, observer);
+}
+
+void detach_observer(struct GameState *game_state, struct GameStateObserver *observer){
+  // Remove observer to this GameState's linked list
+  remove_from_list(&game_state->observers, observer);
+}
+
+void append_to_list(struct ListNode **linked_list, struct GameStateObserver *observer){
   // Allocate a new list node
   struct ListNode *new_node = (struct ListNode *)malloc(sizeof(struct ListNode));
-  new_node->obsever = observer;
+  new_node->observer = observer;
   new_node->next = NULL;
 
   // If root node is NULL, we're adding the first node
@@ -21,7 +64,7 @@ static void append_to_list(struct ListNode **linked_list, struct GameStateObserv
   current_node->next = new_node;
 }
 
-static void remove_from_list(struct ListNode **linked_list, struct GameStateObserver *observer){
+void remove_from_list(struct ListNode **linked_list, struct GameStateObserver *observer){
   // Check root node
   struct ListNode *current_node = *linked_list;
   if (current_node->observer == observer){
@@ -43,7 +86,7 @@ static void remove_from_list(struct ListNode **linked_list, struct GameStateObse
     // - point this node to that node's next node
     if (current_node->next->observer == observer){
       struct ListNode *next = current_node->next->next;
-      free(current->node->next);
+      free(current_node->next);
       current_node->next = next;
       return;
     }
@@ -51,45 +94,4 @@ static void remove_from_list(struct ListNode **linked_list, struct GameStateObse
 
   // Observer not in list
   fprintf(stderr, "Error: failed to remove observer from list: not in list\n");
-}
-
-void attach_observer(struct GameState *game_state, struct GameStateObserver *observer){
-  // Append observer to this GameState's linked list
-  append_to_list(&game_state->observers, observer);
-}
-
-void detach_observer(struct GameState *game_state, struct GameStateObserver *observer){
-  // Remove observer to this GameState's linked list
-  remove_from_list(&game_state->observers, observer);
-}
-
-struct GameState game_state_init(){
-  // Return a GameState with default values
-  struct GameState game_state = {
-    .is_paused = false,
-    .observers = NULL
-  };
-
-  return game_state;
-}
-
-static void game_state_update(struct GameState *game_state){
-  // Iterate through linked list of observers and call their GameStateNotification functions
-  struct ListNode *observer_node = game_state->observers;
-  while (observer_node != NULL){
-    struct GameStateObserver *current_observer = observer_node->observer;
-    current_observer->GameStateNotification(current_observer->instance, game_state);
-    observer_node = observer_node->next;
-  }
-}
-
-// GameState modifiers
-void game_pause(struct GameState *game_state){
-  game_state->is_paused = true;
-  game_state_update(game_state);
-}
-
-void game_unpause(struct GameState *game_state){
-  game_state->is_paused = false;
-  game_state_update(game_state);
 }

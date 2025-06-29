@@ -1,9 +1,7 @@
 #pragma once
 
-#include "game_state.h"
-
-// Forward declaration for circular include
-typedef struct GameState;
+// Forward declaration for circular dependency
+typedef struct GameState GameState;
 
 typedef void (*GameStateNotification)(void *instance, GameState *game_state);
 
