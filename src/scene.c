@@ -157,10 +157,8 @@ struct Scene *scene_init(char *scene_path){
   cJSON_ArrayForEach(effect_json, sound_effects_json){
     cJSON *path;
     cJSON *name;
-    printf("hi\n");
     audio_sound_effect_create("resources/sfx/vineboom.wav", "vine_boom");
   }
-  printf("created vine boom sound effect\n");
 
   // Create entities and populate PhysicsWorld
   meshes = cJSON_GetObjectItemCaseSensitive(scene_json, "meshes");
@@ -446,7 +444,6 @@ void scene_process_meshes_json(cJSON *meshes, struct Model **models, Shader **sh
     entity->physics_body = physics_add_body(physics_world, entity, collider, dynamic);
     index++;
 
-    printf("Time to create an audio component\n");
     // AudioComponent
     entity->audio_component = audio_component_create(entity, 0);
   }

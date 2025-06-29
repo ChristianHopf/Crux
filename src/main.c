@@ -131,15 +131,12 @@ void scroll_callback(GLFWwindow *window, double xoffset, double yoffset){
 
 void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods){
   Engine *engine = (Engine *)glfwGetWindowUserPointer(window);
-  printf("Calling key_callback\n");
   // Pause
   if (key == GLFW_KEY_P && action == GLFW_PRESS){
     if (!engine->game_state.is_paused){
-      printf("Pausing the game!\n");
       game_pause(&engine->game_state);
       game_state_update(&engine->game_state);
     } else {
-      printf("Unpausing the game!\n");
       game_unpause(&engine->game_state);
       game_state_update(&engine->game_state);
     }
@@ -150,7 +147,7 @@ Engine *engine_create(){
   // Allocate Engine struct
   Engine *engine = (Engine *)calloc(1, sizeof(Engine));
   if (!engine){
-    printf("Error: failed to allocate Engine\n");
+    fprintf(stderr, "Error: failed to allocate Engine\n");
     return NULL;
   }
 
@@ -163,7 +160,7 @@ Engine *engine_create(){
   // Create window and register callbacks
 	GLFWwindow *window = glfwCreateWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Crux", NULL, NULL);
 	if (window == NULL){
-		printf("Failed to create GLFW window\n");
+		fprintf(stderr, "Failed to create GLFW window\n");
     free(engine);
 		glfwTerminate();
 		return NULL;
@@ -181,7 +178,7 @@ Engine *engine_create(){
 
 	// Init GLAD
 	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)){
-		printf("Failed to initialize GLAD\n");
+		fprintf(stderr, "Failed to initialize GLAD\n");
     free(engine);
 		return NULL;
 	}
@@ -216,7 +213,7 @@ Engine *engine_create(){
   // Load scene
   engine->active_scene = scene_init("scenes/bouncehouse.json");
   if (!engine->active_scene){
-    printf("Error: failed to create scene\n");
+    fprintf(stderr, "Error: failed to create scene\n");
     free(engine);
     glfwTerminate();
     return NULL;
@@ -265,7 +262,7 @@ Engine *engine_create(){
 int main(){
   Engine *engine = engine_create();
   if (!engine){
-    printf("Error: failed to create Engine\n");
+    fprintf(stderr, "Error: failed to create Engine\n");
     glfwTerminate();
     return -1;
   }
@@ -283,12 +280,12 @@ int main(){
     
 		engine->delta_time = currentFrame - engine->last_frame;
 		engine->last_frame = currentFrame;
-		// printf("FPS: %f\n", 1.0 / engine->delta_time);
+		printf("FPS: %f\n", 1.0 / engine->delta_time);
 
 		// Handle input
 		processInput(engine->window);
 
-    if (engine->active_scene->paused){
+    if (engine->game_state.is_paused){
       // Render pause menu
       printf("paused!\n");
       glfwMakeContextCurrent(engine->window);
@@ -323,7 +320,7 @@ int main(){
   cnd_destroy(&engine->render_done_signal);
 
   // OpenAL
-  alcMakeContextCurrent(NULL);
+  // alcMakeContextCurrent(NULL);
   struct AudioManager *audio_manager = audio_manager_get_global();
   audio_stream_destroy(audio_manager->audio_stream);
   alcDestroyContext(audio_manager->context);

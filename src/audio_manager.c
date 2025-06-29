@@ -9,7 +9,7 @@
 static struct AudioManager *global_audio_manager = NULL;
 
 void audio_manager_init(){
-  global_audio_manager = (struct AudioManager *)malloc(sizeof(struct AudioManager));
+  global_audio_manager = (struct AudioManager *)calloc(1, sizeof(struct AudioManager));
   if (!global_audio_manager){
     fprintf(stderr, "Error: failed to allocate AudioManager in audio_manager_init\n");
     return;
@@ -32,6 +32,9 @@ void audio_manager_init(){
   }
   alcMakeContextCurrent(global_audio_manager->context);
 
+  // Sources
+  global_audio_manager->num_active_sources = 0;
+
   // Global configuration
   alDistanceModel(AL_INVERSE_DISTANCE_CLAMPED);
 
@@ -46,10 +49,34 @@ struct AudioManager *audio_manager_get_global(){
   return global_audio_manager;
 }
 
+bool audio_add_source(ALuint source){
+  // Check if active_sources is full
+  if (global_audio_manager->num_active_sources >= MAX_SOURCES){
+    return false;
+  }
+
+  // Add source and increment num_active_sources
+  global_audio_manager->sources[global_audio_manager->num_active_sources] = source;
+  global_audio_manager->num_active_sources++;
+  return true;
+}
+
+bool audio_remove_source(ALuint source){
+  // Check if source is in sources
+  for (int i = 0; i < global_audio_manager->num_active_sources; i++){
+    if (global_audio_manager->sources[i] == source){
+      // Remove source and decrement num_active_sources
+      global_audio_manager->sources[i] = global_audio_manager->sources[global_audio_manager->num_active_sources - 1];
+      global_audio_manager->num_active_sources--;
+      return true;
+    }
+  }
+  return false;
+}
+
 void audio_pause(){
   // If already paused, exit
   if (global_audio_manager->paused){
-    printf("hi\n");
     return;
   }
 
@@ -66,16 +93,16 @@ void audio_pause(){
 
   // Pause all playing sources
   printf("AUDIO_PAUSE: PAUSING ALL PLAYING SOURCES\n");
-  // for(int i = 0; i < global_audio_manager->num_sound_effects; i++){
-  //   alGetSourcei(global_audio_manager->sound_effects[i].source, AL_SOURCE_STATE, &state);
-  //   if (state == AL_PLAYING){
-  //     alSourcePause(global_audio_manager->sound_effects[i].source);
-  //   }
-  //   error = alGetError();
-  //   if (error != AL_NO_ERROR){
-  //     fprintf(stderr, "Error: failed to get sound effect state or pause sound effect: %d\n", error);
-  //   }
-  // }
+  for(int i = 0; i < global_audio_manager->num_active_sources; i++){
+    alGetSourcei(global_audio_manager->sources[i], AL_SOURCE_STATE, &state);
+    if (state == AL_PLAYING){
+      alSourcePause(global_audio_manager->sources[i]);
+    }
+    error = alGetError();
+    if (error != AL_NO_ERROR){
+      fprintf(stderr, "Error: failed to get source state or pause source in audio_pause: %d\n", error);
+    }
+  }
 
   global_audio_manager->paused = true;
 }
@@ -94,21 +121,20 @@ void audio_unpause(){
   }
   ALenum error = alGetError();
   if (error != AL_NO_ERROR){
-    fprintf(stderr, "Error: failed to get music stream state or pause music stream: %d\n", error);
+    fprintf(stderr, "Error: failed to get music stream state or unpause music stream: %d\n", error);
   }
 
   // Pause all playing sources
-  printf("AUDIO_UNPAUSE: UNPAUSING ALL PLAYING SOURCES\n");
-  // for(int i = 0; i < global_audio_manager->num_sound_effects; i++){
-  //   alGetSourcei(global_audio_manager->sound_effects[i].source, AL_SOURCE_STATE, &state);
-  //   if (state == AL_PAUSED){
-  //     alSourcePlay(global_audio_manager->sound_effects[i].source);
-  //   }
-  //   error = alGetError();
-  //   if (error != AL_NO_ERROR){
-  //     fprintf(stderr, "Error: failed to get sound effect state or pause sound effect: %d\n", error);
-  //   }
-  // }
+  for(int i = 0; i < global_audio_manager->num_active_sources; i++){
+    alGetSourcei(global_audio_manager->sources[i], AL_SOURCE_STATE, &state);
+    if (state == AL_PAUSED){
+      alSourcePlay(global_audio_manager->sources[i]);
+    }
+    error = alGetError();
+    if (error != AL_NO_ERROR){
+      fprintf(stderr, "Error: failed to get source state or unpause source in audio_unpause: %d\n", error);
+    }
+  }
 
   global_audio_manager->paused = false;
 }
@@ -148,23 +174,41 @@ void audio_stream_create(char *path){
     free(stream);
     return;
   }
+
   // Generate and load buffers
   alGenBuffers(NUM_BUFFERS, stream->buffers);
+  ALenum stream_error = alGetError();
+  if (stream_error != AL_NO_ERROR){
+    fprintf(stderr, "Error: failed to generate buffers in audio_stream_create\n");
+    return;
+  }
   for(int i = 0; i < NUM_BUFFERS; i++){
     if (!fill_buffer(stream, stream->buffers[i])){
       break;
     }
   }
 
-  // Generate source
+  // Generate source and add to source pool
   alGenSources(1, &stream->source);
+  stream_error = alGetError();
+  if (stream_error != AL_NO_ERROR){
+    fprintf(stderr, "Error: failed to generate source in audio_stream_create\n");
+    return;
+  }
+  if (!audio_add_source(stream->source)){
+    fprintf(stderr, "Error: failed to add source to source pool in audio_stream_create\n");
+    alDeleteSources(1, &stream->source);
+    return;
+  }
+
   alSourcef(stream->source, AL_GAIN, 1.0f);
   alSourcef(stream->source, AL_PITCH, 1.0f);
 
   // Queue buffers
   alSourceQueueBuffers(stream->source, NUM_BUFFERS, stream->buffers);
-  if (alGetError() != AL_NO_ERROR){
-    fprintf(stderr, "Error: alGetError returned error %d in alSourceQueueBuffers\n", alGetError());
+  stream_error = alGetError();
+  if (stream_error != AL_NO_ERROR){
+    fprintf(stderr, "Error: alGetError returned error %d in alSourceQueueBuffers\n", stream_error);
   }
 
   // Start audio thread
@@ -344,11 +388,16 @@ struct AudioComponent *audio_component_create(struct Entity *entity, int sound_e
     return NULL;
   }
 
-  // Generate source
+  // Generate source and add to source pool
   alGenSources(1, &audio_component->source_id);
   ALenum audio_component_error = alGetError();
   if (audio_component_error != AL_NO_ERROR){
     fprintf(stderr, "Error generating AudioComponent source in audio_component_create: %d\n", audio_component_error);
+    return NULL;
+  }
+  if (!audio_add_source(audio_component->source_id)){
+    fprintf(stderr, "Error: failed to add source to source pool in audio_component_create\n");
+    alDeleteSources(1, &audio_component->source_id);
     return NULL;
   }
 
@@ -477,15 +526,12 @@ struct GameStateObserver *audio_game_state_observer_create(){
 
 void audio_game_state_changed(void *instance, GameState *game_state){
   // Check instance (some kind of observer type enum, just make it work for now)
-  printf("In audio_game_state_changed, game_state->is_paused is %s\n", game_state->is_paused ? "true" : "false");
 
   // Handle game state (pause)
   if (game_state->is_paused){
-    printf("Calling audio_pause\n");
     audio_pause();
   }
   else{
-    printf("Calling audio_unpause\n");
     audio_unpause();
   }
 }

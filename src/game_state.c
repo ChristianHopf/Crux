@@ -13,18 +13,15 @@ struct GameState game_state_init(){
 // GameState modifiers
 void game_pause(struct GameState *game_state){
   game_state->is_paused = true;
-  printf("Set game_state->is_paused to %s\n", game_state->is_paused ? "true" : "false");
 }
 
 void game_unpause(struct GameState *game_state){
   game_state->is_paused = false;
-  printf("Set game_state->is_paused to %s\n", game_state->is_paused ? "true" : "false");
 }
 
 // GameState notification sender
 void game_state_update(struct GameState *game_state){
   // Iterate through linked list of observers and call their GameStateNotification functions
-  printf("In game_state_update\n");
   struct ListNode *observer_node = game_state->observers;
   while (observer_node != NULL){
     struct GameStateObserver *current_observer = observer_node->observer;

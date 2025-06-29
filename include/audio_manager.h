@@ -9,11 +9,11 @@
 #include <stdbool.h>
 #include "tinycthread/tinycthread.h"
 #include "game_state_observer.h"
-// #include "entity.h"
 
 #define NUM_BUFFERS 4
 #define BUFFER_FRAMES 8192
-#define MAX_SOUND_EFFECTS 128
+#define MAX_SOUND_EFFECTS 32
+#define MAX_SOURCES 64
 
 // Forward declarations
 struct Player;
@@ -49,6 +49,10 @@ struct AudioManager {
   ALCdevice *device;
   ALCcontext *context;
 
+  // Sources
+  ALuint sources[MAX_SOURCES];
+  int num_active_sources;
+
   // Music stream
   struct AudioStream *audio_stream;
 
@@ -63,6 +67,10 @@ struct AudioManager {
 // Init (later, could accept an options object for configuration)
 void audio_manager_init();
 struct AudioManager *audio_manager_get_global();
+
+// Add and remove sources
+bool audio_add_source(ALuint source);
+bool audio_remove_source(ALuint source);
 
 // Pause and unpause
 void audio_pause();
