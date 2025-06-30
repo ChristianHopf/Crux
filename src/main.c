@@ -99,12 +99,12 @@ void mouse_callback(GLFWwindow *window, double xpos, double ypos){
   Engine *engine = (Engine *)glfwGetWindowUserPointer(window);
 
   // Don't process input (other than the Escape key) if the game is paused
-  if (engine->active_scene->paused){
-    // A better way to handle this: on pause, set firstMouse to true.
-    // Would have to move it from a main.c global var
-    //firstMouse = true;
-    return;
-  }
+  // if (engine->active_scene->paused){
+  //   // A better way to handle this: on pause, set firstMouse to true.
+  //   // Would have to move it from a main.c global var
+  //   //firstMouse = true;
+  //   return;
+  // }
 
   struct Camera *camera = engine->active_scene->player.camera;
 
@@ -119,8 +119,13 @@ void mouse_callback(GLFWwindow *window, double xpos, double ypos){
 	lastX = (float)xpos;
 	lastY = (float)ypos;
 
+  printf("Last X: %f, last Y: %f\n", lastX, lastY);
+  printf("xoffset: %f, yoffset: %f\n", xoffset, yoffset);
+
   // Update camera
-  camera_process_mouse_input(camera, xoffset, yoffset);
+  if (!engine->game_state.is_paused){
+    camera_process_mouse_input(camera, xoffset, yoffset);
+  }
 }
 
 void scroll_callback(GLFWwindow *window, double xoffset, double yoffset){
@@ -136,9 +141,11 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
     if (!engine->game_state.is_paused){
       game_pause(&engine->game_state);
       game_state_update(&engine->game_state);
+	    glfwSetInputMode(engine->window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
     } else {
       game_unpause(&engine->game_state);
       game_state_update(&engine->game_state);
+	    glfwSetInputMode(engine->window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     }
   }
 }
@@ -283,14 +290,14 @@ int main(){
     
 		engine->delta_time = currentFrame - engine->last_frame;
 		engine->last_frame = currentFrame;
-		printf("FPS: %f\n", 1.0 / engine->delta_time);
+		// printf("FPS: %f\n", 1.0 / engine->delta_time);
 
 		// Handle input
 		processInput(engine->window);
 
     if (engine->game_state.is_paused){
       // Render pause menu
-      printf("paused!\n");
+      // printf("paused!\n");
       glfwMakeContextCurrent(engine->window);
       menu_render();
       glfwSwapBuffers(engine->window);
