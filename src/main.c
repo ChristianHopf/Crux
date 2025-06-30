@@ -131,7 +131,9 @@ void mouse_callback(GLFWwindow *window, double xpos, double ypos){
 void scroll_callback(GLFWwindow *window, double xoffset, double yoffset){
   Engine *engine = (Engine *)glfwGetWindowUserPointer(window);
   struct Camera *camera = engine->active_scene->player.camera;
-  camera_process_scroll_input(camera, yoffset);
+  if (!engine->game_state.is_paused){
+    camera_process_scroll_input(camera, yoffset);
+  }
 }
 
 void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods){
@@ -142,6 +144,7 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
       game_pause(&engine->game_state);
       game_state_update(&engine->game_state);
 	    glfwSetInputMode(engine->window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+      firstMouse = true;
     } else {
       game_unpause(&engine->game_state);
       game_state_update(&engine->game_state);
