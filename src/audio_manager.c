@@ -92,7 +92,6 @@ void audio_pause(){
   }
 
   // Pause all playing sources
-  printf("AUDIO_PAUSE: PAUSING ALL PLAYING SOURCES\n");
   for(int i = 0; i < global_audio_manager->num_active_sources; i++){
     alGetSourcei(global_audio_manager->sources[i], AL_SOURCE_STATE, &state);
     if (state == AL_PLAYING){

@@ -29,15 +29,16 @@ typedef struct {
   float delta_time;
   float last_frame;
   // Multithreading
-  mtx_t scene_mutex;
-  cnd_t render_signal;
-  cnd_t render_done_signal;
-  bool render_ready;
+  // mtx_t scene_mutex;
+  // cnd_t render_signal;
+  // cnd_t render_done_signal;
+  // bool render_ready;
 } Engine;
 
 void framebuffer_size_callback(GLFWwindow *window, int width, int height);
 void processInput(GLFWwindow *window);
 void mouse_callback(GLFWwindow *window, double xpos, double ypos);
+void mouse_button_callback(GLFWwindow* window, int button, int action, int mods);
 void scroll_callback(GLFWwindow *window, double xoffset, double yoffset);
 void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods);
 
@@ -128,6 +129,12 @@ void mouse_callback(GLFWwindow *window, double xpos, double ypos){
   }
 }
 
+void mouse_button_callback(GLFWwindow* window, int button, int action, int mods){
+  if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS){
+    printf("Click! x = %f, y = %f\n", lastX, lastY);
+  }
+}
+
 void scroll_callback(GLFWwindow *window, double xoffset, double yoffset){
   Engine *engine = (Engine *)glfwGetWindowUserPointer(window);
   struct Camera *camera = engine->active_scene->player.camera;
@@ -179,6 +186,7 @@ Engine *engine_create(){
   glfwMakeContextCurrent(engine->window);
 	glfwSetFramebufferSizeCallback(engine->window, framebuffer_size_callback);
 	glfwSetCursorPosCallback(engine->window, mouse_callback);
+  glfwSetMouseButtonCallback(engine->window, mouse_button_callback);
 	glfwSetScrollCallback(engine->window, scroll_callback);
   glfwSetKeyCallback(engine->window, key_callback);
   glfwSetWindowUserPointer(engine->window, engine);
@@ -237,10 +245,10 @@ Engine *engine_create(){
   engine->last_frame = 0.0f;
 
   // Scene mutex
-  mtx_init(&engine->scene_mutex, mtx_plain);
-  cnd_init(&engine->render_signal);
-  cnd_init(&engine->render_done_signal);
-  engine->render_ready = false;
+  // mtx_init(&engine->scene_mutex, mtx_plain);
+  // cnd_init(&engine->render_signal);
+  // cnd_init(&engine->render_done_signal);
+  // engine->render_ready = false;
 
   return engine;
 }
@@ -328,9 +336,9 @@ int main(){
   }
 
   // thrd_join(render_thrd, NULL);
-  mtx_destroy(&engine->scene_mutex);
-  cnd_destroy(&engine->render_signal);
-  cnd_destroy(&engine->render_done_signal);
+  // mtx_destroy(&engine->scene_mutex);
+  // cnd_destroy(&engine->render_signal);
+  // cnd_destroy(&engine->render_done_signal);
 
   // OpenAL
   // alcMakeContextCurrent(NULL);

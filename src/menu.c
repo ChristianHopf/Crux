@@ -19,11 +19,11 @@ void menu_render(){
   // Get current menu
   struct Menu *menu = menu_manager->menu_stack[menu_manager->current_depth];
   // Render background color
-  glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+  glClearColor(0.0f, 0.2745f, 0.5294f, 1.0f);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
   // Render title
-  text_render(menu->title, 960.0f, 1000.0f, 1.0f, (vec3){1.0f, 1.0f, 1.0f});
+  text_render(menu->title, 920.0f, 1000.0f, 1.0f, (vec3){1.0f, 1.0f, 1.0f});
 
   // Render buttons
   for(int i = 0; i < menu->num_buttons; i++){
@@ -39,13 +39,13 @@ struct Menu *pause_menu_create(){
   pause_menu->buttons[0].text = "RESUME";
   pause_menu->buttons[0].type = BUTTON_ACTION;
   pause_menu->buttons[0].data.action = button_print_text;
-  pause_menu->buttons[0].x = 960.0f;
+  pause_menu->buttons[0].x = 920.0f;
   pause_menu->buttons[0].y = 540.0f;
   pause_menu->buttons[1].text = "EXIT";
   pause_menu->buttons[1].type = BUTTON_ACTION;
   pause_menu->buttons[1].data.action = button_print_text;
-  pause_menu->buttons[1].x = 960.0f;
-  pause_menu->buttons[1].y = 500.0f;
+  pause_menu->buttons[1].x = 920.0f;
+  pause_menu->buttons[1].y = 480.0f;
   pause_menu->parent = NULL;
 
   return pause_menu;
