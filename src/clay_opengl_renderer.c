@@ -4,8 +4,16 @@
 static struct ClayOpenGLRenderer clay_opengl_renderer;
 
 void clay_opengl_renderer_init(){
+  // Create shaders
   if (!clay_opengl_renderer_create_shaders()){
     fprintf(stderr, "Error: failed to create shaders in clay_opengl_renderer_init\n");
+    return;
+  }
+
+  // Load fonts
+  if (!clay_opengl_renderer_load_fonts()){
+    fprintf(stderr, "Error: failed to load fonts in clay_opengl_renderer_init\n");
+    return;
   }
 }
 
@@ -16,6 +24,45 @@ bool clay_opengl_renderer_create_shaders(){
     fprintf(stderr, "Error: failed to create clay rectangle shader in ui_manager_init\n");
     return false;
   }
+
+  // Create glyph shader
+  clay_opengl_renderer.glyph_shader = shader_create("shaders/glyph/shader.vs", "shaders/glyph/shader.fs");
+  if (!clay_opengl_renderer.glyph_shader){
+    printf("Error: failed to create glyph shader in load_font_face\n");
+    return false;
+  }
+
+  return true;
+}
+
+bool clay_opengl_renderer_load_fonts(){
+  // Allocate fonts
+  clay_opengl_renderer.fonts = (struct Font *)malloc(sizeof(struct Font));
+  if (!clay_opengl_renderer.fonts){
+    fprintf(stderr, "Error: failed to allocate fonts in clay_opengl_renderer_init\n");
+    return;
+  }
+
+  // Load fonts
+  clay_opengl_renderer.fonts[0] = load_font_face("resources/fonts/HackNerdFontMono-Regular.ttf", 24);
+  if (!clay_opengl_renderer.fonts[0]){
+    fprintf(stderr, "Error: failed to load font in clay_opengl_renderer_init\n");
+    return false;
+  }
+
+  // Text VAO and VBO
+  glGenVertexArrays(1, &clay_opengl_renderer.text_VAO);
+  glGenBuffers(1, &clay_opengl_renderer.text_VBO);
+  glBindVertexArray(clay_opengl_renderer.text_VAO);
+  glBindBuffer(GL_ARRAY_BUFFER, clay_opengl_renderer.text_VBO);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 6 * 4, NULL, GL_DYNAMIC_DRAW);
+  glEnableVertexAttribArray(0);
+  glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
+  glBindBuffer(GL_ARRAY_BUFFER, 0);
+  glBindVertexArray(0);
+
+  // Should probably put some glGetError calls here
+
   return true;
 }
 
@@ -100,4 +147,52 @@ float *clay_color_to_vec4(Clay_Color clay_color){
   color[3] = clay_color.a;
 
   return color;
+}
+void clay_opengl_draw_text(struct Font *font, Clay_StringSlice text, float x, float y, float size, float spacing, Clay_Color color){
+  // Use shader, set uniform, bind to texture and VAO
+  shader_use(clay_opengl_renderer.glyph_shader);
+  mat4 orthographic;
+  glm_ortho(0, 1920, 0, 1080, -1.0f, 1.0f, orthographic);
+  shader_set_mat4(clay_opengl_renderer.glyph_shader, "projection", orthographic);
+  shader_set_vec3(clay_opengl_renderer.glyph_shader, "textColor", (vec4) {color.r, color.g, color.b, color.a});
+
+  glActiveTexture(GL_TEXTURE0);
+  glBindVertexArray(VAO);
+
+  // Draw each character in text
+  glDisable(GL_DEPTH_TEST);
+  for(int i = 0; i < text.length; i++){
+    // Get its Character struct, x, y, w, and h
+    struct Character text_char = font->characters[(int)text.chars[i]];
+
+    float xpos = x + text_char.bearing[0] * scale;
+    float ypos = y - (text_char.size[1] - text_char.bearing[1]) * scale;
+
+    float w = text_char.size[0] * scale;
+    float h = text_char.size[1] * scale;
+
+    // New vertices to buffer to VBO
+    float vertices[6][4] = {
+      { xpos,     ypos + h,   0.0f, 0.0f },            
+      { xpos,     ypos,       0.0f, 1.0f },
+      { xpos + w, ypos,       1.0f, 1.0f },
+
+      { xpos,     ypos + h,   0.0f, 0.0f },
+      { xpos + w, ypos,       1.0f, 1.0f },
+      { xpos + w, ypos + h,   1.0f, 0.0f }           
+    };
+
+    // Render glyph texture over character quad
+    glBindTexture(GL_TEXTURE_2D, text_char.texture_id);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+
+    // Move cursor to the next character's position
+    x += (text_char.advance >> 6) * scale;
+  }
+  glBindVertexArray(0);
+  glBindTexture(GL_TEXTURE_2D, 0);
+  glEnable(GL_DEPTH_TEST);
 }

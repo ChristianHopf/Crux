@@ -312,7 +312,7 @@ int main(){
 
     if (engine->game_state.is_paused){
       // Render pause menu
-      // printf("paused!\n");
+      printf("paused!\n");
       glfwMakeContextCurrent(engine->window);
       // menu_render();
       ui_render_frame();
@@ -320,7 +320,7 @@ int main(){
     }
     else{
       // float update_start_time = glfwGetTime();
-
+      printf("unpaused!\n");
       scene_update(engine->active_scene, engine->delta_time);
 
       // float update_end_time = glfwGetTime();
