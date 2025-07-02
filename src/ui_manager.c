@@ -1,36 +1,23 @@
+#define CLAY_IMPLEMENTATION
+#include "clay.h"
 #include "ui_manager.h"
+#include "clay_opengl_renderer.h"
+
+static Clay_Arena arena;
+
 
 // Sample code from https://github.com/nicbarker/clay/blob/main/README.md, Quick Start section
 // - ui_manager_init
 // - ui_prepare_frame
 // - MeasureText
 
-void ui_manager_init(){
-  // Init Clay
-  uint64_t totalMemorySize = Clay_MinMemorySize();
-  Clay_Arena arena = Clay_CreateArenaWithCapacityAndMemory(totalMemorySize, malloc(totalMemorySize));
-  Clay_Initialize(arena, (Clay_Dimensions) { screenWidth, screenHeight }, (Clay_ErrorHandler) { HandleClayErrors })
-}
-
-// Need to get GLFW window data somehow
-void ui_prepare_frame(){
-  // Clay_SetLayoutDimensions((Clay_Dimensions) { screenWidth, screenHeight });
-  // // Optional: Update internal pointer position for handling mouseover / click / touch events - needed for scrolling & debug tools
-  // Clay_SetPointerState((Clay_Vector2) { mousePositionX, mousePositionY }, isMouseDown);
-  // // Optional: Update internal pointer position for handling mouseover / click / touch events - needed for scrolling and debug tools
-  // Clay_UpdateScrollContainers(true, (Clay_Vector2) { mouseWheelX, mouseWheelY }, deltaTime);
-}
-
-void ui_draw_clay_layout(){
-
-}
-
-Clay_RenderCommandArray compute_clay_layout_menu(struct Menu *menu){
-  Clay_BeginLayout();
-
-  // Build layout from menu...
-
-  return Clay_EndLayout();
+void HandleClayErrors(Clay_ErrorData errorData) {
+    // See the Clay_ErrorData struct for more information
+    printf("%s", errorData.errorText.chars);
+    switch(errorData.errorType) {
+      default:
+        break;
+    }
 }
 
 static inline Clay_Dimensions MeasureText(Clay_StringSlice text, Clay_TextElementConfig *config, uintptr_t userData) {
@@ -41,3 +28,103 @@ static inline Clay_Dimensions MeasureText(Clay_StringSlice text, Clay_TextElemen
             .height = config->fontSize
     };
 }
+
+void ui_manager_init(){
+  // Init Clay
+  uint64_t totalMemorySize = Clay_MinMemorySize();
+  arena = Clay_CreateArenaWithCapacityAndMemory(totalMemorySize, malloc(totalMemorySize));
+  Clay_Initialize(arena, (Clay_Dimensions) { 1920, 1080 }, (Clay_ErrorHandler) { HandleClayErrors });
+  // Clay_SetMeasureTextFunction();
+
+  // Load fonts and create Clay_TextElementConfigs (maybe lazy load later)
+  
+  // Make this return a Clay_TextElementConfig
+  load_font_face();
+
+  clay_opengl_renderer_init();
+}
+
+// Need to get GLFW window data somehow
+void ui_render_frame(){
+  Clay_SetLayoutDimensions((Clay_Dimensions) { 1920.0f, 1080.0f });
+  // Optional: Update internal pointer position for handling mouseover / click / touch events - needed for scrolling & debug tools
+  // Clay_SetPointerState((Clay_Vector2) { mousePositionX, mousePositionY }, isMouseDown);
+  // Optional: Update internal pointer position for handling mouseover / click / touch events - needed for scrolling and debug tools
+  // Clay_UpdateScrollContainers(true, (Clay_Vector2) { mouseWheelX, mouseWheelY }, deltaTime);
+
+  // Call ui_draw_call_layout for each set of render commands
+  // Probably don't have to worry about clearing color and depth bits?
+
+  struct Menu *pause_menu = menu_manager_get_pause_menu();
+  if (!pause_menu){
+    fprintf(stderr, "Error: failed to get pause menu in ui_render_frame\n");
+    return;
+  }
+  printf("time to compute clay layout!\n");
+  Clay_RenderCommandArray render_commands = compute_clay_layout_menu(pause_menu);
+  printf("Got render commands\n");
+  clay_opengl_render(render_commands);
+  // ui_draw_clay_layout(render_commands);
+}
+
+// void ui_draw_clay_layout(Clay_RenderCommandArray render_commands){
+//   clay_opengl_render(render_commands);
+// }
+
+Clay_RenderCommandArray compute_clay_layout_menu(struct Menu *menu){
+  Clay_BeginLayout();
+
+  // Just get a rectangle up for now
+  CLAY({
+    .id = CLAY_ID("MenuContainer"),
+    .backgroundColor = {0.0f, 70.0f, 135.0f, 255.0f},
+    .layout = {
+      // .layoutDirection = CLAY_TOP_TO_BOTTOM,
+      .sizing = {
+        .width = CLAY_SIZING_GROW(),
+        .height = CLAY_SIZING_GROW(),
+        // .padding = { 32, 32 }
+      }
+      // .childGap = 32
+    }
+  }) {}
+  
+  // Build the rest of the pause menu later
+  // {
+  //   CLAY(
+  //     CLAY_ID("MenuTitle"),
+  //     CLAY_TEXT()
+  //   ) {}
+  //   CLAY(
+  //     CLAY_ID("MenuNav"),
+  //     CLAY_LAYOUT({
+  //       .sizing = {
+  //         .width = CLAY_SIZING_FIXED(250),
+  //         .height = CLAY_SIZING_GROW()
+  //       }
+  //       .childGap = 32,
+  //       .childAlignment = {
+  //         .x = CLAY_ALIGN_X_CENTER
+  //       }
+  //     })
+  //   ) {
+  //     CLAY(
+  //       CLAY_LAYOUT({.padding = {32, 16}}),
+  //       CLAY_RECTANGLE({
+  //         .color = {0, 140, 255}
+  //       })
+  //     ) {
+  //       CLAY_TEXT(CLAY_STRING("RESUME"), CLAY_TEXT_CONFIG({
+  //         .fontId = 0,
+  //         .fontSize = 24,
+  //         .textColor = {255, 255, 255, 255}
+  //       }));
+  //     }
+  //   }
+  // }
+  // Build layout from menu, maybe hardcode the translation first
+
+  return Clay_EndLayout();
+}
+
+

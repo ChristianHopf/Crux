@@ -18,6 +18,7 @@
 #include "player.h"
 #include "text.h"
 #include "audio_manager.h"
+#include "ui_manager.h"
 #include "menu.h"
 #include "game_state.h"
 
@@ -231,6 +232,9 @@ Engine *engine_create(){
   // Initialize MenuManager
   menu_manager_init();
 
+  // UI manager
+  ui_manager_init();
+
   // Load scene
   engine->active_scene = scene_init("scenes/bouncehouse.json");
   if (!engine->active_scene){
@@ -289,7 +293,7 @@ int main(){
   }
 
   // Load font
-  load_font_face();
+  // load_font_face();
 
   // thrd_t render_thrd;
   // thrd_create(&render_thrd, render_thread, engine);
@@ -310,7 +314,8 @@ int main(){
       // Render pause menu
       // printf("paused!\n");
       glfwMakeContextCurrent(engine->window);
-      menu_render();
+      // menu_render();
+      ui_render_frame();
       glfwSwapBuffers(engine->window);
     }
     else{

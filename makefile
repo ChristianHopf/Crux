@@ -25,7 +25,7 @@ TEST_OBJS = $(patsubst $(TEST_DIR)/%.c,$(OBJ_DIR)/test/%.o,$(TEST_FILES))
 UNITY_OBJ = $(OBJ_DIR)/unity.o
 
 # Output binaries
-MAIN_OUT = $(OUT_DIR)/pausemenu5
+MAIN_OUT = $(OUT_DIR)/clay1
 TEST_OUT = $(OUT_DIR)/test_runner
 
 # Default target
