@@ -29,7 +29,7 @@ void clay_opengl_render(Clay_RenderCommandArray renderCommands){
     switch(render_command->commandType){
       case CLAY_RENDER_COMMAND_TYPE_RECTANGLE: {
         Clay_RectangleRenderData *config = &render_command->renderData.rectangle;
-        printf("Got Clay_RectangleRenderdata, time to render a rectangle\n");
+
         // No radius support yet
         clay_opengl_draw_rectangle(box.x, box.y, box.width, box.height, config->backgroundColor);
       }
@@ -45,14 +45,12 @@ void clay_opengl_draw_rectangle(float x, float y, float width, float height, Cla
   shader_set_mat4(clay_opengl_renderer.rectangle_shader, "projection", orthographic);
   shader_set_vec4(clay_opengl_renderer.rectangle_shader, "color", (vec4) {color.r, color.g, color.b, color.a});
 
-  printf("Using shader program, uniforms set\n");
-
   // Create vertices
   float vertices[12] = {
     x,          y,          0.0f,
     x + width,  y,          0.0f,
-    x + width,  y - height, 0.0f,
-    x,          y - height, 0.0f,
+    x + width,  y + height, 0.0f,
+    x,          y + height, 0.0f,
   };
   // Create indices
   unsigned int indices[6] = {
@@ -78,8 +76,10 @@ void clay_opengl_draw_rectangle(float x, float y, float width, float height, Cla
   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), 0);
 
   // Draw
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+  // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+  glDisable(GL_DEPTH_TEST);
   glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+  glEnable(GL_DEPTH_TEST);
 
   // Delete buffers, unbind and delete VAO
   // (worry about optimizing this later)

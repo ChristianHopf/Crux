@@ -60,9 +60,7 @@ void ui_render_frame(){
     fprintf(stderr, "Error: failed to get pause menu in ui_render_frame\n");
     return;
   }
-  printf("time to compute clay layout!\n");
   Clay_RenderCommandArray render_commands = compute_clay_layout_menu(pause_menu);
-  printf("Got render commands\n");
   clay_opengl_render(render_commands);
   // ui_draw_clay_layout(render_commands);
 }
@@ -77,7 +75,8 @@ Clay_RenderCommandArray compute_clay_layout_menu(struct Menu *menu){
   // Just get a rectangle up for now
   CLAY({
     .id = CLAY_ID("MenuContainer"),
-    .backgroundColor = {0.0f, 70.0f, 135.0f, 255.0f},
+    .backgroundColor = {0.0f, 0.2745f, 0.5294f, 1.0f},
+    // .backgroundColor = {0.0f, 70.0f, 135.0f, 255.0f},
     .layout = {
       // .layoutDirection = CLAY_TOP_TO_BOTTOM,
       .sizing = {
