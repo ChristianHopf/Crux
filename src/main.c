@@ -24,6 +24,8 @@
 
 typedef struct {
   GLFWwindow *window;
+  int screen_width;
+  int screen_height;
   struct Scene *active_scene;
   struct GameState game_state;
   // Timing
@@ -184,6 +186,8 @@ Engine *engine_create(){
 		return NULL;
 	}
   engine->window = window;
+  engine->screen_width = SCREEN_WIDTH;
+  engine->screen_height = SCREEN_HEIGHT;
   glfwMakeContextCurrent(engine->window);
 	glfwSetFramebufferSizeCallback(engine->window, framebuffer_size_callback);
 	glfwSetCursorPosCallback(engine->window, mouse_callback);
@@ -233,7 +237,7 @@ Engine *engine_create(){
   menu_manager_init();
 
   // UI manager
-  ui_manager_init();
+  ui_manager_init(SCREEN_WIDTH, SCREEN_HEIGHT);
 
   // Load scene
   engine->active_scene = scene_init("scenes/bouncehouse.json");
@@ -306,6 +310,9 @@ int main(){
 		engine->delta_time = currentFrame - engine->last_frame;
 		engine->last_frame = currentFrame;
 		// printf("FPS: %f\n", 1.0 / engine->delta_time);
+    
+    // Update Clay
+    ui_update_frame(engine->screen_width, engine->screen_height);
 
 		// Handle input
 		processInput(engine->window);

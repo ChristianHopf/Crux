@@ -20,16 +20,20 @@ struct ClayOpenGLRenderer {
   Shader *rectangle_shader;
   Shader *glyph_shader;
 
+  float screen_width;
+  float screen_height;
+
   GLuint text_VAO;
   GLuint text_VBO;
 };
 
 
 // Setup, teardown
-void clay_opengl_renderer_init();
+void clay_opengl_renderer_init(float screen_width, float screen_height);
 void clay_opengl_renderer_destroy();
 bool clay_opengl_renderer_create_shaders();
 bool clay_opengl_renderer_text_setup();
+void clay_opengl_renderer_update_dimensions(float screen_width, float screen_height);
 
 // Render
 void clay_opengl_render(Clay_RenderCommandArray render_commands, struct Font *fonts);

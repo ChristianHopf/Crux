@@ -3,7 +3,11 @@
 
 static struct ClayOpenGLRenderer clay_opengl_renderer;
 
-void clay_opengl_renderer_init(){
+void clay_opengl_renderer_init(float screen_width, float screen_height){
+  // The renderer maintains variables for screen width and height updated each frame
+  clay_opengl_renderer.screen_width = screen_width;
+  clay_opengl_renderer.screen_height = screen_height;
+
   // Create shaders
   if (!clay_opengl_renderer_create_shaders()){
     fprintf(stderr, "Error: failed to create shaders in clay_opengl_renderer_init\n");
@@ -70,6 +74,11 @@ bool clay_opengl_renderer_text_setup(){
   return true;
 }
 
+void clay_opengl_renderer_update_dimensions(float screen_width, float screen_height){
+  clay_opengl_renderer.screen_width = screen_width;
+  clay_opengl_renderer.screen_height = screen_height;
+}
+
 void clay_opengl_render(Clay_RenderCommandArray renderCommands, struct Font *fonts){
   // Get render command
   for(int i = 0; i < renderCommands.length; i++){
@@ -89,9 +98,8 @@ void clay_opengl_render(Clay_RenderCommandArray renderCommands, struct Font *fon
         Clay_TextRenderData *config = &render_command->renderData.text;
         printf("Font ID is %hu\n", config->fontId);
         struct Font font_to_use = fonts[config->fontId];
-        // Font font_to_use = clay_opengl_renderer.fonts[config->fontId];
 
-        clay_opengl_draw_text(font_to_use, config->stringContents, box.x, box.y, config->fontSize, config->letterSpacing, 1.0f, config->textColor);
+        clay_opengl_draw_text(font_to_use, config->stringContents, box.x, clay_opengl_renderer.screen_height - (box.y + config->fontSize), config->fontSize, config->letterSpacing, 1.0f, config->textColor);
         break;
       }
     }

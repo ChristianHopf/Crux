@@ -32,11 +32,11 @@ static inline Clay_Dimensions MeasureText(Clay_StringSlice text, Clay_TextElemen
     };
 }
 
-void ui_manager_init(){
+void ui_manager_init(float screen_width, float screen_height){
   // Init Clay
   uint64_t totalMemorySize = Clay_MinMemorySize();
   arena = Clay_CreateArenaWithCapacityAndMemory(totalMemorySize, malloc(totalMemorySize));
-  Clay_Initialize(arena, (Clay_Dimensions) { 1920, 1080 }, (Clay_ErrorHandler) { HandleClayErrors });
+  Clay_Initialize(arena, (Clay_Dimensions) { screen_width, screen_height }, (Clay_ErrorHandler) { HandleClayErrors });
 
   // Load fonts and set MeasureText function
   // (passing fonts matters later for non-monospace text)
@@ -44,7 +44,11 @@ void ui_manager_init(){
   Clay_SetMeasureTextFunction(MeasureText, fonts);
 
   // Init renderer
-  clay_opengl_renderer_init();
+  clay_opengl_renderer_init(screen_width, screen_height);
+}
+
+void ui_update_frame(float screen_width, float screen_height){
+  clay_opengl_renderer_update_dimensions(screen_width, screen_height);
 }
 
 // Need to get GLFW window data somehow
