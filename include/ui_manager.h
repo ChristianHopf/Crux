@@ -15,6 +15,6 @@ typedef struct Clay_TextElementConfig Clay_TextElementConfig;
 // Get the front of all of this built, then write an OpenGL rendering backend.
 void ui_manager_init(float screen_width, float screen_height);
 void ui_render_frame();
-void ui_update_frame(float screen_width, float screen_height);
+void ui_update_frame(float screen_width, float screen_height, double xpos, double ypos, bool mouse_down);
 void ui_draw_clay_layout(Clay_RenderCommandArray render_commands);
 Clay_RenderCommandArray compute_clay_layout_menu(struct Menu *menu);

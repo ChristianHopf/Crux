@@ -23,9 +23,13 @@
 #include "game_state.h"
 
 typedef struct {
+  // Window
   GLFWwindow *window;
   int screen_width;
   int screen_height;
+  // Mouse
+  bool mouse_down;
+  // Scene and game
   struct Scene *active_scene;
   struct GameState game_state;
   // Timing
@@ -123,8 +127,8 @@ void mouse_callback(GLFWwindow *window, double xpos, double ypos){
 	lastX = (float)xpos;
 	lastY = (float)ypos;
 
-  printf("Last X: %f, last Y: %f\n", lastX, lastY);
-  printf("xoffset: %f, yoffset: %f\n", xoffset, yoffset);
+  // printf("Last X: %f, last Y: %f\n", lastX, lastY);
+  // printf("xoffset: %f, yoffset: %f\n", xoffset, yoffset);
 
   // Update camera
   if (!engine->game_state.is_paused){
@@ -133,8 +137,12 @@ void mouse_callback(GLFWwindow *window, double xpos, double ypos){
 }
 
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods){
+  Engine *engine = (Engine *)glfwGetWindowUserPointer(window);
   if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS){
-    printf("Click! x = %f, y = %f\n", lastX, lastY);
+    engine->mouse_down = true;
+  }
+  if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_RELEASE){
+    engine->mouse_down = false;
   }
 }
 
@@ -252,41 +260,8 @@ Engine *engine_create(){
   engine->delta_time = 0.0f;
   engine->last_frame = 0.0f;
 
-  // Scene mutex
-  // mtx_init(&engine->scene_mutex, mtx_plain);
-  // cnd_init(&engine->render_signal);
-  // cnd_init(&engine->render_done_signal);
-  // engine->render_ready = false;
-
   return engine;
 }
-
-// int render_thread(void *arg){
-//   Engine *engine = (Engine *)arg;
-//   glfwMakeContextCurrent(engine->window);
-//   while (!glfwWindowShouldClose(engine->window)){
-//     // Lock mutex
-//     mtx_lock(&engine->scene_mutex);
-//
-//     // Wait for render signal
-//     while (!engine->render_ready){
-//       cnd_wait(&engine->render_signal, &engine->scene_mutex);
-//     }
-//
-//     // Render scene
-//     scene_render(engine->active_scene);
-//     glfwSwapBuffers(engine->window);
-//     printf("RENDER THREAD STILL WORKING!\n");
-//
-//     // Set render_ready back to false, signal rendering is done, unlock mutex
-//     engine->render_ready = false;
-//     cnd_signal(&engine->render_done_signal);
-//     mtx_unlock(&engine->scene_mutex);
-//   }
-//
-//   glfwMakeContextCurrent(NULL);
-//   return 0;
-// }
 
 int main(){
   Engine *engine = engine_create();
@@ -295,12 +270,6 @@ int main(){
     glfwTerminate();
     return -1;
   }
-
-  // Load font
-  // load_font_face();
-
-  // thrd_t render_thrd;
-  // thrd_create(&render_thrd, render_thread, engine);
 
 	// Render loop
 	while (!glfwWindowShouldClose(engine->window)){
@@ -312,14 +281,16 @@ int main(){
 		// printf("FPS: %f\n", 1.0 / engine->delta_time);
     
     // Update Clay
-    ui_update_frame(engine->screen_width, engine->screen_height);
+    double xpos, ypos;
+    glfwGetCursorPos(engine->window, &xpos, &ypos);
+    ui_update_frame(engine->screen_width, engine->screen_height, xpos, ypos, engine->mouse_down);
 
 		// Handle input
 		processInput(engine->window);
 
     if (engine->game_state.is_paused){
       // Render pause menu
-      printf("paused!\n");
+      // printf("paused!\n");
       glfwMakeContextCurrent(engine->window);
       // menu_render();
       ui_render_frame();
@@ -327,7 +298,7 @@ int main(){
     }
     else{
       // float update_start_time = glfwGetTime();
-      printf("unpaused!\n");
+      // printf("unpaused!\n");
       scene_update(engine->active_scene, engine->delta_time);
 
       // float update_end_time = glfwGetTime();
@@ -347,13 +318,7 @@ int main(){
 		glfwPollEvents();
   }
 
-  // thrd_join(render_thrd, NULL);
-  // mtx_destroy(&engine->scene_mutex);
-  // cnd_destroy(&engine->render_signal);
-  // cnd_destroy(&engine->render_done_signal);
-
   // OpenAL
-  // alcMakeContextCurrent(NULL);
   struct AudioManager *audio_manager = audio_manager_get_global();
   audio_stream_destroy(audio_manager->audio_stream);
   alcDestroyContext(audio_manager->context);

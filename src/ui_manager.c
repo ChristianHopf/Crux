@@ -82,22 +82,21 @@ void ui_manager_init(float screen_width, float screen_height){
   // Load fonts and set MeasureText function
   // (passing fonts matters later for non-monospace text)
   fonts[0] = load_font_face("resources/fonts/HackNerdFontMono-Regular.ttf", 24);
-  printf("Init font advance %d\n", fonts[0].characters[0].advance);
   Clay_SetMeasureTextFunction(MeasureText, fonts);
 
   // Init renderer
   clay_opengl_renderer_init(screen_width, screen_height);
 }
 
-void ui_update_frame(float screen_width, float screen_height){
+void ui_update_frame(float screen_width, float screen_height, double xpos, double ypos, bool mouse_down){
   Clay_SetLayoutDimensions((Clay_Dimensions) { screen_width, screen_height });
+  Clay_SetPointerState((Clay_Vector2) { xpos, ypos }, mouse_down);
   clay_opengl_renderer_update_dimensions(screen_width, screen_height);
 }
 
 // Need to get GLFW window data somehow
 void ui_render_frame(){
   // Optional: Update internal pointer position for handling mouseover / click / touch events - needed for scrolling & debug tools
-  // Clay_SetPointerState((Clay_Vector2) { mousePositionX, mousePositionY }, isMouseDown);
   // Optional: Update internal pointer position for handling mouseover / click / touch events - needed for scrolling and debug tools
   // Clay_UpdateScrollContainers(true, (Clay_Vector2) { mouseWheelX, mouseWheelY }, deltaTime);
 
