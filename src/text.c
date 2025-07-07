@@ -67,6 +67,8 @@ struct Font load_font_face(char *path, int size){
     };
     font.characters[(int)c] = character;
   }
+  font.base_size = size;
+
   FT_Done_Face(face);
   FT_Done_FreeType(library);
 

@@ -91,7 +91,7 @@ void clay_opengl_render(Clay_RenderCommandArray renderCommands, struct Font *fon
         Clay_RectangleRenderData *config = &render_command->renderData.rectangle;
 
         // No radius support yet
-        clay_opengl_draw_rectangle(box.x, box.y, box.width, box.height, config->backgroundColor);
+        clay_opengl_draw_rectangle(box.x, clay_opengl_renderer.screen_height - box.y, box.width, box.height, config->backgroundColor);
         break;
       }
       case CLAY_RENDER_COMMAND_TYPE_TEXT: {
@@ -117,14 +117,16 @@ void clay_opengl_draw_rectangle(float x, float y, float width, float height, Cla
   // Create vertices
   float vertices[12] = {
     x,          y,          0.0f,
+    x,          y - height, 0.0f,
+    x + width,  y - height, 0.0f,
     x + width,  y,          0.0f,
-    x + width,  y + height, 0.0f,
-    x,          y + height, 0.0f,
   };
   // Create indices
   unsigned int indices[6] = {
-    0, 1, 2,
-    0, 2, 3
+    0, 1, 3,
+    1, 2, 3
+    // 0, 1, 2,
+    // 0, 2, 3
   };
 
   // Buffer data

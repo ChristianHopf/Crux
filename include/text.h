@@ -15,6 +15,7 @@ struct Character {
 struct Font {
   // unsigned int font_id;
   struct Character characters[128];
+  int base_size;
 };
 
 
