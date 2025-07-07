@@ -2,9 +2,12 @@
 #include "clay.h"
 #include "ui_manager.h"
 #include "clay_opengl_renderer.h"
+#include "text.h"
 
 static Clay_Arena arena;
+Clay_TextElementConfig pause_button_text_config = {.fontId = 0, .fontSize = 24, .textColor = {255, 255, 255, 255}};
 
+static struct Font fonts[16];
 
 // Sample code from https://github.com/nicbarker/clay/blob/main/README.md, Quick Start section
 // - ui_manager_init
@@ -20,7 +23,7 @@ void HandleClayErrors(Clay_ErrorData errorData) {
     }
 }
 
-static inline Clay_Dimensions MeasureText(Clay_StringSlice text, Clay_TextElementConfig *config, uintptr_t userData) {
+static inline Clay_Dimensions MeasureText(Clay_StringSlice text, Clay_TextElementConfig *config, void *userData) {
     // Clay_TextElementConfig contains members such as fontId, fontSize, letterSpacing etc
     // Note: Clay_String->chars is not guaranteed to be null terminated
     return (Clay_Dimensions) {
@@ -34,13 +37,13 @@ void ui_manager_init(){
   uint64_t totalMemorySize = Clay_MinMemorySize();
   arena = Clay_CreateArenaWithCapacityAndMemory(totalMemorySize, malloc(totalMemorySize));
   Clay_Initialize(arena, (Clay_Dimensions) { 1920, 1080 }, (Clay_ErrorHandler) { HandleClayErrors });
-  // Clay_SetMeasureTextFunction();
 
-  // Load fonts and create Clay_TextElementConfigs (maybe lazy load later)
-  
-  // Make this return a Clay_TextElementConfig
-  load_font_face();
+  // Load fonts and set MeasureText function
+  // (passing fonts matters later for non-monospace text)
+  fonts[0] = load_font_face("resources/fonts/HackNerdFontMono-Regular.ttf", 24);
+  Clay_SetMeasureTextFunction(MeasureText, fonts);
 
+  // Init renderer
   clay_opengl_renderer_init();
 }
 
@@ -61,7 +64,7 @@ void ui_render_frame(){
     return;
   }
   Clay_RenderCommandArray render_commands = compute_clay_layout_menu(pause_menu);
-  clay_opengl_render(render_commands);
+  clay_opengl_render(render_commands, fonts);
   // ui_draw_clay_layout(render_commands);
 }
 
@@ -73,20 +76,20 @@ Clay_RenderCommandArray compute_clay_layout_menu(struct Menu *menu){
   Clay_BeginLayout();
 
   // Just get a rectangle up for now
-  CLAY({
-    .id = CLAY_ID("MenuContainer"),
-    .backgroundColor = {0.0f, 0.2745f, 0.5294f, 1.0f},
-    // .backgroundColor = {0.0f, 70.0f, 135.0f, 255.0f},
+  CLAY({ .id = CLAY_ID("MenuContainer"),
     .layout = {
       // .layoutDirection = CLAY_TOP_TO_BOTTOM,
       .sizing = {
-        .width = CLAY_SIZING_GROW(),
-        .height = CLAY_SIZING_GROW(),
+        .width = CLAY_SIZING_GROW(0),
+        .height = CLAY_SIZING_GROW(0),
         // .padding = { 32, 32 }
       }
       // .childGap = 32
+    },
+    .backgroundColor = {0.0f, 0.2745f, 0.5294f, 1.0f},
+    }) {
+       CLAY_TEXT(CLAY_STRING("PAUSED"), &pause_button_text_config);
     }
-  }) {}
   
   // Build the rest of the pause menu later
   // {
@@ -122,8 +125,5 @@ Clay_RenderCommandArray compute_clay_layout_menu(struct Menu *menu){
   //   }
   // }
   // Build layout from menu, maybe hardcode the translation first
-
   return Clay_EndLayout();
 }
-
-

@@ -8,13 +8,14 @@ static unsigned int VAO, VBO;
 static Shader *textShader;
 
 
-struct Font *load_font_face(char *path, int size){
+struct Font load_font_face(char *path, int size){
   // Allocate Font
-  struct Font *font = (struct Font *)malloc(sizeof(struct Font));
-  if (!font){
-    fprintf(stderr, "Error: failed to allocate font in load_font_face\n");
-    return NULL;
-  }
+  struct Font font = {0};
+  // struct Font *font = (struct Font *)malloc(sizeof(struct Font));
+  // if (!font){
+  //   fprintf(stderr, "Error: failed to allocate font in load_font_face\n");
+  //   return NULL;
+  // }
 
   // Init FreeType library, face
   FT_Library  library;
@@ -64,7 +65,7 @@ struct Font *load_font_face(char *path, int size){
       .bearing = {face->glyph->bitmap_left, face->glyph->bitmap_top},
       .advance = face->glyph->advance.x
     };
-    font->characters[(int)c] = character;
+    font.characters[(int)c] = character;
   }
   FT_Done_Face(face);
   FT_Done_FreeType(library);

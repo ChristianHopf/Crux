@@ -11,10 +11,14 @@ void clay_opengl_renderer_init(){
   }
 
   // Load fonts
-  if (!clay_opengl_renderer_load_fonts()){
+  if (!clay_opengl_renderer_text_setup()){
     fprintf(stderr, "Error: failed to load fonts in clay_opengl_renderer_init\n");
     return;
   }
+}
+
+void clay_opengl_renderer_destroy(){
+
 }
 
 bool clay_opengl_renderer_create_shaders(){
@@ -35,20 +39,20 @@ bool clay_opengl_renderer_create_shaders(){
   return true;
 }
 
-bool clay_opengl_renderer_load_fonts(){
+bool clay_opengl_renderer_text_setup(){
   // Allocate fonts
-  clay_opengl_renderer.fonts = (struct Font *)malloc(sizeof(struct Font));
-  if (!clay_opengl_renderer.fonts){
-    fprintf(stderr, "Error: failed to allocate fonts in clay_opengl_renderer_init\n");
-    return;
-  }
-
-  // Load fonts
-  clay_opengl_renderer.fonts[0] = load_font_face("resources/fonts/HackNerdFontMono-Regular.ttf", 24);
-  if (!clay_opengl_renderer.fonts[0]){
-    fprintf(stderr, "Error: failed to load font in clay_opengl_renderer_init\n");
-    return false;
-  }
+  // clay_opengl_renderer.fonts = (struct Font *)malloc(sizeof(struct Font));
+  // if (!clay_opengl_renderer.fonts){
+  //   fprintf(stderr, "Error: failed to allocate fonts in clay_opengl_renderer_init\n");
+  //   return false;
+  // }
+  //
+  // // Load fonts
+  // clay_opengl_renderer.fonts = load_font_face("resources/fonts/HackNerdFontMono-Regular.ttf", 24);
+  // if (!clay_opengl_renderer.fonts){
+  //   fprintf(stderr, "Error: failed to load font in clay_opengl_renderer_init\n");
+  //   return false;
+  // }
 
   // Text VAO and VBO
   glGenVertexArrays(1, &clay_opengl_renderer.text_VAO);
@@ -66,7 +70,7 @@ bool clay_opengl_renderer_load_fonts(){
   return true;
 }
 
-void clay_opengl_render(Clay_RenderCommandArray renderCommands){
+void clay_opengl_render(Clay_RenderCommandArray renderCommands, struct Font *fonts){
   // Get render command
   for(int i = 0; i < renderCommands.length; i++){
     Clay_RenderCommand *render_command = Clay_RenderCommandArray_Get(&renderCommands, i);
@@ -79,6 +83,16 @@ void clay_opengl_render(Clay_RenderCommandArray renderCommands){
 
         // No radius support yet
         clay_opengl_draw_rectangle(box.x, box.y, box.width, box.height, config->backgroundColor);
+        break;
+      }
+      case CLAY_RENDER_COMMAND_TYPE_TEXT: {
+        Clay_TextRenderData *config = &render_command->renderData.text;
+        printf("Font ID is %hu\n", config->fontId);
+        struct Font font_to_use = fonts[config->fontId];
+        // Font font_to_use = clay_opengl_renderer.fonts[config->fontId];
+
+        clay_opengl_draw_text(font_to_use, config->stringContents, box.x, box.y, config->fontSize, config->letterSpacing, 1.0f, config->textColor);
+        break;
       }
     }
   }
@@ -139,16 +153,7 @@ void clay_opengl_draw_rectangle(float x, float y, float width, float height, Cla
   glDeleteVertexArrays(1, &VAO);
 }
 
-float *clay_color_to_vec4(Clay_Color clay_color){
-  vec4 color;
-  color[0] = clay_color.r;
-  color[1] = clay_color.g;
-  color[2] = clay_color.b;
-  color[3] = clay_color.a;
-
-  return color;
-}
-void clay_opengl_draw_text(struct Font *font, Clay_StringSlice text, float x, float y, float size, float spacing, Clay_Color color){
+void clay_opengl_draw_text(struct Font font, Clay_StringSlice text, float x, float y, float size, float spacing, float scale, Clay_Color color){
   // Use shader, set uniform, bind to texture and VAO
   shader_use(clay_opengl_renderer.glyph_shader);
   mat4 orthographic;
@@ -157,13 +162,13 @@ void clay_opengl_draw_text(struct Font *font, Clay_StringSlice text, float x, fl
   shader_set_vec3(clay_opengl_renderer.glyph_shader, "textColor", (vec4) {color.r, color.g, color.b, color.a});
 
   glActiveTexture(GL_TEXTURE0);
-  glBindVertexArray(VAO);
+  glBindVertexArray(clay_opengl_renderer.text_VAO);
 
   // Draw each character in text
   glDisable(GL_DEPTH_TEST);
   for(int i = 0; i < text.length; i++){
     // Get its Character struct, x, y, w, and h
-    struct Character text_char = font->characters[(int)text.chars[i]];
+    struct Character text_char = font.characters[(int)text.chars[i]];
 
     float xpos = x + text_char.bearing[0] * scale;
     float ypos = y - (text_char.size[1] - text_char.bearing[1]) * scale;
@@ -184,7 +189,7 @@ void clay_opengl_draw_text(struct Font *font, Clay_StringSlice text, float x, fl
 
     // Render glyph texture over character quad
     glBindTexture(GL_TEXTURE_2D, text_char.texture_id);
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBindBuffer(GL_ARRAY_BUFFER, clay_opengl_renderer.text_VBO);
     glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glDrawArrays(GL_TRIANGLES, 0, 6);
@@ -195,4 +200,14 @@ void clay_opengl_draw_text(struct Font *font, Clay_StringSlice text, float x, fl
   glBindVertexArray(0);
   glBindTexture(GL_TEXTURE_2D, 0);
   glEnable(GL_DEPTH_TEST);
+}
+
+float *clay_color_to_vec4(Clay_Color clay_color){
+  vec4 color;
+  color[0] = clay_color.r;
+  color[1] = clay_color.g;
+  color[2] = clay_color.b;
+  color[3] = clay_color.a;
+
+  return color;
 }
