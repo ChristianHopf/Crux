@@ -59,3 +59,7 @@ bool menu_stack_is_empty();
 // Button
 void button_activate(struct Button *button);
 void button_print_text(void *arg);
+
+// Actions
+void action_resume(void *arg);
+void action_quit(void *arg);

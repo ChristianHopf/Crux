@@ -35,14 +35,10 @@ typedef struct {
   // Timing
   float delta_time;
   float last_frame;
-  // Multithreading
-  // mtx_t scene_mutex;
-  // cnd_t render_signal;
-  // cnd_t render_done_signal;
-  // bool render_ready;
 } Engine;
 
 void framebuffer_size_callback(GLFWwindow *window, int width, int height);
+void window_size_callback(GLFWwindow *window, int width, int height);
 void processInput(GLFWwindow *window);
 void mouse_callback(GLFWwindow *window, double xpos, double ypos);
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods);
@@ -100,7 +96,20 @@ void processInput(GLFWwindow *window){
 }
 
 void framebuffer_size_callback(GLFWwindow *window, int width, int height){
+  Engine *engine = (Engine *)glfwGetWindowUserPointer(window);
 	glViewport(0, 0, width, height);
+
+  int window_width, window_height;
+  glfwGetWindowSize(engine->window, &window_width, &window_height);
+}
+
+void window_size_callback(GLFWwindow *window, int width, int height){
+  Engine *engine = (Engine *)glfwGetWindowUserPointer(window);
+  // if (width != 1920 || height != 1080) {
+  //   glfwSetWindowSize(window, 1920, 1080);
+  // }
+  engine->screen_width = width;
+  engine->screen_height = height;
 }
 
 void mouse_callback(GLFWwindow *window, double xpos, double ypos){
@@ -184,6 +193,8 @@ Engine *engine_create(){
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+  glfwWindowHint(GLFW_SCALE_TO_MONITOR, GLFW_TRUE);
+  // glfwWindowHint(GLFW_SCALE_FRAMEBUFFER, GLFW_FALSE);
 
   // Create window and register callbacks
 	GLFWwindow *window = glfwCreateWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Crux", NULL, NULL);
@@ -198,11 +209,14 @@ Engine *engine_create(){
   engine->screen_height = SCREEN_HEIGHT;
   glfwMakeContextCurrent(engine->window);
 	glfwSetFramebufferSizeCallback(engine->window, framebuffer_size_callback);
+  glfwSetWindowSizeCallback(engine->window, window_size_callback);
 	glfwSetCursorPosCallback(engine->window, mouse_callback);
   glfwSetMouseButtonCallback(engine->window, mouse_button_callback);
 	glfwSetScrollCallback(engine->window, scroll_callback);
   glfwSetKeyCallback(engine->window, key_callback);
   glfwSetWindowUserPointer(engine->window, engine);
+
+  glfwSetWindowSizeLimits(window, 1920, 1080, 1920, 1080);
 
 	// Capture mouse
 	glfwSetInputMode(engine->window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
@@ -270,6 +284,9 @@ int main(){
     glfwTerminate();
     return -1;
   }
+float xscale, yscale;
+glfwGetWindowContentScale(engine->window, &xscale, &yscale);
+printf("Content scale: %f x %f\n", xscale, yscale);
 
 	// Render loop
 	while (!glfwWindowShouldClose(engine->window)){
@@ -282,8 +299,10 @@ int main(){
     
     // Update Clay
     double xpos, ypos;
+    // int fb_width, fb_height;
     glfwGetCursorPos(engine->window, &xpos, &ypos);
-    ui_update_frame(engine->screen_width, engine->screen_height, xpos, ypos, engine->mouse_down);
+    // glfwGetFramebufferSize(engine->window, &fb_width, &fb_height);
+    ui_update_frame(engine->screen_width, engine->screen_height,xpos, ypos, engine->mouse_down);
 
 		// Handle input
 		processInput(engine->window);

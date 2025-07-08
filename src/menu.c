@@ -38,12 +38,12 @@ struct Menu *pause_menu_create(){
   pause_menu->buttons = (struct Button *)malloc(pause_menu->num_buttons * sizeof(struct Button));
   pause_menu->buttons[0].text = "RESUME";
   pause_menu->buttons[0].type = BUTTON_ACTION;
-  pause_menu->buttons[0].data.action = button_print_text;
+  pause_menu->buttons[0].data.action = action_resume;
   pause_menu->buttons[0].x = 920.0f;
   pause_menu->buttons[0].y = 540.0f;
   pause_menu->buttons[1].text = "EXIT";
   pause_menu->buttons[1].type = BUTTON_ACTION;
-  pause_menu->buttons[1].data.action = button_print_text;
+  pause_menu->buttons[1].data.action = action_quit;
   pause_menu->buttons[1].x = 920.0f;
   pause_menu->buttons[1].y = 480.0f;
   pause_menu->parent = NULL;
@@ -83,6 +83,15 @@ bool menu_stack_is_full(){
 
 bool menu_stack_is_empty(){
   return menu_manager->current_depth == -1;
+}
+
+void action_resume(void *arg){
+  // Unpause
+  printf("Resume action\n");
+}
+
+void action_quit(void *arg){
+  printf("Quit action\n");
 }
 
 void button_print_text(void *arg){

@@ -5,7 +5,8 @@
 #include "text.h"
 
 static Clay_Arena arena;
-Clay_TextElementConfig pause_menu_text_config = {.fontId = 0, .fontSize = 24, .textColor = {255, 255, 255, 255}};
+Clay_TextElementConfig pause_menu_title_text_config = {.fontId = 0, .fontSize = 24, .textColor = {255, 255, 255, 255}};
+Clay_TextElementConfig pause_menu_button_text_config = {.fontId = 1, .fontSize = 48, .lineHeight = 48, .textAlignment = CLAY_TEXT_ALIGN_CENTER, .textColor = {255, 255, 255, 255}};
 
 static struct Font fonts[16];
 
@@ -38,6 +39,7 @@ static inline Clay_Dimensions MeasureText(Clay_StringSlice text, Clay_TextElemen
   struct Font *fonts = (struct Font *)userData;
   struct Font font_to_use = fonts[config->fontId];
 
+  // printf("hi\n");
   float scale = config->fontSize / (float)font_to_use.base_size;
 
   for(int i = 0; i < text.length; i++, line_char_count++){
@@ -53,25 +55,21 @@ static inline Clay_Dimensions MeasureText(Clay_StringSlice text, Clay_TextElemen
     int index = text.chars[i] - 32;
     struct Character current_character = font_to_use.characters[index];
     if (current_character.advance != 0){
-      line_text_width += current_character.advance >> 6;
+      line_text_width += (current_character.advance >> 6) * scale;
     }
     else{
-      line_text_width += current_character.size[0] + current_character.bearing[0];
+      line_text_width += (current_character.size[0] + current_character.bearing[0]) * scale;
     }
   }
   max_text_width = fmax(max_text_width, line_text_width);
   max_line_char_count = CLAY__MAX(max_line_char_count, line_char_count);
 
   // Width is scaled max text width + letter spacing multiplied by the number of chars
-  text_size.width = max_text_width * scale + (line_char_count * config->letterSpacing);
+// text_size.width = max_text_width + (max_line_char_count > 1 ? (max_line_char_count - 1) * config->letterSpacing * scale : 0);
+  text_size.width = max_text_width * scale + (max_line_char_count * config->letterSpacing);
   text_size.height = text_height;
 
   return text_size;
-
-  // return (Clay_Dimensions) {
-  //         .width = text.length * config->fontSize, // <- this will only work for monospace fonts, see the renderers/ directory for more advanced text measurement
-  //         .height = config->fontSize
-  // };
 }
 
 void ui_manager_init(float screen_width, float screen_height){
@@ -82,6 +80,8 @@ void ui_manager_init(float screen_width, float screen_height){
   // Load fonts and set MeasureText function
   // (passing fonts matters later for non-monospace text)
   fonts[0] = load_font_face("resources/fonts/HackNerdFontMono-Regular.ttf", 24);
+  fonts[1] = load_font_face("resources/fonts/HackNerdFontMono-Regular.ttf", 48);
+  // fonts[1] = load_font_face("resources/fonts/OpenSans-Regular.ttf", 48);
   Clay_SetMeasureTextFunction(MeasureText, fonts);
 
   // Init renderer
@@ -113,18 +113,29 @@ void ui_render_frame(){
   // ui_draw_clay_layout(render_commands);
 }
 
-// void ui_draw_clay_layout(Clay_RenderCommandArray render_commands){
-//   clay_opengl_render(render_commands);
-// }
+void handle_button_click(Clay_ElementId elementId, Clay_PointerData pointerData, intptr_t userData){
+  printf("Hovering\n");
+  if (pointerData.state == CLAY_POINTER_DATA_PRESSED_THIS_FRAME){
+    printf("Button clicked!\n");
+    void (*action)(void *arg) = (void (*)(void *))userData;
+    action(NULL);
+  }
+}
 
-void pause_menu_button(Clay_String text){
+void pause_menu_button(struct Button button){
   CLAY({
     .layout = {
       .padding = {16, 16, 8, 8}
     },
-    // .backgroundColor = {0.0f, 0.549f, 1.0f, 1.0f}
+    .backgroundColor = Clay_Hovered() ? (Clay_Color){0.0f, 0.549f, 1.0f, 0.8f} : (Clay_Color){0.0f, 0.3745f, 0.6294f, 1.0f}
   }){
-    CLAY_TEXT(text, &pause_menu_text_config);
+    Clay_OnHover(handle_button_click, (intptr_t)button.data.action);
+    Clay_String button_string = {
+      .isStaticallyAllocated = false,
+      .chars = button.text,
+      .length = strlen(button.text)
+    };
+    CLAY_TEXT(button_string, &pause_menu_button_text_config);
   }
 }
 
@@ -161,24 +172,34 @@ Clay_RenderCommandArray compute_clay_layout_menu(struct Menu *menu){
         }
         // .childGap = 32
       },
-      .backgroundColor = {0.0f, 0.3745f, 0.6294f, 1.0f}
+      // .backgroundColor = {0.0f, 0.3745f, 0.6294f, 1.0f}
     }) {
-      CLAY_TEXT(CLAY_STRING("PAUSED"), &pause_menu_text_config);
+      CLAY_TEXT(CLAY_STRING("PAUSED"), &pause_menu_title_text_config);
     }
     CLAY({ .id = CLAY_ID("MenuNav"),
       .layout = {
         .layoutDirection = CLAY_TOP_TO_BOTTOM,
         .sizing = {
-          .width = CLAY_SIZING_FIXED(250),
+          .width = CLAY_SIZING_FIXED(400),
           .height = CLAY_SIZING_GROW(),
         },
-        .padding = {0, 0, 4, 4 },
+        .childAlignment = {
+          .x = CLAY_ALIGN_X_CENTER,
+        },
+        .padding = { 8, 8, 8, 8 },
         .childGap = 16,
       },
       .backgroundColor = {0.0f, 0.3745f, 0.6294f, 1.0f}
     }) {
-      pause_menu_button(CLAY_STRING("RESUME"));
-      pause_menu_button(CLAY_STRING("EXIT"));
+      pause_menu_button(menu->buttons[0]);
+      CLAY({
+        .layout = {
+          .sizing = {
+            .height = CLAY_SIZING_GROW()
+          }
+        }
+      }){}
+      pause_menu_button(menu->buttons[1]);
     }
   }
   // Build layout from menu, maybe hardcode the translation first

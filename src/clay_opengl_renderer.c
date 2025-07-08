@@ -96,7 +96,6 @@ void clay_opengl_render(Clay_RenderCommandArray renderCommands, struct Font *fon
       }
       case CLAY_RENDER_COMMAND_TYPE_TEXT: {
         Clay_TextRenderData *config = &render_command->renderData.text;
-        printf("Font ID is %hu\n", config->fontId);
         struct Font font_to_use = fonts[config->fontId];
 
         clay_opengl_draw_text(font_to_use, config->stringContents, box.x, clay_opengl_renderer.screen_height - (box.y + config->fontSize), config->fontSize, config->letterSpacing, 1.0f, config->textColor);
@@ -110,7 +109,7 @@ void clay_opengl_draw_rectangle(float x, float y, float width, float height, Cla
   // Use rectangle shader, set projection uniform based on window and color uniform
   shader_use(clay_opengl_renderer.rectangle_shader);
   mat4 orthographic;
-  glm_ortho(0, 1920, 0, 1080, -1.0f, 1.0f, orthographic);
+  glm_ortho(0, clay_opengl_renderer.screen_width, 0, clay_opengl_renderer.screen_height, -1.0f, 1.0f, orthographic);
   shader_set_mat4(clay_opengl_renderer.rectangle_shader, "projection", orthographic);
   shader_set_vec4(clay_opengl_renderer.rectangle_shader, "color", (vec4) {color.r, color.g, color.b, color.a});
 
@@ -167,7 +166,8 @@ void clay_opengl_draw_text(struct Font font, Clay_StringSlice text, float x, flo
   // Use shader, set uniform, bind to texture and VAO
   shader_use(clay_opengl_renderer.glyph_shader);
   mat4 orthographic;
-  glm_ortho(0, 1920, 0, 1080, -1.0f, 1.0f, orthographic);
+  glm_ortho(0, clay_opengl_renderer.screen_width, 0, clay_opengl_renderer.screen_height, -1.0f, 1.0f, orthographic);
+  // glm_ortho(0, 1251, 0, 676, -1.0f, 1.0f, orthographic);
   shader_set_mat4(clay_opengl_renderer.glyph_shader, "projection", orthographic);
   shader_set_vec3(clay_opengl_renderer.glyph_shader, "textColor", (vec4) {color.r, color.g, color.b, color.a});
 
