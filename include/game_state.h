@@ -23,6 +23,7 @@ void game_pause();
 void game_unpause();
 void game_quit();
 bool game_state_is_paused();
+bool game_state_should_quit();
 void game_state_update();
 
 // Observers and linked list

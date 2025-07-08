@@ -25,7 +25,6 @@ struct Scene *scene_init(char *scene_path){
 
   // Set options
   scene->physics_debug_mode = true;
-  scene->paused = false;
 
   // Parse scene JSON
   const char *scene_data = (const char *)read_file(scene_path);
@@ -143,7 +142,7 @@ struct Scene *scene_init(char *scene_path){
   }
   // Only one music stream for now, could later start multiple streams for other ambient loops
   char *music_path = cJSON_GetStringValue(music_json);
-  audio_stream_create(music_path);
+  // audio_stream_create(music_path);
   printf("created audio stream\n");
 
   // Load sound effects
@@ -242,11 +241,6 @@ struct Scene *scene_init(char *scene_path){
 }
 
 void scene_update(struct Scene *scene, float delta_time){
-  // Skip update if the scene is paused
-  if (scene->paused){
-    return;
-  }
-
   // Timing
   static float total_time = 0.0f;
   total_time += delta_time;
@@ -324,19 +318,19 @@ void scene_render(struct Scene *scene){
   text_render("Crux Engine 0.2", 4.0f, 1058.0f, 1.0f, (vec3){1.0f, 1.0f, 1.0f});
 }
 
-void scene_pause(struct Scene *scene){
-  scene->paused = true;
-
-  // Pause audio
-  audio_pause();
-}
-
-void scene_unpause(struct Scene *scene){
-  scene->paused = false;
-
-  // Unpause audio
-  audio_unpause();
-}
+// void scene_pause(struct Scene *scene){
+//   scene->paused = true;
+//
+//   // Pause audio
+//   audio_pause();
+// }
+//
+// void scene_unpause(struct Scene *scene){
+//   scene->paused = false;
+//
+//   // Unpause audio
+//   audio_unpause();
+// }
 
 //     // Rewrite this to actually free everything
 //     free(scene->entities);

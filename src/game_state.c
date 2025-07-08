@@ -1,4 +1,5 @@
 #include "game_state.h"
+#include "window_manager.h"
 
 static struct GameState game_state;
 
@@ -12,6 +13,7 @@ void game_state_init(){
 void game_pause(){
   // Modify game state
   game_state.is_paused = true;
+  printf("Pausing, game_state.is_paused is now %s\n", game_state.is_paused ? "true" : "false");
 
   // Push pause menu to menu stack
   struct Menu *pause_menu = menu_manager_get_pause_menu();
@@ -23,27 +25,41 @@ void game_pause(){
 
   // Notify observers
   game_state_update();
+
+  // Release cursor
+  window_release_cursor();
 }
 
 void game_unpause(){
   // Modify game state
   game_state.is_paused = false;
+  printf("Unpausing, game_state.is_paused is now %s\n", game_state.is_paused ? "true" : "false");
 
   // Pop from the menu stack
   menu_stack_pop();
 
   // Notify observers
   game_state_update();
+
+  // Recapture cursor
+  window_capture_cursor();
 }
 
 void game_quit(){
   game_state.should_quit = true;
   printf("game_state.should_quit is %s\n", game_state.should_quit ? "true" :"false");
+
+  // Notify observers
+  game_state_update();
 }
 
 // GameState getters
 bool game_state_is_paused(){
   return game_state.is_paused;
+}
+
+bool game_state_should_quit(){
+  return game_state.should_quit;
 }
 
 // GameState notification sender

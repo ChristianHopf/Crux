@@ -7,6 +7,7 @@
 static Clay_Arena arena;
 Clay_TextElementConfig pause_menu_title_text_config = {.fontId = 0, .fontSize = 24, .textColor = {255, 255, 255, 255}};
 Clay_TextElementConfig pause_menu_button_text_config = {.fontId = 1, .fontSize = 48, .lineHeight = 48, .textAlignment = CLAY_TEXT_ALIGN_CENTER, .textColor = {255, 255, 255, 255}};
+Clay_TextElementConfig overlay_version_text_config = { .fontId = 0, .fontSize = 24, .textColor = {255, 255, 255, 255}};
 
 static struct Font fonts[16];
 
@@ -92,25 +93,32 @@ void ui_update_frame(float screen_width, float screen_height, double xpos, doubl
   Clay_SetLayoutDimensions((Clay_Dimensions) { screen_width, screen_height });
   Clay_SetPointerState((Clay_Vector2) { xpos, ypos }, mouse_down);
   clay_opengl_renderer_update_dimensions(screen_width, screen_height);
+
+  // If menu stack isn't empty, add current menu to the back of the queue
 }
 
 // Need to get GLFW window data somehow
 void ui_render_frame(){
-  // Optional: Update internal pointer position for handling mouseover / click / touch events - needed for scrolling & debug tools
-  // Optional: Update internal pointer position for handling mouseover / click / touch events - needed for scrolling and debug tools
   // Clay_UpdateScrollContainers(true, (Clay_Vector2) { mouseWheelX, mouseWheelY }, deltaTime);
 
   // Call ui_draw_call_layout for each set of render commands
   // Probably don't have to worry about clearing color and depth bits?
+
+  // TODO: Use a queue of some new struct for UI elements.
+  // Other places in code can push and pop from the stack.
+  // compute_clay_layout would accept the stack and generate render commands
+  // by traversing the queue.
+  // clay_opengl_render wouldn't change, it only needs one array of render commands.
 
   struct Menu *pause_menu = menu_manager_get_pause_menu();
   if (!pause_menu){
     fprintf(stderr, "Error: failed to get pause menu in ui_render_frame\n");
     return;
   }
+  // Clay_RenderCommandArray game_overlay_commands = compute_clay_layout_overlay();
+  // clay_opengl_render(game_overlay_commands, fonts);
   Clay_RenderCommandArray render_commands = compute_clay_layout_menu(pause_menu);
   clay_opengl_render(render_commands, fonts);
-  // ui_draw_clay_layout(render_commands);
 }
 
 void handle_button_click(Clay_ElementId elementId, Clay_PointerData pointerData, intptr_t userData){
@@ -139,10 +147,19 @@ void pause_menu_button(struct Button button){
   }
 }
 
+Clay_RenderCommandArray compute_clay_layout_overlay(){
+  Clay_BeginLayout();
+
+  CLAY({ .id = CLAY_ID("VersionText")}){
+    CLAY_TEXT(CLAY_STRING("Crux Engine 0.3"), &overlay_version_text_config);
+  }
+
+  return Clay_EndLayout();
+}
+
 Clay_RenderCommandArray compute_clay_layout_menu(struct Menu *menu){
   Clay_BeginLayout();
 
-  // Just get a rectangle up for now
   CLAY({ .id = CLAY_ID("MenuContainer"),
     .layout = {
       .layoutDirection = CLAY_TOP_TO_BOTTOM,

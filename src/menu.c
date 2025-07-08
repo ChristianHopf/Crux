@@ -89,6 +89,7 @@ bool menu_stack_is_empty(){
 void action_resume(void *arg){
   // Unpause
   printf("Resume action\n");
+  game_unpause();
 }
 
 void action_quit(void *arg){

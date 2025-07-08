@@ -82,9 +82,11 @@ void audio_pause(){
 
   // Pause music stream
   ALint state;
-  alGetSourcei(global_audio_manager->audio_stream->source, AL_SOURCE_STATE, &state);
-  if (state == AL_PLAYING){
-    alSourcePause(global_audio_manager->audio_stream->source);
+  if (global_audio_manager->audio_stream){
+    alGetSourcei(global_audio_manager->audio_stream->source, AL_SOURCE_STATE, &state);
+    if (state == AL_PLAYING){
+      alSourcePause(global_audio_manager->audio_stream->source);
+    }
   }
   ALenum error = alGetError();
   if (error != AL_NO_ERROR){
@@ -114,9 +116,11 @@ void audio_unpause(){
 
   // Unpause music stream
   ALint state;
-  alGetSourcei(global_audio_manager->audio_stream->source, AL_SOURCE_STATE, &state);
-  if (state == AL_PAUSED){
-    alSourcePlay(global_audio_manager->audio_stream->source);
+  if (global_audio_manager->audio_stream){
+    alGetSourcei(global_audio_manager->audio_stream->source, AL_SOURCE_STATE, &state);
+    if (state == AL_PAUSED){
+      alSourcePlay(global_audio_manager->audio_stream->source);
+    }
   }
   ALenum error = alGetError();
   if (error != AL_NO_ERROR){

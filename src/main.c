@@ -21,6 +21,7 @@
 #include "ui_manager.h"
 #include "menu.h"
 #include "game_state.h"
+#include "window_manager.h"
 
 typedef struct {
   // Window
@@ -59,16 +60,8 @@ vec3 lightPos = {1.2f, 0.5f, 2.0f};
 
 static int last_space_state = GLFW_RELEASE;
 void processInput(GLFWwindow *window){
-	if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS){
-		glfwSetWindowShouldClose(window, 1);
-	}
   Engine *engine = (Engine *)glfwGetWindowUserPointer(window);
   struct Camera *camera = engine->active_scene->player.camera;
-
-  // Don't process input (other than the Escape key) if the game is paused
-  if (engine->active_scene->paused){
-    return;
-  }
 
   // Camera movement
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS){
@@ -105,23 +98,12 @@ void framebuffer_size_callback(GLFWwindow *window, int width, int height){
 
 void window_size_callback(GLFWwindow *window, int width, int height){
   Engine *engine = (Engine *)glfwGetWindowUserPointer(window);
-  // if (width != 1920 || height != 1080) {
-  //   glfwSetWindowSize(window, 1920, 1080);
-  // }
   engine->screen_width = width;
   engine->screen_height = height;
 }
 
 void mouse_callback(GLFWwindow *window, double xpos, double ypos){
   Engine *engine = (Engine *)glfwGetWindowUserPointer(window);
-
-  // Don't process input (other than the Escape key) if the game is paused
-  // if (engine->active_scene->paused){
-  //   // A better way to handle this: on pause, set firstMouse to true.
-  //   // Would have to move it from a main.c global var
-  //   //firstMouse = true;
-  //   return;
-  // }
 
   struct Camera *camera = engine->active_scene->player.camera;
 
@@ -135,9 +117,6 @@ void mouse_callback(GLFWwindow *window, double xpos, double ypos){
 	float yoffset = lastY - (float)ypos;
 	lastX = (float)xpos;
 	lastY = (float)ypos;
-
-  // printf("Last X: %f, last Y: %f\n", lastX, lastY);
-  // printf("xoffset: %f, yoffset: %f\n", xoffset, yoffset);
 
   // Update camera
   if (!game_state_is_paused()){
@@ -166,7 +145,7 @@ void scroll_callback(GLFWwindow *window, double xoffset, double yoffset){
 void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods){
   Engine *engine = (Engine *)glfwGetWindowUserPointer(window);
   // Pause
-  if (key == GLFW_KEY_P && action == GLFW_PRESS){
+  if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS){
     if (!game_state_is_paused()){
       game_pause();
 	    glfwSetInputMode(engine->window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
@@ -191,8 +170,7 @@ Engine *engine_create(){
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-  glfwWindowHint(GLFW_SCALE_TO_MONITOR, GLFW_TRUE);
-  // glfwWindowHint(GLFW_SCALE_FRAMEBUFFER, GLFW_FALSE);
+  // glfwWindowHint(GLFW_SCALE_TO_MONITOR, GLFW_TRUE);
 
   // Create window and register callbacks
 	GLFWwindow *window = glfwCreateWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Crux", NULL, NULL);
@@ -214,7 +192,8 @@ Engine *engine_create(){
   glfwSetKeyCallback(engine->window, key_callback);
   glfwSetWindowUserPointer(engine->window, engine);
 
-  glfwSetWindowSizeLimits(window, 1920, 1080, 1920, 1080);
+  // Window manager for exposing window functions
+  window_manager_init(window);
 
 	// Capture mouse
 	glfwSetInputMode(engine->window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
@@ -244,7 +223,6 @@ Engine *engine_create(){
 
   // Initialize game state
   game_state_init();
-  // engine->game_state = game_state_init();
 
   // Add game state observers
   struct GameStateObserver *audio_game_state_observer = audio_game_state_observer_create();
@@ -283,9 +261,6 @@ int main(){
     glfwTerminate();
     return -1;
   }
-float xscale, yscale;
-glfwGetWindowContentScale(engine->window, &xscale, &yscale);
-printf("Content scale: %f x %f\n", xscale, yscale);
 
 	// Render loop
 	while (!glfwWindowShouldClose(engine->window)){
@@ -298,9 +273,7 @@ printf("Content scale: %f x %f\n", xscale, yscale);
     
     // Update Clay
     double xpos, ypos;
-    // int fb_width, fb_height;
     glfwGetCursorPos(engine->window, &xpos, &ypos);
-    // glfwGetFramebufferSize(engine->window, &fb_width, &fb_height);
     ui_update_frame(engine->screen_width, engine->screen_height,xpos, ypos, engine->mouse_down);
 
 		// Handle input
@@ -326,6 +299,9 @@ printf("Content scale: %f x %f\n", xscale, yscale);
       // float render_start_time = glfwGetTime();
 
       scene_render(engine->active_scene);
+
+      // ui_render_frame();
+
       glfwSwapBuffers(engine->window);
       
       // float render_end_time = glfwGetTime();
@@ -334,11 +310,18 @@ printf("Content scale: %f x %f\n", xscale, yscale);
 
 		// Check and call events
 		glfwPollEvents();
+
+    // Check if the game should quit
+    if (game_state_should_quit()){
+      glfwSetWindowShouldClose(engine->window, 1);
+    }
   }
 
   // OpenAL
   struct AudioManager *audio_manager = audio_manager_get_global();
-  audio_stream_destroy(audio_manager->audio_stream);
+  if (audio_manager->audio_stream){
+    audio_stream_destroy(audio_manager->audio_stream);
+  }
   alcDestroyContext(audio_manager->context);
   alcCloseDevice(audio_manager->device);
   free(audio_manager);
