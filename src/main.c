@@ -169,12 +169,10 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
   if (key == GLFW_KEY_P && action == GLFW_PRESS){
     if (!game_state_is_paused()){
       game_pause();
-      game_state_update();
 	    glfwSetInputMode(engine->window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
       firstMouse = true;
     } else {
       game_unpause();
-      game_state_update();
 	    glfwSetInputMode(engine->window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     }
   }

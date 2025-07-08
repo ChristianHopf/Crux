@@ -3,16 +3,9 @@
 static struct GameState game_state;
 
 void game_state_init(){
-  // Return a GameState with default values
-  // struct GameState game_state = {
-  //   .is_paused = false,
-  //   .observers = NULL
-  // };
-
   game_state.is_paused = false;
+  game_state.should_quit = false;
   game_state.observers = NULL;
-
-  // return game_state;
 }
 
 // GameState modifiers
@@ -27,6 +20,9 @@ void game_pause(){
     return;
   }
   menu_stack_push(pause_menu);
+
+  // Notify observers
+  game_state_update();
 }
 
 void game_unpause(){
@@ -35,8 +31,17 @@ void game_unpause(){
 
   // Pop from the menu stack
   menu_stack_pop();
+
+  // Notify observers
+  game_state_update();
 }
 
+void game_quit(){
+  game_state.should_quit = true;
+  printf("game_state.should_quit is %s\n", game_state.should_quit ? "true" :"false");
+}
+
+// GameState getters
 bool game_state_is_paused(){
   return game_state.is_paused;
 }

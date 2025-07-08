@@ -1,4 +1,5 @@
 #include "menu.h"
+#include "game_state.h"
 
 static struct MenuManager *menu_manager;
 
@@ -92,6 +93,7 @@ void action_resume(void *arg){
 
 void action_quit(void *arg){
   printf("Quit action\n");
+  game_quit();
 }
 
 void button_print_text(void *arg){
