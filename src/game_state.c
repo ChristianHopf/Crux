@@ -1,19 +1,24 @@
 #include "game_state.h"
 
-struct GameState game_state_init(){
-  // Return a GameState with default values
-  struct GameState game_state = {
-    .is_paused = false,
-    .observers = NULL
-  };
+static struct GameState game_state;
 
-  return game_state;
+void game_state_init(){
+  // Return a GameState with default values
+  // struct GameState game_state = {
+  //   .is_paused = false,
+  //   .observers = NULL
+  // };
+
+  game_state.is_paused = false;
+  game_state.observers = NULL;
+
+  // return game_state;
 }
 
 // GameState modifiers
-void game_pause(struct GameState *game_state){
+void game_pause(){
   // Modify game state
-  game_state->is_paused = true;
+  game_state.is_paused = true;
 
   // Push pause menu to menu stack
   struct Menu *pause_menu = menu_manager_get_pause_menu();
@@ -24,34 +29,38 @@ void game_pause(struct GameState *game_state){
   menu_stack_push(pause_menu);
 }
 
-void game_unpause(struct GameState *game_state){
+void game_unpause(){
   // Modify game state
-  game_state->is_paused = false;
+  game_state.is_paused = false;
 
   // Pop from the menu stack
   menu_stack_pop();
 }
 
+bool game_state_is_paused(){
+  return game_state.is_paused;
+}
+
 // GameState notification sender
-void game_state_update(struct GameState *game_state){
+void game_state_update(){
   // Iterate through linked list of observers and call their GameStateNotification functions
-  struct ListNode *observer_node = game_state->observers;
+  struct ListNode *observer_node = game_state.observers;
   while (observer_node != NULL){
     struct GameStateObserver *current_observer = observer_node->observer;
     GameStateNotification notification_function = current_observer->notification;
-    notification_function(current_observer->instance, game_state);
+    notification_function(current_observer->instance, &game_state);
     observer_node = observer_node->next;
   }
 }
 
-void attach_observer(struct GameState *game_state, struct GameStateObserver *observer){
+void attach_observer(struct GameStateObserver *observer){
   // Append observer to this GameState's linked list
-  append_to_list(&game_state->observers, observer);
+  append_to_list(&game_state.observers, observer);
 }
 
-void detach_observer(struct GameState *game_state, struct GameStateObserver *observer){
+void detach_observer(struct GameStateObserver *observer){
   // Remove observer to this GameState's linked list
-  remove_from_list(&game_state->observers, observer);
+  remove_from_list(&game_state.observers, observer);
 }
 
 void append_to_list(struct ListNode **linked_list, struct GameStateObserver *observer){

@@ -13,17 +13,20 @@ struct ListNode {
 
 struct GameState {
   bool is_paused;
+  bool should_quit;
   struct ListNode *observers;
 };
 
 // Game state
-struct GameState game_state_init();
-void game_pause(struct GameState *game_state);
-void game_unpause(struct GameState *game_state);
-void game_state_update(struct GameState *game_state);
+void game_state_init();
+void game_pause();
+void game_unpause();
+void game_quit();
+bool game_state_is_paused();
+void game_state_update();
 
 // Observers and linked list
-void attach_observer(struct GameState *game_state, struct GameStateObserver *observer);
-void detach_observer(struct GameState *game_state, struct GameStateObserver *observer);
+void attach_observer(struct GameStateObserver *observer);
+void detach_observer(struct GameStateObserver *observer);
 void append_to_list(struct ListNode **linked_list, struct GameStateObserver *observer);
 void remove_from_list(struct ListNode **linked_list, struct GameStateObserver *observer);

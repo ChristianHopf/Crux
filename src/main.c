@@ -31,7 +31,7 @@ typedef struct {
   bool mouse_down;
   // Scene and game
   struct Scene *active_scene;
-  struct GameState game_state;
+  // struct GameState game_state;
   // Timing
   float delta_time;
   float last_frame;
@@ -140,7 +140,7 @@ void mouse_callback(GLFWwindow *window, double xpos, double ypos){
   // printf("xoffset: %f, yoffset: %f\n", xoffset, yoffset);
 
   // Update camera
-  if (!engine->game_state.is_paused){
+  if (!game_state_is_paused()){
     camera_process_mouse_input(camera, xoffset, yoffset);
   }
 }
@@ -158,7 +158,7 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 void scroll_callback(GLFWwindow *window, double xoffset, double yoffset){
   Engine *engine = (Engine *)glfwGetWindowUserPointer(window);
   struct Camera *camera = engine->active_scene->player.camera;
-  if (!engine->game_state.is_paused){
+  if (!game_state_is_paused()){
     camera_process_scroll_input(camera, yoffset);
   }
 }
@@ -167,14 +167,14 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
   Engine *engine = (Engine *)glfwGetWindowUserPointer(window);
   // Pause
   if (key == GLFW_KEY_P && action == GLFW_PRESS){
-    if (!engine->game_state.is_paused){
-      game_pause(&engine->game_state);
-      game_state_update(&engine->game_state);
+    if (!game_state_is_paused()){
+      game_pause();
+      game_state_update();
 	    glfwSetInputMode(engine->window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
       firstMouse = true;
     } else {
-      game_unpause(&engine->game_state);
-      game_state_update(&engine->game_state);
+      game_unpause();
+      game_state_update();
 	    glfwSetInputMode(engine->window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     }
   }
@@ -245,7 +245,8 @@ Engine *engine_create(){
   audio_manager_init();
 
   // Initialize game state
-  engine->game_state = game_state_init();
+  game_state_init();
+  // engine->game_state = game_state_init();
 
   // Add game state observers
   struct GameStateObserver *audio_game_state_observer = audio_game_state_observer_create();
@@ -253,7 +254,7 @@ Engine *engine_create(){
     fprintf(stderr, "Error: failed to get audio_game_state_observer in engine_create\n");
     return NULL;
   }
-  attach_observer(&engine->game_state, audio_game_state_observer);
+  attach_observer(audio_game_state_observer);
 
   // Initialize MenuManager
   menu_manager_init();
@@ -307,7 +308,7 @@ printf("Content scale: %f x %f\n", xscale, yscale);
 		// Handle input
 		processInput(engine->window);
 
-    if (engine->game_state.is_paused){
+    if (game_state_is_paused()){
       // Render pause menu
       // printf("paused!\n");
       glfwMakeContextCurrent(engine->window);
