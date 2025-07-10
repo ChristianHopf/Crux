@@ -221,6 +221,12 @@ Engine *engine_create(){
   // Initialize AudioManager
   audio_manager_init();
 
+  // Initialize MenuManager
+  menu_manager_init();
+
+  // UI manager
+  ui_manager_init(SCREEN_WIDTH, SCREEN_HEIGHT);
+
   // Initialize game state
   game_state_init();
 
@@ -231,12 +237,12 @@ Engine *engine_create(){
     return NULL;
   }
   attach_observer(audio_game_state_observer);
-
-  // Initialize MenuManager
-  menu_manager_init();
-
-  // UI manager
-  ui_manager_init(SCREEN_WIDTH, SCREEN_HEIGHT);
+  struct GameStateObserver *ui_game_state_observer = ui_game_state_observer_create();
+  if (!ui_game_state_observer){
+    fprintf(stderr, "Error: failed to get ui_game_state_observer in engine_create\n");
+    return NULL;
+  }
+  attach_observer(ui_game_state_observer);
 
   // Load scene
   engine->active_scene = scene_init("scenes/bouncehouse.json");
@@ -271,39 +277,39 @@ int main(){
 		engine->last_frame = currentFrame;
 		// printf("FPS: %f\n", 1.0 / engine->delta_time);
     
-    // Update Clay
-    double xpos, ypos;
-    glfwGetCursorPos(engine->window, &xpos, &ypos);
-    ui_update_frame(engine->screen_width, engine->screen_height,xpos, ypos, engine->mouse_down);
-
 		// Handle input
 		processInput(engine->window);
 
     if (game_state_is_paused()){
-      // Render pause menu
-      // printf("paused!\n");
-      glfwMakeContextCurrent(engine->window);
-      // menu_render();
+
+      // Update Clay layout dimensions and pointer state
+      ui_update_frame(engine->screen_width, engine->screen_height);
+
+      double xpos, ypos;
+      glfwGetCursorPos(engine->window, &xpos, &ypos);
+      ui_update_mouse(xpos, ypos, engine->mouse_down);
+
+      // Render UI
       ui_render_frame();
       glfwSwapBuffers(engine->window);
     }
     else{
       // float update_start_time = glfwGetTime();
-      // printf("unpaused!\n");
       scene_update(engine->active_scene, engine->delta_time);
-
       // float update_end_time = glfwGetTime();
       // printf("scene update took %.2f ms\n", (update_end_time - update_start_time) * 1000.0);
 
       // Render scene
       // float render_start_time = glfwGetTime();
-
       scene_render(engine->active_scene);
 
-      // ui_render_frame();
+      // Update Clay layout dimensions
+      ui_update_frame(engine->screen_width, engine->screen_height);
+
+      // Render UI
+      ui_render_frame();
 
       glfwSwapBuffers(engine->window);
-      
       // float render_end_time = glfwGetTime();
       // printf("Render took %.2f ms\n", (render_end_time - render_start_time) * 1000.0);
     }

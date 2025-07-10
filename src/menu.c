@@ -56,6 +56,10 @@ struct Menu *menu_manager_get_pause_menu(){
   return menu_manager->pause_menu;
 }
 
+// struct Menu *menu_manager_get_current_menu(){
+//
+// }
+
 bool menu_stack_push(struct Menu *menu){
   // Check if stack is already full
   if (menu_stack_is_full()){
