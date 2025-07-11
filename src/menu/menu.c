@@ -1,4 +1,4 @@
-#include "menu.h"
+#include "menu/menu.h"
 #include "game_state.h"
 
 static struct MenuManager *menu_manager;
@@ -92,12 +92,12 @@ bool menu_stack_is_empty(){
 
 void action_resume(void *arg){
   // Unpause
-  printf("Resume action\n");
+  // printf("Resume action\n");
   game_unpause();
 }
 
 void action_quit(void *arg){
-  printf("Quit action\n");
+  // printf("Quit action\n");
   game_quit();
 }
 

@@ -19,7 +19,7 @@
 #include "text.h"
 #include "audio_manager.h"
 #include "ui_manager.h"
-#include "menu.h"
+#include "menu/menu.h"
 #include "game_state.h"
 #include "window_manager.h"
 

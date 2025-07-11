@@ -2,8 +2,6 @@
 #include "clay.h"
 #include "ui_manager.h"
 #include "clay_opengl_renderer.h"
-#include "menu/menu_presets.h"
-#include "text.h"
 
 static struct UIManager ui_manager;
 
@@ -153,11 +151,9 @@ void ui_game_state_changed(void *instance, struct GameState *game_state){
 
   // Handle game state (pause)
   if (game_state->is_paused){
-    printf("ui_game_state_changed: paused!\n");
     ui_pause();
   }
   else{
-    printf("ui_game_state_changed: unpaused!\n");
     ui_unpause();
   }
 }
@@ -168,6 +164,8 @@ void ui_pause(){
     ui_manager.paused = true;
     struct Layout layout_pause_menu = {
       .type = LAYOUT_MENU,
+      // Could maybe decouple this from my preset by giving ui_manager a struct Layout pause_menu,
+      // and you have to set your own pause menu
       .layout_function = compute_clay_layout_pause_menu
     };
     ui_manager.layout_queue.layouts[ui_manager.layout_queue.num_layouts++] = layout_pause_menu;

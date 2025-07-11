@@ -5,10 +5,7 @@ Clay_TextElementConfig pause_menu_button_text_config = {.fontId = 2, .fontSize =
 Clay_TextElementConfig overlay_version_text_config = { .fontId = 0, .fontSize = 24, .textColor = {255, 255, 255, 255}};
 
 void handle_button_click(Clay_ElementId elementId, Clay_PointerData pointerData, intptr_t userData){
-  printf("Hovering\n");
   if (pointerData.state == CLAY_POINTER_DATA_RELEASED_THIS_FRAME){
-    printf("Button clicked!\n");
-
     // Call the button's action
     void (*action)(void *arg) = (void (*)(void *))userData;
     action(NULL);

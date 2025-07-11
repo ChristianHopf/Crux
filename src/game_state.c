@@ -13,7 +13,7 @@ void game_state_init(){
 void game_pause(){
   // Modify game state
   game_state.is_paused = true;
-  printf("Pausing, game_state.is_paused is now %s\n", game_state.is_paused ? "true" : "false");
+  // printf("Pausing, game_state.is_paused is now %s\n", game_state.is_paused ? "true" : "false");
 
   // Push pause menu to menu stack
   struct Menu *pause_menu = menu_manager_get_pause_menu();
@@ -33,7 +33,7 @@ void game_pause(){
 void game_unpause(){
   // Modify game state
   game_state.is_paused = false;
-  printf("Unpausing, game_state.is_paused is now %s\n", game_state.is_paused ? "true" : "false");
+  // printf("Unpausing, game_state.is_paused is now %s\n", game_state.is_paused ? "true" : "false");
 
   // Pop from the menu stack
   menu_stack_pop();
@@ -47,7 +47,7 @@ void game_unpause(){
 
 void game_quit(){
   game_state.should_quit = true;
-  printf("game_state.should_quit is %s\n", game_state.should_quit ? "true" :"false");
+  // printf("game_state.should_quit is %s\n", game_state.should_quit ? "true" :"false");
 
   // Notify observers
   game_state_update();

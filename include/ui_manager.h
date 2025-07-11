@@ -1,7 +1,8 @@
 #pragma once
 
 #include "clay_opengl_renderer.h"
-#include "menu.h"
+#include "menu/menu.h"
+#include "menu/menu_presets.h"
 #include "text.h"
 #include "game_state.h"
 
