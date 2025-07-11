@@ -497,14 +497,20 @@ void audio_listener_update(struct Player *player){
     fprintf(stderr, "Error: failed to set audio context in player_init\n");
   }
 
+  // Get listener up vector
+  vec3 listener_up;
+  glm_cross(camera->front, camera->right, listener_up);
+  glm_normalize(listener_up);
+
   // Set listener orientation
+  // (Need to negate camera->front for some reason. I thought OpenGL rendering was right-handed?)
   float orientation[6];
-  orientation[0] = camera->front[0];
-  orientation[1] = camera->front[1];
-  orientation[2] = camera->front[2];
-  orientation[3] = camera->up[0];
-  orientation[4] = camera->up[1];
-  orientation[5] = camera->up[2];
+  orientation[0] = -camera->front[0];
+  orientation[1] = -camera->front[1];
+  orientation[2] = -camera->front[2];
+  orientation[3] = listener_up[0];
+  orientation[4] = listener_up[1];
+  orientation[5] = listener_up[2];
 
   alListenerfv(AL_ORIENTATION, orientation);
   player_error = alGetError();
