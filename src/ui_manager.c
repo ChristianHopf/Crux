@@ -2,18 +2,10 @@
 #include "clay.h"
 #include "ui_manager.h"
 #include "clay_opengl_renderer.h"
+#include "menu/menu_presets.h"
 #include "text.h"
 
 static struct UIManager ui_manager;
-
-// static Clay_Arena arena;
-// static struct LayoutQueue layout_queue = {0};
-
-Clay_TextElementConfig pause_menu_title_text_config = {.fontId = 0, .fontSize = 24, .textColor = {255, 255, 255, 255}};
-Clay_TextElementConfig pause_menu_button_text_config = {.fontId = 1, .fontSize = 48, .lineHeight = 48, .textAlignment = CLAY_TEXT_ALIGN_CENTER, .textColor = {255, 255, 255, 255}};
-Clay_TextElementConfig overlay_version_text_config = { .fontId = 0, .fontSize = 24, .textColor = {255, 255, 255, 255}};
-
-// static struct Font fonts[16];
 
 // Sample code from https://github.com/nicbarker/clay/blob/main/README.md, Quick Start section
 // - ui_manager_init
@@ -31,9 +23,6 @@ void HandleClayErrors(Clay_ErrorData errorData) {
 
 // Adapted from Raylib_MeasureText (clay/renderers/raylib/clay_renderer/raylib.c)
 static inline Clay_Dimensions MeasureText(Clay_StringSlice text, Clay_TextElementConfig *config, void *userData) {
-  // Clay_TextElementConfig contains members such as fontId, fontSize, letterSpacing etc
-  // Note: Clay_String->chars is not guaranteed to be null terminated
-
   Clay_Dimensions text_size = {0};
   float max_text_width = 0.0f;
   float line_text_width = 0.0f;
@@ -81,11 +70,11 @@ void ui_manager_init(float screen_width, float screen_height){
   uint64_t totalMemorySize = Clay_MinMemorySize();
   ui_manager.clay_arena = Clay_CreateArenaWithCapacityAndMemory(totalMemorySize, malloc(totalMemorySize));
   Clay_Initialize(ui_manager.clay_arena, (Clay_Dimensions) { screen_width, screen_height }, (Clay_ErrorHandler) { HandleClayErrors });
+
   // Load fonts and set MeasureText function
-  // (passing fonts matters later for non-monospace text)
   ui_manager.fonts[0] = load_font_face("resources/fonts/HackNerdFontMono-Regular.ttf", 24);
-  ui_manager.fonts[1] = load_font_face("resources/fonts/HackNerdFontMono-Regular.ttf", 48);
-  // fonts[1] = load_font_face("resources/fonts/OpenSans-Regular.ttf", 48);
+  ui_manager.fonts[1] = load_font_face("resources/fonts/HackNerdFontMono-Bold.ttf", 48);
+  ui_manager.fonts[2] = load_font_face("resources/fonts/HackNerdFontMono-Regular.ttf", 48);
   Clay_SetMeasureTextFunction(MeasureText, ui_manager.fonts);
 
   ui_manager.paused = false;
@@ -111,27 +100,20 @@ void ui_update_mouse(double xpos, double ypos, bool mouse_down){
   // Clay_UpdateScrollContainers(true, (Clay_Vector2) { mouseWheelX, mouseWheelY }, deltaTime);
 }
 
-// Need to get GLFW window data somehow
 void ui_render_frame(){
-  // TODO: Use a queue of some new struct for UI elements.
-  // Other places in code can push and pop from the stack.
-  // compute_clay_layout would accept the stack and generate render commands
-  // by traversing the queue.
-  // clay_opengl_render wouldn't change, it only needs one array of render commands.
-
   // Render each of this frame's layouts
-  printf("Time to render %d layouts\n", ui_manager.layout_queue.num_layouts);
   for(int i = 0; i < ui_manager.layout_queue.num_layouts; i++){
     struct Layout current_layout = ui_manager.layout_queue.layouts[i];
     void *arg = NULL;
 
+    // Get arg for layout_function based on layout type
     switch(current_layout.type){
       case LAYOUT_OVERLAY: {
         arg = (void *)"Crux Engine 0.3";
         break;
       }
       case LAYOUT_MENU: {
-        // Get current menu
+        // Get current menu (just getting pause menu for now)
         struct Menu *pause_menu = menu_manager_get_pause_menu();
         if (!pause_menu){
           fprintf(stderr, "Error: failed to get pause menu in ui_render_frame\n");
@@ -142,6 +124,8 @@ void ui_render_frame(){
       }
     }
     LayoutFunction layout_function = ui_manager.layout_queue.layouts[i].layout_function;
+
+    // Compute and render this layout
     if (!layout_function){
       fprintf(stderr, "Error: failed to get layout function for layout %d in ui_render_frame\n", i);
       continue;
@@ -149,116 +133,6 @@ void ui_render_frame(){
     Clay_RenderCommandArray render_commands = layout_function(arg);
     clay_opengl_render(render_commands, ui_manager.fonts);
   }
-}
-
-void handle_button_click(Clay_ElementId elementId, Clay_PointerData pointerData, intptr_t userData){
-  printf("Hovering\n");
-  if (pointerData.state == CLAY_POINTER_DATA_RELEASED_THIS_FRAME){
-    printf("Button clicked!\n");
-
-    // Call the button's action
-    void (*action)(void *arg) = (void (*)(void *))userData;
-    action(NULL);
-  }
-}
-
-void pause_menu_button(struct Button button){
-  CLAY({
-    .layout = {
-      .padding = {16, 16, 0, 12}
-    },
-    .backgroundColor = Clay_Hovered() ? (Clay_Color){0.0f, 0.549f, 1.0f, 0.8f} : (Clay_Color){0.0f, 0.3745f, 0.6294f, 1.0f}
-  }){
-    Clay_OnHover(handle_button_click, (intptr_t)button.data.action);
-    Clay_String button_string = {
-      .isStaticallyAllocated = false,
-      .chars = button.text,
-      .length = strlen(button.text)
-    };
-    CLAY_TEXT(button_string, &pause_menu_button_text_config);
-  }
-}
-
-Clay_RenderCommandArray compute_clay_layout_overlay(void *arg){
-  char *version_text = (char *)arg;
-
-  Clay_BeginLayout();
-
-  CLAY({ .id = CLAY_ID("VersionText")}){
-    Clay_String version_text_string = {
-      .isStaticallyAllocated = false,
-      .chars = version_text,
-      .length = strlen(version_text)
-    };
-    CLAY_TEXT(CLAY_STRING("Crux Engine 0.3"), &overlay_version_text_config);
-  }
-
-  return Clay_EndLayout();
-}
-
-Clay_RenderCommandArray compute_clay_layout_pause_menu(void *arg){
-  struct Menu *menu = (struct Menu *)arg;
-
-  Clay_BeginLayout();
-
-  CLAY({ .id = CLAY_ID("MenuContainer"),
-    .layout = {
-      .layoutDirection = CLAY_TOP_TO_BOTTOM,
-      .sizing = {
-        .width = CLAY_SIZING_GROW(),
-        .height = CLAY_SIZING_GROW()
-      },
-       .padding = {0, 0, 0, 32 },
-       .childAlignment = {
-        .x = CLAY_ALIGN_X_CENTER
-       },
-       .childGap = 32
-    },
-    .backgroundColor = {0.0f, 0.2745f, 0.5294f, 1.0f}
-    }) {
-    CLAY({ .id = CLAY_ID("MenuHeader"),
-      .layout = {
-        .layoutDirection = CLAY_TOP_TO_BOTTOM,
-        .sizing = {
-          .width = CLAY_SIZING_GROW(),
-          .height = CLAY_SIZING_FIXED(60)
-        },
-        .childAlignment = {
-          .x = CLAY_ALIGN_X_CENTER,
-          .y = CLAY_ALIGN_Y_CENTER
-        }
-      }
-    }) {
-      CLAY_TEXT(CLAY_STRING("PAUSED"), &pause_menu_title_text_config);
-    }
-    CLAY({ .id = CLAY_ID("MenuNav"),
-      .layout = {
-        .layoutDirection = CLAY_TOP_TO_BOTTOM,
-        .sizing = {
-          .width = CLAY_SIZING_FIXED(400),
-          .height = CLAY_SIZING_GROW()
-        },
-        .childAlignment = {
-          .x = CLAY_ALIGN_X_CENTER,
-        },
-        .padding = { 8, 8, 8, 8 },
-        .childGap = 16
-      },
-      .backgroundColor = {0.0f, 0.3745f, 0.6294f, 1.0f}
-    }) {
-      pause_menu_button(menu->buttons[0]);
-      CLAY({
-        .layout = {
-          .sizing = {
-            .height = CLAY_SIZING_GROW()
-          }
-        }
-      }){}
-      pause_menu_button(menu->buttons[1]);
-    }
-  }
-
-  return Clay_EndLayout();
 }
 
 struct GameStateObserver *ui_game_state_observer_create(){
@@ -279,13 +153,10 @@ void ui_game_state_changed(void *instance, struct GameState *game_state){
 
   // Handle game state (pause)
   if (game_state->is_paused){
-    // Maybe make another function for this to be less tightly coupled w my own menu
-    // For now, just assume you can push or pop once
     printf("ui_game_state_changed: paused!\n");
     ui_pause();
   }
   else{
-    // pop pause menu
     printf("ui_game_state_changed: unpaused!\n");
     ui_unpause();
   }

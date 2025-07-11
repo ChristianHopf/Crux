@@ -75,7 +75,6 @@ struct Scene *scene_init(char *scene_path){
       printf("Error: failed to create shader program\n");
     }
     shaders[index] = shader;
-    printf("Loaded shader with id %d\n", shader->ID);
     index++;
   }
 
@@ -103,7 +102,6 @@ struct Scene *scene_init(char *scene_path){
     return NULL;
   }
   int num_models = cJSON_GetArraySize(models_json);
-  printf("Number of models to load: %d\n", num_models);
   struct Model *models[num_models];
 
   index = 0;
@@ -125,7 +123,6 @@ struct Scene *scene_init(char *scene_path){
     }
 
     models[index] = loaded_model;
-    printf("Loaded model with filepath %s\n", model_path);
     index++;
   }
 
@@ -143,7 +140,6 @@ struct Scene *scene_init(char *scene_path){
   // Only one music stream for now, could later start multiple streams for other ambient loops
   char *music_path = cJSON_GetStringValue(music_json);
   // audio_stream_create(music_path);
-  printf("created audio stream\n");
 
   // Load sound effects
   cJSON *sound_effects_json = cJSON_GetObjectItemCaseSensitive(sounds_json, "effects");

@@ -344,7 +344,6 @@ void audio_sound_effect_create(char *path, char *name){
     fprintf(stderr, "Error: failed to open %s: %s\n", path, sf_strerror(NULL));
     return;
   }
-  printf("Opened sound effect file\n");
 
   // Get format
   ALenum format;
@@ -354,7 +353,6 @@ void audio_sound_effect_create(char *path, char *name){
   else{
     format = AL_FORMAT_STEREO_FLOAT32;
   }
-  printf("Sound effect format is %d\n", format);
 
   // Load and buffer data, add to sound_effects
   float *sfx_data = malloc(sfx_info.frames * sfx_info.channels * sizeof(float));
