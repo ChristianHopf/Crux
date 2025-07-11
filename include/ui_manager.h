@@ -30,6 +30,13 @@ struct LayoutQueue {
   int num_layouts;
 };
 
+struct UIManager {
+   Clay_Arena clay_arena;
+   struct LayoutQueue layout_queue;
+   struct Font fonts[16];
+
+   bool paused;
+};
 
 // Planning to build a global Clay arena to which a stack of things like menus, popups, HUD elements, etc can be pushed
 // for rendering. Should end up with a single function call in the main render loop to render the overlay, whatever it might be.
@@ -44,5 +51,8 @@ void ui_draw_clay_layout(Clay_RenderCommandArray render_commands);
 Clay_RenderCommandArray compute_clay_layout_overlay(void *arg);
 Clay_RenderCommandArray compute_clay_layout_pause_menu(void *arg);
 
+// GameState observation
 struct GameStateObserver *ui_game_state_observer_create();
 void ui_game_state_changed(void *instance, struct GameState *game_state);
+void ui_pause();
+void ui_unpause();

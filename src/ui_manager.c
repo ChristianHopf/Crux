@@ -4,14 +4,16 @@
 #include "clay_opengl_renderer.h"
 #include "text.h"
 
-static Clay_Arena arena;
-static struct LayoutQueue layout_queue = {0};
+static struct UIManager ui_manager;
+
+// static Clay_Arena arena;
+// static struct LayoutQueue layout_queue = {0};
 
 Clay_TextElementConfig pause_menu_title_text_config = {.fontId = 0, .fontSize = 24, .textColor = {255, 255, 255, 255}};
 Clay_TextElementConfig pause_menu_button_text_config = {.fontId = 1, .fontSize = 48, .lineHeight = 48, .textAlignment = CLAY_TEXT_ALIGN_CENTER, .textColor = {255, 255, 255, 255}};
 Clay_TextElementConfig overlay_version_text_config = { .fontId = 0, .fontSize = 24, .textColor = {255, 255, 255, 255}};
 
-static struct Font fonts[16];
+// static struct Font fonts[16];
 
 // Sample code from https://github.com/nicbarker/clay/blob/main/README.md, Quick Start section
 // - ui_manager_init
@@ -77,21 +79,23 @@ static inline Clay_Dimensions MeasureText(Clay_StringSlice text, Clay_TextElemen
 void ui_manager_init(float screen_width, float screen_height){
   // Init Clay
   uint64_t totalMemorySize = Clay_MinMemorySize();
-  arena = Clay_CreateArenaWithCapacityAndMemory(totalMemorySize, malloc(totalMemorySize));
-  Clay_Initialize(arena, (Clay_Dimensions) { screen_width, screen_height }, (Clay_ErrorHandler) { HandleClayErrors });
+  ui_manager.clay_arena = Clay_CreateArenaWithCapacityAndMemory(totalMemorySize, malloc(totalMemorySize));
+  Clay_Initialize(ui_manager.clay_arena, (Clay_Dimensions) { screen_width, screen_height }, (Clay_ErrorHandler) { HandleClayErrors });
   // Load fonts and set MeasureText function
   // (passing fonts matters later for non-monospace text)
-  fonts[0] = load_font_face("resources/fonts/HackNerdFontMono-Regular.ttf", 24);
-  fonts[1] = load_font_face("resources/fonts/HackNerdFontMono-Regular.ttf", 48);
+  ui_manager.fonts[0] = load_font_face("resources/fonts/HackNerdFontMono-Regular.ttf", 24);
+  ui_manager.fonts[1] = load_font_face("resources/fonts/HackNerdFontMono-Regular.ttf", 48);
   // fonts[1] = load_font_face("resources/fonts/OpenSans-Regular.ttf", 48);
-  Clay_SetMeasureTextFunction(MeasureText, fonts);
+  Clay_SetMeasureTextFunction(MeasureText, ui_manager.fonts);
+
+  ui_manager.paused = false;
 
   // Load layouts (figure out a better way than hardcoding things here)
   struct Layout layout_version_text = {
     .type = LAYOUT_OVERLAY,
     .layout_function = compute_clay_layout_overlay
   };
-  layout_queue.layouts[layout_queue.num_layouts++] = layout_version_text;
+  ui_manager.layout_queue.layouts[ui_manager.layout_queue.num_layouts++] = layout_version_text;
 
   // Init renderer
   clay_opengl_renderer_init(screen_width, screen_height);
@@ -116,9 +120,9 @@ void ui_render_frame(){
   // clay_opengl_render wouldn't change, it only needs one array of render commands.
 
   // Render each of this frame's layouts
-  printf("Time to render %d layouts\n", layout_queue.num_layouts);
-  for(int i = 0; i < layout_queue.num_layouts; i++){
-    struct Layout current_layout = layout_queue.layouts[i];
+  printf("Time to render %d layouts\n", ui_manager.layout_queue.num_layouts);
+  for(int i = 0; i < ui_manager.layout_queue.num_layouts; i++){
+    struct Layout current_layout = ui_manager.layout_queue.layouts[i];
     void *arg = NULL;
 
     switch(current_layout.type){
@@ -137,13 +141,13 @@ void ui_render_frame(){
         break;
       }
     }
-    LayoutFunction layout_function = layout_queue.layouts[i].layout_function;
+    LayoutFunction layout_function = ui_manager.layout_queue.layouts[i].layout_function;
     if (!layout_function){
       fprintf(stderr, "Error: failed to get layout function for layout %d in ui_render_frame\n", i);
       continue;
     }
     Clay_RenderCommandArray render_commands = layout_function(arg);
-    clay_opengl_render(render_commands, fonts);
+    clay_opengl_render(render_commands, ui_manager.fonts);
   }
 }
 
@@ -278,16 +282,31 @@ void ui_game_state_changed(void *instance, struct GameState *game_state){
     // Maybe make another function for this to be less tightly coupled w my own menu
     // For now, just assume you can push or pop once
     printf("ui_game_state_changed: paused!\n");
-    struct Layout layout_pause_menu = {
-      .type = LAYOUT_MENU,
-      .layout_function = compute_clay_layout_pause_menu
-    };
-    layout_queue.layouts[layout_queue.num_layouts++] = layout_pause_menu;
+    ui_pause();
   }
   else{
     // pop pause menu
     printf("ui_game_state_changed: unpaused!\n");
-    // layout_queue.layouts[layout_queue.num_layouts--] = NULL;
-    layout_queue.num_layouts--;
+    ui_unpause();
+  }
+}
+
+void ui_pause(){
+  if (!ui_manager.paused){
+    // pause UI
+    ui_manager.paused = true;
+    struct Layout layout_pause_menu = {
+      .type = LAYOUT_MENU,
+      .layout_function = compute_clay_layout_pause_menu
+    };
+    ui_manager.layout_queue.layouts[ui_manager.layout_queue.num_layouts++] = layout_pause_menu;
+  }
+}
+
+void ui_unpause(){
+  if (ui_manager.paused){
+    // unpause UI
+    ui_manager.paused = false;
+    ui_manager.layout_queue.num_layouts--;
   }
 }
