@@ -25,7 +25,6 @@ struct Scene *scene_init(char *scene_path){
 
   // Set options
   scene->physics_debug_mode = true;
-  scene->paused = false;
 
   // Parse scene JSON
   const char *scene_data = (const char *)read_file(scene_path);
@@ -76,7 +75,6 @@ struct Scene *scene_init(char *scene_path){
       printf("Error: failed to create shader program\n");
     }
     shaders[index] = shader;
-    printf("Loaded shader with id %d\n", shader->ID);
     index++;
   }
 
@@ -104,7 +102,6 @@ struct Scene *scene_init(char *scene_path){
     return NULL;
   }
   int num_models = cJSON_GetArraySize(models_json);
-  printf("Number of models to load: %d\n", num_models);
   struct Model *models[num_models];
 
   index = 0;
@@ -126,27 +123,8 @@ struct Scene *scene_init(char *scene_path){
     }
 
     models[index] = loaded_model;
-    printf("Loaded model with filepath %s\n", model_path);
     index++;
   }
-
-  // Init OpenAL
-  audio_device = alcOpenDevice(NULL);
-  if (!audio_device){
-    ALCenum error = alcGetError(NULL);
-    fprintf(stderr, "Error: failed to open OpenAL device: %d\\n", error);
-    return NULL;
-  }
-  audio_context = alcCreateContext(audio_device, NULL);
-  if (!audio_context){
-    fprintf(stderr, "Error: failed to create OpenAL context\n");
-    alcCloseDevice(audio_device);
-    return NULL;
-  }
-  alcMakeContextCurrent(audio_context);
-
-  // Global configuration
-  alDistanceModel(AL_INVERSE_DISTANCE_CLAMPED);
 
   // Load music
   sounds_json = cJSON_GetObjectItemCaseSensitive(scene_json, "sounds");
@@ -161,7 +139,7 @@ struct Scene *scene_init(char *scene_path){
   }
   // Only one music stream for now, could later start multiple streams for other ambient loops
   char *music_path = cJSON_GetStringValue(music_json);
-  scene->music_stream = audio_stream_create(music_path);
+  // audio_stream_create(music_path);
 
   // Load sound effects
   cJSON *sound_effects_json = cJSON_GetObjectItemCaseSensitive(sounds_json, "effects");
@@ -176,35 +154,6 @@ struct Scene *scene_init(char *scene_path){
     cJSON *name;
     audio_sound_effect_create("resources/sfx/vineboom.wav", "vine_boom");
   }
-
-  // SF_INFO vb_info;
-  // SNDFILE *vb_file = sf_open("resources/sfx/vineboom.wav", SFM_READ, &vb_info);
-  // if (!vb_file){
-  //   fprintf(stderr, "Error: failed to open %s: %s\n", "resources/sfx/vineboom.wav", sf_strerror(NULL));
-  //   return NULL;
-  // }
-  // ALenum format;
-  // if (vb_info.channels == 1){
-  //   format = AL_FORMAT_MONO_FLOAT32;
-  // }
-  // else{
-  //   format = AL_FORMAT_STEREO_FLOAT32;
-  // }
-  // float *vb_data = malloc(vb_info.frames * vb_info.channels * sizeof(float));
-  // sf_count_t read_frames = sf_readf_float(vb_file, vb_data, vb_info.frames);
-  // ALuint vb_buffer;
-  // alGenBuffers(1, &vb_buffer);
-  // alBufferData(vb_buffer, format, vb_data, vb_info.frames * vb_info.channels * sizeof(float), vb_info.samplerate);
-  // ALenum vb_error = alGetError();
-  // if (vb_error != AL_NO_ERROR){
-  //   fprintf(stderr, "Error buffering vine boom data: %d\n", vb_error);
-  // }
-  // free(vb_data);
-  // struct SoundEffect vine_boom = {
-  //   "vine_boom",
-  //   vb_buffer
-  // };
-  // sound_effects[num_sound_effects++] = vine_boom;
 
   // Create entities and populate PhysicsWorld
   meshes = cJSON_GetObjectItemCaseSensitive(scene_json, "meshes");
@@ -288,16 +237,9 @@ struct Scene *scene_init(char *scene_path){
 }
 
 void scene_update(struct Scene *scene, float delta_time){
-  // Skip update if the scene is paused
-  if (scene->paused){
-    return;
-  }
-
   // Timing
   static float total_time = 0.0f;
   total_time += delta_time;
-
-  float lightSpeed = 1.0f;
 
   // Update player
   player_update(&scene->player, delta_time);
@@ -310,21 +252,15 @@ void scene_update(struct Scene *scene, float delta_time){
     struct Entity *entity = &scene->dynamic_entities[i];
     glm_vec3_copy(entity->physics_body->position, scene->dynamic_entities[i].position);
     glm_vec3_copy(entity->physics_body->rotation, scene->dynamic_entities[i].rotation);
-    alSource3f(entity->audio_source, AL_POSITION, entity->position[0], entity->position[1], entity->position[2]);
+    alSource3f(entity->audio_component->source_id, AL_POSITION, entity->position[0], entity->position[1], entity->position[2]);
     ALenum position_error = alGetError();
     if (position_error != AL_NO_ERROR){
       fprintf(stderr, "Error matching Entity audio_source position with entity position in scene_update: %d\n", position_error);
     }
   }
 
-  // static float last_update_time = 0;
-  // float current_update_time = glfwGetTime();
-  // if (current_update_time - last_update_time >= 1){
-  //   last_update_time = current_update_time;
-  //   entity_play_sound_effect(&scene->dynamic_entities[0], &sound_effects[0]);
-  // }
-
   // Update light
+  float lightSpeed = 1.0f;
   scene->lights[0].direction[0] = (float)sin(lightSpeed * total_time);
   //scene->light->direction[1] += y;
   scene->lights[0].direction[2] = (float)cos(lightSpeed * total_time);
@@ -378,10 +314,19 @@ void scene_render(struct Scene *scene){
   text_render("Crux Engine 0.2", 4.0f, 1058.0f, 1.0f, (vec3){1.0f, 1.0f, 1.0f});
 }
 
-void scene_pause(struct Scene *scene){
-  bool prev = scene->paused;
-  scene->paused = !prev;
-}
+// void scene_pause(struct Scene *scene){
+//   scene->paused = true;
+//
+//   // Pause audio
+//   audio_pause();
+// }
+//
+// void scene_unpause(struct Scene *scene){
+//   scene->paused = false;
+//
+//   // Unpause audio
+//   audio_unpause();
+// }
 
 //     // Rewrite this to actually free everything
 //     free(scene->entities);
@@ -489,27 +434,8 @@ void scene_process_meshes_json(cJSON *meshes, struct Model **models, Shader **sh
     entity->physics_body = physics_add_body(physics_world, entity, collider, dynamic);
     index++;
 
-    // Generate source
-    alGenSources(1, &entity->audio_source);
-    ALenum audio_source_error = alGetError();
-    if (audio_source_error != AL_NO_ERROR){
-      fprintf(stderr, "Error generating Entity audio_source in scene_process_meshes_json: %d\n", audio_source_error);
-    }
-
-    // Set source position and options for spatial audio
-    alSource3f(entity->audio_source, AL_POSITION, entity->position[0], entity->position[1], entity->position[2]);
-    audio_source_error = alGetError();
-    if (audio_source_error != AL_NO_ERROR){
-      fprintf(stderr, "Error setting Entity audio_source position in scene_process_meshes_json: %d\n", audio_source_error);
-    }
-    alSourcef(entity->audio_source, AL_REFERENCE_DISTANCE, 5.0f);
-    alSourcef(entity->audio_source, AL_MAX_DISTANCE, 50.0f);
-    alSourcef(entity->audio_source, AL_ROLLOFF_FACTOR, 1.0f);
-    alSourcei(entity->audio_source, AL_SOURCE_RELATIVE, AL_FALSE);
-    audio_source_error = alGetError();
-    if (audio_source_error != AL_NO_ERROR){
-      fprintf(stderr, "Error setting Entity audio_source spatial audio options in scene_process_meshes_json: %d\n", audio_source_error);
-    }
+    // AudioComponent
+    entity->audio_component = audio_component_create(entity, 0);
   }
 }
 

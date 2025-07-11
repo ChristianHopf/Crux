@@ -1,5 +1,4 @@
-#ifndef TEXT_H
-#define TEXT_H
+#pragma once
 
 #include <ft2build.h>
 #include FT_FREETYPE_H
@@ -13,8 +12,12 @@ struct Character {
   unsigned int advance;
 };
 
+struct Font {
+  // unsigned int font_id;
+  struct Character characters[128];
+  int base_size;
+};
 
-void load_font_face();
+
+struct Font load_font_face(char *path, int size);
 void text_render(char *text, float x, float y, float scale, vec3 color);
-
-#endif

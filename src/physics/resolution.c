@@ -318,7 +318,7 @@ void resolve_collision_sphere_sphere(struct PhysicsBody *body_A, struct PhysicsB
     body_A->at_rest = true;
   }
   if (body_A->entity != NULL){
-    entity_play_sound_effect(body_A->entity, &sound_effects[0]);
+    entity_play_sound_effect(body_A->entity);
   }
 }
 
@@ -367,6 +367,6 @@ void resolve_collision_sphere_plane(struct PhysicsBody *body_A, struct PhysicsBo
     body_A->at_rest = true;
   }
   if (body_A->entity != NULL){
-    entity_play_sound_effect(body_A->entity, &sound_effects[0]);
+    entity_play_sound_effect(body_A->entity);
   }
 }

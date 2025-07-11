@@ -29,10 +29,9 @@ struct Scene {
   unsigned int ubo_matrices;
   // Physics
   struct PhysicsWorld *physics_world;
-  // Audio
-  struct AudioStream *music_stream;
+  // // Audio
+  // struct AudioStream *music_stream;
   // Options
-  bool paused;
   bool physics_debug_mode;
 };
 
@@ -43,6 +42,7 @@ struct Scene *scene_create(bool physics_view_mode);
 void scene_update(struct Scene *scene, float deltaTime);
 void scene_render(struct Scene *scene);
 void scene_pause(struct Scene *scene);
+void scene_unpause(struct Scene *scene);
 void scene_free(struct Scene *scene);
 
 // JSON processing helpers

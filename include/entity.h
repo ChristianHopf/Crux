@@ -18,8 +18,8 @@ struct Entity {
   struct Model *model;
   Shader *shader;
   // Audio
-  ALuint audio_source;
-  ALfloat audio_position[3];
+  struct AudioComponent *audio_component;
 };
 
-void entity_play_sound_effect(struct Entity *entity, struct SoundEffect *sound_effect);
+void entity_play_sound_effect(struct Entity *entity);
+// void entity_play_sound_effect(struct Entity *entity, struct SoundEffect *sound_effect);

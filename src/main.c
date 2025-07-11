@@ -18,24 +18,31 @@
 #include "player.h"
 #include "text.h"
 #include "audio_manager.h"
-#include "menu.h"
+#include "ui_manager.h"
+#include "menu/menu.h"
+#include "game_state.h"
+#include "window_manager.h"
 
 typedef struct {
+  // Window
   GLFWwindow *window;
+  int screen_width;
+  int screen_height;
+  // Mouse
+  bool mouse_down;
+  // Scene and game
   struct Scene *active_scene;
+  // struct GameState game_state;
   // Timing
   float delta_time;
   float last_frame;
-  // Multithreading
-  mtx_t scene_mutex;
-  cnd_t render_signal;
-  cnd_t render_done_signal;
-  bool render_ready;
 } Engine;
 
 void framebuffer_size_callback(GLFWwindow *window, int width, int height);
+void window_size_callback(GLFWwindow *window, int width, int height);
 void processInput(GLFWwindow *window);
 void mouse_callback(GLFWwindow *window, double xpos, double ypos);
+void mouse_button_callback(GLFWwindow* window, int button, int action, int mods);
 void scroll_callback(GLFWwindow *window, double xoffset, double yoffset);
 void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods);
 
@@ -47,24 +54,14 @@ const unsigned int SCREEN_HEIGHT = 1080;
 bool firstMouse = true;
 float lastX = 960.0f;
 float lastY = 540.0f;
-// float lastX = 512.0f;
-// float lastY = 384.0f;
 
 // Lighting
 vec3 lightPos = {1.2f, 0.5f, 2.0f};
 
 static int last_space_state = GLFW_RELEASE;
 void processInput(GLFWwindow *window){
-	if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS){
-		glfwSetWindowShouldClose(window, 1);
-	}
   Engine *engine = (Engine *)glfwGetWindowUserPointer(window);
   struct Camera *camera = engine->active_scene->player.camera;
-
-  // Don't process input (other than the Escape key) if the game is paused
-  if (engine->active_scene->paused){
-    return;
-  }
 
   // Camera movement
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS){
@@ -92,19 +89,21 @@ void processInput(GLFWwindow *window){
 }
 
 void framebuffer_size_callback(GLFWwindow *window, int width, int height){
+  Engine *engine = (Engine *)glfwGetWindowUserPointer(window);
 	glViewport(0, 0, width, height);
+
+  int window_width, window_height;
+  glfwGetWindowSize(engine->window, &window_width, &window_height);
+}
+
+void window_size_callback(GLFWwindow *window, int width, int height){
+  Engine *engine = (Engine *)glfwGetWindowUserPointer(window);
+  engine->screen_width = width;
+  engine->screen_height = height;
 }
 
 void mouse_callback(GLFWwindow *window, double xpos, double ypos){
   Engine *engine = (Engine *)glfwGetWindowUserPointer(window);
-
-  // Don't process input (other than the Escape key) if the game is paused
-  if (engine->active_scene->paused){
-    // A better way to handle this: on pause, set firstMouse to true.
-    // Would have to move it from a main.c global var
-    //firstMouse = true;
-    return;
-  }
 
   struct Camera *camera = engine->active_scene->player.camera;
 
@@ -120,28 +119,49 @@ void mouse_callback(GLFWwindow *window, double xpos, double ypos){
 	lastY = (float)ypos;
 
   // Update camera
-  camera_process_mouse_input(camera, xoffset, yoffset);
+  if (!game_state_is_paused()){
+    camera_process_mouse_input(camera, xoffset, yoffset);
+  }
+}
+
+void mouse_button_callback(GLFWwindow* window, int button, int action, int mods){
+  Engine *engine = (Engine *)glfwGetWindowUserPointer(window);
+  if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS){
+    engine->mouse_down = true;
+  }
+  if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_RELEASE){
+    engine->mouse_down = false;
+  }
 }
 
 void scroll_callback(GLFWwindow *window, double xoffset, double yoffset){
   Engine *engine = (Engine *)glfwGetWindowUserPointer(window);
   struct Camera *camera = engine->active_scene->player.camera;
-  camera_process_scroll_input(camera, yoffset);
+  if (!game_state_is_paused()){
+    camera_process_scroll_input(camera, yoffset);
+  }
 }
 
 void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods){
-  struct Scene *active_scene = ((Engine *)glfwGetWindowUserPointer(window))->active_scene;
-
+  Engine *engine = (Engine *)glfwGetWindowUserPointer(window);
   // Pause
-  if (key == GLFW_KEY_P && action == GLFW_PRESS){
-    scene_pause(active_scene);
+  if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS){
+    if (!game_state_is_paused()){
+      game_pause();
+	    glfwSetInputMode(engine->window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+      firstMouse = true;
+    } else {
+      game_unpause();
+	    glfwSetInputMode(engine->window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    }
   }
 }
 
 Engine *engine_create(){
+  // Allocate Engine struct
   Engine *engine = (Engine *)calloc(1, sizeof(Engine));
   if (!engine){
-    printf("Error: failed to allocate Engine\n");
+    fprintf(stderr, "Error: failed to allocate Engine\n");
     return NULL;
   }
 
@@ -150,29 +170,37 @@ Engine *engine_create(){
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+  // glfwWindowHint(GLFW_SCALE_TO_MONITOR, GLFW_TRUE);
 
-  // Create window
+  // Create window and register callbacks
 	GLFWwindow *window = glfwCreateWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Crux", NULL, NULL);
 	if (window == NULL){
-		printf("Failed to create GLFW window\n");
+		fprintf(stderr, "Failed to create GLFW window\n");
     free(engine);
 		glfwTerminate();
 		return NULL;
 	}
   engine->window = window;
+  engine->screen_width = SCREEN_WIDTH;
+  engine->screen_height = SCREEN_HEIGHT;
   glfwMakeContextCurrent(engine->window);
 	glfwSetFramebufferSizeCallback(engine->window, framebuffer_size_callback);
+  glfwSetWindowSizeCallback(engine->window, window_size_callback);
 	glfwSetCursorPosCallback(engine->window, mouse_callback);
+  glfwSetMouseButtonCallback(engine->window, mouse_button_callback);
 	glfwSetScrollCallback(engine->window, scroll_callback);
   glfwSetKeyCallback(engine->window, key_callback);
   glfwSetWindowUserPointer(engine->window, engine);
+
+  // Window manager for exposing window functions
+  window_manager_init(window);
 
 	// Capture mouse
 	glfwSetInputMode(engine->window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
 	// Init GLAD
 	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)){
-		printf("Failed to initialize GLAD\n");
+		fprintf(stderr, "Failed to initialize GLAD\n");
     free(engine);
 		return NULL;
 	}
@@ -186,15 +214,40 @@ Engine *engine_create(){
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   //glBlendFunc(GL_ONE, GL_ONE); // additive blending
-
   //glDepthFunc(GL_ALWAYS);
   //glEnable(GL_STENCIL_TEST);
   //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
-  // engine->active_scene = scene_create(true);
+  // Initialize AudioManager
+  audio_manager_init();
+
+  // Initialize MenuManager
+  menu_manager_init();
+
+  // UI manager
+  ui_manager_init(SCREEN_WIDTH, SCREEN_HEIGHT);
+
+  // Initialize game state
+  game_state_init();
+
+  // Add game state observers
+  struct GameStateObserver *audio_game_state_observer = audio_game_state_observer_create();
+  if (!audio_game_state_observer){
+    fprintf(stderr, "Error: failed to get audio_game_state_observer in engine_create\n");
+    return NULL;
+  }
+  attach_observer(audio_game_state_observer);
+  struct GameStateObserver *ui_game_state_observer = ui_game_state_observer_create();
+  if (!ui_game_state_observer){
+    fprintf(stderr, "Error: failed to get ui_game_state_observer in engine_create\n");
+    return NULL;
+  }
+  attach_observer(ui_game_state_observer);
+
+  // Load scene
   engine->active_scene = scene_init("scenes/bouncehouse.json");
   if (!engine->active_scene){
-    printf("Error: failed to create scene\n");
+    fprintf(stderr, "Error: failed to create scene\n");
     free(engine);
     glfwTerminate();
     return NULL;
@@ -204,61 +257,16 @@ Engine *engine_create(){
   engine->delta_time = 0.0f;
   engine->last_frame = 0.0f;
 
-  // Scene mutex
-  mtx_init(&engine->scene_mutex, mtx_plain);
-  cnd_init(&engine->render_signal);
-  cnd_init(&engine->render_done_signal);
-  engine->render_ready = false;
-
   return engine;
-}
-
-int render_thread(void *arg){
-  Engine *engine = (Engine *)arg;
-  glfwMakeContextCurrent(engine->window);
-  while (!glfwWindowShouldClose(engine->window)){
-    // Lock mutex
-    mtx_lock(&engine->scene_mutex);
-
-    // Wait for render signal
-    while (!engine->render_ready){
-      cnd_wait(&engine->render_signal, &engine->scene_mutex);
-    }
-
-    // Render scene
-    scene_render(engine->active_scene);
-    glfwSwapBuffers(engine->window);
-    printf("RENDER THREAD STILL WORKING!\n");
-
-    // Set render_ready back to false, signal rendering is done, unlock mutex
-    engine->render_ready = false;
-    cnd_signal(&engine->render_done_signal);
-    mtx_unlock(&engine->scene_mutex);
-  }
-
-  glfwMakeContextCurrent(NULL);
-  return 0;
 }
 
 int main(){
   Engine *engine = engine_create();
   if (!engine){
-    printf("Error: failed to create Engine\n");
+    fprintf(stderr, "Error: failed to create Engine\n");
     glfwTerminate();
     return -1;
   }
-
-  // Load font
-  load_font_face();
-
-  // Release context for render thread to use it later
-  glfwMakeContextCurrent(NULL);
-
-  // struct AudioStream *audio_stream = audio_stream_create("resources/music/mookid.wav");
-  // alcMakeContextCurrent(NULL);
-
-  thrd_t render_thrd;
-  thrd_create(&render_thrd, render_thread, engine);
 
 	// Render loop
 	while (!glfwWindowShouldClose(engine->window)){
@@ -267,70 +275,62 @@ int main(){
     
 		engine->delta_time = currentFrame - engine->last_frame;
 		engine->last_frame = currentFrame;
-		printf("FPS: %f\n", 1.0 / engine->delta_time);
-
+		// printf("FPS: %f\n", 1.0 / engine->delta_time);
+    
 		// Handle input
 		processInput(engine->window);
 
-    if (engine->active_scene->paused){
-      // Render pause menu
-      printf("paused!\n");
-      glfwMakeContextCurrent(engine->window);
-      pause_menu_render();
+    if (game_state_is_paused()){
+
+      // Update Clay layout dimensions and pointer state
+      ui_update_frame(engine->screen_width, engine->screen_height);
+
+      double xpos, ypos;
+      glfwGetCursorPos(engine->window, &xpos, &ypos);
+      ui_update_mouse(xpos, ypos, engine->mouse_down);
+
+      // Render UI
+      ui_render_frame();
       glfwSwapBuffers(engine->window);
     }
     else{
-      // Lock scene mutex to update and render
-      mtx_lock(&engine->scene_mutex);
-      float update_start_time = glfwGetTime();
+      // float update_start_time = glfwGetTime();
       scene_update(engine->active_scene, engine->delta_time);
-      float update_end_time = glfwGetTime();
-      printf("scene update took %.2f ms\n", (update_end_time - update_start_time) * 1000.0);
+      // float update_end_time = glfwGetTime();
+      // printf("scene update took %.2f ms\n", (update_end_time - update_start_time) * 1000.0);
 
-      // Set render_ready to true, signal render thread to work
-      float render_start_time = glfwGetTime();
-      engine->render_ready = true;
-      cnd_signal(&engine->render_signal);
-      while(engine->render_ready){
-        cnd_wait(&engine->render_done_signal, &engine->scene_mutex);
-      }
-      mtx_unlock(&engine->scene_mutex);
+      // Render scene
+      // float render_start_time = glfwGetTime();
+      scene_render(engine->active_scene);
 
-      float render_end_time = glfwGetTime();
-      printf("Render took %.2f ms\n", (render_end_time - render_start_time) * 1000.0);
+      // Update Clay layout dimensions
+      ui_update_frame(engine->screen_width, engine->screen_height);
+
+      // Render UI
+      ui_render_frame();
+
+      glfwSwapBuffers(engine->window);
+      // float render_end_time = glfwGetTime();
+      // printf("Render took %.2f ms\n", (render_end_time - render_start_time) * 1000.0);
     }
-
-    // // Lock scene mutex to update and render
-    // mtx_lock(&engine->scene_mutex);
-    // float update_start_time = glfwGetTime();
-    // scene_update(engine->active_scene, engine->delta_time);
-    // float update_end_time = glfwGetTime();
-    // printf("scene update took %.2f ms\n", (update_end_time - update_start_time) * 1000.0);
-    //
-    // // Set render_ready to true, signal render thread to work
-    // float render_start_time = glfwGetTime();
-    // engine->render_ready = true;
-    // cnd_signal(&engine->render_signal);
-    // while(engine->render_ready){
-    //   cnd_wait(&engine->render_done_signal, &engine->scene_mutex);
-    // }
-    // mtx_unlock(&engine->scene_mutex);
-    //
-    // float render_end_time = glfwGetTime();
-    // printf("Render took %.2f ms\n", (render_end_time - render_start_time) * 1000.0);
 
 		// Check and call events
 		glfwPollEvents();
+
+    // Check if the game should quit
+    if (game_state_should_quit()){
+      glfwSetWindowShouldClose(engine->window, 1);
+    }
   }
 
-  audio_stream_destroy(engine->active_scene->music_stream);
-  thrd_join(render_thrd, NULL);
-  mtx_destroy(&engine->scene_mutex);
-  cnd_destroy(&engine->render_signal);
-  cnd_destroy(&engine->render_done_signal);
-  alcMakeContextCurrent(NULL);
-  alcDestroyContext(audio_context);
-  alcCloseDevice(audio_device);
+  // OpenAL
+  struct AudioManager *audio_manager = audio_manager_get_global();
+  if (audio_manager->audio_stream){
+    audio_stream_destroy(audio_manager->audio_stream);
+  }
+  alcDestroyContext(audio_manager->context);
+  alcCloseDevice(audio_manager->device);
+  free(audio_manager);
 
   glfwDestroyWindow(engine->window);
 	glfwTerminate();

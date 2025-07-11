@@ -20,3 +20,4 @@ void shader_set_float(const Shader *shader, const char *name, float value);
 void shader_set_mat4(const Shader *shader, const char *name, mat4 value);
 void shader_set_mat3(const Shader *shader, const char *name, mat3 value);
 void shader_set_vec3(const Shader *shader, const char *name, vec3 value);
+void shader_set_vec4(const Shader *shader, const char *name, vec4 value);

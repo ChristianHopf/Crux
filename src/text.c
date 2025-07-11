@@ -8,7 +8,15 @@ static unsigned int VAO, VBO;
 static Shader *textShader;
 
 
-void load_font_face(){
+struct Font load_font_face(char *path, int size){
+  // Allocate Font
+  struct Font font = {0};
+  // struct Font *font = (struct Font *)malloc(sizeof(struct Font));
+  // if (!font){
+  //   fprintf(stderr, "Error: failed to allocate font in load_font_face\n");
+  //   return NULL;
+  // }
+
   // Init FreeType library, face
   FT_Library  library;
   FT_Face     face;
@@ -17,7 +25,7 @@ void load_font_face(){
   if (error){
     printf("Error: failed to initialize FreeType library\n");
   }
-  error = FT_New_Face(library, "resources/fonts/HackNerdFontMono-Regular.ttf", 0, &face);
+  error = FT_New_Face(library, path, 0, &face);
   if (error == FT_Err_Unknown_File_Format){
     printf("Error: failed to read font file: format unsupported\n");
   }
@@ -26,7 +34,7 @@ void load_font_face(){
   }
 
   // Set font size
-  FT_Set_Pixel_Sizes(face, 0, 24);
+  FT_Set_Pixel_Sizes(face, 0, size);
 
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
@@ -57,8 +65,10 @@ void load_font_face(){
       .bearing = {face->glyph->bitmap_left, face->glyph->bitmap_top},
       .advance = face->glyph->advance.x
     };
-    characters[(int)c] = character;
+    font.characters[(int)c] = character;
   }
+  font.base_size = size;
+
   FT_Done_Face(face);
   FT_Done_FreeType(library);
 
@@ -68,34 +78,36 @@ void load_font_face(){
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
   // Create text shader program, use orthographic projection
-  Shader *shader = shader_create("shaders/glyph/shader.vs", "shaders/glyph/shader.fs");
-  if (!shader){
-    printf("Error: failed to create text shader in load_font_face\n");
-    return;
-  }
-  textShader = shader;
-  shader_use(textShader);
-  mat4 orthographic;
-  glm_ortho(0, 1920, 0, 1080, -1.0f, 1.0f, orthographic);
-  shader_set_mat4(shader, "projection", orthographic);
+  // Shader *shader = shader_create("shaders/glyph/shader.vs", "shaders/glyph/shader.fs");
+  // if (!shader){
+  //   printf("Error: failed to create text shader in load_font_face\n");
+  //   return;
+  // }
+  // textShader = shader;
+  // shader_use(textShader);
+  // mat4 orthographic;
+  // glm_ortho(0, 1920, 0, 1080, -1.0f, 1.0f, orthographic);
+  // shader_set_mat4(shader, "projection", orthographic);
 
   // VAO and VBO
-  glGenVertexArrays(1, &VAO);
-  glGenBuffers(1, &VBO);
-  glBindVertexArray(VAO);
-  glBindBuffer(GL_ARRAY_BUFFER, VBO);
-  glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 6 * 4, NULL, GL_DYNAMIC_DRAW);
-  glEnableVertexAttribArray(0);
-  glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
-  glBindBuffer(GL_ARRAY_BUFFER, 0);
-  glBindVertexArray(0);
+  // glGenVertexArrays(1, &VAO);
+  // glGenBuffers(1, &VBO);
+  // glBindVertexArray(VAO);
+  // glBindBuffer(GL_ARRAY_BUFFER, VBO);
+  // glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 6 * 4, NULL, GL_DYNAMIC_DRAW);
+  // glEnableVertexAttribArray(0);
+  // glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
+  // glBindBuffer(GL_ARRAY_BUFFER, 0);
+  // glBindVertexArray(0);
+
+  return font;
 }
 
 void text_render(char *text, float x, float y, float scale, vec3 color){
   // Use shader, set uniform, bind to texture and VAO
   shader_use(textShader);
   shader_set_vec3(textShader, "textColor", color);
-  glActiveTexture(GL_TEXTURE);
+  glActiveTexture(GL_TEXTURE0);
   glBindVertexArray(VAO);
 
   // Draw each character in text

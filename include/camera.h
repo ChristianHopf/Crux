@@ -1,5 +1,4 @@
-#ifndef CAMERA_H
-#define CAMERA_H
+#pragma once
 
 #include <GLFW/glfw3.h>
 #include <cglm/cglm.h>
@@ -49,5 +48,3 @@ void camera_process_keyboard_input(struct Camera *camera, CameraDirection direct
 void camera_process_mouse_input(struct Camera *camera, float xoffset, float yoffset);
 void camera_process_scroll_input(struct Camera *camera, double yoffset);
 void camera_update_vectors(struct Camera *camera);
-
-#endif
