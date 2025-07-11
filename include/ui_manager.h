@@ -26,14 +26,14 @@ struct Layout {
   LayoutFunction layout_function;
 };
 
-struct LayoutQueue {
+struct LayoutStack {
   struct Layout layouts[MAX_LAYOUTS];
   int num_layouts;
 };
 
 struct UIManager {
    Clay_Arena clay_arena;
-   struct LayoutQueue layout_queue;
+   struct LayoutStack layout_stack;
    struct Font fonts[16];
 
    bool paused;

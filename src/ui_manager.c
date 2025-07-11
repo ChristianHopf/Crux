@@ -82,7 +82,7 @@ void ui_manager_init(float screen_width, float screen_height){
     .type = LAYOUT_OVERLAY,
     .layout_function = compute_clay_layout_overlay
   };
-  ui_manager.layout_queue.layouts[ui_manager.layout_queue.num_layouts++] = layout_version_text;
+  ui_manager.layout_stack.layouts[ui_manager.layout_stack.num_layouts++] = layout_version_text;
 
   // Init renderer
   clay_opengl_renderer_init(screen_width, screen_height);
@@ -100,8 +100,8 @@ void ui_update_mouse(double xpos, double ypos, bool mouse_down){
 
 void ui_render_frame(){
   // Render each of this frame's layouts
-  for(int i = 0; i < ui_manager.layout_queue.num_layouts; i++){
-    struct Layout current_layout = ui_manager.layout_queue.layouts[i];
+  for(int i = 0; i < ui_manager.layout_stack.num_layouts; i++){
+    struct Layout current_layout = ui_manager.layout_stack.layouts[i];
     void *arg = NULL;
 
     // Get arg for layout_function based on layout type
@@ -121,7 +121,7 @@ void ui_render_frame(){
         break;
       }
     }
-    LayoutFunction layout_function = ui_manager.layout_queue.layouts[i].layout_function;
+    LayoutFunction layout_function = ui_manager.layout_stack.layouts[i].layout_function;
 
     // Compute and render this layout
     if (!layout_function){
@@ -168,7 +168,7 @@ void ui_pause(){
       // and you have to set your own pause menu
       .layout_function = compute_clay_layout_pause_menu
     };
-    ui_manager.layout_queue.layouts[ui_manager.layout_queue.num_layouts++] = layout_pause_menu;
+    ui_manager.layout_stack.layouts[ui_manager.layout_stack.num_layouts++] = layout_pause_menu;
   }
 }
 
@@ -176,6 +176,6 @@ void ui_unpause(){
   if (ui_manager.paused){
     // unpause UI
     ui_manager.paused = false;
-    ui_manager.layout_queue.num_layouts--;
+    ui_manager.layout_stack.num_layouts--;
   }
 }
