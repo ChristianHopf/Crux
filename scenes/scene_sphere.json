@@ -30,16 +30,101 @@
 						"distance": 0
 					}
 				}
+			},
+      {
+				"model_index": 0,
+				"shader_index": 0,
+				"position": [0.0, 10.0, 0.0],
+				"rotation": [0.0, 0.0, 180.0],
+				"scale": [0.5, 0.5, 0.5],
+				"collider": {
+					"type": 2,
+					"data": {
+						"normal": [0.0, -1.0, 0.0],
+						"distance": -10
+					}
+				}
+			},
+      {
+				"model_index": 0,
+				"shader_index": 0,
+				"position": [-5.0, 5.0, 0.0],
+				"rotation": [0.0, 0.0, -90.0],
+				"scale": [0.5, 0.5, 0.5],
+				"collider": {
+					"type": 2,
+					"data": {
+						"normal": [1.0, 0.0, 0.0],
+						"distance": -5
+					}
+				}
+			},
+      {
+				"model_index": 0,
+				"shader_index": 0,
+				"position": [5.0, 5.0, 0.0],
+				"rotation": [0.0, 0.0, 90.0],
+				"scale": [0.5, 0.5, 0.5],
+				"collider": {
+					"type": 2,
+					"data": {
+						"normal": [-1.0, 0.0, 0.0],
+						"distance": -5
+					}
+				}
+			},
+      {
+				"model_index": 0,
+				"shader_index": 0,
+				"position": [0.0, 5.0, -5.0],
+				"rotation": [90.0, 0.0, 0.0],
+				"scale": [0.5, 0.5, 0.5],
+				"collider": {
+					"type": 2,
+					"data": {
+						"normal": [0.0, 0.0, 1.0],
+						"distance": -5
+					}
+				}
+			},
+      {
+				"model_index": 0,
+				"shader_index": 0,
+				"position": [0.0, 5.0, 5.0],
+				"rotation": [-90.0, 0.0, 0.0],
+				"scale": [0.5, 0.5, 0.5],
+				"collider": {
+					"type": 2,
+					"data": {
+						"normal": [0.0, 0.0, -1.0],
+						"distance": -5
+					}
+				}
 			}
 		],
 		"dynamic": [
 			{
 				"model_index": 1,
 				"shader_index": 0,
-				"position": [0.0, 2.0, 0.0],
+				"position": [-1.0, 2.0, 0.0],
 				"rotation": [0.0, 0.0, 0.0],
 				"scale": [1.0, 1.0, 1.0],
-				"velocity": [0.0, 0.0, 0.0],
+				"velocity": [2.0, 0.0, 0.0],
+				"collider": {
+					"type": 1,
+					"data": {
+						"center": [0.0014968, 0.1823103, 0.0],
+						"radius": 0.45
+					}
+				}
+			},
+			{
+				"model_index": 1,
+				"shader_index": 0,
+				"position": [1.0, 2.0, 0.0],
+				"rotation": [0.0, 0.0, 0.0],
+				"scale": [1.0, 1.0, 1.0],
+				"velocity": [-2.0, 0.0, 0.0],
 				"collider": {
 					"type": 1,
 					"data": {

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <glad/glad.h>
 #include <cglm/cglm.h>
 #include <AL/al.h>
 #include <AL/alc.h>

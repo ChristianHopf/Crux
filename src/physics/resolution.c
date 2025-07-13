@@ -275,51 +275,86 @@ void resolve_collision_sphere_sphere(struct PhysicsBody *body_A, struct PhysicsB
   glm_vec3_add(sphere_B->center, body_B->position, world_sphere_B.center);
   world_sphere_B.radius = sphere_B->radius * body_B->scale[0];
 
+  // Get contact normal, penetration
   vec3 difference, contact_normal;
-  glm_vec3_sub(world_sphere_A.center, world_sphere_B.center, difference);
-  float s2 = glm_dot(difference, difference);
+  glm_vec3_sub(world_sphere_B.center, world_sphere_A.center, difference);
+  float s = glm_vec3_norm(difference);
   float r = world_sphere_A.radius + world_sphere_B.radius;
-  float penetration = (s2 < (r * r)) ? (r - s2) + 0.001 : 0.0f;
+  float penetration = (s < r) ? (r - s) + 0.001 : 0.0f;
+  // float penetration = (s2 < (r * r)) ? (r - (sqrtf(s2))) + 0.001 : 0.0f;
   // Find contact normal: simply normalize the difference vector
-  // Keep it in difference instead of a new contact_normal vec3,
+  // (Keep it in difference instead of a new contact_normal vec3,
   // since we don't use non-normalized difference again?
-  // For now this is more readable
+  // For now this is more readable)
   glm_vec3_copy(difference, contact_normal);
   glm_vec3_normalize(contact_normal);
-  if (penetration > 0.0f){
-    // Add normal scaled by (penetration / 2) to sphere_A position
-    glm_vec3_muladds(contact_normal, (penetration / 2), body_A->position);
-    // Subtract from sphere_B position
-    glm_vec3_mulsubs(contact_normal, (penetration / 2), body_B->position);
+
+  if (penetration <= 0.0f) return;
+
+  // Only correct positions and reflect velocities if the bodies aren't moving away from each other
+  vec3 rel_v;
+  glm_vec3_sub(velocity_before_B, velocity_before_A, rel_v);
+  float separating_v = glm_dot(rel_v, contact_normal);
+  if (separating_v < 0.0f){
+    glm_vec3_muladds(contact_normal, (penetration / 2), body_B->position);
+    glm_vec3_mulsubs(contact_normal, (penetration / 2), body_A->position);
+
+    float restitution = 1.0f;
+    float v_dot_n_A = glm_dot(velocity_before_A, contact_normal);
+    float v_dot_n_B = glm_dot(velocity_before_B, contact_normal);
+
+    // For a perfectly elastic collision,
+    // swap the bodies' velocities along the contact normal
+    vec3 normal_v_A, normal_v_B;
+    glm_vec3_scale(contact_normal, v_dot_n_A, normal_v_A);
+    glm_vec3_scale(contact_normal, v_dot_n_B, normal_v_B);
+
+    glm_vec3_sub(velocity_before_A, normal_v_A, body_A->velocity);
+    glm_vec3_add(body_A->velocity, normal_v_B, body_A->velocity);
+
+    glm_vec3_sub(velocity_before_B, normal_v_B, body_B->velocity);
+    glm_vec3_add(body_B->velocity, normal_v_A, body_B->velocity);
+  }
+  else{
+    // Bodies are moving away from each other, don't change velocities
+    glm_vec3_copy(velocity_before_A, body_A->velocity);
+    glm_vec3_copy(velocity_before_B, body_B->velocity);
   }
 
-  // Reflect velocities over contact normal (orthogonal to line tangent to contact point)
-  float restitution = 1.0f;
-  float rest_velocity_threshold = 0.1f;
-  float v_dot_n_A = glm_dot(velocity_before_A, contact_normal);
-  float v_dot_n_B = glm_dot(velocity_before_B, contact_normal);
-  vec3 reflection_A;
-  vec3 reflection_B;
-  glm_vec3_scale(contact_normal, -2.0f * v_dot_n_A * restitution, reflection_A);
-  glm_vec3_scale(contact_normal, -2.0f * v_dot_n_B * restitution, reflection_B);
-  glm_vec3_add(velocity_before_A, reflection_A, body_A->velocity);
-  glm_vec3_add(velocity_before_B, reflection_B, body_B->velocity);
-
-  // If velocity along the normal is very small,
-  // AND the sphere is perfectly atop the other,
-  // (dot(contact_normal, gravity_normal) == -1, since the dot product of two opposite unit vectors is -1)
-  // the sphere should be at rest.
-  v_dot_n_A = glm_dot(contact_normal, body_A->velocity);
-  // How to handle the other sphere? What if sphere A is under B but should be at rest?
-  // I don't know
-  v_dot_n_B = glm_dot(contact_normal, body_B->velocity);
-  if (v_dot_n_A < 0.5 && glm_dot(contact_normal, (vec3){0.0f, -1.0f, 0.0f}) == -1){
-    glm_vec3_zero(body_A->velocity);
-    body_A->at_rest = true;
-  }
-  if (body_A->entity != NULL){
-    entity_play_sound_effect(body_A->entity);
-  }
+  // if (penetration > 0.0f){
+  //   // Add normal scaled by (penetration / 2) to sphere_A position
+  //   glm_vec3_muladds(contact_normal, (penetration / 2), body_A->position);
+  //   // Subtract from sphere_B position
+  //   glm_vec3_mulsubs(contact_normal, (penetration / 2), body_B->position);
+  // }
+  //
+  // // Reflect velocities over contact normal (orthogonal to line tangent to contact point)
+  // float restitution = 1.0f;
+  // float rest_velocity_threshold = 0.1f;
+  // float v_dot_n_A = glm_dot(velocity_before_A, contact_normal);
+  // float v_dot_n_B = glm_dot(velocity_before_B, contact_normal);
+  // vec3 reflection_A;
+  // vec3 reflection_B;
+  // glm_vec3_scale(contact_normal, -2.0f * v_dot_n_A * restitution, reflection_A);
+  // glm_vec3_scale(contact_normal, -2.0f * v_dot_n_B * restitution, reflection_B);
+  // glm_vec3_add(velocity_before_A, reflection_A, body_A->velocity);
+  // glm_vec3_add(velocity_before_B, reflection_B, body_B->velocity);
+  //
+  // // If velocity along the normal is very small,
+  // // AND the sphere is perfectly atop the other,
+  // // (dot(contact_normal, gravity_normal) == -1, since the dot product of two opposite unit vectors is -1)
+  // // the sphere should be at rest.
+  // v_dot_n_A = glm_dot(contact_normal, body_A->velocity);
+  // // How to handle the other sphere? What if sphere A is under B but should be at rest?
+  // // I don't know
+  // v_dot_n_B = glm_dot(contact_normal, body_B->velocity);
+  // if (v_dot_n_A < 0.5 && glm_dot(contact_normal, (vec3){0.0f, -1.0f, 0.0f}) == -1){
+  //   glm_vec3_zero(body_A->velocity);
+  //   body_A->at_rest = true;
+  // }
+  // if (body_A->entity != NULL){
+  //   entity_play_sound_effect(body_A->entity);
+  // }
 }
 
 void resolve_collision_sphere_plane(struct PhysicsBody *body_A, struct PhysicsBody *body_B, struct CollisionResult result, float delta_time){
@@ -338,7 +373,6 @@ void resolve_collision_sphere_plane(struct PhysicsBody *body_A, struct PhysicsBo
   // Correct penetration
   struct Sphere world_sphere = {0};
   glm_vec3_add(sphere->center, body_A->position, world_sphere.center);
-  // glm_vec3_scale(world_sphere.center, body_A->scale[0], world_sphere.center);
   world_sphere.radius = sphere->radius * body_A->scale[0];
 
   float s = glm_dot(world_sphere.center, plane->normal) - plane->distance;
