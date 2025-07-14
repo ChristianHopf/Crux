@@ -6,7 +6,7 @@
 		}
 	],
 	"models": [
-		"resources/objects/forest/scene.gltf"
+		"resources/objects/cube/scene.gltf"
 	],
   "sounds": {
     "music": "resources/music/mookid.wav",

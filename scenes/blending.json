@@ -1,0 +1,180 @@
+{
+	"shaders": [
+		{
+			"vertex": "shaders/shader.vs",
+			"fragment": "shaders/dirlight/shader.fs"
+		}
+	],
+	"models": [
+		"resources/basic/grass_plane/grass_plane.gltf",
+		"resources/objects/cube/scene.gltf"
+	],
+  "sounds": {
+    "music": "resources/music/mookid.wav",
+    "effects": [
+      "resources/sfx/vineboom.wav"
+    ]
+  },
+	"meshes": {
+		"static": [
+			{
+				"model_index": 0,
+				"shader_index": 0,
+				"position": [0.0, 0.0, 0.0],
+				"rotation": [0.0, 0.0, 0.0],
+				"scale": [0.5, 0.5, 0.5],
+				"collider": {
+					"type": 2,
+					"data": {
+						"normal": [0.0, 1.0, 0.0],
+						"distance": 0
+					}
+				}
+			},
+      {
+				"model_index": 0,
+				"shader_index": 0,
+				"position": [0.0, 10.0, 0.0],
+				"rotation": [0.0, 0.0, 180.0],
+				"scale": [0.5, 0.5, 0.5],
+				"collider": {
+					"type": 2,
+					"data": {
+						"normal": [0.0, -1.0, 0.0],
+						"distance": -10
+					}
+				}
+			},
+      {
+				"model_index": 0,
+				"shader_index": 0,
+				"position": [-5.0, 5.0, 0.0],
+				"rotation": [0.0, 0.0, -90.0],
+				"scale": [0.5, 0.5, 0.5],
+				"collider": {
+					"type": 2,
+					"data": {
+						"normal": [1.0, 0.0, 0.0],
+						"distance": -5
+					}
+				}
+			},
+      {
+				"model_index": 0,
+				"shader_index": 0,
+				"position": [5.0, 5.0, 0.0],
+				"rotation": [0.0, 0.0, 90.0],
+				"scale": [0.5, 0.5, 0.5],
+				"collider": {
+					"type": 2,
+					"data": {
+						"normal": [-1.0, 0.0, 0.0],
+						"distance": -5
+					}
+				}
+			},
+      {
+				"model_index": 0,
+				"shader_index": 0,
+				"position": [0.0, 5.0, -5.0],
+				"rotation": [90.0, 0.0, 0.0],
+				"scale": [0.5, 0.5, 0.5],
+				"collider": {
+					"type": 2,
+					"data": {
+						"normal": [0.0, 0.0, 1.0],
+						"distance": -5
+					}
+				}
+			},
+      {
+				"model_index": 0,
+				"shader_index": 0,
+				"position": [0.0, 5.0, 5.0],
+				"rotation": [-90.0, 0.0, 0.0],
+				"scale": [0.5, 0.5, 0.5],
+				"collider": {
+					"type": 2,
+					"data": {
+						"normal": [0.0, 0.0, -1.0],
+						"distance": -5
+					}
+				}
+			}
+		],
+		"dynamic": [
+			{
+				"model_index": 1,
+				"shader_index": 0,
+				"position": [0.0, 1.0, -3.0],
+				"rotation": [0.0, 0.0, 0.0],
+				"scale": [0.5, 0.5, 0.5],
+				"velocity": [0.0, 0.0, 0.0],
+				"collider": {
+					"type": 0,
+					"data": {
+						"center": [0.0, 0.0, 0.0],
+						"extents": [1.0, 1.0, 1.0]
+					}
+				}
+			},
+			{
+				"model_index": 1,
+				"shader_index": 0,
+				"position": [0.0, 1.0, -1.0],
+				"rotation": [0.0, 0.0, 0.0],
+				"scale": [0.5, 0.5, 0.5],
+				"velocity": [0.0, 0.0, 0.0],
+				"collider": {
+					"type": 0,
+					"data": {
+						"center": [0.0, 0.0, 0.0],
+						"extents": [0.5, 0.5, 0.5]
+					}
+				}
+			},
+			{
+				"model_index": 1,
+				"shader_index": 0,
+				"position": [0.0, 1.0, -4.0],
+				"rotation": [0.0, 0.0, 0.0],
+				"scale": [0.5, 0.5, 0.5],
+				"velocity": [0.0, 0.0, 0.0],
+				"collider": {
+					"type": 0,
+					"data": {
+						"center": [0.0, 0.0, 0.0],
+						"extents": [0.5, 0.5, 0.5]
+					}
+				}
+			},
+			{
+				"model_index": 1,
+				"shader_index": 0,
+				"position": [0.0, 1.0, -2.0],
+				"rotation": [0.0, 0.0, 0.0],
+				"scale": [0.5, 0.5, 0.5],
+				"velocity": [0.0, 0.0, 0.0],
+				"collider": {
+					"type": 0,
+					"data": {
+						"center": [0.0, 0.0, 0.0],
+						"extents": [0.5, 0.5, 0.5]
+					}
+				}
+			}
+		]
+	},
+	"lights": [
+		{
+			"type": "directional",
+			"data": {
+				"direction": [-0.2, 0.0, -0.3],
+				"ambient": [0.5, 0.5, 0.5],
+				"diffuse": [0.8, 0.8, 0.8],
+				"specular": [1.0, 1.0, 1.0]
+			}
+		}
+	],
+	"skybox": "resources/skybox/"
+}

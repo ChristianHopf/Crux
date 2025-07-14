@@ -424,10 +424,8 @@ void scene_render(struct Scene *scene){
   sort_render_items(combined_entities, num_entities, scene->player.camera->position, &opaque_items, &num_opaque_items, &mask_items, &num_mask_items, &transparent_items, &num_transparent_items, &additive_items, &num_additive_items);
 
   // Render RenderItem arrays in order: opaque, mask, transparent, additive
-  // printf("Number of opaque items to render: %d\n", num_opaque_items);
-  // printf("Number of mask items to render: %d\n", num_mask_items);
-  // printf("Number of transparent items to render: %d\n", num_transparent_items);
-  // printf("Number of additive items to render: %d\n", num_additive_items);
+  // TODO draw functions for each RenderItem array
+
   // Free allocated RenderItem arrays (optimize because this seems like a lot more work than I should have to do for this every single frame)
   free(combined_entities);
   free(opaque_items);
@@ -448,9 +446,9 @@ void scene_render(struct Scene *scene){
   skybox_render(scene->skybox, &context);
 
   // Draw physics debug volumes
-  if (scene->physics_debug_mode){
-    physics_debug_render(scene->physics_world, &context);
-  }
+  // if (scene->physics_debug_mode){
+  //   physics_debug_render(scene->physics_world, &context);
+  // }
 
   // Render text
   text_render("Crux Engine 0.2", 4.0f, 1058.0f, 1.0f, (vec3){1.0f, 1.0f, 1.0f});
