@@ -15,7 +15,7 @@
 #include "material.h"
 
 bool model_load(struct Model *model, const char *path){
-  const struct aiScene* scene = aiImportFile(path, aiProcessPreset_TargetRealtime_Fast);
+  const struct aiScene* scene = aiImportFile(path, aiProcess_GenBoundingBoxes | aiProcessPreset_TargetRealtime_Fast);
 
   if(!scene || !scene->mRootNode || !scene->mMeshes || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE) {
     printf("ERROR::ASSIMP:: %s\n", aiGetErrorString());
@@ -161,6 +161,17 @@ void model_process_mesh(struct aiMesh *ai_mesh, const struct aiScene *scene, str
   }
   dest_mesh->num_indices = num_indices;
   dest_mesh->material_index = ai_mesh->mMaterialIndex;
+
+  // Get center from AABB min and max vectors, apply node space transform
+  struct aiVector3D min = ai_mesh->mAABB.mMin;
+  struct aiVector3D max = ai_mesh->mAABB.mMax;
+
+  dest_mesh->center[0] = (min.x + max.x) * 0.5f;
+  dest_mesh->center[1] = (min.y + max.y) * 0.5f;
+  dest_mesh->center[2] = (min.z + max.z) * 0.5f;
+  vec3 node_space_center;
+  glm_mat4_mulv3(node_transform_mat4, dest_mesh->center, 1.0f, node_space_center);
+  glm_vec3_copy(node_space_center, dest_mesh->center);
 
   // Bind vertex buffers and buffer vertex data
   glGenBuffers(1, &dest_mesh->VBO);

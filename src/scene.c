@@ -314,11 +314,13 @@ void sort_render_items(
   for (unsigned int i = 0; i < num_entities; i++){
     struct Entity *entity = &entities[i];
     struct Model *model = entity->model;
+
     for (unsigned int j = 0; j < model->num_meshes; j++){
       Mesh *mesh = &model->meshes[j];
-      printf("sort_render_items: processing model %d, mesh %d\n", i, j);
+
       struct RenderItem render_item;
       render_item.mesh = mesh;
+
       // Compute transform from the Entity's position, rotation, and scale
       glm_mat4_identity(render_item.transform);
       glm_translate(render_item.transform, entity->position);
@@ -327,16 +329,19 @@ void sort_render_items(
       glm_euler_xyz(rotation_radians, rotation);
       glm_mul(render_item.transform, rotation, render_item.transform);
       glm_scale(render_item.transform, entity->scale);
-printf("sort_render_items: got render_item transform\n");
-      // Get mesh depth
 
-      // switch on the mesh's material's blend_mode to determine which array to add it to
+      // Get mesh depth
+      // print_glm_vec3(camera_pos, "sort_render_items camera position");
+      vec3 world_mesh_center;
+      glm_mat4_mulv3(render_item.transform, mesh->center, 1.0f, world_mesh_center);
+      print_glm_vec3(world_mesh_center, "mesh center");
+      print_glm_vec3(entity->position, "entity position");
+
+      // Switch on this mesh's material's blend_mode to determine which array to add it to
       switch(model->materials[model->meshes[j].material_index].blend_mode){
         // Opaque
         case 0: {
-          printf("Adding opaque render item\n");
           (*opaque_items)[(*num_opaque_items)++] = render_item;
-          printf("Added opaque render item\n");
           break;
         }
         // Mask
@@ -404,6 +409,10 @@ void scene_render(struct Scene *scene){
   sort_render_items(combined_entities, num_entities, scene->player.camera->position, &opaque_items, &num_opaque_items, &mask_items, &num_mask_items, &transparent_items, &num_transparent_items, &additive_items, &num_additive_items);
 
   // Render RenderItem arrays in order: opaque, mask, transparent, additive
+  // printf("Number of opaque items to render: %d\n", num_opaque_items);
+  // printf("Number of mask items to render: %d\n", num_mask_items);
+  // printf("Number of transparent items to render: %d\n", num_transparent_items);
+  // printf("Number of additive items to render: %d\n", num_additive_items);
   // Free allocated RenderItem arrays (optimize because this seems like a lot more work than I should have to do for this every single frame)
   free(combined_entities);
   free(opaque_items);
@@ -431,20 +440,6 @@ void scene_render(struct Scene *scene){
   // Render text
   text_render("Crux Engine 0.2", 4.0f, 1058.0f, 1.0f, (vec3){1.0f, 1.0f, 1.0f});
 }
-
-// void scene_pause(struct Scene *scene){
-//   scene->paused = true;
-//
-//   // Pause audio
-//   audio_pause();
-// }
-//
-// void scene_unpause(struct Scene *scene){
-//   scene->paused = false;
-//
-//   // Unpause audio
-//   audio_unpause();
-// }
 
 //     // Rewrite this to actually free everything
 //     free(scene->entities);
