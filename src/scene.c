@@ -266,6 +266,17 @@ void scene_update(struct Scene *scene, float delta_time){
   scene->lights[0].direction[2] = (float)cos(lightSpeed * total_time);
 }
 
+// Helper for sorting transparent RenderItems by depth
+int compare_render_item_depth(const void *a, const void *b){
+  float depth_A = ((struct RenderItem *)a)->depth;
+  float depth_B = ((struct RenderItem *)b)->depth;
+
+  // Descending order: if A is farther away, return -1 (A comes first)
+  if (depth_A > depth_B) return -1;
+  if (depth_A < depth_B) return 1;
+  return 0;
+}
+
 void sort_render_items(
   struct Entity *entities,
   unsigned int num_entities,
@@ -330,12 +341,14 @@ void sort_render_items(
       glm_mul(render_item.transform, rotation, render_item.transform);
       glm_scale(render_item.transform, entity->scale);
 
-      // Get mesh depth
+      // Get mesh depth: magnitude of difference between camera pos and mesh center
       // print_glm_vec3(camera_pos, "sort_render_items camera position");
-      vec3 world_mesh_center;
+      vec3 world_mesh_center, difference;
       glm_mat4_mulv3(render_item.transform, mesh->center, 1.0f, world_mesh_center);
-      print_glm_vec3(world_mesh_center, "mesh center");
-      print_glm_vec3(entity->position, "entity position");
+      // glm_vec3_copy(world_mesh_center, mesh->center);
+      glm_vec3_sub(camera_pos, world_mesh_center, difference);
+      render_item.depth = glm_vec3_norm(difference);
+      printf("Depth of entity: %f\n", render_item.depth);
 
       // Switch on this mesh's material's blend_mode to determine which array to add it to
       switch(model->materials[model->meshes[j].material_index].blend_mode){
@@ -364,6 +377,8 @@ void sort_render_items(
   }
 
   // Sort transparent_items back to front
+  qsort(*transparent_items, *num_transparent_items, sizeof(struct RenderItem), compare_render_item_depth);
+  printf("Successfully sorted %d transparent_items\n", *num_transparent_items);
 }
 
 void scene_render(struct Scene *scene){
