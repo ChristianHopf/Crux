@@ -18,7 +18,7 @@ struct Light {
 
 // For sorting meshes for multiple rendering passes
 struct RenderItem {
-  struct Mesh *mesh;
+  Mesh *mesh;
   mat4 transform;
   float depth;
 };

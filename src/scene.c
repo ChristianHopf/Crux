@@ -268,20 +268,95 @@ void scene_update(struct Scene *scene, float delta_time){
 
 void sort_render_items(
   struct Entity *entities,
+  unsigned int num_entities,
   vec3 camera_pos,
   struct RenderItem **opaque_items, unsigned int *num_opaque_items,
   struct RenderItem **mask_items, unsigned int *num_mask_items,
   struct RenderItem **transparent_items, unsigned int *num_transparent_items,
   struct RenderItem **additive_items, unsigned int *num_additive_items)
 {
-  // Allocate memory for each array of RenderItems
+  // Total number of items is the number of meshes for each Entity
+  unsigned int num_items = 0;
+  for (unsigned int i = 0; i < num_entities; i++){
+    num_items += entities[i].model->num_meshes;
+  }
+
+  // Allocate memory for each array of RenderItems (could maybe optimize by somehow figuring out the number for each array beforehand)
+  *opaque_items = (struct RenderItem *)malloc(num_items * sizeof(struct RenderItem));
+  if (!opaque_items){
+    fprintf(stderr, "Error: failed to allocate opaque RenderItems in sort_render_items\n");
+    // When rendering, make sure to check whether opaque_items is valid before trying to render them
+  }
+  *mask_items = (struct RenderItem *)malloc(num_items * sizeof(struct RenderItem));
+  if (!mask_items){
+    fprintf(stderr, "Error: failed to allocate mask RenderItems in sort_render_items\n");
+  }
+  *transparent_items = (struct RenderItem *)malloc(num_items * sizeof(struct RenderItem));
+  if (!transparent_items){
+    fprintf(stderr, "Error: failed to allocate transparent RenderItems in sort_render_items\n");
+  }
+  *additive_items = (struct RenderItem *)malloc(num_items * sizeof(struct RenderItem));
+  if (!additive_items){
+    fprintf(stderr, "Error: failed to allocate additive RenderItems in sort_render_items\n");
+  }
+  printf("Successfully allocated RenderItem arrays\n");
+  // Zero length of each array
+  *num_opaque_items = 0;
+  *num_mask_items = 0;
+  *num_transparent_items = 0;
+  *num_additive_items = 0;
 
   // For each Entity, get its Model
   // For each of the Model's Meshes, create a RenderItem:
   // - pointer to mesh
   // - transform (Entity's model matrix)
   // - get depth as distance from camera to mesh (think I need the center, aiMesh has an aiAABB, can probably get it from that)
-  // switch on the mesh's material's blend_mode to determine which array to add it to
+  for (unsigned int i = 0; i < num_entities; i++){
+    struct Entity *entity = &entities[i];
+    struct Model *model = entity->model;
+    for (unsigned int j = 0; j < model->num_meshes; j++){
+      Mesh *mesh = &model->meshes[j];
+      printf("sort_render_items: processing model %d, mesh %d\n", i, j);
+      struct RenderItem render_item;
+      render_item.mesh = mesh;
+      // Compute transform from the Entity's position, rotation, and scale
+      glm_mat4_identity(render_item.transform);
+      glm_translate(render_item.transform, entity->position);
+      vec3 rotation_radians = {glm_rad(entity->rotation[0]), glm_rad(entity->rotation[1]), glm_rad(entity->rotation[2])};
+      mat4 rotation;
+      glm_euler_xyz(rotation_radians, rotation);
+      glm_mul(render_item.transform, rotation, render_item.transform);
+      glm_scale(render_item.transform, entity->scale);
+printf("sort_render_items: got render_item transform\n");
+      // Get mesh depth
+
+      // switch on the mesh's material's blend_mode to determine which array to add it to
+      switch(model->materials[model->meshes[j].material_index].blend_mode){
+        // Opaque
+        case 0: {
+          printf("Adding opaque render item\n");
+          (*opaque_items)[(*num_opaque_items)++] = render_item;
+          printf("Added opaque render item\n");
+          break;
+        }
+        // Mask
+        case 1: {
+          (*mask_items)[(*num_mask_items)++] = render_item;
+          break;
+        }
+        // Transparent
+        case 2: {
+          (*transparent_items)[(*num_transparent_items)++] = render_item;
+          break;
+        }
+        // Additive
+        case 3: {
+          (*additive_items)[(*num_additive_items)++] = render_item;
+          break;
+        }
+      }
+    }
+  }
 
   // Sort transparent_items back to front
 }
@@ -318,9 +393,23 @@ void scene_render(struct Scene *scene){
   struct RenderItem *transparent_items = NULL;
   struct RenderItem *additive_items = NULL;
   unsigned int num_opaque_items, num_mask_items, num_transparent_items, num_additive_items;
-  // sort_render_items(concatenated_entities, &scene->player.camera->position, &opaque_items, &num_opaque_items, &mask_items, &num_mask_items, &transparent_items, &num_transparent_items, &additive_items, &num_additive_items);
+  // Combine static and dynamic entities
+  unsigned int num_entities = scene->num_static_entities + scene->num_dynamic_entities;
+  struct Entity *combined_entities = (struct Entity *)malloc(num_entities * sizeof(struct Entity));
+  if (!combined_entities){
+    fprintf(stderr, "Error: failed to allocate entities for render item sorting in scene_render\n");
+  }
+  memcpy(combined_entities, scene->static_entities, scene->num_static_entities * sizeof(struct Entity));
+  memcpy(combined_entities + scene->num_static_entities, scene->dynamic_entities, scene->num_dynamic_entities * sizeof(struct Entity));
+  sort_render_items(combined_entities, num_entities, scene->player.camera->position, &opaque_items, &num_opaque_items, &mask_items, &num_mask_items, &transparent_items, &num_transparent_items, &additive_items, &num_additive_items);
 
   // Render RenderItem arrays in order: opaque, mask, transparent, additive
+  // Free allocated RenderItem arrays (optimize because this seems like a lot more work than I should have to do for this every single frame)
+  free(combined_entities);
+  free(opaque_items);
+  free(mask_items);
+  free(transparent_items);
+  free(additive_items);
 
   // Draw entities
   for(int i = 0; i < scene->num_static_entities; i++){
@@ -330,7 +419,6 @@ void scene_render(struct Scene *scene){
   for(int i = 0; i < scene->num_dynamic_entities; i++){
     entity_render(&scene->dynamic_entities[i], &context);
   }
-  // printf("OIIAI RENDER TIME: %.2f ms\n", (glfwGetTime() - oiiai_start_time) * 1000.0);
 
   // Draw skybox
   skybox_render(scene->skybox, &context);
