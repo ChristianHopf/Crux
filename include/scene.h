@@ -16,6 +16,13 @@ struct Light {
   vec3 specular;
 };
 
+// For sorting meshes for multiple rendering passes
+struct RenderItem {
+  struct Mesh *mesh;
+  mat4 transform;
+  float depth;
+};
+
 struct Scene {
   struct Entity *static_entities;
   struct Entity *dynamic_entities;

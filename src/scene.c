@@ -139,7 +139,7 @@ struct Scene *scene_init(char *scene_path){
   }
   // Only one music stream for now, could later start multiple streams for other ambient loops
   char *music_path = cJSON_GetStringValue(music_json);
-  // audio_stream_create(music_path);
+  audio_stream_create(music_path);
 
   // Load sound effects
   cJSON *sound_effects_json = cJSON_GetObjectItemCaseSensitive(sounds_json, "effects");
@@ -266,6 +266,26 @@ void scene_update(struct Scene *scene, float delta_time){
   scene->lights[0].direction[2] = (float)cos(lightSpeed * total_time);
 }
 
+void sort_render_items(
+  struct Entity *entities,
+  vec3 camera_pos,
+  struct RenderItem **opaque_items, unsigned int *num_opaque_items,
+  struct RenderItem **mask_items, unsigned int *num_mask_items,
+  struct RenderItem **transparent_items, unsigned int *num_transparent_items,
+  struct RenderItem **additive_items, unsigned int *num_additive_items)
+{
+  // Allocate memory for each array of RenderItems
+
+  // For each Entity, get its Model
+  // For each of the Model's Meshes, create a RenderItem:
+  // - pointer to mesh
+  // - transform (Entity's model matrix)
+  // - get depth as distance from camera to mesh (think I need the center, aiMesh has an aiAABB, can probably get it from that)
+  // switch on the mesh's material's blend_mode to determine which array to add it to
+
+  // Sort transparent_items back to front
+}
+
 void scene_render(struct Scene *scene){
   // Render (clear color and depth buffer bits)
   glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
@@ -291,6 +311,16 @@ void scene_render(struct Scene *scene){
   glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(mat4), view);
   glBufferSubData(GL_UNIFORM_BUFFER, sizeof(mat4), sizeof(mat4), projection);
   glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+  // Sort meshes by opaque, mask, transparent, additive
+  struct RenderItem *opaque_items = NULL;
+  struct RenderItem *mask_items = NULL;
+  struct RenderItem *transparent_items = NULL;
+  struct RenderItem *additive_items = NULL;
+  unsigned int num_opaque_items, num_mask_items, num_transparent_items, num_additive_items;
+  // sort_render_items(concatenated_entities, &scene->player.camera->position, &opaque_items, &num_opaque_items, &mask_items, &num_mask_items, &transparent_items, &num_transparent_items, &additive_items, &num_additive_items);
+
+  // Render RenderItem arrays in order: opaque, mask, transparent, additive
 
   // Draw entities
   for(int i = 0; i < scene->num_static_entities; i++){
