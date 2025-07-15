@@ -139,7 +139,7 @@ struct Scene *scene_init(char *scene_path){
   }
   // Only one music stream for now, could later start multiple streams for other ambient loops
   char *music_path = cJSON_GetStringValue(music_json);
-  audio_stream_create(music_path);
+  // audio_stream_create(music_path);
 
   // Load sound effects
   cJSON *sound_effects_json = cJSON_GetObjectItemCaseSensitive(sounds_json, "effects");
@@ -266,121 +266,6 @@ void scene_update(struct Scene *scene, float delta_time){
   scene->lights[0].direction[2] = (float)cos(lightSpeed * total_time);
 }
 
-// Helper for sorting transparent RenderItems by depth
-int compare_render_item_depth(const void *a, const void *b){
-  float depth_A = ((struct RenderItem *)a)->depth;
-  float depth_B = ((struct RenderItem *)b)->depth;
-
-  // Descending order: if A is farther away, return -1 (A comes first)
-  if (depth_A > depth_B) return -1;
-  if (depth_A < depth_B) return 1;
-  return 0;
-}
-
-void sort_render_items(
-  struct Entity *entities,
-  unsigned int num_entities,
-  vec3 camera_pos,
-  struct RenderItem **opaque_items, unsigned int *num_opaque_items,
-  struct RenderItem **mask_items, unsigned int *num_mask_items,
-  struct RenderItem **transparent_items, unsigned int *num_transparent_items,
-  struct RenderItem **additive_items, unsigned int *num_additive_items)
-{
-  // Total number of items is the number of meshes for each Entity
-  unsigned int num_items = 0;
-  for (unsigned int i = 0; i < num_entities; i++){
-    num_items += entities[i].model->num_meshes;
-  }
-
-  // Allocate memory for each array of RenderItems (could maybe optimize by somehow figuring out the number for each array beforehand)
-  *opaque_items = (struct RenderItem *)malloc(num_items * sizeof(struct RenderItem));
-  if (!opaque_items){
-    fprintf(stderr, "Error: failed to allocate opaque RenderItems in sort_render_items\n");
-    // When rendering, make sure to check whether opaque_items is valid before trying to render them
-  }
-  *mask_items = (struct RenderItem *)malloc(num_items * sizeof(struct RenderItem));
-  if (!mask_items){
-    fprintf(stderr, "Error: failed to allocate mask RenderItems in sort_render_items\n");
-  }
-  *transparent_items = (struct RenderItem *)malloc(num_items * sizeof(struct RenderItem));
-  if (!transparent_items){
-    fprintf(stderr, "Error: failed to allocate transparent RenderItems in sort_render_items\n");
-  }
-  *additive_items = (struct RenderItem *)malloc(num_items * sizeof(struct RenderItem));
-  if (!additive_items){
-    fprintf(stderr, "Error: failed to allocate additive RenderItems in sort_render_items\n");
-  }
-  printf("Successfully allocated RenderItem arrays\n");
-  // Zero length of each array
-  *num_opaque_items = 0;
-  *num_mask_items = 0;
-  *num_transparent_items = 0;
-  *num_additive_items = 0;
-
-  // For each Entity, get its Model
-  // For each of the Model's Meshes, create a RenderItem:
-  // - pointer to mesh
-  // - transform (Entity's model matrix)
-  // - get depth as distance from camera to mesh (think I need the center, aiMesh has an aiAABB, can probably get it from that)
-  for (unsigned int i = 0; i < num_entities; i++){
-    struct Entity *entity = &entities[i];
-    struct Model *model = entity->model;
-
-    for (unsigned int j = 0; j < model->num_meshes; j++){
-      Mesh *mesh = &model->meshes[j];
-
-      struct RenderItem render_item;
-      render_item.mesh = mesh;
-
-      // Compute transform from the Entity's position, rotation, and scale
-      glm_mat4_identity(render_item.transform);
-      glm_translate(render_item.transform, entity->position);
-      vec3 rotation_radians = {glm_rad(entity->rotation[0]), glm_rad(entity->rotation[1]), glm_rad(entity->rotation[2])};
-      mat4 rotation;
-      glm_euler_xyz(rotation_radians, rotation);
-      glm_mul(render_item.transform, rotation, render_item.transform);
-      glm_scale(render_item.transform, entity->scale);
-
-      // Get mesh depth: magnitude of difference between camera pos and mesh center
-      // print_glm_vec3(camera_pos, "sort_render_items camera position");
-      vec3 world_mesh_center, difference;
-      glm_mat4_mulv3(render_item.transform, mesh->center, 1.0f, world_mesh_center);
-      // glm_vec3_copy(world_mesh_center, mesh->center);
-      glm_vec3_sub(camera_pos, world_mesh_center, difference);
-      render_item.depth = glm_vec3_norm(difference);
-      printf("Depth of entity: %f\n", render_item.depth);
-
-      // Switch on this mesh's material's blend_mode to determine which array to add it to
-      switch(model->materials[model->meshes[j].material_index].blend_mode){
-        // Opaque
-        case 0: {
-          (*opaque_items)[(*num_opaque_items)++] = render_item;
-          break;
-        }
-        // Mask
-        case 1: {
-          (*mask_items)[(*num_mask_items)++] = render_item;
-          break;
-        }
-        // Transparent
-        case 2: {
-          (*transparent_items)[(*num_transparent_items)++] = render_item;
-          break;
-        }
-        // Additive
-        case 3: {
-          (*additive_items)[(*num_additive_items)++] = render_item;
-          break;
-        }
-      }
-    }
-  }
-
-  // Sort transparent_items back to front
-  qsort(*transparent_items, *num_transparent_items, sizeof(struct RenderItem), compare_render_item_depth);
-  printf("Successfully sorted %d transparent_items\n", *num_transparent_items);
-}
-
 void scene_render(struct Scene *scene){
   // Render (clear color and depth buffer bits)
   glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
@@ -424,7 +309,16 @@ void scene_render(struct Scene *scene){
   sort_render_items(combined_entities, num_entities, scene->player.camera->position, &opaque_items, &num_opaque_items, &mask_items, &num_mask_items, &transparent_items, &num_transparent_items, &additive_items, &num_additive_items);
 
   // Render RenderItem arrays in order: opaque, mask, transparent, additive
-  // TODO draw functions for each RenderItem array
+  glDisable(GL_BLEND);
+  draw_render_items(opaque_items, num_opaque_items, &context);
+
+  // draw_render_items(mask_items, num_mask_items);
+
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  draw_render_items(transparent_items, num_transparent_items, &context);
+
+  // draw_render_items(additive_items, num_additive_items);
 
   // Free allocated RenderItem arrays (optimize because this seems like a lot more work than I should have to do for this every single frame)
   free(combined_entities);
@@ -434,13 +328,13 @@ void scene_render(struct Scene *scene){
   free(additive_items);
 
   // Draw entities
-  for(int i = 0; i < scene->num_static_entities; i++){
-    entity_render(&scene->static_entities[i], &context);
-  }
-  float oiiai_start_time = glfwGetTime();
-  for(int i = 0; i < scene->num_dynamic_entities; i++){
-    entity_render(&scene->dynamic_entities[i], &context);
-  }
+  // for(int i = 0; i < scene->num_static_entities; i++){
+  //   entity_render(&scene->static_entities[i], &context);
+  // }
+  // float oiiai_start_time = glfwGetTime();
+  // for(int i = 0; i < scene->num_dynamic_entities; i++){
+  //   entity_render(&scene->dynamic_entities[i], &context);
+  // }
 
   // Draw skybox
   skybox_render(scene->skybox, &context);

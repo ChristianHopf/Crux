@@ -3,7 +3,11 @@
 		{
 			"vertex": "shaders/shader.vs",
 			"fragment": "shaders/dirlight/shader.fs"
-		}
+		},
+    {
+      "vertex": "shaders/physics/common.vs",
+      "fragment": "shaders/physics/translucent.fs"
+    }
 	],
 	"models": [
 		"resources/basic/grass_plane/grass_plane.gltf",
@@ -105,7 +109,7 @@
 		"dynamic": [
 			{
 				"model_index": 1,
-				"shader_index": 0,
+				"shader_index": 1,
 				"position": [0.0, 1.0, -3.0],
 				"rotation": [0.0, 0.0, 0.0],
 				"scale": [0.5, 0.5, 0.5],
@@ -120,7 +124,7 @@
 			},
 			{
 				"model_index": 1,
-				"shader_index": 0,
+				"shader_index": 1,
 				"position": [0.0, 1.0, -1.0],
 				"rotation": [0.0, 0.0, 0.0],
 				"scale": [0.5, 0.5, 0.5],
@@ -129,13 +133,13 @@
 					"type": 0,
 					"data": {
 						"center": [0.0, 0.0, 0.0],
-						"extents": [0.5, 0.5, 0.5]
+						"extents": [1.0, 1.0, 1.0]
 					}
 				}
 			},
 			{
 				"model_index": 1,
-				"shader_index": 0,
+				"shader_index": 1,
 				"position": [0.0, 1.0, -4.0],
 				"rotation": [0.0, 0.0, 0.0],
 				"scale": [0.5, 0.5, 0.5],
@@ -144,13 +148,13 @@
 					"type": 0,
 					"data": {
 						"center": [0.0, 0.0, 0.0],
-						"extents": [0.5, 0.5, 0.5]
+						"extents": [1.0, 1.0, 1.0]
 					}
 				}
 			},
 			{
 				"model_index": 1,
-				"shader_index": 0,
+				"shader_index": 1,
 				"position": [0.0, 1.0, -2.0],
 				"rotation": [0.0, 0.0, 0.0],
 				"scale": [0.5, 0.5, 0.5],
@@ -159,7 +163,7 @@
 					"type": 0,
 					"data": {
 						"center": [0.0, 0.0, 0.0],
-						"extents": [0.5, 0.5, 0.5]
+						"extents": [1.0, 1.0, 1.0]
 					}
 				}
 			}
