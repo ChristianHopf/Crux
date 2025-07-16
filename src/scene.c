@@ -311,15 +311,19 @@ void scene_render(struct Scene *scene){
   // Render RenderItem arrays in order: opaque, mask, transparent, additive
   glDisable(GL_BLEND);
   draw_render_items(opaque_items, num_opaque_items, &context);
+  // printf("Rendered %d opaque meshes\n", num_opaque_items);
 
   draw_render_items(mask_items, num_mask_items, &context);
+  // printf("Rendered %d mask meshes\n", num_mask_items);
 
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   draw_render_items(transparent_items, num_transparent_items, &context);
+  // printf("Rendered %d transparent meshes\n", num_transparent_items);
 
   glBlendFunc(GL_SRC_ALPHA, GL_ONE);
   draw_render_items(additive_items, num_additive_items, &context);
+  // printf("Rendered %d additive meshes\n", num_additive_items);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
   // Free allocated RenderItem arrays (optimize because this seems like a lot more work than I should have to do for this every single frame)

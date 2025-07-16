@@ -51,7 +51,7 @@ void material_load_textures(struct Material *mat, struct aiMaterial *ai_mat, con
     // $mat.opacity
     if (strcmp(property->mKey.data, "$mat.opacity") == 0){
       float mat_opacity = *(float *)property->mData;
-      printf("mat opacity is %f\n", mat_opacity);
+      // printf("mat opacity is %f\n", mat_opacity);
       mat->opacity = mat_opacity;
     }
 
@@ -82,7 +82,7 @@ void material_load_textures(struct Material *mat, struct aiMaterial *ai_mat, con
       num_texture_properties++;
     }
   }
-  printf("Material blend mode is %d\n", mat->blend_mode);
+  // printf("Material blend mode is %d\n", mat->blend_mode);
 
   // int blend_mode;
   // if (aiGetMaterialInteger(ai_mat, AI_MATKEY_SHADING_MODEL, &ai_shading_mode) == AI_SUCCESS){

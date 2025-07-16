@@ -1,0 +1,48 @@
+{
+	"shaders": [
+		{
+			"vertex": "shaders/shader.vs",
+			"fragment": "shaders/dirlight/shader.fs"
+		}
+	],
+	"models": [
+		"resources/objects/modular_dungeon/free_modular_low_poly_dungeon_pack/scene.gltf"
+	],
+  "sounds": {
+    "music": "resources/music/mookid.wav",
+    "effects": [
+      "resources/sfx/vineboom.wav"
+    ]
+  },
+	"meshes": {
+		"static": [
+			{
+				"model_index": 0,
+				"shader_index": 0,
+				"position": [0.0, 0.0, 0.0],
+				"rotation": [0.0, 0.0, 0.0],
+				"scale": [1.0, 1.0, 1.0],
+				"collider": {
+					"type": 2,
+					"data": {
+						"normal": [0.0, 1.0, 0.0],
+						"distance": 0
+					}
+				}
+			}
+		],
+		"dynamic": []
+	},
+	"lights": [
+		{
+			"type": "directional",
+			"data": {
+				"direction": [-0.2, 0.0, -0.3],
+				"ambient": [0.4, 0.4, 0.4],
+				"diffuse": [0.8, 0.8, 0.8],
+				"specular": [1.0, 1.0, 1.0]
+			}
+		}
+	],
+	"skybox": "resources/skybox/"
+}

@@ -70,7 +70,7 @@ void main(){
     resultColor = baseColor.rgb + emissive;
   }
 
-  FragColor = vec4(resultColor, material.opacity);
+  FragColor = vec4(resultColor, alpha);
   //FragColor = vec4(resultColor, alpha);
 }
 
