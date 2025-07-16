@@ -1,9 +1,10 @@
 #pragma once
 
-// #include <glad/glad.h>
+#include <glad/glad.h>
 #include <cglm/cglm.h>
 #include <assimp/texture.h>
 #include <assimp/material.h>
+#include <string.h>
 #include "utils.h"
 
 typedef struct {
@@ -22,6 +23,14 @@ struct Material {
   vec3 ambient;
   vec3 diffuse;
   vec4 specular;
+  // mat.gltf.blendMode can be OPAQUE (0), MASK (1), BLEND (2), or ADDITIVE (3)
+  // Maybe make this a char pointer so it makes more sense, or an enum
+  int blend_mode;
+  float alpha_cutoff;
+  enum aiShadingMode shading_mode;
+  // Diffuse opacity
+  float opacity;
+  vec3 emissive_color;
   float shininess;
 };
 

@@ -292,15 +292,55 @@ void scene_render(struct Scene *scene){
   glBufferSubData(GL_UNIFORM_BUFFER, sizeof(mat4), sizeof(mat4), projection);
   glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
+  // Sort meshes by opaque, mask, transparent, additive
+  struct RenderItem *opaque_items = NULL;
+  struct RenderItem *mask_items = NULL;
+  struct RenderItem *transparent_items = NULL;
+  struct RenderItem *additive_items = NULL;
+  unsigned int num_opaque_items, num_mask_items, num_transparent_items, num_additive_items;
+  // Combine static and dynamic entities
+  unsigned int num_entities = scene->num_static_entities + scene->num_dynamic_entities;
+  struct Entity *combined_entities = (struct Entity *)malloc(num_entities * sizeof(struct Entity));
+  if (!combined_entities){
+    fprintf(stderr, "Error: failed to allocate entities for render item sorting in scene_render\n");
+  }
+  memcpy(combined_entities, scene->static_entities, scene->num_static_entities * sizeof(struct Entity));
+  memcpy(combined_entities + scene->num_static_entities, scene->dynamic_entities, scene->num_dynamic_entities * sizeof(struct Entity));
+  sort_render_items(combined_entities, num_entities, scene->player.camera->position, &opaque_items, &num_opaque_items, &mask_items, &num_mask_items, &transparent_items, &num_transparent_items, &additive_items, &num_additive_items);
+
+  // Render RenderItem arrays in order: opaque, mask, transparent, additive
+  glDisable(GL_BLEND);
+  draw_render_items(opaque_items, num_opaque_items, &context);
+  // printf("Rendered %d opaque meshes\n", num_opaque_items);
+
+  draw_render_items(mask_items, num_mask_items, &context);
+  // printf("Rendered %d mask meshes\n", num_mask_items);
+
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  draw_render_items(transparent_items, num_transparent_items, &context);
+  // printf("Rendered %d transparent meshes\n", num_transparent_items);
+
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+  draw_render_items(additive_items, num_additive_items, &context);
+  // printf("Rendered %d additive meshes\n", num_additive_items);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+  // Free allocated RenderItem arrays (optimize because this seems like a lot more work than I should have to do for this every single frame)
+  free(combined_entities);
+  free(opaque_items);
+  free(mask_items);
+  free(transparent_items);
+  free(additive_items);
+
   // Draw entities
-  for(int i = 0; i < scene->num_static_entities; i++){
-    entity_render(&scene->static_entities[i], &context);
-  }
-  float oiiai_start_time = glfwGetTime();
-  for(int i = 0; i < scene->num_dynamic_entities; i++){
-    entity_render(&scene->dynamic_entities[i], &context);
-  }
-  // printf("OIIAI RENDER TIME: %.2f ms\n", (glfwGetTime() - oiiai_start_time) * 1000.0);
+  // for(int i = 0; i < scene->num_static_entities; i++){
+  //   entity_render(&scene->static_entities[i], &context);
+  // }
+  // float oiiai_start_time = glfwGetTime();
+  // for(int i = 0; i < scene->num_dynamic_entities; i++){
+  //   entity_render(&scene->dynamic_entities[i], &context);
+  // }
 
   // Draw skybox
   skybox_render(scene->skybox, &context);
@@ -313,20 +353,6 @@ void scene_render(struct Scene *scene){
   // Render text
   text_render("Crux Engine 0.2", 4.0f, 1058.0f, 1.0f, (vec3){1.0f, 1.0f, 1.0f});
 }
-
-// void scene_pause(struct Scene *scene){
-//   scene->paused = true;
-//
-//   // Pause audio
-//   audio_pause();
-// }
-//
-// void scene_unpause(struct Scene *scene){
-//   scene->paused = false;
-//
-//   // Unpause audio
-//   audio_unpause();
-// }
 
 //     // Rewrite this to actually free everything
 //     free(scene->entities);

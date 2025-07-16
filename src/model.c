@@ -15,7 +15,7 @@
 #include "material.h"
 
 bool model_load(struct Model *model, const char *path){
-  const struct aiScene* scene = aiImportFile(path, aiProcessPreset_TargetRealtime_Fast);
+  const struct aiScene* scene = aiImportFile(path, aiProcess_GenBoundingBoxes | aiProcessPreset_TargetRealtime_Fast);
 
   if(!scene || !scene->mRootNode || !scene->mMeshes || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE) {
     printf("ERROR::ASSIMP:: %s\n", aiGetErrorString());
@@ -64,16 +64,6 @@ bool model_load(struct Model *model, const char *path){
     model->materials[i].shininess = 32.0f;
 
     material_load_textures(&model->materials[i], mat, scene, model->directory);
-    // if(model->materials[i].num_textures > 0){
-    //   printf("Let's look at the texture info I just loaded:\n");
-    //   printf("Number of textures loaded: %d\n", model->materials[i].num_textures);
-    //   for (size_t j = 0; j < model->materials[i].num_textures; ++j) {
-    //     struct Texture *tex = &model->materials[i].textures[j];
-    //     printf("  Texture %zu:\n", j);
-    //     printf("    ID:   %u\n", tex->texture_id);
-    //     printf("    Type: %s\n", tex->texture_type);
-    //   }
-    // }
   }
 
   // Process the root node's meshes, build AABB
@@ -144,7 +134,7 @@ void model_process_mesh(struct aiMesh *ai_mesh, const struct aiScene *scene, str
       glm_vec2_copy((vec2){0.0f, 0.0f}, vertices[i].tex_coord);
     }
 
-    // Tangent, Bitangent
+    // Tangent, Bitangent (for normal mapping)
     if (ai_mesh->mTangents){
       memcpy(vertices[i].tangent, &ai_mesh->mTangents[i], sizeof(float) * 3);
     }
@@ -170,7 +160,17 @@ void model_process_mesh(struct aiMesh *ai_mesh, const struct aiScene *scene, str
   }
   dest_mesh->num_indices = num_indices;
   dest_mesh->material_index = ai_mesh->mMaterialIndex;
-  
+
+  // Get center from AABB min and max vectors, apply node space transform
+  struct aiVector3D min = ai_mesh->mAABB.mMin;
+  struct aiVector3D max = ai_mesh->mAABB.mMax;
+
+  dest_mesh->center[0] = (min.x + max.x) * 0.5f;
+  dest_mesh->center[1] = (min.y + max.y) * 0.5f;
+  dest_mesh->center[2] = (min.z + max.z) * 0.5f;
+  vec3 node_space_center;
+  glm_mat4_mulv3(node_transform_mat4, dest_mesh->center, 1.0f, node_space_center);
+  glm_vec3_copy(node_space_center, dest_mesh->center);
 
   // Bind vertex buffers and buffer vertex data
   glGenBuffers(1, &dest_mesh->VBO);
@@ -206,6 +206,7 @@ void model_process_mesh(struct aiMesh *ai_mesh, const struct aiScene *scene, str
 
   glBindVertexArray(0);
 
+  // Pretty sure I just don't need to keep these since I have the VBO and EBO ids.
   free(vertices);
   free(indices);
 }
@@ -213,11 +214,37 @@ void model_process_mesh(struct aiMesh *ai_mesh, const struct aiScene *scene, str
 void model_draw(struct Model *model, Shader *shader){
   // For each mesh in the model
   for(unsigned int i = 0; i < model->num_meshes; i++){
+    // if (i == 1 || i == 6 || i == 10 || i == 26 || i == 27) continue;
+
+    // My shader has an emissive map uniform, but a mesh might not use
+    // an emissive texture. A good enough solution is to just give
+    // the shader a bool for whether it should sample whatever emissive
+    // texture is currently bound.
+    bool has_emissive = false;
 
     // Only bind textures if this mesh *has* a material.
     // If it doesn't, model->meshes[i].material_index will be negative.
     if (model->meshes[i].material_index >= 0){
       struct Material *mat = &model->materials[model->meshes[i].material_index];
+
+      // Blend mode
+      // printf("This mesh's material has blend mode %d\n", mat->blend_mode);
+      if (mat->blend_mode == 3 || mat->blend_mode == 2){
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+      }
+      else{
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+      }
+      if (mat->blend_mode == 1){
+        shader_set_bool(shader, "material.mask", true);
+      }
+      else{
+        shader_set_bool(shader, "material.mask", false);
+      }
+
+      // Shading mode
+      if (mat->shading_mode == 9) shader_set_bool(shader, "material.unlit", true);
+      else shader_set_bool(shader, "material.unlit", false);
 
       unsigned int diffuse_num = 1;
       unsigned int specular_num = 1;
@@ -259,11 +286,18 @@ void model_draw(struct Model *model, Shader *shader){
           glBindTexture(GL_TEXTURE_2D, mat->textures[j].texture_id);
           shader_set_int(shader, "material.normal", j);
         }
+        // What I actually need to do is check if this mesh uses an emissive texture,
+        // not whether its material has one.
         else if (strcmp(mat->textures[j].texture_type, "emissive") == 0){
-
+          has_emissive = true;
           glActiveTexture(GL_TEXTURE0 + j);
           glBindTexture(GL_TEXTURE_2D, mat->textures[j].texture_id);
           shader_set_int(shader, "material.emissive", j);
+          shader_set_bool(shader, "material.has_emissive", has_emissive);
+        }
+        else{
+          has_emissive = false;
+          shader_set_bool(shader, "material.has_emissive", has_emissive);
         }
       }
     }
@@ -275,6 +309,7 @@ void model_draw(struct Model *model, Shader *shader){
 
   // Next mesh will bind its VAO first, so this shouldn't matter. Experiment with and without
   glBindVertexArray(0);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
 
 void model_free(struct Model *model){

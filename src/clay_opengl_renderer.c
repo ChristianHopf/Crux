@@ -80,6 +80,7 @@ void clay_opengl_renderer_update_dimensions(float screen_width, float screen_hei
 }
 
 void clay_opengl_render(Clay_RenderCommandArray renderCommands, struct Font *fonts){
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   // Get render command
   for(int i = 0; i < renderCommands.length; i++){
     Clay_RenderCommand *render_command = Clay_RenderCommandArray_Get(&renderCommands, i);
