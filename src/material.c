@@ -52,6 +52,7 @@ void material_load_textures(struct Material *mat, struct aiMaterial *ai_mat, con
     if (strcmp(property->mKey.data, "$mat.opacity") == 0){
       float mat_opacity = *(float *)property->mData;
       printf("mat opacity is %f\n", mat_opacity);
+      mat->opacity = mat_opacity;
     }
 
     // Alpha cutoff (should only exist for material with MASK alphaMode)

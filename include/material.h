@@ -28,6 +28,8 @@ struct Material {
   int blend_mode;
   float alpha_cutoff;
   enum aiShadingMode shading_mode;
+  // Diffuse opacity
+  float opacity;
   vec3 emissive_color;
   float shininess;
 };

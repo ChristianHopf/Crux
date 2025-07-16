@@ -52,6 +52,9 @@ void draw_render_items(struct RenderItem *render_items, unsigned int num_render_
       // Emissive color
       shader_set_vec3(render_item.shader, "material.emissive_color", mat->emissive_color);
 
+      // Opacity
+      shader_set_float(render_item.shader, "material.opacity", mat->opacity);
+
       unsigned int diffuse_num = 1;
       unsigned int specular_num = 1;
 
