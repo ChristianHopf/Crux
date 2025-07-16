@@ -22,12 +22,12 @@ void material_load_textures(struct Material *mat, struct aiMaterial *ai_mat, con
   unsigned int num_texture_properties = 0;
   for (unsigned int i = 0; i < ai_mat->mNumProperties; i++){
     struct aiMaterialProperty *property = ai_mat->mProperties[i];
-    printf("Property string is %s\n", property->mKey.data);
+    // printf("Property string is %s\n", property->mKey.data);
 
     // Alpha mode
     if (strcmp(property->mKey.data, "$mat.gltf.alphaMode") == 0){
       struct aiString *alphaMode = (struct aiString *)property->mData;
-      printf("$mat.gltf.alphaMode property string is %s\n", alphaMode->data);
+      // printf("$mat.gltf.alphaMode property string is %s\n", alphaMode->data);
       if (strcmp(alphaMode->data, "OPAQUE") == 0){
         mat->blend_mode = 0;
       }
@@ -39,21 +39,43 @@ void material_load_textures(struct Material *mat, struct aiMaterial *ai_mat, con
       }
     }
 
+    // $clr.emissive?
+    if (strcmp(property->mKey.data, "$clr.emissive") == 0){
+      struct aiVector3D clr_emissive = *(struct aiVector3D *)property->mData;
+      mat->emissive_color[0] = clr_emissive.x;
+      mat->emissive_color[1] = clr_emissive.y;
+      mat->emissive_color[2] = clr_emissive.z;
+      // printf("$clr.emissive is %f %f %f\n", clr_emissive.x, clr_emissive.y, clr_emissive.z);
+    }
+
+    // $mat.opacity
+    if (strcmp(property->mKey.data, "$mat.opacity") == 0){
+      float mat_opacity = *(float *)property->mData;
+      printf("mat opacity is %f\n", mat_opacity);
+    }
+
+    // Alpha cutoff (should only exist for material with MASK alphaMode)
+    if (strcmp(property->mKey.data, "$mat.gltf.alphaCutoff") == 0){
+      float alpha_cutoff = *(float *)property->mData;
+      // printf("alpha cutoff is %f\n", alpha_cutoff);
+      mat->alpha_cutoff = alpha_cutoff;
+    }
+
     // Shading mode (unlit or not)
     if (strcmp(property->mKey.data, "$mat.shadingm") == 0){
       enum aiShadingMode shading_mode = *(int *)property->mData;
-      printf("$mat.shadingm int is %d\n", shading_mode);
+      // printf("$mat.shadingm int is %d\n", shading_mode);
       mat->shading_mode = shading_mode;
     }
 
     // Texture file
     if (strcmp(property->mKey.data, "$tex.file") == 0){
       struct aiString *texPath = (struct aiString *)property->mData;
-      printf("$tex.file string is %s\n", texPath->data);
+      // printf("$tex.file string is %s\n", texPath->data);
       
       // Check for "additive" in texture file name (alphaMode does not include additive blending)
       if (strcasestr(texPath->data, "additive") != NULL){
-        printf("Texture path contains the substring \"additive\"!\n");
+        // printf("Texture path contains the substring \"additive\"!\n");
         mat->blend_mode = 3;
       }
       num_texture_properties++;

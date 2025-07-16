@@ -62,6 +62,7 @@ bool model_load(struct Model *model, const char *path){
     glm_vec3_copy(model->materials[i].diffuse, (vec3){0.8f, 0.8f, 0.8f});
     glm_vec3_copy(model->materials[i].specular, (vec3){1.0f, 1.0f, 1.0f});
     model->materials[i].shininess = 32.0f;
+    // model->materials[i].num_textures = 0;
 
     printf("Processing material %d\n", i);
     material_load_textures(&model->materials[i], mat, scene, model->directory);

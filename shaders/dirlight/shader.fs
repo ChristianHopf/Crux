@@ -26,9 +26,12 @@ struct Material {
   sampler2D specular2;
 
   sampler2D emissive;
+  vec3 emissive_color;
   bool has_emissive;
 
   bool mask;
+  float alphaCutoff;
+
   bool unlit;
 
   sampler2D normal;
@@ -45,13 +48,14 @@ void main(){
 
   float alpha = baseColor.a;
   if (material.mask)
-    if (alpha < 0.1)
+    if (alpha < material.alphaCutoff)
       discard;
 
   // Emissive light
   vec3 emissive = vec3(0.0f);
   if (material.has_emissive){
-    emissive = texture(material.emissive, TexCoord).rgb * alpha;
+    //emissive = texture(material.emissive, TexCoord).rgb;
+    emissive = texture(material.emissive, TexCoord).rgb * material.emissive_color;
   }
   //emissive = vec3(texture(material.emissive, TexCoord));
 

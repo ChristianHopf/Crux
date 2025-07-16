@@ -110,10 +110,25 @@
 			{
 				"model_index": 1,
 				"shader_index": 1,
-				"position": [0.0, 1.0, -3.0],
+				"position": [-2.0, 2.5, -2.0],
 				"rotation": [0.0, 0.0, 0.0],
 				"scale": [0.5, 0.5, 0.5],
-				"velocity": [0.0, 0.0, 0.0],
+				"velocity": [4.0, 6.0, 4.0],
+				"collider": {
+					"type": 0,
+					"data": {
+						"center": [0.0, 0.0, 0.0],
+						"extents": [1.0, 1.0, 1.0]
+					}
+				}
+			},
+      {
+				"model_index": 1,
+				"shader_index": 1,
+				"position": [2.0, 2.5, -2.0],
+				"rotation": [0.0, 0.0, 0.0],
+				"scale": [0.5, 0.5, 0.5],
+				"velocity": [-4.0, 6.0, -4.0],
 				"collider": {
 					"type": 0,
 					"data": {
@@ -125,10 +140,25 @@
 			{
 				"model_index": 1,
 				"shader_index": 1,
-				"position": [0.0, 1.0, -1.0],
+				"position": [-2.0, 2.5, 2.0],
 				"rotation": [0.0, 0.0, 0.0],
 				"scale": [0.5, 0.5, 0.5],
-				"velocity": [0.0, 0.0, 0.0],
+				"velocity": [4.0, 6.0, -4.0],
+				"collider": {
+					"type": 0,
+					"data": {
+						"center": [0.0, 0.0, 0.0],
+						"extents": [1.0, 1.0, 1.0]
+					}
+				}
+			},
+      {
+				"model_index": 1,
+				"shader_index": 1,
+				"position": [2.0, 2.5, 2.0],
+				"rotation": [0.0, 0.0, 0.0],
+				"scale": [0.5, 0.5, 0.5],
+				"velocity": [-4.0, 6.0, -4.0],
 				"collider": {
 					"type": 0,
 					"data": {
@@ -140,10 +170,25 @@
 			{
 				"model_index": 1,
 				"shader_index": 1,
-				"position": [0.0, 1.0, -4.0],
+				"position": [-2.0, 7.5, -2.0],
 				"rotation": [0.0, 0.0, 0.0],
 				"scale": [0.5, 0.5, 0.5],
-				"velocity": [0.0, 0.0, 0.0],
+				"velocity": [4.0, -4.0, 4.0],
+				"collider": {
+					"type": 0,
+					"data": {
+						"center": [0.0, 0.0, 0.0],
+						"extents": [1.0, 1.0, 1.0]
+					}
+				}
+			},
+      {
+				"model_index": 1,
+				"shader_index": 1,
+				"position": [2.0, 7.5, -2.0],
+				"rotation": [0.0, 0.0, 0.0],
+				"scale": [0.5, 0.5, 0.5],
+				"velocity": [-4.0, -4.0, -4.0],
 				"collider": {
 					"type": 0,
 					"data": {
@@ -155,10 +200,25 @@
 			{
 				"model_index": 1,
 				"shader_index": 1,
-				"position": [0.0, 1.0, -2.0],
+				"position": [-2.0, 7.5, 2.0],
 				"rotation": [0.0, 0.0, 0.0],
 				"scale": [0.5, 0.5, 0.5],
-				"velocity": [0.0, 0.0, 0.0],
+				"velocity": [4.0, -4.0, -4.0],
+				"collider": {
+					"type": 0,
+					"data": {
+						"center": [0.0, 0.0, 0.0],
+						"extents": [1.0, 1.0, 1.0]
+					}
+				}
+			},
+      {
+				"model_index": 1,
+				"shader_index": 1,
+				"position": [2.0, 7.5, 2.0],
+				"rotation": [0.0, 0.0, 0.0],
+				"scale": [0.5, 0.5, 0.5],
+				"velocity": [-4.0, -4.0, -4.0],
 				"collider": {
 					"type": 0,
 					"data": {

@@ -30,15 +30,27 @@ void draw_render_items(struct RenderItem *render_items, unsigned int num_render_
     // Set camera position as viewPos in the fragment shader
     shader_set_vec3(render_item.shader, "viewPos", *context->camera_position_ptr);
 
+
     // Bind material info (has_emissive, shading mode (blend mode already handled), textures)
     bool has_emissive = false;
 
     if (render_item.mesh->material_index >= 0){
+      // if (render_item.mesh->material_index != 0 && render_item.mesh->material_index != 5 && render_item.mesh->material_index != 6) continue;
       struct Material *mat = &render_item.model->materials[render_item.mesh->material_index];
+
+      // If blend mode is MASK, set mask uniform and alpha cutoff
+      if (mat->blend_mode == 1){
+        shader_set_bool(render_item.shader, "material.mask", true);
+        shader_set_float(render_item.shader, "material.alphaCutoff", mat->alpha_cutoff);
+      }
+      else shader_set_bool(render_item.shader, "material.mask", false);
 
       // Shading mode
       if (mat->shading_mode == aiShadingMode_Unlit) shader_set_bool(render_item.shader, "material.unlit", true);
       else shader_set_bool(render_item.shader, "material.unlit", false);
+
+      // Emissive color
+      shader_set_vec3(render_item.shader, "material.emissive_color", mat->emissive_color);
 
       unsigned int diffuse_num = 1;
       unsigned int specular_num = 1;
@@ -200,7 +212,7 @@ void sort_render_items(
   if (!additive_items){
     fprintf(stderr, "Error: failed to allocate additive RenderItems in sort_render_items\n");
   }
-  printf("Successfully allocated RenderItem arrays\n");
+  // printf("Successfully allocated RenderItem arrays\n");
   // Zero length of each array
   *num_opaque_items = 0;
   *num_mask_items = 0;
@@ -241,7 +253,6 @@ void sort_render_items(
       // glm_vec3_copy(world_mesh_center, mesh->center);
       glm_vec3_sub(camera_pos, world_mesh_center, difference);
       render_item.depth = glm_vec3_norm(difference);
-      printf("Depth of entity: %f\n", render_item.depth);
 
       // Switch on this mesh's material's blend_mode to determine which array to add it to
       switch(model->materials[model->meshes[j].material_index].blend_mode){
@@ -271,7 +282,7 @@ void sort_render_items(
 
   // Sort transparent_items back to front
   qsort(*transparent_items, *num_transparent_items, sizeof(struct RenderItem), compare_render_item_depth);
-  printf("Successfully sorted %d transparent_items\n", *num_transparent_items);
+  // printf("Successfully sorted %d transparent_items\n", *num_transparent_items);
 }
 
 // Helper for sorting transparent RenderItems by depth

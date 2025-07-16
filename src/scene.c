@@ -312,13 +312,15 @@ void scene_render(struct Scene *scene){
   glDisable(GL_BLEND);
   draw_render_items(opaque_items, num_opaque_items, &context);
 
-  // draw_render_items(mask_items, num_mask_items);
+  draw_render_items(mask_items, num_mask_items, &context);
 
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   draw_render_items(transparent_items, num_transparent_items, &context);
 
-  // draw_render_items(additive_items, num_additive_items);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+  draw_render_items(additive_items, num_additive_items, &context);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
   // Free allocated RenderItem arrays (optimize because this seems like a lot more work than I should have to do for this every single frame)
   free(combined_entities);
@@ -340,9 +342,9 @@ void scene_render(struct Scene *scene){
   skybox_render(scene->skybox, &context);
 
   // Draw physics debug volumes
-  // if (scene->physics_debug_mode){
-  //   physics_debug_render(scene->physics_world, &context);
-  // }
+  if (scene->physics_debug_mode){
+    physics_debug_render(scene->physics_world, &context);
+  }
 
   // Render text
   text_render("Crux Engine 0.2", 4.0f, 1058.0f, 1.0f, (vec3){1.0f, 1.0f, 1.0f});
