@@ -6,9 +6,14 @@
 NarrowPhaseFunction narrow_phase_functions[NUM_COLLIDER_TYPES][NUM_COLLIDER_TYPES] = {
   [COLLIDER_AABB][COLLIDER_AABB] = narrow_phase_AABB_AABB,
   [COLLIDER_AABB][COLLIDER_SPHERE] = narrow_phase_AABB_sphere,
+  [COLLIDER_AABB][COLLIDER_CAPSULE] = narrow_phase_AABB_capsule,
   [COLLIDER_AABB][COLLIDER_PLANE] = narrow_phase_AABB_plane,
   [COLLIDER_SPHERE][COLLIDER_SPHERE] = narrow_phase_sphere_sphere,
+  [COLLIDER_SPHERE][COLLIDER_CAPSULE] = narrow_phase_sphere_capsule,
   [COLLIDER_SPHERE][COLLIDER_PLANE] = narrow_phase_sphere_plane,
+  [COLLIDER_SPHERE][COLLIDER_CAPSULE] = narrow_phase_sphere_capsule,
+  [COLLIDER_CAPSULE][COLLIDER_CAPSULE] = narrow_phase_capsule_capsule,
+  [COLLIDER_CAPSULE][COLLIDER_PLANE] = narrow_phase_capsule_plane
 };
 
 struct CollisionResult narrow_phase_AABB_AABB(struct PhysicsBody *body_AABB_A, struct PhysicsBody *body_AABB_B, float delta_time){
@@ -185,6 +190,10 @@ struct CollisionResult narrow_phase_AABB_sphere(struct PhysicsBody *body_AABB, s
   //
   //   }
   // }
+}
+
+struct CollisionResult narrow_phase_AABB_capsule(struct PhysicsBody *body_AABB, struct PhysicsBody *body_capsule, float delta_time){
+
 }
 
 struct CollisionResult narrow_phase_AABB_plane(struct PhysicsBody *body_AABB, struct PhysicsBody *body_plane, float delta_time){
@@ -365,6 +374,10 @@ struct CollisionResult narrow_phase_sphere_sphere(struct PhysicsBody *body_spher
   return result;
 }
 
+struct CollisionResult narrow_phase_sphere_capsule(struct PhysicsBody *body_sphere, struct PhysicsBody *body_capsule, float delta_time){
+
+}
+
 struct CollisionResult narrow_phase_sphere_plane(struct PhysicsBody *body_sphere, struct PhysicsBody *body_plane, float delta_time){
   struct Sphere *sphere = &body_sphere->collider.data.sphere;
   struct Plane *plane = &body_plane->collider.data.plane;
@@ -427,6 +440,14 @@ struct CollisionResult narrow_phase_sphere_plane(struct PhysicsBody *body_sphere
   }
 
   return result;
+}
+
+struct CollisionResult narrow_phase_capsule_capsule(struct PhysicsBody *body_capsule_A, struct PhysicsBody *body_capsule_B, float delta_time){
+
+}
+
+struct CollisionResult narrow_phase_capsule_plane(struct PhysicsBody *body_capsule, struct PhysicsBody *body_plane, float delta_time){
+
 }
 
 

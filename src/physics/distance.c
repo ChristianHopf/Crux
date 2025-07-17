@@ -4,10 +4,13 @@
 DistanceFunction distance_functions[NUM_COLLIDER_TYPES][NUM_COLLIDER_TYPES] = {
   [COLLIDER_AABB][COLLIDER_AABB] = min_dist_at_time_AABB_AABB,
   [COLLIDER_AABB][COLLIDER_SPHERE] = min_dist_at_time_AABB_sphere,
+  [COLLIDER_AABB][COLLIDER_CAPSULE] = min_dist_at_time_AABB_capsule,
   [COLLIDER_AABB][COLLIDER_PLANE] = min_dist_at_time_AABB_plane,
   [COLLIDER_SPHERE][COLLIDER_SPHERE] = min_dist_at_time_sphere_sphere,
+  [COLLIDER_SPHERE][COLLIDER_CAPSULE] = min_dist_at_time_sphere_capsule,
   [COLLIDER_SPHERE][COLLIDER_PLANE] = min_dist_at_time_sphere_plane,
-  // [COLLIDER_PLANE][COLLIDER_SPHERE] = min_dist_at_time_sphere_plane,
+  [COLLIDER_CAPSULE][COLLIDER_CAPSULE] = min_dist_at_time_capsule_capsule,
+  [COLLIDER_CAPSULE][COLLIDER_PLANE] = min_dist_at_time_capsule_plane
 };
 
 
@@ -97,6 +100,10 @@ float min_dist_at_time_AABB_sphere(struct PhysicsBody *body_A, struct PhysicsBod
   return distance_squared < (world_sphere.radius * world_sphere.radius) ? 0.0f : sqrt(distance_squared) - world_sphere.radius;
 }
 
+float min_dist_at_time_AABB_capsule(struct PhysicsBody *body_A, struct PhysicsBody *body_B, float time){
+
+}
+
 float min_dist_at_time_AABB_plane(struct PhysicsBody *body_A, struct PhysicsBody *body_B, float time){
 
   // Get pointers to the bodies' colliders
@@ -152,6 +159,10 @@ float min_dist_at_time_sphere_sphere(struct PhysicsBody *body_A, struct PhysicsB
   return distance_squared < (radius_sum * radius_sum) ? 0.0f : sqrt(distance_squared) - radius_sum;
 }
 
+float min_dist_at_time_sphere_capsule(struct PhysicsBody *body_A, struct PhysicsBody *body_B, float time){
+
+}
+
 float min_dist_at_time_sphere_plane(struct PhysicsBody *body_A, struct PhysicsBody *body_B, float time){
   // Get pointers to the bodies' colliders
   struct Sphere *sphere = &body_A->collider.data.sphere;
@@ -168,4 +179,12 @@ float min_dist_at_time_sphere_plane(struct PhysicsBody *body_A, struct PhysicsBo
   float distance = fabs(s) - world_sphere.radius;
 
   return glm_max(distance, 0);
+}
+
+float min_dist_at_time_capsule_capsule(struct PhysicsBody *body_A, struct PhysicsBody *body_B, float time){
+
+}
+
+float min_dist_at_time_capsule_plane(struct PhysicsBody *body_A, struct PhysicsBody *body_B, float time){
+
 }

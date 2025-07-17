@@ -53,7 +53,7 @@ void main(){
     if (alpha < material.alphaCutoff)
       discard;
 
-  vec3 resultColor;
+  vec3 resultColor = vec3(0.0f);
 
   // Emissive light
   vec3 emissive = vec3(0.0f);

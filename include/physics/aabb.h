@@ -31,6 +31,3 @@ void AABB_update_by_vertex(struct AABB *aabb, vec3 vertex);
 // Collision tests
 bool AABB_intersect_AABB(struct AABB *a, struct AABB *b);
 bool AABB_intersect_plane(struct AABB *box, struct Plane *plane);
-
-// void AABB_init(struct AABB *aabb);
-// void AABB_render(struct AABB *aabb, mat4 model, mat4 view, mat4 projection);

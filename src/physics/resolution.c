@@ -6,9 +6,13 @@
 ResolutionFunction resolution_functions[NUM_COLLIDER_TYPES][NUM_COLLIDER_TYPES] = {
   [COLLIDER_AABB][COLLIDER_AABB] = resolve_collision_AABB_AABB,
   [COLLIDER_AABB][COLLIDER_SPHERE] = resolve_collision_AABB_sphere,
+  [COLLIDER_AABB][COLLIDER_CAPSULE] = resolve_collision_AABB_capsule,
   [COLLIDER_AABB][COLLIDER_PLANE] = resolve_collision_AABB_plane,
   [COLLIDER_SPHERE][COLLIDER_SPHERE] = resolve_collision_sphere_sphere,
-  [COLLIDER_SPHERE][COLLIDER_PLANE] = resolve_collision_sphere_plane
+  [COLLIDER_SPHERE][COLLIDER_CAPSULE] = resolve_collision_sphere_capsule,
+  [COLLIDER_SPHERE][COLLIDER_PLANE] = resolve_collision_sphere_plane,
+  [COLLIDER_CAPSULE][COLLIDER_CAPSULE] = resolve_collision_capsule_capsule,
+  [COLLIDER_CAPSULE][COLLIDER_PLANE] = resolve_collision_capsule_plane
 };
 
 
@@ -201,6 +205,10 @@ void resolve_collision_AABB_sphere(struct PhysicsBody *body_A, struct PhysicsBod
   }
 }
 
+void resolve_collision_AABB_capsule(struct PhysicsBody *body_A, struct PhysicsBody *body_B, struct CollisionResult result, float delta_time){
+
+}
+
 void resolve_collision_AABB_plane(struct PhysicsBody *body_A, struct PhysicsBody *body_B, struct CollisionResult result, float delta_time){
   struct AABB *box = &body_A->collider.data.aabb;
   struct Plane *plane = &body_B->collider.data.plane;
@@ -357,6 +365,10 @@ void resolve_collision_sphere_sphere(struct PhysicsBody *body_A, struct PhysicsB
   // }
 }
 
+void resolve_collision_sphere_capsule(struct PhysicsBody *body_A, struct PhysicsBody *body_B, struct CollisionResult result, float delta_time){
+
+}
+
 void resolve_collision_sphere_plane(struct PhysicsBody *body_A, struct PhysicsBody *body_B, struct CollisionResult result, float delta_time){
   // Might be able to merge collision resolution into one function, with helpers
   // based on types?
@@ -403,4 +415,12 @@ void resolve_collision_sphere_plane(struct PhysicsBody *body_A, struct PhysicsBo
   if (body_A->entity != NULL){
     entity_play_sound_effect(body_A->entity);
   }
+}
+
+void resolve_collision_capsule_capsule(struct PhysicsBody *body_A, struct PhysicsBody *body_B, struct CollisionResult result, float delta_time){
+
+}
+
+void resolve_collision_capsule_plane(struct PhysicsBody *body_A, struct PhysicsBody *body_B, struct CollisionResult result, float delta_time){
+
 }
