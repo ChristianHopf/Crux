@@ -26,52 +26,55 @@ struct Material {
   sampler2D specular2;
 
   sampler2D emissive;
-  vec3 emissive_color;
-  bool has_emissive;
-
-  float opacity;
-
-  bool mask;
-  float alphaCutoff;
-
-  bool unlit;
 
   sampler2D normal;
+
+  float opacity;
+  float alphaCutoff;
+
+  vec3 diffuse_color;
+  vec3 emissive_color;
+
+  bool has_diffuse;
+  bool has_emissive;
+  bool mask;
+  bool unlit;
 };
 uniform Material material;
 
 vec4 calc_dir_light(DirLight light, vec3 norm, vec3 viewDir);
 
 void main(){
-  vec3 norm = normalize(Normal);
-  vec3 viewDir = normalize(viewPos - FragPos);
 
-  vec4 baseColor = texture(material.diffuse1, TexCoord);
+  vec3 baseColor = material.has_diffuse ? texture(material.diffuse1, TexCoord).rgb : material.diffuse_color;
+  float alpha = material.has_diffuse ? texture(material.diffuse1, TexCoord).a : material.opacity;
 
-  float alpha = baseColor.a;
   if (material.mask)
     if (alpha < material.alphaCutoff)
       discard;
+
+  vec3 resultColor;
 
   // Emissive light
   vec3 emissive = vec3(0.0f);
   if (material.has_emissive){
     //emissive = texture(material.emissive, TexCoord).rgb;
-    emissive = texture(material.emissive, TexCoord).rgb * material.emissive_color;
+    //emissive = texture(material.emissive, TexCoord).rgb * material.emissive_color;
+    emissive = material.has_emissive ? texture(material.emissive, TexCoord).rgb : material.emissive_color;
+    resultColor += emissive * alpha;
   }
-  //emissive = vec3(texture(material.emissive, TexCoord));
 
   // Directional light
-  vec3 resultColor;
   if (!material.unlit){
+    vec3 norm = normalize(Normal);
+    vec3 viewDir = normalize(viewPos - FragPos);
     vec4 lighting = calc_dir_light(dirLight, norm, viewDir);
-    resultColor = lighting.rgb + emissive;
+    resultColor += lighting.rgb;
   } else {
-    resultColor = baseColor.rgb + emissive;
+    resultColor += baseColor.rgb;
   }
 
   FragColor = vec4(resultColor, alpha);
-  //FragColor = vec4(resultColor, alpha);
 }
 
 vec4 calc_dir_light(DirLight light, vec3 norm, vec3 viewDir){
@@ -79,11 +82,13 @@ vec4 calc_dir_light(DirLight light, vec3 norm, vec3 viewDir){
   vec3 lightDir = normalize(-light.direction);
 
   // Ambient
-  vec3 ambient = light.ambient * vec3(texture(material.diffuse1, TexCoord));
+  vec3 ambient = light.ambient * material.diffuse_color;
+  //vec3 ambient = light.ambient * vec3(texture(material.diffuse1, TexCoord));
 
   // Diffuse
   float diff = max(dot(norm, lightDir), 0.0);
-  vec3 diffuse = light.diffuse * diff * texture(material.diffuse1, TexCoord).rgb;
+  vec3 diffuse = light.diffuse * diff * material.diffuse_color;
+  //vec3 diffuse = light.diffuse * diff * texture(material.diffuse1, TexCoord).rgb;
   float alpha = texture(material.diffuse1, TexCoord).a;
 
   // Specular

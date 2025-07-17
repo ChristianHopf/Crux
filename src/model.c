@@ -59,7 +59,7 @@ bool model_load(struct Model *model, const char *path){
     struct aiMaterial *mat = scene->mMaterials[i];
 
     glm_vec3_copy(model->materials[i].ambient, (vec3){0.2f, 0.2f, 0.2f});
-    glm_vec3_copy(model->materials[i].diffuse, (vec3){0.8f, 0.8f, 0.8f});
+    glm_vec3_copy(model->materials[i].diffuse_color, (vec3){0.8f, 0.8f, 0.8f});
     glm_vec3_copy(model->materials[i].specular, (vec3){1.0f, 1.0f, 1.0f});
     model->materials[i].shininess = 32.0f;
 

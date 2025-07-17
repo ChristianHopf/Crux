@@ -18,6 +18,9 @@ void material_load(){
 }
 
 void material_load_textures(struct Material *mat, struct aiMaterial *ai_mat, const struct aiScene *scene, const char *directory){
+  // Set defaults (where 0 is not desired)
+  mat->opacity = 1.0f;
+
   // Process material properties
   unsigned int num_texture_properties = 0;
   for (unsigned int i = 0; i < ai_mat->mNumProperties; i++){
@@ -35,11 +38,23 @@ void material_load_textures(struct Material *mat, struct aiMaterial *ai_mat, con
         mat->blend_mode = 1;
       }
       else if (strcmp(alphaMode->data, "BLEND") == 0){
+        // Seems like materials that should be additive get marked with BLEND,
+        // and you have to determine whether they should be additive by other means
+        // (texture filename check below)
         if (mat->blend_mode != 3) mat->blend_mode = 2;
       }
     }
 
-    // $clr.emissive?
+    // Diffuse color
+    if (strcmp(property->mKey.data, "$clr.diffuse") == 0){
+      struct aiVector3D clr_diffuse = *(struct aiVector3D *)property->mData;
+      mat->diffuse_color[0] = clr_diffuse.x;
+      mat->diffuse_color[1] = clr_diffuse.y;
+      mat->diffuse_color[2] = clr_diffuse.z;
+      // printf("$clr.diffuse is %f %f %f\n", clr_diffuse.x, clr_diffuse.y, clr_diffuse.z);
+    }
+
+    // Emissive color
     if (strcmp(property->mKey.data, "$clr.emissive") == 0){
       struct aiVector3D clr_emissive = *(struct aiVector3D *)property->mData;
       mat->emissive_color[0] = clr_emissive.x;
@@ -48,7 +63,7 @@ void material_load_textures(struct Material *mat, struct aiMaterial *ai_mat, con
       // printf("$clr.emissive is %f %f %f\n", clr_emissive.x, clr_emissive.y, clr_emissive.z);
     }
 
-    // $mat.opacity
+    // Opacity
     if (strcmp(property->mKey.data, "$mat.opacity") == 0){
       float mat_opacity = *(float *)property->mData;
       // printf("mat opacity is %f\n", mat_opacity);
@@ -72,7 +87,6 @@ void material_load_textures(struct Material *mat, struct aiMaterial *ai_mat, con
     // Texture file
     if (strcmp(property->mKey.data, "$tex.file") == 0){
       struct aiString *texPath = (struct aiString *)property->mData;
-      // printf("$tex.file string is %s\n", texPath->data);
       
       // Check for "additive" in texture file name (alphaMode does not include additive blending)
       if (strcasestr(texPath->data, "additive") != NULL){
@@ -113,12 +127,7 @@ void material_load_textures(struct Material *mat, struct aiMaterial *ai_mat, con
 
       // Get texture type and index (used for diffuse1, diffuse2, ...)
       enum aiTextureType type = (enum aiTextureType)property->mSemantic;
-      // Don't think I need this
-      //unsigned int texture_index = property->mIndex;
 
-      // Texture properties have mType aiPTI_String,
-      // which means the bytes in mData are a struct aiString.
-      // (probably no need to check mType)
       struct aiString *path = (struct aiString *)property->mData;
 
       // Load texture, embedded
@@ -135,7 +144,6 @@ void material_load_textures(struct Material *mat, struct aiMaterial *ai_mat, con
         mat->num_textures++;
         texture_index++;
 
-        // free(path);
         continue;
       }
 
@@ -144,6 +152,8 @@ void material_load_textures(struct Material *mat, struct aiMaterial *ai_mat, con
         printf("Error: failed to get texture path in material_load_textures\n");
         return;
       }
+
+      // Build directory string
       size_t len = strlen(directory) + 1 + strlen(path->data) + 1;
       char *full_texture_path = malloc(len);
       if (!full_texture_path){
@@ -157,16 +167,26 @@ void material_load_textures(struct Material *mat, struct aiMaterial *ai_mat, con
       if (texture_id == 0){
         texture_id = material_load_texture(full_texture_path, type);
         add_loaded_texture(full_texture_path, texture_id);
-        // printf("Loaded texture of type %s\n", aiTextureTypeToString(type));
       }
-
       free(full_texture_path);
 
       // Add texture to material
       mat->textures[texture_index].texture_id = texture_id;
       mat->textures[texture_index].texture_type = get_texture_type_string(type);
+
+      // Set texture bool
+      switch(type){
+        case aiTextureType_DIFFUSE: {
+          mat->has_diffuse = true;
+          break;
+        }
+        case aiTextureType_EMISSIVE: {
+          mat->has_emissive = true;
+          break;
+        }
+      }
+
       mat->num_textures++;
-      // printf("assigned texture type: %s to texture with id %d\n", mat->textures[texture_index].texture_type, mat->textures[texture_index].texture_id);
       texture_index++;
     }
   }

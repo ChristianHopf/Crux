@@ -21,8 +21,9 @@ struct Material {
   struct Texture *textures;
   unsigned int num_textures;
   vec3 ambient;
-  vec3 diffuse;
+  vec3 diffuse_color;
   vec4 specular;
+  vec3 emissive_color;
   // mat.gltf.blendMode can be OPAQUE (0), MASK (1), BLEND (2), or ADDITIVE (3)
   // Maybe make this a char pointer so it makes more sense, or an enum
   int blend_mode;
@@ -30,8 +31,10 @@ struct Material {
   enum aiShadingMode shading_mode;
   // Diffuse opacity
   float opacity;
-  vec3 emissive_color;
   float shininess;
+
+  bool has_diffuse;
+  bool has_emissive;
 };
 
 // Load all textures in a model's material

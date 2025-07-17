@@ -35,10 +35,10 @@ void draw_render_items(struct RenderItem *render_items, unsigned int num_render_
     bool has_emissive = false;
 
     if (render_item.mesh->material_index >= 0){
-      // if (render_item.mesh->material_index != 0 && render_item.mesh->material_index != 5 && render_item.mesh->material_index != 6) continue;
       struct Material *mat = &render_item.model->materials[render_item.mesh->material_index];
 
       // If blend mode is MASK, set mask uniform and alpha cutoff
+      // shader_set_bool(render_item.shader, "material.mask", mat->blend_mode == 1);
       if (mat->blend_mode == 1){
         shader_set_bool(render_item.shader, "material.mask", true);
         shader_set_float(render_item.shader, "material.alphaCutoff", mat->alpha_cutoff);
@@ -49,7 +49,12 @@ void draw_render_items(struct RenderItem *render_items, unsigned int num_render_
       if (mat->shading_mode == aiShadingMode_Unlit) shader_set_bool(render_item.shader, "material.unlit", true);
       else shader_set_bool(render_item.shader, "material.unlit", false);
 
+      // Diffuse color
+      shader_set_bool(render_item.shader, "material.has_diffuse", mat->has_diffuse);
+      shader_set_vec3(render_item.shader, "material.diffuse_color", mat->diffuse_color);
+
       // Emissive color
+      shader_set_bool(render_item.shader, "material.has_emissive", mat->has_emissive);
       shader_set_vec3(render_item.shader, "material.emissive_color", mat->emissive_color);
 
       // Opacity
@@ -57,12 +62,10 @@ void draw_render_items(struct RenderItem *render_items, unsigned int num_render_
 
       unsigned int diffuse_num = 1;
       unsigned int specular_num = 1;
-
+      
       // Bind textures
       for(unsigned int j = 0; j < mat->num_textures; j++){
-                
-        // Build uniform string of the form:
-        // material.<type><index>
+        // Build uniform string of the form: material.<type><index>
         char texture_uniform[32];
         if (strcmp(mat->textures[j].texture_type, "diffuse") == 0){
           snprintf(texture_uniform, sizeof(texture_uniform), "material.%s%u", mat->textures[j].texture_type, diffuse_num);
@@ -93,10 +96,6 @@ void draw_render_items(struct RenderItem *render_items, unsigned int num_render_
           glActiveTexture(GL_TEXTURE0 + j);
           glBindTexture(GL_TEXTURE_2D, mat->textures[j].texture_id);
           shader_set_int(render_item.shader, "material.emissive", j);
-          shader_set_bool(render_item.shader, "material.has_emissive", has_emissive);
-        }
-        else{
-          has_emissive = false;
           shader_set_bool(render_item.shader, "material.has_emissive", has_emissive);
         }
       }

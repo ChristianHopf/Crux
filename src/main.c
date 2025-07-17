@@ -30,9 +30,8 @@ typedef struct {
   int screen_height;
   // Mouse
   bool mouse_down;
-  // Scene and game
+  // Scene
   struct Scene *active_scene;
-  // struct GameState game_state;
   // Timing
   float delta_time;
   float last_frame;
@@ -245,7 +244,7 @@ Engine *engine_create(){
   attach_observer(ui_game_state_observer);
 
   // Load scene
-  engine->active_scene = scene_init("scenes/blending.json");
+  engine->active_scene = scene_init("scenes/dungeon1.json");
   if (!engine->active_scene){
     fprintf(stderr, "Error: failed to create scene\n");
     free(engine);
