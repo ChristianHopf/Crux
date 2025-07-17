@@ -82,17 +82,13 @@ vec4 calc_dir_light(DirLight light, vec3 norm, vec3 viewDir){
   vec3 lightDir = normalize(-light.direction);
 
   // Ambient
-  vec3 ambient = material.has_diffuse ?
-    light.ambient * vec3(texture(material.diffuse1, TexCoord)) :
-    light.ambient * material.diffuse_color;
+  vec3 ambient = material.has_diffuse ? light.ambient * vec3(texture(material.diffuse1, TexCoord)) : light.ambient * material.diffuse_color;
   //vec3 ambient = light.ambient * vec3(texture(material.diffuse1, TexCoord));
 
   // Diffuse
   float diff = max(dot(norm, lightDir), 0.0);
-  vec3 diffuse = material.has_diffuse ?
-    light.diffuse * diff * vec3(texture(material.diffuse1, TexCoord)) :
-    light.diffuse * diff * material.diffuse_color;
-  //vec3 diffuse = light.diffuse * diff * texture(material.diffuse1, TexCoord).rgb;
+  vec3 diffuse = material.has_diffuse ? light.diffuse * diff * vec3(texture(material.diffuse1, TexCoord)) : light.diffuse * diff * material.diffuse_color;
+  // vec3 diffuse = light.diffuse * diff * texture(material.diffuse1, TexCoord).rgb;
   float alpha = texture(material.diffuse1, TexCoord).a;
 
   // Specular

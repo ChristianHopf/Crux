@@ -141,6 +141,21 @@ void material_load_textures(struct Material *mat, struct aiMaterial *ai_mat, con
         // Add texture to material
         mat->textures[texture_index].texture_id = embedded_texture_id;
         mat->textures[texture_index].texture_type = get_texture_type_string(type);
+
+        // Set texture bool
+        // (I don't like that because of how the logic in this function flows I have to write
+        // the same switch twice for the embedded and non-embedded cases, fine for now)
+        switch(type){
+          case aiTextureType_DIFFUSE: {
+            mat->has_diffuse = true;
+            break;
+          }
+          case aiTextureType_EMISSIVE: {
+            mat->has_emissive = true;
+            break;
+          }
+        }
+
         mat->num_textures++;
         texture_index++;
 
