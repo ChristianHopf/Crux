@@ -179,7 +179,7 @@ void physics_step(struct PhysicsWorld *physics_world, float delta_time){
       }
     }
     if (!body_A->at_rest){
-      float gravity = 9.8f;
+      float gravity = 0.1f;
       body_A->velocity[1] -= gravity * delta_time;
       glm_vec3_muladds(body_A->velocity, delta_time, body_A->position);
     }
