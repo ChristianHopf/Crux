@@ -494,12 +494,12 @@ void physics_debug_capsule_init(struct PhysicsBody *body){
 
     for (int j = 0; j < sector_count; j++, k1++, k2++){
       indices[indices_index++] = k1;
-      indices[indices_index++] = k2;
       indices[indices_index++] = k1 + 1;
+      indices[indices_index++] = k2;
 
       indices[indices_index++] = k1 + 1;
-      indices[indices_index++] = k2;
       indices[indices_index++] = k2 + 1;
+      indices[indices_index++] = k2;
     }
   }
   printf("Successfully generated %d capsule indices\n", indices_index);

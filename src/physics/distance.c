@@ -186,5 +186,62 @@ float min_dist_at_time_capsule_capsule(struct PhysicsBody *body_A, struct Physic
 }
 
 float min_dist_at_time_capsule_plane(struct PhysicsBody *body_A, struct PhysicsBody *body_B, float time){
+  // Get pointers to the bodies' colliders
+  struct Capsule *capsule = &body_A->collider.data.capsule;
+  struct Plane *plane = &body_B->collider.data.plane;
 
+  struct Capsule world_capsule = {0};
+  // Scale
+  glm_vec3_scale(capsule->segment_A, body_A->scale[0], world_capsule.segment_A);
+  glm_vec3_scale(capsule->segment_B, body_A->scale[0], world_capsule.segment_B);
+  // Rotate
+  mat4 eulerA;
+  mat3 rotationA;
+  vec3 rotatedA, rotatedB;
+  glm_euler_xyz(body_A->rotation, eulerA);
+  glm_mat4_pick3(eulerA, rotationA);
+  glm_mat3_mulv(rotationA, world_capsule.segment_A, world_capsule.segment_A);
+  glm_mat3_mulv(rotationA, world_capsule.segment_B, world_capsule.segment_B);
+
+  glm_vec3_add(world_capsule.segment_A, body_A->position, world_capsule.segment_A);
+  glm_vec3_add(world_capsule.segment_B, body_A->position, world_capsule.segment_B);
+  world_capsule.radius = capsule->radius * body_A->scale[0];
+  // printf("ORIGINAL CAPSULE\n");
+  // print_glm_vec3(capsule->segment_A, "Segment A");
+  // print_glm_vec3(capsule->segment_B, "Segment B");
+  // printf("Radius: %f\n", capsule->radius);
+  //
+  // printf("WORLD CAPSULE\n");
+  // print_glm_vec3(world_capsule.segment_A, "Segment A");
+  // print_glm_vec3(world_capsule.segment_B, "Segment B");
+  // printf("Radius: %f\n", world_capsule.radius);
+
+  // Get signed distance from capsule to plane: distance from point to plane minus radius
+  // - A capsule is a sphere-swept volume, which is just a line segment and a radius
+  // - The closest point on the segment to the plane is the closest point on the line to the plane,
+  //   clamped to the segment
+  // - Line segment: P(t) = A + t(B - A), where 0 <= t <= 1
+  // - Plane: n * X = d
+  // - Solve n * P(t) = d for t: t = (d - (n * A)) / (n * (B - A))
+  //   If t <= 0, the closest point is A
+  //   If t >= 1, the closest point is B
+  //   Else, compute P(t) for a point on the segment
+  float n_dot_A = glm_dot(plane->normal, world_capsule.segment_A);
+  vec3 segment;
+  glm_vec3_sub(world_capsule.segment_B, world_capsule.segment_A, segment);
+  float n_dot_segment = glm_dot(plane->normal, segment);
+
+  vec3 closest_point;
+  float t = (plane->distance - n_dot_A) / n_dot_segment;
+  if (t <= 0) glm_vec3_copy(world_capsule.segment_A, closest_point);
+  else if (t >= 1) glm_vec3_copy(world_capsule.segment_B, closest_point);
+  else glm_vec3_lerp(world_capsule.segment_A, world_capsule.segment_B, t, closest_point);
+  // print_glm_vec3(closest_point, "Closest point");
+
+  // Distance from closest point to plane
+  float s = glm_dot(closest_point, plane->normal) - plane->distance;
+  float distance = fabs(s) - world_capsule.radius;
+  // printf("s: %f, distance: %f\n", s, distance);
+
+  return glm_max(distance, 0);
 }
