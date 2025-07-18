@@ -379,6 +379,7 @@ void physics_debug_capsule_init(struct PhysicsBody *body){
 
   // Vertices and indices for cylinder
   int num_vertices = (total_stacks + 1) * (sector_count + 1);
+  printf("Num vertices is %d\n", num_vertices);
   int num_indices = total_stacks * sector_count * 6;
   // int num_indices = (sector_count * (total_stacks - 1)) * 6;
   printf("A capsule has %d indices\n", num_indices);
@@ -475,7 +476,7 @@ void physics_debug_capsule_init(struct PhysicsBody *body){
       vertex_index++;
     }
   }
-  printf("Successfully generated capsule vertices\n");
+  printf("Successfully generated %d capsule vertices\n", vertex_index);
 
   // Allocate indices
   unsigned int *indices = (unsigned int*)malloc(num_indices * sizeof(unsigned int));
@@ -493,15 +494,15 @@ void physics_debug_capsule_init(struct PhysicsBody *body){
 
     for (int j = 0; j < sector_count; j++, k1++, k2++){
       indices[indices_index++] = k1;
-      indices[indices_index++] = k1 + 1;
       indices[indices_index++] = k2;
+      indices[indices_index++] = k1 + 1;
 
       indices[indices_index++] = k1 + 1;
-      indices[indices_index++] = k2 + 1;
       indices[indices_index++] = k2;
+      indices[indices_index++] = k2 + 1;
     }
   }
-  printf("Successfully generated capsule indices\n");
+  printf("Successfully generated %d capsule indices\n", indices_index);
 
   // Buffers
   glGenVertexArrays(1, &body->VAO);
@@ -575,7 +576,7 @@ void physics_debug_sphere_render(struct Sphere *sphere, struct RenderContext *co
 }
 
 void physics_debug_capsule_render(struct Capsule *capsule, struct RenderContext *context, mat4 model){
-  printf("Rendering capsule\n");
+  // printf("Rendering capsule\n");
   // Shader and uniforms
   shader_use(translucentShader);
   shader_set_mat4(translucentShader, "model", model);
@@ -583,7 +584,7 @@ void physics_debug_capsule_render(struct Capsule *capsule, struct RenderContext 
   // shader_set_mat4(translucentShader, "projection", context->projection_ptr);
 
   // Draw triangles
-  glDrawElements(GL_TRIANGLES, 4800, GL_UNSIGNED_INT, (void*)0);
+  glDrawElements(GL_TRIANGLES, 4920, GL_UNSIGNED_INT, (void*)0);
 
   glBindVertexArray(0);
 }
