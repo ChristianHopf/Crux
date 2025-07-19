@@ -25,7 +25,10 @@ typedef struct {
   GLuint VAO, VBO, EBO;
   unsigned int num_indices;
   unsigned int material_index;
+  // Mesh aabb
   vec3 center;
+  vec3 aabb_min;
+  vec3 aabb_max;
 } Mesh;
 
 struct Model {

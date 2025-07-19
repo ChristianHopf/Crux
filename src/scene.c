@@ -472,6 +472,8 @@ void scene_process_meshes_json(cJSON *meshes, struct Model **models, Shader **sh
       default:
         break;
     }
+    
+    // Match entity scale to physics unit height
     entity->physics_body = physics_add_body(physics_world, entity, collider, dynamic);
     index++;
 
