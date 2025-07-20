@@ -244,7 +244,7 @@ Engine *engine_create(){
   attach_observer(ui_game_state_observer);
 
   // Load scene
-  engine->active_scene = scene_init("scenes/dungeon1.json");
+  engine->active_scene = scene_init("scenes/wizard.json");
   if (!engine->active_scene){
     fprintf(stderr, "Error: failed to create scene\n");
     free(engine);
@@ -274,7 +274,7 @@ int main(){
     
 		engine->delta_time = currentFrame - engine->last_frame;
 		engine->last_frame = currentFrame;
-		// printf("FPS: %f\n", 1.0 / engine->delta_time);
+		printf("FPS: %f\n", 1.0 / engine->delta_time);
     
 		// Handle input
 		processInput(engine->window);

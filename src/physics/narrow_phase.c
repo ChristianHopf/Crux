@@ -6,9 +6,14 @@
 NarrowPhaseFunction narrow_phase_functions[NUM_COLLIDER_TYPES][NUM_COLLIDER_TYPES] = {
   [COLLIDER_AABB][COLLIDER_AABB] = narrow_phase_AABB_AABB,
   [COLLIDER_AABB][COLLIDER_SPHERE] = narrow_phase_AABB_sphere,
+  [COLLIDER_AABB][COLLIDER_CAPSULE] = narrow_phase_AABB_capsule,
   [COLLIDER_AABB][COLLIDER_PLANE] = narrow_phase_AABB_plane,
   [COLLIDER_SPHERE][COLLIDER_SPHERE] = narrow_phase_sphere_sphere,
+  [COLLIDER_SPHERE][COLLIDER_CAPSULE] = narrow_phase_sphere_capsule,
   [COLLIDER_SPHERE][COLLIDER_PLANE] = narrow_phase_sphere_plane,
+  [COLLIDER_SPHERE][COLLIDER_CAPSULE] = narrow_phase_sphere_capsule,
+  [COLLIDER_CAPSULE][COLLIDER_CAPSULE] = narrow_phase_capsule_capsule,
+  [COLLIDER_CAPSULE][COLLIDER_PLANE] = narrow_phase_capsule_plane
 };
 
 struct CollisionResult narrow_phase_AABB_AABB(struct PhysicsBody *body_AABB_A, struct PhysicsBody *body_AABB_B, float delta_time){
@@ -185,6 +190,10 @@ struct CollisionResult narrow_phase_AABB_sphere(struct PhysicsBody *body_AABB, s
   //
   //   }
   // }
+}
+
+struct CollisionResult narrow_phase_AABB_capsule(struct PhysicsBody *body_AABB, struct PhysicsBody *body_capsule, float delta_time){
+
 }
 
 struct CollisionResult narrow_phase_AABB_plane(struct PhysicsBody *body_AABB, struct PhysicsBody *body_plane, float delta_time){
@@ -365,6 +374,10 @@ struct CollisionResult narrow_phase_sphere_sphere(struct PhysicsBody *body_spher
   return result;
 }
 
+struct CollisionResult narrow_phase_sphere_capsule(struct PhysicsBody *body_sphere, struct PhysicsBody *body_capsule, float delta_time){
+
+}
+
 struct CollisionResult narrow_phase_sphere_plane(struct PhysicsBody *body_sphere, struct PhysicsBody *body_plane, float delta_time){
   struct Sphere *sphere = &body_sphere->collider.data.sphere;
   struct Plane *plane = &body_plane->collider.data.plane;
@@ -417,6 +430,93 @@ struct CollisionResult narrow_phase_sphere_plane(struct PhysicsBody *body_sphere
     // If hit_time is outside of interval, check if already colliding
     if (!result.colliding){
       if (abs(s <= world_sphere.radius)){
+        result.hit_time = 0;
+        result.colliding = true;
+      }
+      else{
+        result.hit_time = -1;
+      }
+    }
+  }
+
+  return result;
+}
+
+struct CollisionResult narrow_phase_capsule_capsule(struct PhysicsBody *body_capsule_A, struct PhysicsBody *body_capsule_B, float delta_time){
+
+}
+
+struct CollisionResult narrow_phase_capsule_plane(struct PhysicsBody *body_capsule, struct PhysicsBody *body_plane, float delta_time){
+  struct Capsule *capsule = &body_capsule->collider.data.capsule;
+  struct Plane *plane = &body_plane->collider.data.plane;
+  struct CollisionResult result = {0};
+
+  // Get world space capsule
+  struct Capsule world_capsule = {0};
+  glm_vec3_scale(capsule->segment_A, body_capsule->scale[0], world_capsule.segment_A);
+  glm_vec3_scale(capsule->segment_B, body_capsule->scale[0], world_capsule.segment_B);
+  mat4 eulerA;
+  mat3 rotationA;
+  vec3 rotatedA, rotatedB;
+  glm_euler_xyz(body_capsule->rotation, eulerA);
+  glm_mat4_pick3(eulerA, rotationA);
+  glm_mat3_mulv(rotationA, world_capsule.segment_A, world_capsule.segment_A);
+  glm_mat3_mulv(rotationA, world_capsule.segment_B, world_capsule.segment_B);
+
+  glm_vec3_add(world_capsule.segment_A, body_capsule->position, world_capsule.segment_A);
+  glm_vec3_add(world_capsule.segment_B, body_capsule->position, world_capsule.segment_B);
+  world_capsule.radius = capsule->radius * body_capsule->scale[0];
+
+  // Get distance from closest point on capsule to plane
+  float n_dot_A = glm_dot(plane->normal, world_capsule.segment_A);
+  vec3 segment;
+  glm_vec3_sub(world_capsule.segment_B, world_capsule.segment_A, segment);
+  float n_dot_segment = glm_dot(plane->normal, segment);
+
+  vec3 closest_point;
+  float t = (plane->distance - n_dot_A) / n_dot_segment;
+  if (t <= 0) glm_vec3_copy(world_capsule.segment_A, closest_point);
+  else if (t >= 1) glm_vec3_copy(world_capsule.segment_B, closest_point);
+  else glm_vec3_lerp(world_capsule.segment_A, world_capsule.segment_B, t, closest_point);
+
+  float s = glm_dot(closest_point, plane->normal) - plane->distance;
+
+  // Get velocity along normal
+  float n_dot_v = glm_dot(body_capsule->velocity, plane->normal);
+
+  // Compute product of signed distance and normal velocity
+  float discriminant = s * n_dot_v;
+
+  // Solve for t based on plane displacement according to the sign of:
+  // (n * V)(n * C - d)
+  // - term > 0 => capsule is moving away from the plane
+  // - term < 0 => capsule is moving towards the plane
+  // - term == 0 => capsule is moving parallel to the plane
+  if (discriminant == 0){
+    if (fabs(s) <= world_capsule.radius){
+      result.hit_time = 0;
+      result.colliding = true;
+    }
+    else{
+      result.hit_time = -1;
+      result.colliding = false;
+    }
+  }
+  else{
+    if (discriminant < 0){
+      // t = (r - ((n * C) - d)) / (n * v)
+      result.hit_time = (world_capsule.radius - s) / n_dot_v;
+      result.colliding = (result.hit_time >= 0 && result.hit_time <= delta_time);
+    }
+    else{
+      // t = (-r - ((n * C) - d)) / (n * v)
+      result.hit_time = (-world_capsule.radius - s) / n_dot_v;
+      result.colliding = (result.hit_time >= 0 && result.hit_time <= delta_time);
+    }
+
+    // If hit_time is outside of interval, check if already colliding
+    if (!result.colliding){
+      if (abs(s <= world_capsule.radius)){
         result.hit_time = 0;
         result.colliding = true;
       }

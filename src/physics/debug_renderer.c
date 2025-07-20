@@ -12,17 +12,16 @@ void physics_debug_render(struct PhysicsWorld *physics_world, struct RenderConte
     struct PhysicsBody *body = &physics_world->static_bodies[i];
 
     glBindVertexArray(body->VAO);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, body->VBO);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, body->EBO);
 
     mat4 model;
+    glm_mat4_identity(model);
 
     switch(body->collider.type){
       case COLLIDER_AABB:
         // Get updated AABB and model matrix
         struct AABB *box = &body->collider.data.aabb;
 
-        // mat4 model;
-        glm_mat4_identity(model);
         glm_translate(model, body->position);
         glm_rotate_y(model, glm_rad(body->rotation[1]), model);
         glm_rotate_x(model, glm_rad(body->rotation[0]), model);
@@ -34,8 +33,6 @@ void physics_debug_render(struct PhysicsWorld *physics_world, struct RenderConte
       case COLLIDER_SPHERE:
         struct Sphere *sphere = &body->collider.data.sphere;
 
-        // mat4 model;
-        glm_mat4_identity(model);
         glm_translate(model, body->position);
         // Spheres are invariant to rotation
         // glm_rotate_y(model, glm_rad(body->rotation[1]), model);
@@ -44,6 +41,17 @@ void physics_debug_render(struct PhysicsWorld *physics_world, struct RenderConte
         glm_scale(model, body->scale);
 
         physics_debug_sphere_render(sphere, context, model);
+        break;
+      case COLLIDER_CAPSULE:
+        struct Capsule *capsule = &body->collider.data.capsule;
+
+        glm_translate(model, body->position);
+        glm_rotate_y(model, glm_rad(body->rotation[1]), model);
+        glm_rotate_x(model, glm_rad(body->rotation[0]), model);
+        glm_rotate_z(model, glm_rad(body->rotation[2]), model);
+        glm_scale(model, body->scale);
+
+        physics_debug_capsule_render(capsule, context, model);
         break;
       case COLLIDER_PLANE:
         // debug_plane_render(body);
@@ -55,7 +63,11 @@ void physics_debug_render(struct PhysicsWorld *physics_world, struct RenderConte
   for (unsigned int i = 0; i < physics_world->num_dynamic_bodies; i++){
     struct PhysicsBody *body = &physics_world->dynamic_bodies[i];
 
+    glBindVertexArray(body->VAO);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, body->EBO);
+
     mat4 model;
+    glm_mat4_identity(model);
 
     switch(body->collider.type){
       case COLLIDER_AABB:
@@ -77,7 +89,6 @@ void physics_debug_render(struct PhysicsWorld *physics_world, struct RenderConte
         glm_vec3_copy(body->scale, scaleA); // Use body scale
         AABB_update(box, rotationA, translationA, scaleA, &rotated_AABB);
 
-        glm_mat4_identity(model);
         // glm_translate(model, body->position);
         // glm_rotate_x(model, glm_rad(body->rotation[1]), model);
         // glm_rotate_y(model, glm_rad(body->rotation[0]), model);
@@ -91,8 +102,6 @@ void physics_debug_render(struct PhysicsWorld *physics_world, struct RenderConte
       case COLLIDER_SPHERE:
         struct Sphere *sphere = &body->collider.data.sphere;
 
-        // mat4 model;
-        glm_mat4_identity(model);
         vec3 translation;
         glm_vec3_add(body->position, sphere->center, translation);
         glm_translate(model, translation);
@@ -105,6 +114,17 @@ void physics_debug_render(struct PhysicsWorld *physics_world, struct RenderConte
 
         glBindVertexArray(body->VAO);
         physics_debug_sphere_render(sphere, context, model);
+        break;
+      case COLLIDER_CAPSULE:
+        struct Capsule *capsule = &body->collider.data.capsule;
+
+        glm_translate(model, body->position);
+        glm_rotate_y(model, glm_rad(body->rotation[1]), model);
+        glm_rotate_x(model, glm_rad(body->rotation[0]), model);
+        glm_rotate_z(model, glm_rad(body->rotation[2]), model);
+        glm_scale(model, body->scale);
+
+        physics_debug_capsule_render(capsule, context, model);
         break;
       case COLLIDER_PLANE:
         // debug_plane_render(body);
@@ -144,6 +164,9 @@ void physics_debug_renderer_init(struct PhysicsWorld *physics_world){
       case COLLIDER_SPHERE:
         physics_debug_sphere_init(body);
         break;
+      case COLLIDER_CAPSULE:
+        physics_debug_capsule_init(body);
+        break;
       case COLLIDER_PLANE:
         // debug_plane_init(body);
         break;
@@ -159,6 +182,9 @@ void physics_debug_renderer_init(struct PhysicsWorld *physics_world){
         break;
       case COLLIDER_SPHERE:
         physics_debug_sphere_init(body);
+        break;
+      case COLLIDER_CAPSULE:
+        physics_debug_capsule_init(body);
         break;
       case COLLIDER_PLANE:
         // debug_plane_init(body);
@@ -324,6 +350,181 @@ void physics_debug_sphere_init(struct PhysicsBody *body){
 
   // Unbind VAO
   glBindVertexArray(0);
+
+  free(vertices);
+  free(indices);
+}
+
+void physics_debug_capsule_init(struct PhysicsBody *body){
+  if (!wireframeShader){
+    fprintf(stderr, "Error: wireframe shader program not initialized\n");
+    return;
+  }
+
+  struct Capsule *capsule = &body->collider.data.capsule;
+
+  // Get axis and length of cylinder
+  vec3 axis;
+  glm_vec3_sub(capsule->segment_B, capsule->segment_A, axis);
+  float length = glm_vec3_norm(axis);
+  glm_vec3_normalize(axis);
+
+  // Stacks and sectors
+  int sector_count = 20;
+  int stack_count = 20;
+  // stack_count stacks per hemisphere, one extra stack for the cylinder
+  int total_stacks = stack_count * 2 + 1;
+  float sector_step = (2 * M_PI) / sector_count;
+  float stack_step = M_PI / stack_count;
+
+  // Vertices and indices for cylinder
+  int num_vertices = (total_stacks + 1) * (sector_count + 1);
+  printf("Num vertices is %d\n", num_vertices);
+  int num_indices = total_stacks * sector_count * 6;
+  // int num_indices = (sector_count * (total_stacks - 1)) * 6;
+  printf("A capsule has %d indices\n", num_indices);
+
+  // Allocate vertices
+  float *vertices = (float *)malloc(num_vertices * 3 * sizeof(float));
+  if (!vertices) {
+    fprintf(stderr, "Error: failed to allocate capsule vertices in physics_debug_capsule_init\n");
+    return;
+  }
+
+  // Get axis and rotation matrix for rotating generated capsule to the capsule's axis
+  vec3 z_axis = {0.0f, 0.0f, 1.0f};
+  vec3 rotation_axis;
+  glm_vec3_cross(z_axis, axis, rotation_axis);
+  float rotation_angle = acosf(glm_vec3_dot(z_axis, axis));
+
+  mat4 rotation_matrix;
+  // If the magnitude of the rotation axis is positive, the axes are not parallel
+  if (glm_vec3_norm(rotation_axis) > 0.0f) {
+    glm_vec3_normalize(rotation_axis);
+    glm_rotate_make(rotation_matrix, rotation_angle, rotation_axis);
+  } else {
+    // If the magnitude of the rotation axis is 0, and the dot product of the axes is not negative,
+    // the axes are aligned, and no rotation is needed.
+    // If the magnitude of the rotation axis is 0, and the dot product of the axes is negative,
+    // the axes are opposite (z and -z), rotate 180 degrees around the x axis.
+    glm_mat4_identity(rotation_matrix);
+    if (glm_vec3_dot(z_axis, axis) < 0) {
+      glm_rotate_make(rotation_matrix, M_PI, (vec3){1.0f, 0.0f, 0.0f});
+    }
+  }
+
+  // Generate vertices
+  int vertex_index = 0;
+  // For each stack
+  for (int i = 0; i <= total_stacks; i++){
+    float t;
+    vec3 center;
+    float stack_radius;
+    float z;
+    
+    // Bottom hemisphere:
+    // - t is from -1 to 0
+    // - center is segment_A
+    // - 
+    if (i < stack_count){
+      t = ((float)i / stack_count);
+      // glm_vec3_scale(axis, -capsule->radius, center);
+      glm_vec3_copy(capsule->segment_A, center);
+      stack_radius = capsule->radius * cosf(t * M_PI / 2.0f);
+      z = -capsule->radius * sinf(t * M_PI / 2.0f);
+    }
+    else if (i == stack_count){
+      glm_vec3_copy(capsule->segment_A, center);
+      stack_radius = capsule->radius;
+      z = 0.0f;
+    }
+    // Cylinder:
+    // - t is from 0 to 1
+    // - center of sector is interpolated between segment_A and segment_B
+    else if (i == stack_count + 1){
+      glm_vec3_copy(capsule->segment_B, center);
+      stack_radius = capsule->radius;
+      z = 0.0f;
+    }
+    // Top hemisphere:
+    // - t is from 1 to 2
+    // - center is segment_B
+    else {
+      t = ((float)(i - (stack_count + 1)) / stack_count);
+      glm_vec3_copy(capsule->segment_B, center);
+      stack_radius = capsule->radius * cosf(t * M_PI / 2.0f);
+      z = capsule->radius * sinf(t * M_PI / 2.0f);
+    }
+
+    // For each sector, get x and y coordinates to make (sector_count + 1) vertices per stack
+    for (int j = 0; j <= sector_count; j++){
+      float sector_angle = j * sector_step;
+      float x = stack_radius * cosf(sector_angle);
+      float y = stack_radius * sinf(sector_angle);
+
+      // Rotate and translate vertex to capsule axis and center
+      vec3 vertex, rotated_vertex;
+      vertex[0] = x;
+      vertex[1] = y;
+      vertex[2] = z;
+      glm_mat4_mulv3(rotation_matrix, vertex, 1.0f, rotated_vertex);
+      glm_vec3_add(rotated_vertex, center, rotated_vertex);
+
+      vertices[vertex_index * 3] = rotated_vertex[0];
+      vertices[vertex_index * 3 + 1] = rotated_vertex[1];
+      vertices[vertex_index * 3 + 2] = rotated_vertex[2];
+      vertex_index++;
+    }
+  }
+  printf("Successfully generated %d capsule vertices\n", vertex_index);
+
+  // Allocate indices
+  unsigned int *indices = (unsigned int*)malloc(num_indices * sizeof(unsigned int));
+  if (!indices){
+    fprintf(stderr, "Error: failed to allocate indices in physics_debug_capsule_init\n");
+    free(vertices);
+    return;
+  }
+
+  // Generate indices for two triangles per quad
+  unsigned int indices_index = 0;
+  for (int i = 0; i < total_stacks; i++){
+    int k1 = i * (sector_count + 1);
+    int k2 = k1 + sector_count + 1;
+
+    for (int j = 0; j < sector_count; j++, k1++, k2++){
+      indices[indices_index++] = k1;
+      indices[indices_index++] = k1 + 1;
+      indices[indices_index++] = k2;
+
+      indices[indices_index++] = k1 + 1;
+      indices[indices_index++] = k2 + 1;
+      indices[indices_index++] = k2;
+    }
+  }
+  printf("Successfully generated %d capsule indices\n", indices_index);
+
+  // Buffers
+  glGenVertexArrays(1, &body->VAO);
+  glGenBuffers(1, &body->VBO);
+  glGenBuffers(1, &body->EBO);
+  glBindVertexArray(body->VAO);
+
+  glBindBuffer(GL_ARRAY_BUFFER, body->VBO);
+  glBufferData(GL_ARRAY_BUFFER, num_vertices * 3 * sizeof(float), vertices, GL_DYNAMIC_DRAW);
+
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, body->EBO);
+  glBufferData(GL_ELEMENT_ARRAY_BUFFER, num_indices * sizeof(unsigned int), indices, GL_STATIC_DRAW);
+
+  // Configure attribute pointer, unbind
+  glEnableVertexAttribArray(0);
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+
+  // Unbind VAO
+  glBindVertexArray(0);
+
+  free(vertices);
+  free(indices);
 }
 
 void physics_debug_plane_init(struct PhysicsBody *body){
@@ -370,6 +571,20 @@ void physics_debug_sphere_render(struct Sphere *sphere, struct RenderContext *co
 
   // Draw triangles
   glDrawElements(GL_TRIANGLES, 2280, GL_UNSIGNED_INT, (void*)0);
+
+  glBindVertexArray(0);
+}
+
+void physics_debug_capsule_render(struct Capsule *capsule, struct RenderContext *context, mat4 model){
+  // printf("Rendering capsule\n");
+  // Shader and uniforms
+  shader_use(translucentShader);
+  shader_set_mat4(translucentShader, "model", model);
+  // shader_set_mat4(translucentShader, "view", context->view_ptr);
+  // shader_set_mat4(translucentShader, "projection", context->projection_ptr);
+
+  // Draw triangles
+  glDrawElements(GL_TRIANGLES, 4920, GL_UNSIGNED_INT, (void*)0);
 
   glBindVertexArray(0);
 }

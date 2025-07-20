@@ -43,7 +43,7 @@ bool model_load(struct Model *model, const char *path){
     printf("Error: found 0 meshes in scene\n");
     return false;
   }
-  model->meshes = (Mesh *)malloc(scene->mNumMeshes * sizeof(Mesh));
+  model->meshes = (Mesh *)calloc(scene->mNumMeshes, sizeof(Mesh));
   if (!model->meshes){
     printf("Error: failed to allocate meshes\n");
   return false;
@@ -164,13 +164,24 @@ void model_process_mesh(struct aiMesh *ai_mesh, const struct aiScene *scene, str
   // Get center from AABB min and max vectors, apply node space transform
   struct aiVector3D min = ai_mesh->mAABB.mMin;
   struct aiVector3D max = ai_mesh->mAABB.mMax;
+  vec3 cglm_min, cglm_max;
+  cglm_min[0] = min.x;
+  cglm_min[1] = min.y;
+  cglm_min[2] = min.z;
+  cglm_min[0] = max.x;
+  cglm_min[1] = max.y;
+  cglm_min[2] = max.z;
+  glm_mat4_mulv3(node_transform_mat4, cglm_min, 1.0f, cglm_min);
+  glm_mat4_mulv3(node_transform_mat4, cglm_max, 1.0f, cglm_max);
 
-  dest_mesh->center[0] = (min.x + max.x) * 0.5f;
-  dest_mesh->center[1] = (min.y + max.y) * 0.5f;
-  dest_mesh->center[2] = (min.z + max.z) * 0.5f;
-  vec3 node_space_center;
-  glm_mat4_mulv3(node_transform_mat4, dest_mesh->center, 1.0f, node_space_center);
-  glm_vec3_copy(node_space_center, dest_mesh->center);
+  dest_mesh->center[0] = (cglm_min[0] + cglm_max[0]) * 0.5f;
+  dest_mesh->center[1] = (cglm_min[1] + cglm_max[1]) * 0.5f;
+  dest_mesh->center[2] = (cglm_min[2] + cglm_max[2]) * 0.5f;
+  // vec3 node_space_center;
+  // glm_mat4_mulv3(node_transform_mat4, dest_mesh->center, 1.0f, node_space_center);
+  // glm_vec3_copy(node_space_center, dest_mesh->center);
+  glm_vec3_copy(cglm_min, dest_mesh->aabb_min);
+  glm_vec3_copy(cglm_max, dest_mesh->aabb_max);
 
   // Bind vertex buffers and buffer vertex data
   glGenBuffers(1, &dest_mesh->VBO);

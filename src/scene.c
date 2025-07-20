@@ -438,6 +438,21 @@ void scene_process_meshes_json(cJSON *meshes, struct Model **models, Shader **sh
         collider.type = type;
         collider.data.sphere = sphere;
         break;
+      case COLLIDER_CAPSULE:
+        struct Capsule capsule;
+
+        scene_process_vec3_json(cJSON_GetObjectItemCaseSensitive(collider_data_json, "segment_A"), capsule.segment_A);
+        scene_process_vec3_json(cJSON_GetObjectItemCaseSensitive(collider_data_json, "segment_B"), capsule.segment_B);
+        radius = cJSON_GetObjectItemCaseSensitive(collider_data_json, "radius");
+        if(!cJSON_IsNumber(radius)){
+          fprintf(stderr, "Error: failed to get radius in collider object in static mesh at index %d, either invalid or does not exist\n", index);
+          return;
+        }
+        capsule.radius = cJSON_GetNumberValue(radius);
+
+        collider.type = type;
+        collider.data.capsule = capsule;
+        break;
       case COLLIDER_PLANE:
         struct Plane plane;
 
@@ -457,6 +472,8 @@ void scene_process_meshes_json(cJSON *meshes, struct Model **models, Shader **sh
       default:
         break;
     }
+    
+    // Match entity scale to physics unit height
     entity->physics_body = physics_add_body(physics_world, entity, collider, dynamic);
     index++;
 

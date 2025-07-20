@@ -2,13 +2,13 @@
 
 #include "physics/world.h"
 #include "physics/aabb.h"
-#include "physics/plane.h"
+#include "physics/plane.h"  
 
 // Defines a function pointer lookup table for calculating minimum distances between
 // different types of volumes. I didn't want a huge switch statement, and it turns out
 // you can do this in C!
 
-#define NUM_COLLIDER_TYPES 3
+#define NUM_COLLIDER_TYPES 4
 
 typedef float (*DistanceFunction)(struct PhysicsBody *body_A, struct PhysicsBody *body_B, float time);
 
@@ -19,9 +19,13 @@ extern DistanceFunction distance_functions[NUM_COLLIDER_TYPES][NUM_COLLIDER_TYPE
 // Minimum distance functions
 float min_dist_at_time_AABB_AABB(struct PhysicsBody *body_A, struct PhysicsBody *body_B, float time);
 float min_dist_at_time_AABB_sphere(struct PhysicsBody *body_A, struct PhysicsBody *body_B, float time);
+float min_dist_at_time_AABB_capsule(struct PhysicsBody *body_A, struct PhysicsBody *body_B, float time);
 float min_dist_at_time_AABB_plane(struct PhysicsBody *body_A, struct PhysicsBody *body_B, float time);
 float min_dist_at_time_sphere_sphere(struct PhysicsBody *body_A, struct PhysicsBody *body_B, float time);
+float min_dist_at_time_sphere_capsule(struct PhysicsBody *body_A, struct PhysicsBody *body_B, float time);
 float min_dist_at_time_sphere_plane(struct PhysicsBody *body_A, struct PhysicsBody *body_B, float time);
+float min_dist_at_time_capsule_capsule(struct PhysicsBody *body_A, struct PhysicsBody *body_B, float time);
+float min_dist_at_time_capsule_plane(struct PhysicsBody *body_A, struct PhysicsBody *body_B, float time);
 
 // DistanceFunction distance_functions[NUM_COLLIDER_TYPES][NUM_COLLIDER_TYPES] = {
 //   [COLLIDER_AABB][COLLIDER_PLANE] = min_dist_at_time_AABB_plane,

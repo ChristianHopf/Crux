@@ -3,8 +3,10 @@ ALSOFT_DRIVERS ?= pulse,pipewire,alsa
 
 # Compiler and flags
 CC = gcc
-CFLAGS = -Iinclude -Iinclude/physics $(addprefix -I,$(shell find third_party -type d)) $(shell pkg-config --cflags freetype2) -Wall -Wextra -g
-LDFLAGS = -L/usr/lib $(shell pkg-config --libs freetype2) -lglfw -lGL -lcglm -lm -ldl -lassimp -lopenal -lsndfile
+CFLAGS = -Iinclude -Iinclude/physics -Iinclude/menu $(addprefix -I,$(shell find third_party -type d)) $(shell pkg-config --cflags freetype2 glfw3 openal assimp) -Wall -Wextra -g
+# LDFLAGS = -L/usr/lib $(shell pkg-config --libs freetype2) -lglfw -lGL -lcglm -lm -ldl -lassimp -lopenal -lsndfile
+# LDFLAGS = $(shoreplace -L/usr/lib $(shell pkg-config --libs freetype2 glfw3 openal assimp libsndfile) -lcglm -lm -ldl
+LDFLAGS = $(shell pkg-config --libs freetype2 glfw3 openal assimp) -lcglm -lm -ldl -lsndfile
 
 # Directories
 SRC_DIR = src
@@ -25,8 +27,16 @@ TEST_OBJS = $(patsubst $(TEST_DIR)/%.c,$(OBJ_DIR)/test/%.o,$(TEST_FILES))
 UNITY_OBJ = $(OBJ_DIR)/unity.o
 
 # Output binaries
-MAIN_OUT = $(OUT_DIR)/dungeon1
+MAIN_OUT = $(OUT_DIR)/capsule5
 TEST_OUT = $(OUT_DIR)/test_runner
+
+# Dependency check
+# check-dependencies:
+# 	@command -v pkg-config >/dev/null 2>&1 || { echo "Error: pkg-config is required"; exit 1; }
+# 	@pkg-config --exists freetype2 || { echo "Error: FreeType2 is not installed"; exit 1; }
+# 	@pkg-config --exists glfw3 || { echo "Error: GLFW is not installed"; exit 1; }
+# 	@pkg-config --exists openal || { echo "Error: OpenAL is not installed"; exit 1; }
+# 	@pkg-config --exists assimp || { echo "Error: Assimp is not installed"; exit 1; }
 
 # Default target
 all: $(MAIN_OUT)
