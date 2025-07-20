@@ -438,7 +438,6 @@ void resolve_collision_capsule_plane(struct PhysicsBody *body_A, struct PhysicsB
   glm_vec3_scale(capsule->segment_B, body_A->scale[0], world_capsule.segment_B);
   mat4 eulerA;
   mat3 rotationA;
-  vec3 rotatedA, rotatedB;
   glm_euler_xyz(body_A->rotation, eulerA);
   glm_mat4_pick3(eulerA, rotationA);
   glm_mat3_mulv(rotationA, world_capsule.segment_A, world_capsule.segment_A);

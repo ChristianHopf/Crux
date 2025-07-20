@@ -8,6 +8,7 @@
 
 struct Player {
   struct Camera *camera;
+  struct PhysicsBody *physics_body;
   vec3 velocity;
   bool is_grounded;
 };
