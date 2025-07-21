@@ -31,7 +31,7 @@ void player_init(struct Player *player, struct Model *model, Shader *shader){
   glm_vec3_copy((vec3){0.0f, 0.0f, 0.0f}, player->entity->rotation);
   glm_vec3_copy((vec3){1.0f, 1.0f, 1.0f}, player->entity->scale);
   glm_vec3_copy((vec3){0.0f, 0.0f, 0.0f}, player->entity->velocity);
-  glm_vec3_copy((vec3){0.0f, 0.0f, 0.0f}, player->camera_offset);
+  glm_vec3_copy((vec3){0.0f, 1.0f, 0.0f}, player->camera_offset);
   player->is_grounded = true;
 
   // AudioComponent
@@ -52,14 +52,13 @@ void player_jump(struct Player *player){
 }
 
 void player_update(struct Player *player, float delta_time){
-  if (!player->is_grounded){
-    glm_vec3_copy(player->entity->physics_body->position, player->entity->position);
-    glm_vec3_copy(player->entity->physics_body->position, player->camera->position);
-    glm_vec3_copy(player->entity->physics_body->rotation, player->entity->rotation);
-    glm_vec3_copy(player->entity->physics_body->velocity, player->entity->velocity);
+  glm_vec3_copy(player->entity->physics_body->position, player->entity->position);
+  // glm_vec3_copy(player->entity->physics_body->position, player->camera->position);
+  glm_vec3_copy(player->entity->physics_body->rotation, player->entity->rotation);
+  glm_vec3_copy(player->entity->physics_body->velocity, player->entity->velocity);
 
-    // Add Camera offset
-    glm_vec3_add(player->camera->position, player->camera_offset, player->camera->position);
+  // Add Camera offset
+  glm_vec3_add(player->entity->position, player->camera_offset, player->camera->position);
 
     // Apply gravity to the player's velocity
     // float gravity = 9.8f;
@@ -70,7 +69,7 @@ void player_update(struct Player *player, float delta_time){
     // glm_vec3_copy(player->velocity, update);
     // glm_vec3_scale(update, delta_time, update);
     // glm_vec3_add(update, player->camera->position, player->camera->position);
-  }
+  // }
   
   // If this update makes the player hit the ground, set their velocity back to 0
   // if (player->camera->position[1] <= 1.0f){
