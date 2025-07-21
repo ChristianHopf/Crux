@@ -1,7 +1,6 @@
-#ifndef MODEL_H
-#define MODEL_H
+#pragma once
 
-// #include <glad/glad.h>
+#include <glad/glad.h>
 #include <cglm/cglm.h>
 #include <stdbool.h>
 #include <assimp/scene.h>
@@ -50,5 +49,3 @@ GLuint model_load_texture_type(struct Model *model, const struct aiMaterial *mat
 // char *get_texture_path(const struct aiMaterial *material, enum aiTextureType type);
 // GLuint model_check_loaded_texture(const char *path);
 // void model_add_loaded_texture(const char *path, GLuint texture_id);
-
-#endif

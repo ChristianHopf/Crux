@@ -1,6 +1,6 @@
 #pragma once
 
-#include <glad/glad.h>
+// #include <glad/glad.h>
 #include <cJSON/cJSON.h>
 #include <stdbool.h>
 #include "physics/world.h"

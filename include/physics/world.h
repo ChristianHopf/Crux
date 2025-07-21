@@ -7,6 +7,7 @@
 #include "collider.h"
 #include "physics/utils.h"
 #include "entity.h"
+#include "player.h"
 
 struct PhysicsBody {
   // Collision
@@ -27,14 +28,17 @@ struct PhysicsBody {
 struct PhysicsWorld {
   struct PhysicsBody *static_bodies;
   struct PhysicsBody *dynamic_bodies;
+  struct PhysicsBody *player_bodies;
   unsigned int num_static_bodies;
   unsigned int num_dynamic_bodies;
+  unsigned int num_player_bodies;
 };
 
 
 // World, bodies
 struct PhysicsWorld *physics_world_create();
 struct PhysicsBody  *physics_add_body(struct PhysicsWorld *physics_world, struct Entity *entity, struct Collider collider, bool dynamic);
+struct PhysicsBody *physics_add_player(struct PhysicsWorld *physics_world, struct Player *player, struct Collider collider);
 
 void physics_step(struct PhysicsWorld *physics_world, float delta_time);
 

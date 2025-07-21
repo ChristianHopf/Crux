@@ -25,6 +25,7 @@ struct PhysicsWorld *physics_world_create(){
   // - if a static body becomes dynamic, or vice versa, reallocate accordingly
   world->static_bodies = (struct PhysicsBody *)calloc(MAX_PHYSICS_BODIES, sizeof(struct PhysicsBody));
   world->dynamic_bodies = (struct PhysicsBody *)calloc(MAX_PHYSICS_BODIES, sizeof(struct PhysicsBody));
+  world->player_bodies = (struct PhysicsBody *)calloc(MAX_PHYSICS_BODIES, sizeof(struct PhysicsBody));
 
   // Might want some kind of default field population later.
   // calloc should be fine for now, though.
@@ -61,11 +62,85 @@ struct PhysicsBody *body;
   return body;
 }
 
+struct PhysicsBody *physics_add_player(struct PhysicsWorld *physics_world, struct Player *player, struct Collider collider){
+  // Check type validity
+  if (collider.type < 0 || collider.type > COLLIDER_COUNT){
+    fprintf(stderr, "Error: collider type provided to physics_add_body is invalid\n");
+    return NULL;
+  }
+
+  struct PhysicsBody *body;
+  printf("Num player bodies is initially %d\n", physics_world->num_player_bodies);
+  body = &physics_world->player_bodies[physics_world->num_player_bodies++];
+
+  glm_vec3_copy(player->entity->position, body->position);
+  glm_vec3_copy(player->entity->rotation, body->rotation);
+  glm_vec3_copy(player->entity->scale, body->scale);
+  glm_vec3_copy(player->entity->velocity, body->velocity);
+  body->collider = collider;
+  body->entity = player->entity;
+
+  return body;
+}
+
 void physics_step(struct PhysicsWorld *physics_world, float delta_time){
   if (delta_time > MAX_DELTA_TIME){
     delta_time = MAX_DELTA_TIME;
   }
-  // printf("PHYSICS_STEP: Dynamic body 0 has entity address %p\n", &physics_world->dynamic_bodies[0]);
+
+  for (unsigned int i = 0; i < physics_world->num_player_bodies; i++){
+    struct PhysicsBody *body_A = &physics_world->player_bodies[i];
+
+    for (unsigned int j = 0; j < physics_world->num_static_bodies; j++){
+      struct PhysicsBody *body_B = &physics_world->static_bodies[j];
+
+      // Order bodies by enum value for function tables
+      bool body_swap = false;
+      if (body_A->collider.type > body_B->collider.type){
+        struct PhysicsBody *temp = body_A;
+        body_A = body_B;
+        body_B = body_A;
+        body_swap = true;
+      }
+
+      // BROAD PHASE: Create a hit_time float and perform interval halving
+      float hit_time;
+      struct CollisionResult result = {0};
+      if (interval_collision(body_A, body_B, 0, delta_time, &hit_time)){
+        // NARROW PHASE
+        NarrowPhaseFunction narrow_phase_function = narrow_phase_functions[body_A->collider.type][body_B->collider.type];
+        if (!narrow_phase_function){
+          fprintf(stderr, "Error: no narrow phase function found for collider types %d, %d\n", body_A->collider.type, body_B->collider.type);
+        }
+        else{
+          result = narrow_phase_function(body_A, body_B, delta_time);
+        }
+      }
+
+      // COLLISION RESOLUTION
+      if (result.colliding && result.hit_time >= 0){
+        ResolutionFunction resolution_function = resolution_functions[body_A->collider.type][body_B->collider.type];
+        if (!resolution_function){
+          fprintf(stderr, "Error: no collision resolution function found for types %d and %d\n", body_A->collider.type, body_B->collider.type);
+        }
+        else{
+          resolution_function(body_A, body_B, result, delta_time);
+        }
+      }
+      // Reorder bodies by enum value
+      if (body_swap){
+        struct PhysicsBody *temp = body_A;
+        body_A = body_B;
+        body_B = temp;
+      }
+    }
+    if (!body_A->at_rest){
+      float gravity = 9.8f;
+      body_A->velocity[1] -= gravity * delta_time;
+      glm_vec3_muladds(body_A->velocity, delta_time, body_A->position);
+    }
+  }
+
   for(unsigned int i = 0; i < physics_world->num_dynamic_bodies; i++){
     struct PhysicsBody *body_A = &physics_world->dynamic_bodies[i];
 

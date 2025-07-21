@@ -1,7 +1,8 @@
 #include <cglm/vec3.h>
 #include "player.h"
+#include "physics/world.h"
 
-void player_init(struct Player *player){
+void player_init(struct Player *player, struct Model *model, Shader *shader){
 
   // Init camera
   vec3 cameraPos = {0.0f, 1.0f, 3.0f};
@@ -17,39 +18,66 @@ void player_init(struct Player *player){
     return;
   }
   player->camera = camera;
-  glm_vec3_copy((vec3){0.0f, 0.0f, 0.0f}, player->velocity);
+
+  // Add entity information (model, shader, etc)
+  player->entity = (struct Entity *)malloc(sizeof(struct Entity));
+  if (!player->entity){
+    fprintf(stderr, "Error: failed to allocate entity in player_init\n");
+    return;
+  }
+  player->entity->model = model;
+  player->entity->shader = shader;
+  glm_vec3_copy((vec3){0.0f, 1.0f, 3.0f}, player->entity->position);
+  glm_vec3_copy((vec3){0.0f, 0.0f, 0.0f}, player->entity->rotation);
+  glm_vec3_copy((vec3){1.0f, 1.0f, 1.0f}, player->entity->scale);
+  glm_vec3_copy((vec3){0.0f, 0.0f, 0.0f}, player->entity->velocity);
+  glm_vec3_copy((vec3){0.0f, 0.0f, 0.0f}, player->camera_offset);
   player->is_grounded = true;
+
+  // AudioComponent
+  player->entity->audio_component = audio_component_create(player->entity, 0);
 
   // Set listener position to camera position
   audio_listener_update(player);
 }
 
 void player_jump(struct Player *player){
+
+  // Apply an impulse to player->physics_body->velocity
+  player->entity->physics_body->velocity[1] = 3.0f;
+
   // Basic jump: add a constant value to the player's y axis velocity
-  player->velocity[1] = 3.0f;
+  // player->velocity[1] = 3.0f;
   player->is_grounded = false;
 }
 
 void player_update(struct Player *player, float delta_time){
   if (!player->is_grounded){
+    glm_vec3_copy(player->entity->physics_body->position, player->entity->position);
+    glm_vec3_copy(player->entity->physics_body->position, player->camera->position);
+    glm_vec3_copy(player->entity->physics_body->rotation, player->entity->rotation);
+    glm_vec3_copy(player->entity->physics_body->velocity, player->entity->velocity);
+
+    // Add Camera offset
+    glm_vec3_add(player->camera->position, player->camera_offset, player->camera->position);
+
     // Apply gravity to the player's velocity
-    float gravity = 9.8f;
-    player->velocity[1] -= gravity * delta_time;
+    // float gravity = 9.8f;
+    // player->velocity[1] -= gravity * delta_time;
 
     // Add player's velocity to the camera position, scaled by delta_time
-    vec3 update;
-    glm_vec3_copy(player->velocity, update);
-    glm_vec3_scale(update, delta_time, update);
-    glm_vec3_add(update, player->camera->position, player->camera->position);
-
+    // vec3 update;
+    // glm_vec3_copy(player->velocity, update);
+    // glm_vec3_scale(update, delta_time, update);
+    // glm_vec3_add(update, player->camera->position, player->camera->position);
   }
   
   // If this update makes the player hit the ground, set their velocity back to 0
-  if (player->camera->position[1] <= 1.0f){
-    player->camera->position[1] = 1.0f;
-    player->velocity[1] = 0.0f;
-    player->is_grounded = true;
-  }
+  // if (player->camera->position[1] <= 1.0f){
+  //   player->camera->position[1] = 1.0f;
+  //   player->velocity[1] = 0.0f;
+  //   player->is_grounded = true;
+  // }
 
   // Update listener position and orientation
   audio_listener_update(player);

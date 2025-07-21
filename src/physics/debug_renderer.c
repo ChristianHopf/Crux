@@ -166,6 +166,7 @@ void physics_debug_renderer_init(struct PhysicsWorld *physics_world){
         break;
       case COLLIDER_CAPSULE:
         physics_debug_capsule_init(body);
+        printf("success\n");
         break;
       case COLLIDER_PLANE:
         // debug_plane_init(body);
@@ -476,7 +477,7 @@ void physics_debug_capsule_init(struct PhysicsBody *body){
       vertex_index++;
     }
   }
-  printf("Successfully generated %d capsule vertices\n", vertex_index);
+  // printf("Successfully generated %d capsule vertices\n", vertex_index);
 
   // Allocate indices
   unsigned int *indices = (unsigned int*)malloc(num_indices * sizeof(unsigned int));
@@ -502,7 +503,7 @@ void physics_debug_capsule_init(struct PhysicsBody *body){
       indices[indices_index++] = k2;
     }
   }
-  printf("Successfully generated %d capsule indices\n", indices_index);
+  // printf("Successfully generated %d capsule indices\n", indices_index);
 
   // Buffers
   glGenVertexArrays(1, &body->VAO);

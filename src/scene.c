@@ -218,7 +218,16 @@ struct Scene *scene_init(char *scene_path){
   }
 
   // Player
-  player_init(&scene->player);
+  player_init(&scene->player, models[1], shaders[0]);
+  struct Collider player_collider = {
+    .type = 2,
+    .data.capsule = {
+      .segment_A = {0.0f, 0.25f, 0.0f},
+      .segment_B = {0.0f, 1.75f, 0.0f},
+      .radius = 0.25f
+    }
+  };
+  scene->player.entity->physics_body = physics_add_player(scene->physics_world, &scene->player, player_collider);
   
   // Skybox
   //
@@ -241,11 +250,11 @@ void scene_update(struct Scene *scene, float delta_time){
   static float total_time = 0.0f;
   total_time += delta_time;
 
-  // Update player
-  player_update(&scene->player, delta_time);
-
   // Perform collision detection
   physics_step(scene->physics_world, delta_time);
+
+  // Update player
+  player_update(&scene->player, delta_time);
 
   // Match entity audio source and PhysicsBody positions with entity position
   for(int i = 0; i < scene->num_dynamic_entities; i++){
@@ -351,7 +360,7 @@ void scene_render(struct Scene *scene){
   }
 
   // Render text
-  text_render("Crux Engine 0.2", 4.0f, 1058.0f, 1.0f, (vec3){1.0f, 1.0f, 1.0f});
+  // text_render("Crux Engine 0.2", 4.0f, 1058.0f, 1.0f, (vec3){1.0f, 1.0f, 1.0f});
 }
 
 //     // Rewrite this to actually free everything
