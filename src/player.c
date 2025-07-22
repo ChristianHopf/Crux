@@ -27,7 +27,7 @@ void player_init(struct Player *player, struct Model *model, Shader *shader){
   }
   player->entity->model = model;
   player->entity->shader = shader;
-  glm_vec3_copy((vec3){0.0f, 1.75f, 3.0f}, player->entity->position);
+  glm_vec3_copy((vec3){0.0f, 0.0f, 3.0f}, player->entity->position);
   glm_vec3_copy((vec3){0.0f, 0.0f, 0.0f}, player->entity->rotation);
   glm_vec3_copy((vec3){1.0f, 1.0f, 1.0f}, player->entity->scale);
   glm_vec3_copy((vec3){0.0f, 0.0f, 0.0f}, player->entity->velocity);
@@ -143,7 +143,7 @@ void player_update(struct Player *player, float delta_time){
 
   // Add Camera offset
   glm_vec3_add(player->entity->position, player->camera_offset, player->camera->position);
-  player->camera->position[1] += 1.0f;
+  player->camera->position[1] += player->camera_height;
 
   print_glm_vec3(player->camera->position, "player_update camera position");
 
