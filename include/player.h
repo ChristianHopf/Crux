@@ -19,5 +19,6 @@ struct PlayerManager {
 };
 
 void player_init(struct Player *player, struct Model *model, Shader *shader);
+void player_process_keyboard_input(struct Player *player, CameraDirection camera_direction, float delta_time);
 void player_jump(struct Player *player);
 void player_update(struct Player *player, float delta_time);

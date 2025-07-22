@@ -64,20 +64,24 @@ void processInput(GLFWwindow *window){
 
   // Camera movement
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS){
-    camera_process_keyboard_input(camera, CAMERA_FORWARD, engine->delta_time);
+    player_process_keyboard_input(&engine->active_scene->player, CAMERA_FORWARD, engine->delta_time);
+    // camera_process_keyboard_input(camera, CAMERA_FORWARD, engine->delta_time);
 	}
 	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS){
-    camera_process_keyboard_input(camera, CAMERA_BACKWARD, engine->delta_time);
+    player_process_keyboard_input(&engine->active_scene->player, CAMERA_BACKWARD, engine->delta_time);
+    // camera_process_keyboard_input(camera, CAMERA_BACKWARD, engine->delta_time);
 	}
 	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS){
-    camera_process_keyboard_input(camera, CAMERA_LEFT, engine->delta_time);
+    player_process_keyboard_input(&engine->active_scene->player, CAMERA_LEFT, engine->delta_time);
+    // camera_process_keyboard_input(camera, CAMERA_LEFT, engine->delta_time);
   }
 	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS){
-    camera_process_keyboard_input(camera, CAMERA_RIGHT, engine->delta_time);
+    player_process_keyboard_input(&engine->active_scene->player, CAMERA_RIGHT, engine->delta_time);
+    // camera_process_keyboard_input(camera, CAMERA_RIGHT, engine->delta_time);
 	}
-	if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS){
-    camera_process_keyboard_input(camera, CAMERA_DOWN, engine->delta_time);
-  }
+	// if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS){
+	//    camera_process_keyboard_input(camera, CAMERA_DOWN, engine->delta_time);
+	//  }
 
   // Only process these inputs a single time per press
   int space_state = glfwGetKey(window, GLFW_KEY_SPACE);
