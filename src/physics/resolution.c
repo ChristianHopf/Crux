@@ -469,7 +469,7 @@ void resolve_collision_capsule_plane(struct PhysicsBody *body_A, struct PhysicsB
   glm_vec3_add(body_A->position, correction, body_A->position);
 
   // Reflect velocity over normal
-  float restitution = 1.0f;
+  float restitution = 0.8f;
   float rest_velocity_threshold = 0.1f;
   float v_dot_n = glm_dot(velocity_before, plane->normal);
   vec3 reflection;

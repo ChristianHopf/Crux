@@ -8,6 +8,62 @@ static Shader *wireframeShader;
 static Shader *translucentShader;
 
 void physics_debug_render(struct PhysicsWorld *physics_world, struct RenderContext *context){
+  // Render player bodies
+  // TODO refactor the switch into its own function
+  for (unsigned int i = 0; i < physics_world->num_player_bodies; i++){
+    struct PhysicsBody *body = &physics_world->player_bodies[i];
+
+    glBindVertexArray(body->VAO);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, body->EBO);
+
+    mat4 model;
+    glm_mat4_identity(model);
+
+    switch(body->collider.type){
+      case COLLIDER_AABB:
+        // Get updated AABB and model matrix
+        struct AABB *box = &body->collider.data.aabb;
+
+        glm_translate(model, body->position);
+        glm_rotate_y(model, glm_rad(body->rotation[1]), model);
+        glm_rotate_x(model, glm_rad(body->rotation[0]), model);
+        glm_rotate_z(model, glm_rad(body->rotation[2]), model);
+        glm_scale(model, body->scale);
+
+        physics_debug_AABB_render(box, context, model);
+        break;
+      case COLLIDER_SPHERE:
+        struct Sphere *sphere = &body->collider.data.sphere;
+
+        glm_translate(model, body->position);
+        // Spheres are invariant to rotation
+        // glm_rotate_y(model, glm_rad(body->rotation[1]), model);
+        // glm_rotate_x(model, glm_rad(body->rotation[0]), model);
+        // glm_rotate_z(model, glm_rad(body->rotation[2]), model);
+        glm_scale(model, body->scale);
+
+        physics_debug_sphere_render(sphere, context, model);
+        break;
+      case COLLIDER_CAPSULE:
+        struct Capsule *capsule = &body->collider.data.capsule;
+
+        glm_translate(model, body->position);
+        glm_rotate_y(model, glm_rad(body->rotation[1]), model);
+        glm_rotate_x(model, glm_rad(body->rotation[0]), model);
+        glm_rotate_z(model, glm_rad(body->rotation[2]), model);
+        glm_scale(model, body->scale);
+
+        physics_debug_capsule_render(capsule, context, model);
+        break;
+      case COLLIDER_PLANE:
+        // debug_plane_render(body);
+        break;
+      default:
+        break;
+    }
+  }
+
+  // Render static bodies
   for (unsigned int i = 0; i < physics_world->num_static_bodies; i++){
     struct PhysicsBody *body = &physics_world->static_bodies[i];
 
@@ -60,6 +116,8 @@ void physics_debug_render(struct PhysicsWorld *physics_world, struct RenderConte
         break;
     }
   }
+
+  // Render dynamic bodies
   for (unsigned int i = 0; i < physics_world->num_dynamic_bodies; i++){
     struct PhysicsBody *body = &physics_world->dynamic_bodies[i];
 
@@ -155,6 +213,28 @@ void physics_debug_renderer_init(struct PhysicsWorld *physics_world){
   glUniformBlockBinding(wireframeShader->ID, uniform_block_index_wireframe, 0);
   glUniformBlockBinding(translucentShader->ID, uniform_block_index_translucent, 0);
 
+  // Init players' bodies
+  for (unsigned int i = 0; i < physics_world->num_player_bodies; i++){
+    struct PhysicsBody *body = &physics_world->player_bodies[i];
+    switch(body->collider.type){
+      case COLLIDER_AABB:
+        physics_debug_AABB_init(body);
+        break;
+      case COLLIDER_SPHERE:
+        physics_debug_sphere_init(body);
+        break;
+      case COLLIDER_CAPSULE:
+        physics_debug_capsule_init(body);
+        break;
+      case COLLIDER_PLANE:
+        // debug_plane_init(body);
+        break;
+      default:
+        break;
+    }
+  }
+
+  // Init static bodies
   for (unsigned int i = 0; i < physics_world->num_static_bodies; i++){
     struct PhysicsBody *body = &physics_world->static_bodies[i];
     switch(body->collider.type){
@@ -166,7 +246,6 @@ void physics_debug_renderer_init(struct PhysicsWorld *physics_world){
         break;
       case COLLIDER_CAPSULE:
         physics_debug_capsule_init(body);
-        printf("success\n");
         break;
       case COLLIDER_PLANE:
         // debug_plane_init(body);
@@ -175,6 +254,8 @@ void physics_debug_renderer_init(struct PhysicsWorld *physics_world){
         break;
     }
   }
+
+  // Init dynamic bodies
   for (unsigned int i = 0; i < physics_world->num_dynamic_bodies; i++){
     struct PhysicsBody *body = &physics_world->dynamic_bodies[i];
     switch(body->collider.type){

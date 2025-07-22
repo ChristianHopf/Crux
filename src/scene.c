@@ -189,11 +189,6 @@ struct Scene *scene_init(char *scene_path){
   scene_process_meshes_json(dynamic_meshes, models, shaders, scene->dynamic_entities, scene->physics_world, true);
 
   scene->max_entities = 64;
-
-  // Init physics debug renderer
-  if (scene->physics_debug_mode){
-    physics_debug_renderer_init(scene->physics_world);
-  }
   
   // Lights
   lights_json = cJSON_GetObjectItemCaseSensitive(scene_json, "lights");
@@ -228,6 +223,11 @@ struct Scene *scene_init(char *scene_path){
     }
   };
   scene->player.entity->physics_body = physics_add_player(scene->physics_world, &scene->player, player_collider);
+
+  // Init physics debug renderer
+  if (scene->physics_debug_mode){
+    physics_debug_renderer_init(scene->physics_world);
+  }
   
   // Skybox
   //

@@ -123,7 +123,8 @@ void mouse_callback(GLFWwindow *window, double xpos, double ypos){
 
   // Update camera
   if (!game_state_is_paused()){
-    camera_process_mouse_input(camera, xoffset, yoffset);
+    player_process_mouse_input(&engine->active_scene->player, xoffset, yoffset);
+    // camera_process_mouse_input(camera, xoffset, yoffset);
   }
 }
 
