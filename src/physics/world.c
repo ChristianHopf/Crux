@@ -63,23 +63,22 @@ struct PhysicsBody *body;
   return body;
 }
 
-struct PhysicsBody *physics_add_player(struct PhysicsWorld *physics_world, struct Player *player, struct Collider collider){
+struct PhysicsBody *physics_add_player(struct PhysicsWorld *physics_world, struct Entity *entity, struct Collider collider){
   // Check type validity
   if (collider.type < 0 || collider.type > COLLIDER_COUNT){
     fprintf(stderr, "Error: collider type provided to physics_add_body is invalid\n");
     return NULL;
   }
-
   struct PhysicsBody *body;
   body = &physics_world->player_bodies[physics_world->num_player_bodies++];
 
-  glm_vec3_copy(player->entity->position, body->position);
-  glm_vec3_copy(player->entity->rotation, body->rotation);
-  glm_vec3_copy(player->entity->scale, body->scale);
-  glm_vec3_copy(player->entity->velocity, body->velocity);
+  glm_vec3_copy(entity->position, body->position);
+  glm_vec3_copy(entity->rotation, body->rotation);
+  glm_vec3_copy(entity->scale, body->scale);
+  glm_vec3_copy(entity->velocity, body->velocity);
   body->collider = collider;
   body->restitution = 0.0f;
-  body->entity = player->entity;
+  body->entity = entity;
 
   return body;
 }

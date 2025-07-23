@@ -100,10 +100,9 @@ void player_process_mouse_input(struct Player *player, float xoffset, float yoff
 	if (camera->pitch > 89.0f) camera->pitch = 89.0f;
 	if (camera->pitch < -89.0f) camera->pitch = -89.0f;
 
-  // Update camera position using offset
+  // Update camera direction using offset
   float r = glm_vec3_norm(player->camera_offset);
   vec3 direction;
-  printf("magnitude of offset is %f\n", r);
   if (r > 0){
     vec3 update;
     update[0] = -r * cosf(glm_rad(camera->pitch)) * cosf(glm_rad(camera->yaw));
@@ -127,11 +126,6 @@ void player_process_mouse_input(struct Player *player, float xoffset, float yoff
 
 
   // Calculate new cameraFront vector
-  // vec3 direction;
-  // vec3 entity_plus_height;
-  // glm_vec3_copy(player->entity->position, entity_plus_height);
-  // entity_plus_height[1] += player->camera_height;
-  // glm_vec3_sub(entity_plus_height, camera->position, direction);
 	glm_vec3_normalize(direction);
 	glm_vec3_copy(direction, camera->front);
   // Calculate cameraRight vector

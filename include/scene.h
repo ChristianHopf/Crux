@@ -7,6 +7,7 @@
 #include "skybox.h"
 #include "entity.h"
 #include "player.h"
+#include "shader.h"
 
 struct Light {
   vec3 direction;
@@ -17,6 +18,10 @@ struct Light {
 };
 
 struct Scene {
+  struct Model **models;
+  Shader **shaders;
+  int num_models;
+  int num_shaders;
   struct Entity *static_entities;
   struct Entity *dynamic_entities;
   int num_static_entities;

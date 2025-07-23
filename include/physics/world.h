@@ -40,7 +40,7 @@ struct PhysicsWorld {
 // World, bodies
 struct PhysicsWorld *physics_world_create();
 struct PhysicsBody  *physics_add_body(struct PhysicsWorld *physics_world, struct Entity *entity, struct Collider collider, float restitution, bool dynamic);
-struct PhysicsBody *physics_add_player(struct PhysicsWorld *physics_world, struct Player *player, struct Collider collider);
+struct PhysicsBody *physics_add_player(struct PhysicsWorld *physics_world, struct Entity *entity, struct Collider collider);
 
 void physics_step(struct PhysicsWorld *physics_world, float delta_time);
 

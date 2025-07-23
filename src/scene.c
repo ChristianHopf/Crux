@@ -55,12 +55,21 @@ struct Scene *scene_init(char *scene_path){
   }
   int num_shaders = cJSON_GetArraySize(shaders_json);
   Shader *shaders[num_shaders];
+  scene->shaders = (Shader **)malloc(num_shaders * sizeof(Shader *));
+  if (!scene->shaders){
+    fprintf(stderr, "Error: failed to allocate scene->shaders in scene_init\n");
+    return NULL;
+  }
+  for (int i = 0; i < num_shaders; i++){
+    scene->shaders[i] = NULL;
+  }
+  scene->num_shaders = num_shaders;
 
   int index = 0;
-  const cJSON *shader = NULL;
-  cJSON_ArrayForEach(shader, shaders_json){
-    cJSON *vertex = cJSON_GetObjectItemCaseSensitive(shader, "vertex");
-    cJSON *fragment = cJSON_GetObjectItemCaseSensitive(shader, "fragment");
+  const cJSON *shader_data = NULL;
+  cJSON_ArrayForEach(shader_data, shaders_json){
+    cJSON *vertex = cJSON_GetObjectItemCaseSensitive(shader_data, "vertex");
+    cJSON *fragment = cJSON_GetObjectItemCaseSensitive(shader_data, "fragment");
 
     if (!cJSON_IsString(vertex) || !cJSON_IsString(fragment)){
       fprintf(stderr, "Error: invalid JSON data in shaders[\"vertex\"]\n");
@@ -75,8 +84,10 @@ struct Scene *scene_init(char *scene_path){
       printf("Error: failed to create shader program\n");
     }
     shaders[index] = shader;
+    scene->shaders[index] = shader;
     index++;
   }
+  // scene->shaders = shaders;
 
   // Link shader uniform blocks to binding points
   for (int i = 0; i < num_shaders; i++){
@@ -103,6 +114,15 @@ struct Scene *scene_init(char *scene_path){
   }
   int num_models = cJSON_GetArraySize(models_json);
   struct Model *models[num_models];
+  scene->models = (struct Model **)malloc(num_models * sizeof(struct Model *));
+  if (!scene->models){
+    fprintf(stderr, "Error: failed to allocate scene->shaders in scene_init\n");
+    return NULL;
+  }
+  for (int i = 0; i < num_models; i++){
+    scene->models[i] = NULL;
+  }
+  scene->num_models = num_models;
 
   index = 0;
   cJSON *model_json;
@@ -123,6 +143,7 @@ struct Scene *scene_init(char *scene_path){
     }
 
     models[index] = loaded_model;
+    scene->models[index] = loaded_model;
     index++;
   }
 
@@ -222,7 +243,7 @@ struct Scene *scene_init(char *scene_path){
       .radius = 0.25f
     }
   };
-  scene->player.entity->physics_body = physics_add_player(scene->physics_world, &scene->player, player_collider);
+  scene->player.entity->physics_body = physics_add_player(scene->physics_world, scene->player.entity, player_collider);
 
   // Init physics debug renderer
   if (scene->physics_debug_mode){
@@ -363,15 +384,39 @@ void scene_render(struct Scene *scene){
   // text_render("Crux Engine 0.2", 4.0f, 1058.0f, 1.0f, (vec3){1.0f, 1.0f, 1.0f});
 }
 
-//     // Rewrite this to actually free everything
-//     free(scene->entities);
-//     free(scene->player.camera);
-//     free(scene->light);
-//     free(scene->skybox->shader);
-//     free(scene->skybox);
-//     free(scene);
-//   }
-// }
+void scene_free(struct Scene *scene){
+  // Free models
+  for (int i = 0; i < scene->num_models; i++){
+    free(scene->models[i]);
+  }
+  // Free shaders
+  for (int i = 0; i < scene->num_shaders; i++){
+    free(scene->shaders[i]);
+  }
+  // Free entities
+  for (unsigned int i = 0; i < scene->num_dynamic_entities; i++){
+    free(scene->dynamic_entities[i].audio_component);
+  }
+  free(scene->dynamic_entities);
+  for (unsigned int i = 0; i < scene->num_static_entities; i++){
+    free(scene->static_entities[i].audio_component);
+  }
+  free(scene->static_entities);
+
+  // Free skybox
+  free(scene->skybox->shader);
+  free(scene->skybox);
+
+  // Free lights
+  free(scene->lights);
+
+  // Free physics_world
+  free(scene->physics_world->static_bodies);
+  free(scene->physics_world->dynamic_bodies);
+  free(scene->physics_world->player_bodies);
+
+  free(scene);
+}
 
 void scene_process_meshes_json(cJSON *meshes, struct Model **models, Shader **shaders, struct Entity *entities, struct PhysicsWorld *physics_world, bool dynamic){
   int index = 0;
