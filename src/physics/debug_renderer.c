@@ -461,10 +461,10 @@ void physics_debug_capsule_init(struct PhysicsBody *body){
 
   // Vertices and indices for cylinder
   int num_vertices = (total_stacks + 1) * (sector_count + 1);
-  printf("Num vertices is %d\n", num_vertices);
+  // printf("Num vertices is %d\n", num_vertices);
   int num_indices = total_stacks * sector_count * 6;
   // int num_indices = (sector_count * (total_stacks - 1)) * 6;
-  printf("A capsule has %d indices\n", num_indices);
+  // printf("A capsule has %d indices\n", num_indices);
 
   // Allocate vertices
   float *vertices = (float *)malloc(num_vertices * 3 * sizeof(float));

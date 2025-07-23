@@ -481,9 +481,19 @@ void scene_process_meshes_json(cJSON *meshes, struct Model **models, Shader **sh
       default:
         break;
     }
+
+    float restitution = 0.0f;
+    if (dynamic){
+      cJSON *restitution_json = cJSON_GetObjectItemCaseSensitive(collider_json, "restitution");
+      if(!cJSON_IsNumber(restitution_json)){
+        fprintf(stderr, "Error: failed to get restitution in collider object in static mesh at index %d, either invalid or does not exist\n", index);
+        return;
+      }
+      restitution = cJSON_GetNumberValue(restitution_json);
+    }
     
     // Match entity scale to physics unit height
-    entity->physics_body = physics_add_body(physics_world, entity, collider, dynamic);
+    entity->physics_body = physics_add_body(physics_world, entity, collider, restitution, dynamic);
     index++;
 
     // AudioComponent

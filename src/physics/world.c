@@ -32,7 +32,7 @@ struct PhysicsWorld *physics_world_create(){
   return world;
 }
 
-struct PhysicsBody *physics_add_body(struct PhysicsWorld *physics_world, struct Entity *entity, struct Collider collider, bool dynamic){
+struct PhysicsBody *physics_add_body(struct PhysicsWorld *physics_world, struct Entity *entity, struct Collider collider, float restitution, bool dynamic){
   // Memory is already allocated: get a pointer, assign values, return the pointer
 struct PhysicsBody *body;
   switch(dynamic){
@@ -57,6 +57,7 @@ struct PhysicsBody *body;
   glm_vec3_copy(entity->position, body->position);
   glm_vec3_copy(entity->rotation, body->rotation);
   glm_vec3_copy(entity->scale, body->scale);
+  body->restitution = restitution;
   body->entity = entity;
 
   return body;
@@ -70,7 +71,6 @@ struct PhysicsBody *physics_add_player(struct PhysicsWorld *physics_world, struc
   }
 
   struct PhysicsBody *body;
-  printf("Num player bodies is initially %d\n", physics_world->num_player_bodies);
   body = &physics_world->player_bodies[physics_world->num_player_bodies++];
 
   glm_vec3_copy(player->entity->position, body->position);
@@ -78,6 +78,7 @@ struct PhysicsBody *physics_add_player(struct PhysicsWorld *physics_world, struc
   glm_vec3_copy(player->entity->scale, body->scale);
   glm_vec3_copy(player->entity->velocity, body->velocity);
   body->collider = collider;
+  body->restitution = 0.0f;
   body->entity = player->entity;
 
   return body;

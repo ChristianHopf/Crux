@@ -145,8 +145,6 @@ void player_update(struct Player *player, float delta_time){
   glm_vec3_add(player->entity->position, player->camera_offset, player->camera->position);
   player->camera->position[1] += player->camera_height;
 
-  print_glm_vec3(player->camera->position, "player_update camera position");
-
   // Update audio source position
   alSource3f(player->entity->audio_component->source_id, AL_POSITION, player->entity->position[0], player->entity->position[1], player->entity->position[2]);
   ALenum position_error = alGetError();
