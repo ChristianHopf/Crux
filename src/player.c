@@ -5,7 +5,7 @@
 void player_init(struct Player *player, struct Model *model, Shader *shader){
 
   // Init camera
-  vec3 cameraPos = {0.0f, 1.75f, 3.0f};
+  vec3 cameraPos = {0.0f, 0.0f, 3.0f};
   vec3 cameraUp = {0.0f, 1.0f, 0.0f};
   float yaw = -90.0f;
   float pitch = 0.0f;
@@ -31,7 +31,7 @@ void player_init(struct Player *player, struct Model *model, Shader *shader){
   glm_vec3_copy((vec3){0.0f, 0.0f, 0.0f}, player->entity->rotation);
   glm_vec3_copy((vec3){1.0f, 1.0f, 1.0f}, player->entity->scale);
   glm_vec3_copy((vec3){0.0f, 0.0f, 0.0f}, player->entity->velocity);
-  glm_vec3_copy((vec3){0.0f, 0.0f, 2.0f}, player->camera_offset);
+  glm_vec3_copy((vec3){0.0f, 0.0f, 3.0f}, player->camera_offset);
   player->camera_height = 1.75f;
 
   // AudioComponent
@@ -102,21 +102,36 @@ void player_process_mouse_input(struct Player *player, float xoffset, float yoff
 
   // Update camera position using offset
   float r = glm_vec3_norm(player->camera_offset);
-  vec3 update;
-  update[0] = -r * cosf(glm_rad(camera->pitch)) * cosf(glm_rad(camera->yaw));
-  update[1] = -r * sinf(glm_rad(camera->pitch));
-  update[2] = -r * cosf(glm_rad(camera->pitch)) * sinf(glm_rad(camera->yaw));
-  update[0] = clamp(update[0], -r, r);
-  update[1] = clamp(update[1], -r, r);
-  update[2] = clamp(update[2], -r, r);
-  glm_vec3_copy(update, player->camera_offset);
+  vec3 direction;
+  printf("magnitude of offset is %f\n", r);
+  if (r > 0){
+    vec3 update;
+    update[0] = -r * cosf(glm_rad(camera->pitch)) * cosf(glm_rad(camera->yaw));
+    update[1] = -r * sinf(glm_rad(camera->pitch));
+    update[2] = -r * cosf(glm_rad(camera->pitch)) * sinf(glm_rad(camera->yaw));
+    update[0] = clamp(update[0], -r, r);
+    update[1] = clamp(update[1], -r, r);
+    update[2] = clamp(update[2], -r, r);
+    glm_vec3_copy(update, player->camera_offset);
+    // Calculate new cameraFront vector
+    vec3 entity_plus_height;
+    glm_vec3_copy(player->entity->position, entity_plus_height);
+    entity_plus_height[1] += player->camera_height;
+    glm_vec3_sub(entity_plus_height, camera->position, direction);
+  }
+  else{
+    direction[0] = cos(glm_rad(camera->yaw)) * cos(glm_rad(camera->pitch));
+    direction[1] = sin(glm_rad(camera->pitch));
+    direction[2] = sin(glm_rad(camera->yaw)) * cos(glm_rad(camera->pitch));
+  }
+
 
   // Calculate new cameraFront vector
-  vec3 direction;
-  vec3 entity_plus_height;
-  glm_vec3_copy(player->entity->position, entity_plus_height);
-  entity_plus_height[1] += player->camera_height;
-  glm_vec3_sub(entity_plus_height, camera->position, direction);
+  // vec3 direction;
+  // vec3 entity_plus_height;
+  // glm_vec3_copy(player->entity->position, entity_plus_height);
+  // entity_plus_height[1] += player->camera_height;
+  // glm_vec3_sub(entity_plus_height, camera->position, direction);
 	glm_vec3_normalize(direction);
 	glm_vec3_copy(direction, camera->front);
   // Calculate cameraRight vector
