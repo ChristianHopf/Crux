@@ -58,7 +58,6 @@ vec3 lightPos = {1.2f, 0.5f, 2.0f};
 static int last_space_state = GLFW_RELEASE;
 void processInput(GLFWwindow *window){
   Engine *engine = (Engine *)glfwGetWindowUserPointer(window);
-
   // Camera movement
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS){
     player_process_keyboard_input(&engine->active_scene->player, CAMERA_FORWARD, engine->delta_time);
@@ -97,7 +96,6 @@ void window_size_callback(GLFWwindow *window, int width, int height){
 
 void mouse_callback(GLFWwindow *window, double xpos, double ypos){
   Engine *engine = (Engine *)glfwGetWindowUserPointer(window);
-
   struct Camera *camera = engine->active_scene->player.camera;
 
 	if (firstMouse){

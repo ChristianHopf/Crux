@@ -24,8 +24,10 @@ struct Scene {
   int num_shaders;
   struct Entity *static_entities;
   struct Entity *dynamic_entities;
+  struct Entity *player_entities;
   int num_static_entities;
   int num_dynamic_entities;
+  int num_player_entities;
   int max_entities;
   struct Skybox *skybox;
   struct Player player;
@@ -34,8 +36,6 @@ struct Scene {
   unsigned int ubo_matrices;
   // Physics
   struct PhysicsWorld *physics_world;
-  // // Audio
-  // struct AudioStream *music_stream;
   // Options
   bool physics_debug_mode;
 };

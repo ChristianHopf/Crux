@@ -5,7 +5,7 @@
 void player_init(struct Player *player, struct Model *model, Shader *shader){
 
   // Init camera
-  vec3 cameraPos = {0.0f, 0.0f, 3.0f};
+  vec3 cameraPos = {0.0f, 0.0f, 0.0f};
   vec3 cameraUp = {0.0f, 1.0f, 0.0f};
   float yaw = -90.0f;
   float pitch = 0.0f;
@@ -31,8 +31,10 @@ void player_init(struct Player *player, struct Model *model, Shader *shader){
   glm_vec3_copy((vec3){0.0f, 0.0f, 0.0f}, player->entity->rotation);
   glm_vec3_copy((vec3){1.0f, 1.0f, 1.0f}, player->entity->scale);
   glm_vec3_copy((vec3){0.0f, 0.0f, 0.0f}, player->entity->velocity);
-  glm_vec3_copy((vec3){0.0f, 0.0f, 3.0f}, player->camera_offset);
-  player->camera_height = 1.75f;
+  glm_vec3_copy((vec3){0.75f, 1.75f, 1.0f}, player->camera_offset);
+  glm_vec3_copy((vec3){0.75f, 1.75f, 1.0f}, player->rotated_offset);
+  player->camera_distance = 0.0f;
+  player->camera_height = 0.0f;
 
   // AudioComponent
   player->entity->audio_component = audio_component_create(player->entity, 0);
@@ -96,7 +98,12 @@ void player_process_mouse_input(struct Player *player, float xoffset, float yoff
 	if (camera->pitch > 89.0f) camera->pitch = 89.0f;
 	if (camera->pitch < -89.0f) camera->pitch = -89.0f;
 
+  // Keep yaw between 0 and 360 degrees
+  if (camera->yaw >= 360.0f) camera->yaw -= 360.0f;
+  if (camera->yaw < 0.0f) camera->yaw += 360.0f;
+
   // Update camera direction using offset
+  // float r = player->camera_distance;
   float r = glm_vec3_norm(player->camera_offset);
   vec3 direction;
   if (r > 0){
@@ -107,19 +114,33 @@ void player_process_mouse_input(struct Player *player, float xoffset, float yoff
     update[0] = clamp(update[0], -r, r);
     update[1] = clamp(update[1], -r, r);
     update[2] = clamp(update[2], -r, r);
-    glm_vec3_copy(update, player->camera_offset);
+    print_glm_vec3(update, "Update to be added to camera position");
+
+    // Rotate camera offset by yaw
+    mat4 rotation;
+    glm_mat4_identity(rotation);
+    // glm_rotate_x(rotation, glm_rad(camera->pitch), rotation);
+    glm_rotate_y(rotation, glm_rad(-camera->yaw - 90.0f), rotation);
+    glm_mat4_mulv3(rotation, player->camera_offset, 0.0f, player->rotated_offset);
+
+    glm_mat4_identity(rotation);
+    glm_rotate(rotation, glm_rad(camera->pitch), player->camera->right);
+    glm_mat4_mulv3(rotation, player->rotated_offset, 0.0f, player->rotated_offset);
+
+    glm_vec3_add(player->entity->position, update, player->camera->position);
+    glm_vec3_add(player->camera->position, player->rotated_offset, player->camera->position);
+
     // Calculate new cameraFront vector
-    vec3 entity_plus_height;
-    glm_vec3_copy(player->entity->position, entity_plus_height);
-    entity_plus_height[1] += player->camera_height;
-    glm_vec3_sub(entity_plus_height, camera->position, direction);
+    vec3 target;
+    glm_vec3_add(player->entity->position, player->rotated_offset, target);
+    glm_vec3_sub(target, camera->position, direction);
+
   }
   else{
     direction[0] = cos(glm_rad(camera->yaw)) * cos(glm_rad(camera->pitch));
     direction[1] = sin(glm_rad(camera->pitch));
     direction[2] = sin(glm_rad(camera->yaw)) * cos(glm_rad(camera->pitch));
   }
-
 
   // Calculate new cameraFront vector
 	glm_vec3_normalize(direction);
@@ -129,6 +150,18 @@ void player_process_mouse_input(struct Player *player, float xoffset, float yoff
   glm_vec3_cross(camera->front, camera->up, right);
   glm_vec3_normalize(right);
   glm_vec3_copy(right, camera->right);
+
+  // Rotate PhysicsBody
+  // (This assumes the model for the player will always have been created facing
+  // the positive z direction, and thus its rotation about the y axis must be adjusted
+  // to face the same direction as the camera. I may also want to make an API for setting
+  // physics body values instead of directly mutating them.)
+  player->entity->physics_body->rotation[0] = 0.0f;
+  player->entity->physics_body->rotation[1] = -camera->yaw + 90.0f;
+  player->entity->physics_body->rotation[2] = 0.0f;
+
+  print_glm_vec3(player->rotated_offset, "mouse input rotated offset");
+  print_glm_vec3(player->camera->position, "mouse input camera position");
 }
 
 void player_jump(struct Player *player){
@@ -142,12 +175,12 @@ void player_jump(struct Player *player){
 
 void player_update(struct Player *player, float delta_time){
   glm_vec3_copy(player->entity->physics_body->position, player->entity->position);
-  // glm_vec3_copy(player->entity->physics_body->position, player->camera->position);
   glm_vec3_copy(player->entity->physics_body->rotation, player->entity->rotation);
   glm_vec3_copy(player->entity->physics_body->velocity, player->entity->velocity);
-
   // Add Camera offset
-  glm_vec3_add(player->entity->position, player->camera_offset, player->camera->position);
+  glm_vec3_add(player->entity->position, player->rotated_offset, player->camera->position);
+  print_glm_vec3(player->rotated_offset, "player_update rotated offset");
+  print_glm_vec3(player->camera->position, "player_update camera position");
   player->camera->position[1] += player->camera_height;
 
   // Update audio source position

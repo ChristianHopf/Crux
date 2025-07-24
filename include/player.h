@@ -16,7 +16,9 @@ struct Player {
   // If the camera_offset is updated by its magnitude and
   // the camera's yaw and pitch, it loses that height offset I want.
   float camera_height;
+  float camera_distance;
   vec3 camera_offset;
+  vec3 rotated_offset;
   bool is_grounded;
 };
 

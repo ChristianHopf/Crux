@@ -22,9 +22,9 @@ struct Scene *scene_init(char *scene_path){
     printf("Error: failed to allocate scene in scene_init\n");
     return NULL;
   }
-
   // Set options
   scene->physics_debug_mode = true;
+  printf("scene hi\n");
 
   // Parse scene JSON
   const char *scene_data = (const char *)read_file(scene_path);
@@ -235,6 +235,9 @@ struct Scene *scene_init(char *scene_path){
 
   // Player
   player_init(&scene->player, models[1], shaders[0]);
+  scene->player_entities = (struct Entity *)calloc(1, sizeof(struct Entity));
+  scene->num_player_entities = 1;
+  scene->player_entities = scene->player.entity;
   struct Collider player_collider = {
     .type = 2,
     .data.capsule = {
@@ -288,6 +291,17 @@ void scene_update(struct Scene *scene, float delta_time){
       fprintf(stderr, "Error matching Entity audio_source position with entity position in scene_update: %d\n", position_error);
     }
   }
+  // for (int i = 0; i < scene->num_player_entities; i++){
+  //   struct Entity *entity = &scene->player_entities[i];
+  //   print_glm_vec3(entity->physics_body->position, "scene player entity physics body position\n");
+  //   // glm_vec3_copy(entity->physics_body->position, scene->player_entities[i].position);
+  //   // glm_vec3_copy(entity->physics_body->rotation, scene->player_entities[i].rotation);
+  //   alSource3f(entity->audio_component->source_id, AL_POSITION, entity->position[0], entity->position[1], entity->position[2]);
+  //   ALenum position_error = alGetError();
+  //   if (position_error != AL_NO_ERROR){
+  //     fprintf(stderr, "Error matching Entity audio_source position with entity position in scene_update: %d\n", position_error);
+  //   }
+  // }
 
   // Update light
   float lightSpeed = 1.0f;
@@ -329,13 +343,14 @@ void scene_render(struct Scene *scene){
   struct RenderItem *additive_items = NULL;
   unsigned int num_opaque_items, num_mask_items, num_transparent_items, num_additive_items;
   // Combine static and dynamic entities
-  unsigned int num_entities = scene->num_static_entities + scene->num_dynamic_entities;
+  unsigned int num_entities = scene->num_static_entities + scene->num_dynamic_entities + scene->num_player_entities;
   struct Entity *combined_entities = (struct Entity *)malloc(num_entities * sizeof(struct Entity));
   if (!combined_entities){
     fprintf(stderr, "Error: failed to allocate entities for render item sorting in scene_render\n");
   }
   memcpy(combined_entities, scene->static_entities, scene->num_static_entities * sizeof(struct Entity));
   memcpy(combined_entities + scene->num_static_entities, scene->dynamic_entities, scene->num_dynamic_entities * sizeof(struct Entity));
+  memcpy(combined_entities + scene->num_static_entities + scene->num_dynamic_entities, scene->player_entities, scene->num_player_entities * sizeof(struct Entity));
   sort_render_items(combined_entities, num_entities, scene->player.camera->position, &opaque_items, &num_opaque_items, &mask_items, &num_mask_items, &transparent_items, &num_transparent_items, &additive_items, &num_additive_items);
 
   // Render RenderItem arrays in order: opaque, mask, transparent, additive
