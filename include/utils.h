@@ -1,5 +1,4 @@
-#ifndef UTILS_H
-#define UTILS_H
+#pragma once
 
 #include <assimp/material.h>
 #include <assimp/matrix4x4.h>
@@ -13,10 +12,12 @@ unsigned char *read_file(const char *path);
 // CGLM helpers
 // Print formatted values of a glm_vec3
 void print_glm_vec3(vec3 vector, char *name);
+void print_glm_mat4(mat4 matrix, const char* name);
 
 // Assimp helpers
 char *get_texture_type_string(enum aiTextureType type);
 void print_aiMatrix4x4(struct aiMatrix4x4 *mat);
 void aiMatrix4x4_to_mat4(struct aiMatrix4x4 *src, mat4 dest);
 
-#endif
+// Miscellaneous
+float clamp(float value, float min_val, float max_val);

@@ -34,13 +34,8 @@ unsigned char *read_file(const char *path){
 	return buffer;
 }
 
+// CGLM helpers
 void print_glm_mat4(mat4 matrix, const char* name) {
-  // printf("%s: [%.2f %.2f %.2f %.2f ]\n[%.2f %.2f %.2f %.2f | %.2f %.2f %.2f %.2f | %.2f %.2f %.2f %.2f]\n", 
-  //    name ? name : "Matrix",
-  //    matrix[0][0], matrix[1][0], matrix[2][0], matrix[3][0],
-  //    matrix[0][1], matrix[1][1], matrix[2][1], matrix[3][1], 
-  //    matrix[0][2], matrix[1][2], matrix[2][2], matrix[3][2],
-  //    matrix[0][3], matrix[1][3], matrix[2][3], matrix[3][3]);
   printf("%s:\n", name);
     for (int i = 0; i < 4; i++) {
         printf("  [");
@@ -94,3 +89,9 @@ void aiMatrix4x4_to_mat4(struct aiMatrix4x4 *src, mat4 dest) {
     dest[0][3] = src->d1; dest[1][3] = src->d2; dest[2][3] = src->d3; dest[3][3] = src->d4;
 }
 
+// Miscellaneous
+float clamp(float value, float min_val, float max_val) {
+    if (value < min_val) return min_val;
+    if (value > max_val) return max_val;
+    return value;
+}

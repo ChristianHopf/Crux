@@ -80,11 +80,7 @@ void player_process_keyboard_input(struct Player *player, CameraDirection direct
 	// 	glm_vec3_add(camera->position, up, camera->position);
 	//}
 }
-float clamp(float value, float min_val, float max_val) {
-    if (value < min_val) return min_val;
-    if (value > max_val) return max_val;
-    return value;
-}
+
 void player_process_mouse_input(struct Player *player, float xoffset, float yoffset){
   struct Camera *camera = player->camera;
 

@@ -6,6 +6,7 @@
 #include "audio_manager.h"
 #include "camera.h"
 #include "entity.h"
+#include "utils.h"
 
 struct Player {
   struct Camera *camera;
