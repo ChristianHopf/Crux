@@ -11,7 +11,7 @@ To build an executable:
 sudo pacman -Syu --needed base-devel pkgconf glm freetype2 glfw openal assimp libsndfile
 ```
 3. cd into the project directory and run the ```make``` command.
-4. Run the created executable in the ```executables``` directory.
+4. Execute the run script with ```./run.sh```.
 
 ## Ubuntu
 To build an executable:
@@ -21,4 +21,4 @@ To build an executable:
 sudo apt-get update && apt-get install -y build-essential pkg-config libcglm-dev libfreetype6-dev libglfw3-dev libopenal-dev libassimp-dev libsndfile1-dev
 ```
 3. cd into the project directory and run the ```make``` command.
-4. Run the created executable in the ```executables``` directory.
+4. Execute the run script with ```./run.sh```.
