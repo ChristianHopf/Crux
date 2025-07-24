@@ -206,10 +206,6 @@ Engine *engine_create(){
   glEnable(GL_CULL_FACE);
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-  //glBlendFunc(GL_ONE, GL_ONE); // additive blending
-  //glDepthFunc(GL_ALWAYS);
-  //glEnable(GL_STENCIL_TEST);
-  //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
   // Initialize AudioManager
   audio_manager_init();
@@ -290,7 +286,6 @@ int main(){
 
       // Render UI
       ui_render_frame();
-      glfwSwapBuffers(engine->window);
     }
     else{
       scene_update(engine->active_scene, engine->delta_time);
@@ -303,11 +298,9 @@ int main(){
 
       // Render UI
       ui_render_frame();
-
-      glfwSwapBuffers(engine->window);
     }
 
-		// Check and call events
+    glfwSwapBuffers(engine->window);
 		glfwPollEvents();
 
     // Check if the game should quit
@@ -316,7 +309,7 @@ int main(){
     }
   }
 
-  // OpenAL
+  // Teardown
   struct AudioManager *audio_manager = audio_manager_get_global();
   if (audio_manager->audio_stream){
     audio_stream_destroy(audio_manager->audio_stream);
