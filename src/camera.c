@@ -7,7 +7,7 @@ struct Camera *camera_create(vec3 position, vec3 up, float yaw, float pitch, flo
     printf("Error: failed to allocate camera\n");
     return NULL;
   }
-  glm_vec3_copy(position, camera->position); // Copy vec3 to vec3
+  glm_vec3_copy(position, camera->position);
   glm_vec3_copy(up, camera->up);
   camera->yaw = yaw;
   camera->pitch = pitch;

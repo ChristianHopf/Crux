@@ -5,8 +5,6 @@
 #include <AL/alc.h>
 #include <AL/alext.h>
 #include "tinycthread/tinycthread.h"
-#include <ft2build.h>
-#include FT_FREETYPE_H
 #include <stdio.h>
 #include <stdbool.h>
 #include "stb_image/stb_image.h"
@@ -60,24 +58,19 @@ vec3 lightPos = {1.2f, 0.5f, 2.0f};
 static int last_space_state = GLFW_RELEASE;
 void processInput(GLFWwindow *window){
   Engine *engine = (Engine *)glfwGetWindowUserPointer(window);
-  struct Camera *camera = engine->active_scene->player.camera;
-
   // Camera movement
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS){
-    camera_process_keyboard_input(camera, CAMERA_FORWARD, engine->delta_time);
+    player_process_keyboard_input(&engine->active_scene->player, CAMERA_FORWARD, engine->delta_time);
 	}
 	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS){
-    camera_process_keyboard_input(camera, CAMERA_BACKWARD, engine->delta_time);
+    player_process_keyboard_input(&engine->active_scene->player, CAMERA_BACKWARD, engine->delta_time);
 	}
 	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS){
-    camera_process_keyboard_input(camera, CAMERA_LEFT, engine->delta_time);
+    player_process_keyboard_input(&engine->active_scene->player, CAMERA_LEFT, engine->delta_time);
   }
 	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS){
-    camera_process_keyboard_input(camera, CAMERA_RIGHT, engine->delta_time);
+    player_process_keyboard_input(&engine->active_scene->player, CAMERA_RIGHT, engine->delta_time);
 	}
-	if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS){
-    camera_process_keyboard_input(camera, CAMERA_DOWN, engine->delta_time);
-  }
 
   // Only process these inputs a single time per press
   int space_state = glfwGetKey(window, GLFW_KEY_SPACE);
@@ -103,7 +96,6 @@ void window_size_callback(GLFWwindow *window, int width, int height){
 
 void mouse_callback(GLFWwindow *window, double xpos, double ypos){
   Engine *engine = (Engine *)glfwGetWindowUserPointer(window);
-
   struct Camera *camera = engine->active_scene->player.camera;
 
 	if (firstMouse){
@@ -119,7 +111,7 @@ void mouse_callback(GLFWwindow *window, double xpos, double ypos){
 
   // Update camera
   if (!game_state_is_paused()){
-    camera_process_mouse_input(camera, xoffset, yoffset);
+    player_process_mouse_input(&engine->active_scene->player, xoffset, yoffset);
   }
 }
 
@@ -212,10 +204,6 @@ Engine *engine_create(){
   glEnable(GL_CULL_FACE);
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-  //glBlendFunc(GL_ONE, GL_ONE); // additive blending
-  //glDepthFunc(GL_ALWAYS);
-  //glEnable(GL_STENCIL_TEST);
-  //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
   // Initialize AudioManager
   audio_manager_init();
@@ -259,6 +247,12 @@ Engine *engine_create(){
   return engine;
 }
 
+void engine_free(Engine *engine){
+  glfwDestroyWindow(engine->window);
+  scene_free(engine->active_scene);
+  free(engine);
+}
+
 int main(){
   Engine *engine = engine_create();
   if (!engine){
@@ -274,7 +268,7 @@ int main(){
     
 		engine->delta_time = currentFrame - engine->last_frame;
 		engine->last_frame = currentFrame;
-		printf("FPS: %f\n", 1.0 / engine->delta_time);
+		// printf("FPS: %f\n", 1.0 / engine->delta_time);
     
 		// Handle input
 		processInput(engine->window);
@@ -290,16 +284,11 @@ int main(){
 
       // Render UI
       ui_render_frame();
-      glfwSwapBuffers(engine->window);
     }
     else{
-      // float update_start_time = glfwGetTime();
       scene_update(engine->active_scene, engine->delta_time);
-      // float update_end_time = glfwGetTime();
-      // printf("scene update took %.2f ms\n", (update_end_time - update_start_time) * 1000.0);
 
       // Render scene
-      // float render_start_time = glfwGetTime();
       scene_render(engine->active_scene);
 
       // Update Clay layout dimensions
@@ -307,13 +296,9 @@ int main(){
 
       // Render UI
       ui_render_frame();
-
-      glfwSwapBuffers(engine->window);
-      // float render_end_time = glfwGetTime();
-      // printf("Render took %.2f ms\n", (render_end_time - render_start_time) * 1000.0);
     }
 
-		// Check and call events
+    glfwSwapBuffers(engine->window);
 		glfwPollEvents();
 
     // Check if the game should quit
@@ -322,7 +307,7 @@ int main(){
     }
   }
 
-  // OpenAL
+  // Teardown
   struct AudioManager *audio_manager = audio_manager_get_global();
   if (audio_manager->audio_stream){
     audio_stream_destroy(audio_manager->audio_stream);
@@ -331,8 +316,8 @@ int main(){
   alcCloseDevice(audio_manager->device);
   free(audio_manager);
 
-  glfwDestroyWindow(engine->window);
-	glfwTerminate();
-  free(engine);
+  engine_free(engine);
+  glfwTerminate();
+
 	return 0;
 }

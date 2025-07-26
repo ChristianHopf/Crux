@@ -244,11 +244,11 @@ void resolve_collision_AABB_plane(struct PhysicsBody *body_A, struct PhysicsBody
   }
 
   // Reflect velocity vector over normal
-  float restitution = 1.0f;
+  // float restitution = 1.0f;
   float rest_velocity_threshold = 0.1f;
   float v_dot_n = glm_dot(velocity_before, plane->normal);
   vec3 reflection;
-  glm_vec3_scale(plane->normal, -2.0f * v_dot_n * restitution, reflection);
+  glm_vec3_scale(plane->normal, -2.0f * v_dot_n * body_A->restitution, reflection);
   glm_vec3_add(velocity_before, reflection, body_A->velocity);
 
   // If velocity along the normal is very small,
@@ -397,11 +397,11 @@ void resolve_collision_sphere_plane(struct PhysicsBody *body_A, struct PhysicsBo
   }
 
   // Reflect velocity over normal
-  float restitution = 1.0f;
+  // float restitution = 1.0f;
   float rest_velocity_threshold = 0.1f;
   float v_dot_n = glm_dot(velocity_before, plane->normal);
   vec3 reflection;
-  glm_vec3_scale(plane->normal, -2.0f * v_dot_n * restitution, reflection);
+  glm_vec3_scale(plane->normal, -2.0f * v_dot_n * body_A->restitution, reflection);
   glm_vec3_add(velocity_before, reflection, body_A->velocity);
 
   // If velocity along the normal is very small,
@@ -469,11 +469,11 @@ void resolve_collision_capsule_plane(struct PhysicsBody *body_A, struct PhysicsB
   glm_vec3_add(body_A->position, correction, body_A->position);
 
   // Reflect velocity over normal
-  float restitution = 1.0f;
+  // float restitution = 0.8f;
   float rest_velocity_threshold = 0.1f;
   float v_dot_n = glm_dot(velocity_before, plane->normal);
   vec3 reflection;
-  glm_vec3_scale(plane->normal, -2.0f * v_dot_n * restitution, reflection);
+  glm_vec3_scale(plane->normal, -2.0f * v_dot_n * body_A->restitution, reflection);
   glm_vec3_add(velocity_before, reflection, body_A->velocity);
 
   // If velocity along the normal is very small,

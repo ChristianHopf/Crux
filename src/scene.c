@@ -22,9 +22,9 @@ struct Scene *scene_init(char *scene_path){
     printf("Error: failed to allocate scene in scene_init\n");
     return NULL;
   }
-
   // Set options
   scene->physics_debug_mode = true;
+  printf("scene hi\n");
 
   // Parse scene JSON
   const char *scene_data = (const char *)read_file(scene_path);
@@ -55,12 +55,21 @@ struct Scene *scene_init(char *scene_path){
   }
   int num_shaders = cJSON_GetArraySize(shaders_json);
   Shader *shaders[num_shaders];
+  scene->shaders = (Shader **)malloc(num_shaders * sizeof(Shader *));
+  if (!scene->shaders){
+    fprintf(stderr, "Error: failed to allocate scene->shaders in scene_init\n");
+    return NULL;
+  }
+  for (int i = 0; i < num_shaders; i++){
+    scene->shaders[i] = NULL;
+  }
+  scene->num_shaders = num_shaders;
 
   int index = 0;
-  const cJSON *shader = NULL;
-  cJSON_ArrayForEach(shader, shaders_json){
-    cJSON *vertex = cJSON_GetObjectItemCaseSensitive(shader, "vertex");
-    cJSON *fragment = cJSON_GetObjectItemCaseSensitive(shader, "fragment");
+  const cJSON *shader_data = NULL;
+  cJSON_ArrayForEach(shader_data, shaders_json){
+    cJSON *vertex = cJSON_GetObjectItemCaseSensitive(shader_data, "vertex");
+    cJSON *fragment = cJSON_GetObjectItemCaseSensitive(shader_data, "fragment");
 
     if (!cJSON_IsString(vertex) || !cJSON_IsString(fragment)){
       fprintf(stderr, "Error: invalid JSON data in shaders[\"vertex\"]\n");
@@ -75,8 +84,10 @@ struct Scene *scene_init(char *scene_path){
       printf("Error: failed to create shader program\n");
     }
     shaders[index] = shader;
+    scene->shaders[index] = shader;
     index++;
   }
+  // scene->shaders = shaders;
 
   // Link shader uniform blocks to binding points
   for (int i = 0; i < num_shaders; i++){
@@ -103,6 +114,15 @@ struct Scene *scene_init(char *scene_path){
   }
   int num_models = cJSON_GetArraySize(models_json);
   struct Model *models[num_models];
+  scene->models = (struct Model **)malloc(num_models * sizeof(struct Model *));
+  if (!scene->models){
+    fprintf(stderr, "Error: failed to allocate scene->shaders in scene_init\n");
+    return NULL;
+  }
+  for (int i = 0; i < num_models; i++){
+    scene->models[i] = NULL;
+  }
+  scene->num_models = num_models;
 
   index = 0;
   cJSON *model_json;
@@ -123,6 +143,7 @@ struct Scene *scene_init(char *scene_path){
     }
 
     models[index] = loaded_model;
+    scene->models[index] = loaded_model;
     index++;
   }
 
@@ -189,11 +210,6 @@ struct Scene *scene_init(char *scene_path){
   scene_process_meshes_json(dynamic_meshes, models, shaders, scene->dynamic_entities, scene->physics_world, true);
 
   scene->max_entities = 64;
-
-  // Init physics debug renderer
-  if (scene->physics_debug_mode){
-    physics_debug_renderer_init(scene->physics_world);
-  }
   
   // Lights
   lights_json = cJSON_GetObjectItemCaseSensitive(scene_json, "lights");
@@ -218,7 +234,38 @@ struct Scene *scene_init(char *scene_path){
   }
 
   // Player
-  player_init(&scene->player);
+  struct Player *player = player_create(models[1], shaders[0],
+                                (vec3){0.0f, 0.0f, 3.0f},
+                                (vec3){0.0f, 180.0f, 0.0f},
+                                (vec3){1.0f, 1.0f, 1.0f},
+                                (vec3){0.0f, 0.0f, 0.0f},
+                                (vec3){0.0f, 0.0f, 0.0f},
+                                1.75f, false);
+  if (!player){
+    fprintf(stderr, "Error: failed to create player in scene_init\n");
+    return NULL;
+  }
+  scene->player = *player;
+
+  if (scene->player.render_entity){
+    scene->player_entities = (struct Entity *)calloc(1, sizeof(struct Entity));
+    scene->num_player_entities = 1;
+    scene->player_entities = scene->player.entity;
+  }
+  struct Collider player_collider = {
+    .type = 2,
+    .data.capsule = {
+      .segment_A = {0.0f, 0.25f, 0.0f},
+      .segment_B = {0.0f, 1.75f, 0.0f},
+      .radius = 0.25f
+    }
+  };
+  scene->player.entity->physics_body = physics_add_player(scene->physics_world, scene->player.entity, player_collider);
+
+  // Init physics debug renderer
+  if (scene->physics_debug_mode){
+    physics_debug_renderer_init(scene->physics_world);
+  }
   
   // Skybox
   //
@@ -241,11 +288,11 @@ void scene_update(struct Scene *scene, float delta_time){
   static float total_time = 0.0f;
   total_time += delta_time;
 
-  // Update player
-  player_update(&scene->player, delta_time);
-
   // Perform collision detection
   physics_step(scene->physics_world, delta_time);
+
+  // Update player
+  player_update(&scene->player, delta_time);
 
   // Match entity audio source and PhysicsBody positions with entity position
   for(int i = 0; i < scene->num_dynamic_entities; i++){
@@ -258,6 +305,17 @@ void scene_update(struct Scene *scene, float delta_time){
       fprintf(stderr, "Error matching Entity audio_source position with entity position in scene_update: %d\n", position_error);
     }
   }
+  // for (int i = 0; i < scene->num_player_entities; i++){
+  //   struct Entity *entity = &scene->player_entities[i];
+  //   print_glm_vec3(entity->physics_body->position, "scene player entity physics body position\n");
+  //   // glm_vec3_copy(entity->physics_body->position, scene->player_entities[i].position);
+  //   // glm_vec3_copy(entity->physics_body->rotation, scene->player_entities[i].rotation);
+  //   alSource3f(entity->audio_component->source_id, AL_POSITION, entity->position[0], entity->position[1], entity->position[2]);
+  //   ALenum position_error = alGetError();
+  //   if (position_error != AL_NO_ERROR){
+  //     fprintf(stderr, "Error matching Entity audio_source position with entity position in scene_update: %d\n", position_error);
+  //   }
+  // }
 
   // Update light
   float lightSpeed = 1.0f;
@@ -299,13 +357,14 @@ void scene_render(struct Scene *scene){
   struct RenderItem *additive_items = NULL;
   unsigned int num_opaque_items, num_mask_items, num_transparent_items, num_additive_items;
   // Combine static and dynamic entities
-  unsigned int num_entities = scene->num_static_entities + scene->num_dynamic_entities;
+  unsigned int num_entities = scene->num_static_entities + scene->num_dynamic_entities + scene->num_player_entities;
   struct Entity *combined_entities = (struct Entity *)malloc(num_entities * sizeof(struct Entity));
   if (!combined_entities){
     fprintf(stderr, "Error: failed to allocate entities for render item sorting in scene_render\n");
   }
   memcpy(combined_entities, scene->static_entities, scene->num_static_entities * sizeof(struct Entity));
   memcpy(combined_entities + scene->num_static_entities, scene->dynamic_entities, scene->num_dynamic_entities * sizeof(struct Entity));
+  memcpy(combined_entities + scene->num_static_entities + scene->num_dynamic_entities, scene->player_entities, scene->num_player_entities * sizeof(struct Entity));
   sort_render_items(combined_entities, num_entities, scene->player.camera->position, &opaque_items, &num_opaque_items, &mask_items, &num_mask_items, &transparent_items, &num_transparent_items, &additive_items, &num_additive_items);
 
   // Render RenderItem arrays in order: opaque, mask, transparent, additive
@@ -351,18 +410,42 @@ void scene_render(struct Scene *scene){
   }
 
   // Render text
-  text_render("Crux Engine 0.2", 4.0f, 1058.0f, 1.0f, (vec3){1.0f, 1.0f, 1.0f});
+  // text_render("Crux Engine 0.2", 4.0f, 1058.0f, 1.0f, (vec3){1.0f, 1.0f, 1.0f});
 }
 
-//     // Rewrite this to actually free everything
-//     free(scene->entities);
-//     free(scene->player.camera);
-//     free(scene->light);
-//     free(scene->skybox->shader);
-//     free(scene->skybox);
-//     free(scene);
-//   }
-// }
+void scene_free(struct Scene *scene){
+  // Free models
+  for (int i = 0; i < scene->num_models; i++){
+    free(scene->models[i]);
+  }
+  // Free shaders
+  for (int i = 0; i < scene->num_shaders; i++){
+    free(scene->shaders[i]);
+  }
+  // Free entities
+  for (unsigned int i = 0; i < scene->num_dynamic_entities; i++){
+    free(scene->dynamic_entities[i].audio_component);
+  }
+  free(scene->dynamic_entities);
+  for (unsigned int i = 0; i < scene->num_static_entities; i++){
+    free(scene->static_entities[i].audio_component);
+  }
+  free(scene->static_entities);
+
+  // Free skybox
+  free(scene->skybox->shader);
+  free(scene->skybox);
+
+  // Free lights
+  free(scene->lights);
+
+  // Free physics_world
+  free(scene->physics_world->static_bodies);
+  free(scene->physics_world->dynamic_bodies);
+  free(scene->physics_world->player_bodies);
+
+  free(scene);
+}
 
 void scene_process_meshes_json(cJSON *meshes, struct Model **models, Shader **shaders, struct Entity *entities, struct PhysicsWorld *physics_world, bool dynamic){
   int index = 0;
@@ -472,9 +555,19 @@ void scene_process_meshes_json(cJSON *meshes, struct Model **models, Shader **sh
       default:
         break;
     }
+
+    float restitution = 0.0f;
+    if (dynamic){
+      cJSON *restitution_json = cJSON_GetObjectItemCaseSensitive(collider_json, "restitution");
+      if(!cJSON_IsNumber(restitution_json)){
+        fprintf(stderr, "Error: failed to get restitution in collider object in static mesh at index %d, either invalid or does not exist\n", index);
+        return;
+      }
+      restitution = cJSON_GetNumberValue(restitution_json);
+    }
     
     // Match entity scale to physics unit height
-    entity->physics_body = physics_add_body(physics_world, entity, collider, dynamic);
+    entity->physics_body = physics_add_body(physics_world, entity, collider, restitution, dynamic);
     index++;
 
     // AudioComponent

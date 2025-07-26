@@ -1,5 +1,5 @@
 # Makefile variables
-ALSOFT_DRIVERS ?= pulse,pipewire,alsa
+# ALSOFT_DRIVERS ?= pulse,pipewire,alsa
 
 # Compiler and flags
 CC = gcc
@@ -27,7 +27,7 @@ TEST_OBJS = $(patsubst $(TEST_DIR)/%.c,$(OBJ_DIR)/test/%.o,$(TEST_FILES))
 UNITY_OBJ = $(OBJ_DIR)/unity.o
 
 # Output binaries
-MAIN_OUT = $(OUT_DIR)/capsule5
+MAIN_OUT = $(OUT_DIR)/main_out
 TEST_OUT = $(OUT_DIR)/test_runner
 
 # Dependency check

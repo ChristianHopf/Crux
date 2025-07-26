@@ -1,12 +1,13 @@
 #pragma once
 
-#include <glad/glad.h>
+// #include <glad/glad.h>
 #include <cJSON/cJSON.h>
 #include <stdbool.h>
 #include "physics/world.h"
 #include "skybox.h"
 #include "entity.h"
 #include "player.h"
+#include "shader.h"
 
 struct Light {
   vec3 direction;
@@ -17,10 +18,16 @@ struct Light {
 };
 
 struct Scene {
+  struct Model **models;
+  Shader **shaders;
+  int num_models;
+  int num_shaders;
   struct Entity *static_entities;
   struct Entity *dynamic_entities;
+  struct Entity *player_entities;
   int num_static_entities;
   int num_dynamic_entities;
+  int num_player_entities;
   int max_entities;
   struct Skybox *skybox;
   struct Player player;
@@ -29,8 +36,6 @@ struct Scene {
   unsigned int ubo_matrices;
   // Physics
   struct PhysicsWorld *physics_world;
-  // // Audio
-  // struct AudioStream *music_stream;
   // Options
   bool physics_debug_mode;
 };

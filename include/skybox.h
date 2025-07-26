@@ -1,7 +1,6 @@
-#ifndef SKYBOX_H
-#define SKYBOX_H
+#pragma once
 
-#include <glad/glad.h>
+// #include <glad/glad.h>
 #include <stb_image/stb_image.h>
 #include "shader.h"
 
@@ -15,5 +14,3 @@ struct Skybox {
 // Generate VBO, VAO, and texture IDs for a cubemap, return as a struct Skybox
 // directory is the path to the directory containing 6 texture files of a cubemap
 struct Skybox *skybox_create(char *directory);
-
-#endif

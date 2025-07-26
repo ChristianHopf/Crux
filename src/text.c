@@ -1,6 +1,6 @@
 #include <cglm/cam.h>
 #include <glad/glad.h>
-#include <iso646.h>
+// #include <iso646.h>
 #include "text.h"
 
 static struct Character characters[128];
@@ -112,7 +112,7 @@ void text_render(char *text, float x, float y, float scale, vec3 color){
 
   // Draw each character in text
   glDisable(GL_DEPTH_TEST);
-  for(int i = 0; i < strlen(text); i++){
+  for(size_t i = 0; i < strlen(text); i++){
     // Get its Character struct, x, y, w, and h
     struct Character text_char = characters[(int)text[i]];
 
