@@ -28,13 +28,14 @@ void player_init(struct Player *player, struct Model *model, Shader *shader){
   player->entity->model = model;
   player->entity->shader = shader;
   glm_vec3_copy((vec3){0.0f, 0.0f, 3.0f}, player->entity->position);
-  glm_vec3_copy((vec3){0.0f, 0.0f, 0.0f}, player->entity->rotation);
+  glm_vec3_copy((vec3){0.0f, 180.0f, 0.0f}, player->entity->rotation);
   glm_vec3_copy((vec3){1.0f, 1.0f, 1.0f}, player->entity->scale);
   glm_vec3_copy((vec3){0.0f, 0.0f, 0.0f}, player->entity->velocity);
-  glm_vec3_copy((vec3){0.75f, 1.75f, 1.0f}, player->camera_offset);
-  glm_vec3_copy((vec3){0.75f, 1.75f, 1.0f}, player->rotated_offset);
+  // glm_vec3_copy((vec3){0.0f, 1.75f, 0.0f}, player->camera_offset);
+  glm_vec3_copy((vec3){0.75f, 0.0f, 1.0f}, player->camera_offset);
+  glm_vec3_copy(player->camera_offset, player->rotated_offset);
   player->camera_distance = 0.0f;
-  player->camera_height = 0.0f;
+  player->camera_height = 1.75f;
 
   // AudioComponent
   player->entity->audio_component = audio_component_create(player->entity, 0);
@@ -101,6 +102,7 @@ void player_process_mouse_input(struct Player *player, float xoffset, float yoff
   // Keep yaw between 0 and 360 degrees
   if (camera->yaw >= 360.0f) camera->yaw -= 360.0f;
   if (camera->yaw < 0.0f) camera->yaw += 360.0f;
+  printf("YAW IS %f\n", camera->yaw);
 
   // Update camera direction using offset
   // float r = player->camera_distance;
@@ -108,43 +110,58 @@ void player_process_mouse_input(struct Player *player, float xoffset, float yoff
   vec3 direction;
   if (r > 0){
     vec3 update;
-    update[0] = -r * cosf(glm_rad(camera->pitch)) * cosf(glm_rad(camera->yaw));
-    update[1] = -r * sinf(glm_rad(camera->pitch));
-    update[2] = -r * cosf(glm_rad(camera->pitch)) * sinf(glm_rad(camera->yaw));
+    update[0] = -cosf(glm_rad(camera->pitch)) * cosf(glm_rad(camera->yaw));
+    update[1] = -sinf(glm_rad(camera->pitch));
+    update[2] = -cosf(glm_rad(camera->pitch)) * sinf(glm_rad(camera->yaw));
     update[0] = clamp(update[0], -r, r);
     update[1] = clamp(update[1], -r, r);
     update[2] = clamp(update[2], -r, r);
     print_glm_vec3(update, "Update to be added to camera position");
 
     // Rotate camera offset by yaw
-    mat4 rotation;
+    mat4 rotation, pitch_rotation;
     glm_mat4_identity(rotation);
-    // glm_rotate_x(rotation, glm_rad(camera->pitch), rotation);
-    glm_rotate_y(rotation, glm_rad(-camera->yaw - 90.0f), rotation);
-    glm_mat4_mulv3(rotation, player->camera_offset, 0.0f, player->rotated_offset);
+    glm_mat4_identity(pitch_rotation);
 
-    glm_mat4_identity(rotation);
-    glm_rotate(rotation, glm_rad(camera->pitch), player->camera->right);
-    glm_mat4_mulv3(rotation, player->rotated_offset, 0.0f, player->rotated_offset);
+    printf("Pitch is %f\n", camera->pitch);
+    print_glm_vec3(player->camera_offset, "Camera offset before rotation");
+    glm_rotate_y(rotation, glm_rad(-camera->yaw - 90.0f), rotation);
+    glm_rotate_x(rotation, glm_rad(camera->pitch), rotation);
+    glm_mat4_mulv3(rotation, player->camera_offset, 0.0f, player->rotated_offset);
+    print_glm_vec3(player->rotated_offset, "Camera offset after rotation");
+    // player->rotated_offset[1] += 1.75f;
 
     glm_vec3_add(player->entity->position, update, player->camera->position);
     glm_vec3_add(player->camera->position, player->rotated_offset, player->camera->position);
+
+    // Translate camera position based on pitch after rotating based on yaw
+    vec3 pitch_translation;
+    float rotated_r = glm_vec3_norm(player->rotated_offset);
+    pitch_translation[0] = -cos(glm_rad(camera->yaw)) * cos(glm_rad(-camera->pitch));
+    // pitch_translation[0] = -cos(glm_rad(camera->yaw)) * cos(glm_rad(-camera->pitch));
+    pitch_translation[1] = sin(glm_rad(-camera->pitch));
+    pitch_translation[2] = -cos(glm_rad(camera->pitch)) * sin(glm_rad(camera->yaw));
+    // pitch_translation[2] = -cos(glm_rad(camera->pitch)) * sin(glm_rad(camera->yaw));
+    // glm_vec3_scale(pitch_translation, sin(glm_rad(camera->pitch + 90.0f)), pitch_translation);
+    print_glm_vec3(pitch_translation, "Pitch translation");
 
     // Calculate new cameraFront vector
     vec3 target;
     glm_vec3_add(player->entity->position, player->rotated_offset, target);
     glm_vec3_sub(target, camera->position, direction);
 
+    // glm_vec3_add(player->rotated_offset, pitch_translation, player->rotated_offset);
+
   }
   else{
-    direction[0] = cos(glm_rad(camera->yaw)) * cos(glm_rad(camera->pitch));
-    direction[1] = sin(glm_rad(camera->pitch));
-    direction[2] = sin(glm_rad(camera->yaw)) * cos(glm_rad(camera->pitch));
+    direction[0] = cos(glm_rad(-camera->yaw)) * cos(glm_rad(camera->pitch));
+    direction[1] = sin(glm_rad(-camera->pitch));
+    direction[2] = sin(glm_rad(-camera->yaw)) * cos(glm_rad(camera->pitch));
   }
 
-  // Calculate new cameraFront vector
-	glm_vec3_normalize(direction);
-	glm_vec3_copy(direction, camera->front);
+  // Calculate new cameraFront vector 
+  glm_vec3_normalize(direction);
+  glm_vec3_copy(direction, camera->front);
   // Calculate cameraRight vector
   vec3 right;
   glm_vec3_cross(camera->front, camera->up, right);
@@ -161,7 +178,7 @@ void player_process_mouse_input(struct Player *player, float xoffset, float yoff
   player->entity->physics_body->rotation[2] = 0.0f;
 
   print_glm_vec3(player->rotated_offset, "mouse input rotated offset");
-  print_glm_vec3(player->camera->position, "mouse input camera position");
+  // print_glm_vec3(player->camera->position, "mouse input camera position");
 }
 
 void player_jump(struct Player *player){
