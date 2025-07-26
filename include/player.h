@@ -20,13 +20,14 @@ struct Player {
   vec3 camera_offset;
   vec3 rotated_offset;
   bool is_grounded;
+  bool render_entity;
 };
 
 struct PlayerManager {
   struct Player player;
 };
 
-void player_init(struct Player *player, struct Model *model, Shader *shader);
+struct Player *player_create(struct Model *model, Shader *shader, vec3 position, vec3 rotation, vec3 scale, vec3 velocity, vec3 camera_offset, float camera_height, bool render_entity);
 void player_process_keyboard_input(struct Player *player, CameraDirection camera_direction, float delta_time);
 void player_process_mouse_input(struct Player *player, float xoffset, float yoffset);
 void player_jump(struct Player *player);

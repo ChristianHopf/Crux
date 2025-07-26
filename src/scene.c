@@ -234,10 +234,24 @@ struct Scene *scene_init(char *scene_path){
   }
 
   // Player
-  player_init(&scene->player, models[1], shaders[0]);
-  scene->player_entities = (struct Entity *)calloc(1, sizeof(struct Entity));
-  scene->num_player_entities = 1;
-  scene->player_entities = scene->player.entity;
+  struct Player *player = player_create(models[1], shaders[0],
+                                (vec3){0.0f, 0.0f, 3.0f},
+                                (vec3){0.0f, 180.0f, 0.0f},
+                                (vec3){1.0f, 1.0f, 1.0f},
+                                (vec3){0.0f, 0.0f, 0.0f},
+                                (vec3){0.0f, 0.0f, 0.0f},
+                                1.75f, false);
+  if (!player){
+    fprintf(stderr, "Error: failed to create player in scene_init\n");
+    return NULL;
+  }
+  scene->player = *player;
+
+  if (scene->player.render_entity){
+    scene->player_entities = (struct Entity *)calloc(1, sizeof(struct Entity));
+    scene->num_player_entities = 1;
+    scene->player_entities = scene->player.entity;
+  }
   struct Collider player_collider = {
     .type = 2,
     .data.capsule = {
