@@ -79,7 +79,7 @@ void clay_opengl_renderer_update_dimensions(float screen_width, float screen_hei
   clay_opengl_renderer.screen_height = screen_height;
 }
 
-void clay_opengl_render(Clay_RenderCommandArray renderCommands, struct Font *fonts){
+void clay_opengl_render(Clay_RenderCommandArray renderCommands, struct Font **fonts){
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   // Get render command
   for(int i = 0; i < renderCommands.length; i++){
@@ -97,7 +97,7 @@ void clay_opengl_render(Clay_RenderCommandArray renderCommands, struct Font *fon
       }
       case CLAY_RENDER_COMMAND_TYPE_TEXT: {
         Clay_TextRenderData *config = &render_command->renderData.text;
-        struct Font font_to_use = fonts[config->fontId];
+        struct Font *font_to_use = fonts[config->fontId];
 
         clay_opengl_draw_text(font_to_use, config->stringContents, box.x, clay_opengl_renderer.screen_height - (box.y + config->fontSize), config->fontSize, config->letterSpacing, 1.0f, config->textColor);
         break;
@@ -163,7 +163,7 @@ void clay_opengl_draw_rectangle(float x, float y, float width, float height, Cla
   glDeleteVertexArrays(1, &VAO);
 }
 
-void clay_opengl_draw_text(struct Font font, Clay_StringSlice text, float x, float y, float size, float spacing, float scale, Clay_Color color){
+void clay_opengl_draw_text(struct Font *font, Clay_StringSlice text, float x, float y, float size, float spacing, float scale, Clay_Color color){
   // Use shader, set uniform, bind to texture and VAO
   shader_use(clay_opengl_renderer.glyph_shader);
   mat4 orthographic;
@@ -179,7 +179,7 @@ void clay_opengl_draw_text(struct Font font, Clay_StringSlice text, float x, flo
   glDisable(GL_DEPTH_TEST);
   for(int i = 0; i < text.length; i++){
     // Get its Character struct, x, y, w, and h
-    struct Character text_char = font.characters[(int)text.chars[i]];
+    struct Character text_char = font->characters[(int)text.chars[i]];
 
     float xpos = x + text_char.bearing[0] * scale;
     float ypos = y - (text_char.size[1] - text_char.bearing[1]) * scale;

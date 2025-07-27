@@ -19,5 +19,5 @@ struct Font {
 };
 
 
-struct Font load_font_face(char *path, int size);
+struct Font *load_font_face(char *path, int size);
 void text_render(char *text, float x, float y, float scale, vec3 color);

@@ -28,10 +28,10 @@ static inline Clay_Dimensions MeasureText(Clay_StringSlice text, Clay_TextElemen
   int line_char_count = 0;
 
   float text_height = config->fontSize;
-  struct Font *fonts = (struct Font *)userData;
-  struct Font font_to_use = fonts[config->fontId];
+  struct Font **fonts = (struct Font **)userData;
+  struct Font *font_to_use = fonts[config->fontId];
 
-  float scale = config->fontSize / (float)font_to_use.base_size;
+  float scale = config->fontSize / (float)font_to_use->base_size;
 
   for(int i = 0; i < text.length; i++, line_char_count++){
     // Newline -> set maxes, reset line text width and char count
@@ -44,7 +44,7 @@ static inline Clay_Dimensions MeasureText(Clay_StringSlice text, Clay_TextElemen
     }
 
     int index = text.chars[i] - 32;
-    struct Character current_character = font_to_use.characters[index];
+    struct Character current_character = font_to_use->characters[index];
     if (current_character.advance != 0){
       line_text_width += (current_character.advance >> 6) * scale;
     }
@@ -76,6 +76,7 @@ void ui_manager_init(float screen_width, float screen_height){
   Clay_SetMeasureTextFunction(MeasureText, ui_manager.fonts);
 
   ui_manager.paused = false;
+  ui_manager.num_fonts = 0;
 
   // Load layouts (figure out a better way than hardcoding things here)
   struct Layout layout_version_text = {
@@ -86,6 +87,13 @@ void ui_manager_init(float screen_width, float screen_height){
 
   // Init renderer
   clay_opengl_renderer_init(screen_width, screen_height);
+}
+
+void ui_load_font(char *path, int size){
+  ui_manager.fonts[ui_manager.num_fonts] = load_font_face(path, size);
+  if (ui_manager.fonts[ui_manager.num_fonts]){
+    ui_manager.num_fonts++;
+  }
 }
 
 void ui_update_frame(float screen_width, float screen_height){

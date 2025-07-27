@@ -213,6 +213,9 @@ Engine *engine_create(){
 
   // UI manager
   ui_manager_init(SCREEN_WIDTH, SCREEN_HEIGHT);
+  ui_load_font("resources/fonts/HackNerdFontMono-Regular.ttf", 24);
+  ui_load_font("resources/fonts/HackNerdFontMono-Bold.ttf", 48);
+  ui_load_font("resources/fonts/HackNerdFontMono-Regular.ttf", 48);
 
   // Initialize game state
   game_state_init();

@@ -34,13 +34,15 @@ struct LayoutStack {
 struct UIManager {
    Clay_Arena clay_arena;
    struct LayoutStack layout_stack;
-   struct Font fonts[16];
+   struct Font *fonts[16];
+   int num_fonts;
 
    bool paused;
 };
 
 // Documentation later
 void ui_manager_init(float screen_width, float screen_height);
+void ui_load_font(char *path, int size);
 void ui_render_frame();
 void ui_update_frame(float screen_width, float screen_height);
 void ui_update_mouse(double xpos, double ypos, bool mouse_down);
