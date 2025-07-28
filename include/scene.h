@@ -17,11 +17,21 @@ struct Light {
   vec3 specular;
 };
 
+struct SceneNode {
+  unsigned int ID;
+  mat4 world_transform;
+  struct Entity *entity;
+  struct SceneNode *parent;
+  struct SceneNode **children;
+  unsigned int num_children;
+};
+
 struct Scene {
   struct Model **models;
   Shader **shaders;
   int num_models;
   int num_shaders;
+  // struct SceneNode *root_node;
   struct Entity *static_entities;
   struct Entity *dynamic_entities;
   struct Entity *player_entities;

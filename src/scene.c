@@ -24,7 +24,6 @@ struct Scene *scene_init(char *scene_path){
   }
   // Set options
   scene->physics_debug_mode = true;
-  printf("scene hi\n");
 
   // Parse scene JSON
   const char *scene_data = (const char *)read_file(scene_path);
@@ -408,9 +407,6 @@ void scene_render(struct Scene *scene){
   if (scene->physics_debug_mode){
     physics_debug_render(scene->physics_world, &context);
   }
-
-  // Render text
-  // text_render("Crux Engine 0.2", 4.0f, 1058.0f, 1.0f, (vec3){1.0f, 1.0f, 1.0f});
 }
 
 void scene_free(struct Scene *scene){
