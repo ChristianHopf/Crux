@@ -45,6 +45,17 @@ void audio_manager_init(){
   global_audio_manager->paused = false;
 }
 
+void audio_manager_free(){
+  if (global_audio_manager){
+    if (global_audio_manager->audio_stream){
+      audio_stream_destroy(global_audio_manager->audio_stream);
+    }
+    alcDestroyContext(global_audio_manager->context);
+    alcCloseDevice(global_audio_manager->device);
+    free(global_audio_manager);
+  }
+}
+
 struct AudioManager *audio_manager_get_global(){
   return global_audio_manager;
 }

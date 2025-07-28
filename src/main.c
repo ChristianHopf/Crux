@@ -1,9 +1,6 @@
 #include <cglm/cam.h>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
-#include <AL/al.h>
-#include <AL/alc.h>
-#include <AL/alext.h>
 #include "tinycthread/tinycthread.h"
 #include <stdio.h>
 #include <stdbool.h>
@@ -11,10 +8,8 @@
 #include <cglm/cglm.h>
 #include "camera.h"
 #include "shader.h"
-#include "model.h"
 #include "scene.h"
 #include "player.h"
-#include "text.h"
 #include "audio_manager.h"
 #include "ui_manager.h"
 #include "menu/menu.h"
@@ -96,7 +91,6 @@ void window_size_callback(GLFWwindow *window, int width, int height){
 
 void mouse_callback(GLFWwindow *window, double xpos, double ypos){
   Engine *engine = (Engine *)glfwGetWindowUserPointer(window);
-  struct Camera *camera = engine->active_scene->player.camera;
 
 	if (firstMouse){
 		lastX = (float)xpos;
@@ -311,13 +305,14 @@ int main(){
   }
 
   // Teardown
-  struct AudioManager *audio_manager = audio_manager_get_global();
-  if (audio_manager->audio_stream){
-    audio_stream_destroy(audio_manager->audio_stream);
-  }
-  alcDestroyContext(audio_manager->context);
-  alcCloseDevice(audio_manager->device);
-  free(audio_manager);
+  audio_manager_free();
+  // struct AudioManager *audio_manager = audio_manager_get_global();
+  // if (audio_manager->audio_stream){
+  //   audio_stream_destroy(audio_manager->audio_stream);
+  // }
+  // alcDestroyContext(audio_manager->context);
+  // alcCloseDevice(audio_manager->device);
+  // free(audio_manager);
 
   engine_free(engine);
   glfwTerminate();

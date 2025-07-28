@@ -64,8 +64,9 @@ struct AudioManager {
 };
 
 
-// Init (later, could accept an options object for configuration)
+// Init, teardown, getter (later, could accept an options object for configuration)
 void audio_manager_init();
+void audio_manager_free();
 struct AudioManager *audio_manager_get_global();
 
 // Add and remove sources
