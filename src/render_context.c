@@ -214,7 +214,6 @@ void sort_render_items(
   if (!additive_items){
     fprintf(stderr, "Error: failed to allocate additive RenderItems in sort_render_items\n");
   }
-  // printf("Successfully allocated RenderItem arrays\n");
   // Zero length of each array
   *num_opaque_items = 0;
   *num_mask_items = 0;
@@ -285,6 +284,23 @@ void sort_render_items(
   // Sort transparent_items back to front
   qsort(*transparent_items, *num_transparent_items, sizeof(struct RenderItem), compare_render_item_depth);
   // printf("Successfully sorted %d transparent_items\n", *num_transparent_items);
+}
+
+void scene_get_render_items(
+  struct SceneNode *scene_node,
+  vec3 camera_pos,
+  struct RenderItem **opaque_items, unsigned int *num_opaque_items,
+  struct RenderItem **mask_items, unsigned int *num_mask_items,
+  struct RenderItem **transparent_items, unsigned int *num_transparent_items,
+  struct RenderItem **additive_items, unsigned int *num_additive_items)
+{
+  if (scene_node->entity){
+    // Get this node's RenderItems
+  }
+  
+  for (unsigned int i = 0; i < scene_node->num_children; i++){
+    scene_get_render_items(scene_node->children[i], camera_pos, opaque_items, num_opaque_items, mask_items, num_mask_items, transparent_items, num_transparent_items, additive_items, num_additive_items);
+  }
 }
 
 // Helper for sorting transparent RenderItems by depth

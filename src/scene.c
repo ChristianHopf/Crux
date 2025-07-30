@@ -176,21 +176,21 @@ struct Scene *scene_init(char *scene_path){
   }
 
   // Create entities and populate PhysicsWorld
-  meshes = cJSON_GetObjectItemCaseSensitive(scene_json, "meshes");
-  if (!meshes){
-    fprintf(stderr, "Error: failed to get meshes object in scene_json, meshes is either invalid or does not exist\n");
-    return NULL;
-  }
-  cJSON *static_meshes = cJSON_GetObjectItemCaseSensitive(meshes, "static");
-  cJSON *dynamic_meshes = cJSON_GetObjectItemCaseSensitive(meshes, "dynamic");
-  if (!static_meshes){
-    fprintf(stderr, "Error: failed to get meshes[\"static\"] object in scene_init, invalid or does not exist\n");
-    return NULL;
-  }
-  if (!dynamic_meshes){
-    fprintf(stderr, "Error: failed to get meshes[\"dynamic\"] object in scene_init, invalid or does not exist\n");
-    return NULL;
-  }
+  // meshes = cJSON_GetObjectItemCaseSensitive(scene_json, "meshes");
+  // if (!meshes){
+  //   fprintf(stderr, "Error: failed to get meshes object in scene_json, meshes is either invalid or does not exist\n");
+  //   return NULL;
+  // }
+  // cJSON *static_meshes = cJSON_GetObjectItemCaseSensitive(meshes, "static");
+  // cJSON *dynamic_meshes = cJSON_GetObjectItemCaseSensitive(meshes, "dynamic");
+  // if (!static_meshes){
+  //   fprintf(stderr, "Error: failed to get meshes[\"static\"] object in scene_init, invalid or does not exist\n");
+  //   return NULL;
+  // }
+  // if (!dynamic_meshes){
+  //   fprintf(stderr, "Error: failed to get meshes[\"dynamic\"] object in scene_init, invalid or does not exist\n");
+  //   return NULL;
+  // }
 
   scene->physics_world = physics_world_create();
 
@@ -201,21 +201,26 @@ struct Scene *scene_init(char *scene_path){
     return NULL;
   }
   scene->root_node = (struct SceneNode *)calloc(1, sizeof(struct SceneNode));
+  if (!scene->root_node){
+    fprintf(stderr, "Error: failed to allocate root SceneNode in scene_init\n");
+    return NULL;
+  }
+
   scene_process_node_json(nodes_json, scene->root_node, NULL, models, shaders, scene->physics_world);
 
   // Process static meshes
-  int num_static_meshes = cJSON_GetArraySize(static_meshes);
-  scene->static_entities = (struct Entity *)calloc(num_static_meshes, sizeof(struct Entity));
-  scene->num_static_entities = num_static_meshes;
-
-  scene_process_meshes_json(static_meshes, models, shaders, scene->static_entities, scene->physics_world, false);
-
-  // Process dynamic meshes
-  int num_dynamic_meshes = cJSON_GetArraySize(dynamic_meshes);
-  scene->dynamic_entities = (struct Entity *)calloc(num_dynamic_meshes, sizeof(struct Entity));
-  scene->num_dynamic_entities = num_dynamic_meshes;
-
-  scene_process_meshes_json(dynamic_meshes, models, shaders, scene->dynamic_entities, scene->physics_world, true);
+  // int num_static_meshes = cJSON_GetArraySize(static_meshes);
+  // scene->static_entities = (struct Entity *)calloc(num_static_meshes, sizeof(struct Entity));
+  // scene->num_static_entities = num_static_meshes;
+  //
+  // scene_process_meshes_json(static_meshes, models, shaders, scene->static_entities, scene->physics_world, false);
+  //
+  // // Process dynamic meshes
+  // int num_dynamic_meshes = cJSON_GetArraySize(dynamic_meshes);
+  // scene->dynamic_entities = (struct Entity *)calloc(num_dynamic_meshes, sizeof(struct Entity));
+  // scene->num_dynamic_entities = num_dynamic_meshes;
+  //
+  // scene_process_meshes_json(dynamic_meshes, models, shaders, scene->dynamic_entities, scene->physics_world, true);
 
   scene->max_entities = 64;
   
@@ -302,6 +307,8 @@ void scene_update(struct Scene *scene, float delta_time){
   // Update player
   player_update(&scene->player, delta_time);
 
+  // physics_sync_entities(scene->physics_world);
+
   // Match entity audio source and PhysicsBody positions with entity position
   for(int i = 0; i < scene->num_dynamic_entities; i++){
     struct Entity *entity = &scene->dynamic_entities[i];
@@ -313,17 +320,6 @@ void scene_update(struct Scene *scene, float delta_time){
       fprintf(stderr, "Error matching Entity audio_source position with entity position in scene_update: %d\n", position_error);
     }
   }
-  // for (int i = 0; i < scene->num_player_entities; i++){
-  //   struct Entity *entity = &scene->player_entities[i];
-  //   print_glm_vec3(entity->physics_body->position, "scene player entity physics body position\n");
-  //   // glm_vec3_copy(entity->physics_body->position, scene->player_entities[i].position);
-  //   // glm_vec3_copy(entity->physics_body->rotation, scene->player_entities[i].rotation);
-  //   alSource3f(entity->audio_component->source_id, AL_POSITION, entity->position[0], entity->position[1], entity->position[2]);
-  //   ALenum position_error = alGetError();
-  //   if (position_error != AL_NO_ERROR){
-  //     fprintf(stderr, "Error matching Entity audio_source position with entity position in scene_update: %d\n", position_error);
-  //   }
-  // }
 
   // Update light
   float lightSpeed = 1.0f;
@@ -363,7 +359,13 @@ void scene_render(struct Scene *scene){
   struct RenderItem *mask_items = NULL;
   struct RenderItem *transparent_items = NULL;
   struct RenderItem *additive_items = NULL;
-  unsigned int num_opaque_items, num_mask_items, num_transparent_items, num_additive_items;
+  unsigned int num_opaque_items = 0;
+  unsigned int num_mask_items = 0;
+  unsigned int num_transparent_items = 0;
+  unsigned int num_additive_items = 0;
+
+  scene_get_render_items(scene->root_node, scene->player.camera->position, &opaque_items, &num_opaque_items, &mask_items, &num_mask_items, &transparent_items, &num_transparent_items, &additive_items, &num_additive_items);
+
   // Combine static and dynamic entities
   unsigned int num_entities = scene->num_static_entities + scene->num_dynamic_entities + scene->num_player_entities;
   struct Entity *combined_entities = (struct Entity *)malloc(num_entities * sizeof(struct Entity));
@@ -375,7 +377,7 @@ void scene_render(struct Scene *scene){
   memcpy(combined_entities + scene->num_static_entities + scene->num_dynamic_entities, scene->player_entities, scene->num_player_entities * sizeof(struct Entity));
   sort_render_items(combined_entities, num_entities, scene->player.camera->position, &opaque_items, &num_opaque_items, &mask_items, &num_mask_items, &transparent_items, &num_transparent_items, &additive_items, &num_additive_items);
 
-  // Render RenderItem arrays in order: opaque, mask, transparent, additive
+  // Draw RenderItem arrays in order: opaque, mask, transparent, additive
   glDisable(GL_BLEND);
   draw_render_items(opaque_items, num_opaque_items, &context);
   // printf("Rendered %d opaque meshes\n", num_opaque_items);
@@ -623,23 +625,23 @@ struct SceneNode *scene_node_create(unsigned int id){
   glm_vec3_zero(node->rotation);
   glm_vec3_zero(node->scale);
   node->entity = NULL;
-  node->parent = NULL;
+  node->parent_node = NULL;
   node->children = NULL;
   node->num_children = 0;
 
   return node;
 }
 
-void scene_process_node_json(cJSON *node_json, struct SceneNode *current_node, struct SceneNode *parent_node, struct Model **models, Shader **shaders, struct PhysicsWorld *physics_world){
+void scene_process_node_json(const cJSON *node_json, struct SceneNode *current_node, struct SceneNode *parent_node, struct Model **models, Shader **shaders, struct PhysicsWorld *physics_world){
   // Model and shader for Entity
-  cJSON *model_index_json = cJSON_GetObjectItemCaseSensitive(mesh_json, "model_index");
-  cJSON *shader_index_json = cJSON_GetObjectItemCaseSensitive(mesh_json, "shader_index");
+  cJSON *model_index_json = cJSON_GetObjectItemCaseSensitive(node_json, "model_index");
+  cJSON *shader_index_json = cJSON_GetObjectItemCaseSensitive(node_json, "shader_index");
   if(!cJSON_IsNumber(model_index_json)){
-    fprintf(stderr, "Error: failed to get model_index in mesh at index %d, either invalid or does not exist\n", index);
+    fprintf(stderr, "Error: failed to get model_index in scene_process_node_json, either invalid or does not exist\n");
     return;
   }
   if(!cJSON_IsNumber(shader_index_json)){
-    fprintf(stderr, "Error: failed to get shader_index in mesh at index %d, either invalid or does not exist\n", index);
+    fprintf(stderr, "Error: failed to get shader_index in scene_process_node_json, either invalid or does not exist\n");
     return;
   }
   int model_index = (int)cJSON_GetNumberValue(model_index_json);
@@ -648,7 +650,7 @@ void scene_process_node_json(cJSON *node_json, struct SceneNode *current_node, s
     current_node->entity = (struct Entity *)calloc(1, sizeof(struct Entity));
     if (!current_node->entity){
       fprintf(stderr, "Error: failed to allocate entity in scene_process_node_json\n");
-      break;
+      return;
     }
     current_node->entity->model = models[model_index];
     current_node->entity->shader = shaders[shader_index];
@@ -663,7 +665,7 @@ void scene_process_node_json(cJSON *node_json, struct SceneNode *current_node, s
   scene_process_vec3_json(cJSON_GetObjectItemCaseSensitive(node_json, "rotation"), current_node->rotation);
   scene_process_vec3_json(cJSON_GetObjectItemCaseSensitive(node_json, "scale"), current_node->scale);
 
-
+  // Build local and world transforms
   glm_mat4_identity(current_node->local_transform);
   glm_translate(current_node->local_transform, current_node->position);
   vec3 rotation_radians = {
@@ -683,21 +685,24 @@ void scene_process_node_json(cJSON *node_json, struct SceneNode *current_node, s
     glm_mat4_copy(current_node->local_transform, current_node->world_transform);
   }
 
+  // print_glm_mat4(current_node->world_transform, "Current node world transform");
+  print_glm_mat4(current_node->local_transform, "Current node local transform");
+
   // Process PhysicsBody if collider is not null
   cJSON *collider_json = cJSON_GetObjectItemCaseSensitive(node_json, "collider");
   if (!collider_json){
-    fprintf(stderr, "Error: failed to get collider object in mesh at index %d, either invalid or does not exist\n", index);
+    fprintf(stderr, "Error: failed to get collider object in scene_process_node_json, either invalid or does not exist\n");
     return;
   }
-  if (!cJSON_IsNull(collider_json){
+  if (!cJSON_IsNull(collider_json)){
     cJSON *collider_type = cJSON_GetObjectItemCaseSensitive(collider_json, "type");
     if (!cJSON_IsNumber(collider_type)){
-      fprintf(stderr, "Error: failed to get type in collider object in mesh at index %d, either invalid or does not exist\n", index);
+      fprintf(stderr, "Error: failed to get type in collider object in scene_process_node_json, either invalid or does not exist\n");
       return;
     }
     cJSON *collider_data_json = cJSON_GetObjectItemCaseSensitive(collider_json, "data");
     if (!collider_data_json){
-      fprintf(stderr, "Error: failed to get data in collider object in mesh at index %d, either invalid or does not exist\n", index);
+      fprintf(stderr, "Error: failed to get data in collider object in scene_process_node_json, either invalid or does not exist\n");
       return;
     }
 
@@ -722,7 +727,7 @@ void scene_process_node_json(cJSON *node_json, struct SceneNode *current_node, s
 
         cJSON *radius = cJSON_GetObjectItemCaseSensitive(collider_data_json, "radius");
         if(!cJSON_IsNumber(radius)){
-          fprintf(stderr, "Error: failed to get radius in collider object in static mesh at index %d, either invalid or does not exist\n", index);
+          fprintf(stderr, "Error: failed to get radius in collider object in scene_process_node_json, either invalid or does not exist\n");
           return;
         }
         sphere.radius = cJSON_GetNumberValue(radius);
@@ -737,7 +742,7 @@ void scene_process_node_json(cJSON *node_json, struct SceneNode *current_node, s
         scene_process_vec3_json(cJSON_GetObjectItemCaseSensitive(collider_data_json, "segment_B"), capsule.segment_B);
         radius = cJSON_GetObjectItemCaseSensitive(collider_data_json, "radius");
         if(!cJSON_IsNumber(radius)){
-          fprintf(stderr, "Error: failed to get radius in collider object in static mesh at index %d, either invalid or does not exist\n", index);
+          fprintf(stderr, "Error: failed to get radius in collider object in scene_process_node_json, either invalid or does not exist\n");
           return;
         }
         capsule.radius = cJSON_GetNumberValue(radius);
@@ -752,7 +757,7 @@ void scene_process_node_json(cJSON *node_json, struct SceneNode *current_node, s
 
         cJSON *distance = cJSON_GetObjectItemCaseSensitive(collider_data_json, "distance");
         if(!cJSON_IsNumber(distance)){
-          fprintf(stderr, "Error: failed to get distance in collider object in static mesh at index %d, either invalid or does not exist\n", index);
+          fprintf(stderr, "Error: failed to get distance in collider object in scene_process_node_json, either invalid or does not exist\n");
           return;
         }
 
@@ -775,7 +780,7 @@ void scene_process_node_json(cJSON *node_json, struct SceneNode *current_node, s
     if (cJSON_IsTrue(dynamic_json)){
       cJSON *restitution_json = cJSON_GetObjectItemCaseSensitive(collider_json, "restitution");
       if(!cJSON_IsNumber(restitution_json)){
-        fprintf(stderr, "Error: failed to get restitution in collider object in static mesh at index %d, either invalid or does not exist\n", index);
+        fprintf(stderr, "Error: failed to get restitution in collider object in scene_process_node_json\n");
         return;
       }
       restitution = cJSON_GetNumberValue(restitution_json);
@@ -783,20 +788,21 @@ void scene_process_node_json(cJSON *node_json, struct SceneNode *current_node, s
     }
     
     // (Assumes every node with a collider also has an entity, maybe this shouldn't always be true?)
-    current_node->entity->physics_body = physics_add_body(physics_world, entity, collider, restitution, dynamic);
+    current_node->entity->physics_body = physics_add_body(physics_world, current_node->entity, collider, restitution, dynamic);
   }
   
   // Process children
   cJSON *children_json = cJSON_GetObjectItemCaseSensitive(node_json, "children");
   if (!children_json){
     fprintf(stderr, "Error: failed to get node children in scene_process_node_json, invalid or does not exist\n");
-    return NULL;
+    return;
   }
   int num_children = cJSON_GetArraySize(children_json);
+  printf("This node has %d children\n", num_children);
   if (num_children > 0){
     current_node->children = (struct SceneNode **)calloc(num_children, sizeof(struct SceneNode *));
 
-    const cJSON *child_node;
+    const cJSON *child_node_json;
     int index = 0;
     cJSON_ArrayForEach(child_node_json, children_json){
       // Allocate node

@@ -25,7 +25,7 @@ struct SceneNode {
   vec3 rotation;
   vec3 scale;
   struct Entity *entity;
-  struct SceneNode *parent;
+  struct SceneNode *parent_node;
   struct SceneNode **children;
   unsigned int num_children;
 };
@@ -35,7 +35,7 @@ struct Scene {
   Shader **shaders;
   int num_models;
   int num_shaders;
-  // struct SceneNode *root_node;
+  struct SceneNode *root_node;
   struct Entity *static_entities;
   struct Entity *dynamic_entities;
   struct Entity *player_entities;
@@ -65,6 +65,7 @@ void scene_unpause(struct Scene *scene);
 void scene_free(struct Scene *scene);
 
 // JSON processing helpers
+void scene_process_node_json(const cJSON *node_json, struct SceneNode *current_node, struct SceneNode *parent_node, struct Model **models, Shader **shaders, struct PhysicsWorld *physics_world);
 void scene_process_meshes_json(cJSON *meshes, struct Model **models, Shader **shaders, struct Entity *entities, struct PhysicsWorld *physics_world, bool dynamic);
 void scene_process_light_json(cJSON *light_json, struct Light *light);
 void scene_process_vec3_json(cJSON *vec3_json, vec3 dest);
