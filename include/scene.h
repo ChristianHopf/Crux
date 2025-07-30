@@ -19,6 +19,7 @@ struct Light {
 
 struct SceneNode {
   unsigned int ID;
+  mat4 local_transform;
   mat4 world_transform;
   vec3 position;
   vec3 rotation;
