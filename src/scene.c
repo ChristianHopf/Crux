@@ -364,18 +364,42 @@ void scene_render(struct Scene *scene){
   unsigned int num_transparent_items = 0;
   unsigned int num_additive_items = 0;
 
+  // Allocate RenderItem arrays
+  unsigned int num_render_items;
+  scene_get_render_item_count(scene->root_node, &num_render_items);
+  opaque_items = (struct RenderItem *)malloc(num_render_items * sizeof(struct RenderItem));
+  if (!opaque_items){
+    fprintf(stderr, "Error: failed to allocate opaque RenderItems in scene_render\n");
+    // When rendering, make sure to check whether opaque_items is valid before trying to render them
+  }
+  mask_items = (struct RenderItem *)malloc(num_render_items * sizeof(struct RenderItem));
+  if (!mask_items){
+    fprintf(stderr, "Error: failed to allocate mask RenderItems in scene_render\n");
+  }
+  transparent_items = (struct RenderItem *)malloc(num_render_items * sizeof(struct RenderItem));
+  if (!transparent_items){
+    fprintf(stderr, "Error: failed to allocate transparent RenderItems in scene_render\n");
+  }
+  additive_items = (struct RenderItem *)malloc(num_render_items * sizeof(struct RenderItem));
+  if (!additive_items){
+    fprintf(stderr, "Error: failed to allocate additive RenderItems in scene_render\n");
+  }
+
   scene_get_render_items(scene->root_node, scene->player.camera->position, &opaque_items, &num_opaque_items, &mask_items, &num_mask_items, &transparent_items, &num_transparent_items, &additive_items, &num_additive_items);
 
+  // Sort transparent_items back to front
+  qsort(transparent_items, num_transparent_items, sizeof(struct RenderItem), compare_render_item_depth);
+
   // Combine static and dynamic entities
-  unsigned int num_entities = scene->num_static_entities + scene->num_dynamic_entities + scene->num_player_entities;
-  struct Entity *combined_entities = (struct Entity *)malloc(num_entities * sizeof(struct Entity));
-  if (!combined_entities){
-    fprintf(stderr, "Error: failed to allocate entities for render item sorting in scene_render\n");
-  }
-  memcpy(combined_entities, scene->static_entities, scene->num_static_entities * sizeof(struct Entity));
-  memcpy(combined_entities + scene->num_static_entities, scene->dynamic_entities, scene->num_dynamic_entities * sizeof(struct Entity));
-  memcpy(combined_entities + scene->num_static_entities + scene->num_dynamic_entities, scene->player_entities, scene->num_player_entities * sizeof(struct Entity));
-  sort_render_items(combined_entities, num_entities, scene->player.camera->position, &opaque_items, &num_opaque_items, &mask_items, &num_mask_items, &transparent_items, &num_transparent_items, &additive_items, &num_additive_items);
+  // unsigned int num_entities = scene->num_static_entities + scene->num_dynamic_entities + scene->num_player_entities;
+  // struct Entity *combined_entities = (struct Entity *)malloc(num_entities * sizeof(struct Entity));
+  // if (!combined_entities){
+  //   fprintf(stderr, "Error: failed to allocate entities for render item sorting in scene_render\n");
+  // }
+  // memcpy(combined_entities, scene->static_entities, scene->num_static_entities * sizeof(struct Entity));
+  // memcpy(combined_entities + scene->num_static_entities, scene->dynamic_entities, scene->num_dynamic_entities * sizeof(struct Entity));
+  // memcpy(combined_entities + scene->num_static_entities + scene->num_dynamic_entities, scene->player_entities, scene->num_player_entities * sizeof(struct Entity));
+  // sort_render_items(combined_entities, num_entities, scene->player.camera->position, &opaque_items, &num_opaque_items, &mask_items, &num_mask_items, &transparent_items, &num_transparent_items, &additive_items, &num_additive_items);
 
   // Draw RenderItem arrays in order: opaque, mask, transparent, additive
   glDisable(GL_BLEND);
@@ -396,7 +420,7 @@ void scene_render(struct Scene *scene){
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
   // Free allocated RenderItem arrays (optimize because this seems like a lot more work than I should have to do for this every single frame)
-  free(combined_entities);
+  // free(combined_entities);
   free(opaque_items);
   free(mask_items);
   free(transparent_items);

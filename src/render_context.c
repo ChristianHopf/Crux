@@ -286,6 +286,20 @@ void sort_render_items(
   // printf("Successfully sorted %d transparent_items\n", *num_transparent_items);
 }
 
+// First draft algorithm:
+// - traverse the graph to get the total number of meshes, allocate RenderItem arrays as above
+// - pass allocated arrays as arguments to scene_get_render_items
+// - process current node's entity
+// - process current node's children
+void scene_get_render_item_count(struct SceneNode *scene_node, unsigned int *num_render_items){
+  // Get this node's meshes
+  if (scene_node->entity){
+    *num_render_items += scene_node->entity->model->num_meshes;
+  }
+  for (unsigned int i = 0; i < scene_node->num_children; i++){
+    scene_get_render_item_count(scene_node->children[i], num_render_items);
+  }
+}
 void scene_get_render_items(
   struct SceneNode *scene_node,
   vec3 camera_pos,
@@ -296,6 +310,51 @@ void scene_get_render_items(
 {
   if (scene_node->entity){
     // Get this node's RenderItems
+    struct Entity *entity = scene_node->entity;
+    struct Model *model = entity->model;
+
+    for (unsigned int j = 0; j < model->num_meshes; j++){
+      Mesh *mesh = &model->meshes[j];
+
+      struct RenderItem render_item;
+      render_item.mesh = mesh;
+      render_item.model = model;
+      render_item.shader = entity->shader;
+
+      // World transform
+      glm_mat4_copy(scene_node->world_transform, render_item.transform);
+
+      // Get mesh depth: magnitude of difference between camera pos and mesh center
+      // print_glm_vec3(camera_pos, "sort_render_items camera position");
+      vec3 world_mesh_center, difference;
+      glm_mat4_mulv3(render_item.transform, mesh->center, 1.0f, world_mesh_center);
+      glm_vec3_sub(camera_pos, world_mesh_center, difference);
+      render_item.depth = glm_vec3_norm(difference);
+
+      // Switch on this mesh's material's blend_mode to determine which array to add it to
+      switch(model->materials[model->meshes[j].material_index].blend_mode){
+        // Opaque
+        case 0: {
+          (*opaque_items)[(*num_opaque_items)++] = render_item;
+          break;
+        }
+        // Mask
+        case 1: {
+          (*mask_items)[(*num_mask_items)++] = render_item;
+          break;
+        }
+        // Transparent
+        case 2: {
+          (*transparent_items)[(*num_transparent_items)++] = render_item;
+          break;
+        }
+        // Additive
+        case 3: {
+          (*additive_items)[(*num_additive_items)++] = render_item;
+          break;
+        }
+      }
+    } 
   }
   
   for (unsigned int i = 0; i < scene_node->num_children; i++){
