@@ -293,7 +293,9 @@ void sort_render_items(
 // - process current node's children
 void scene_get_render_item_count(struct SceneNode *scene_node, unsigned int *num_render_items){
   // Get this node's meshes
+  printf("SCENE_GET_RENDER_ITEM_COUNT: this node has %d children\n", scene_node->num_children);
   if (scene_node->entity){
+    printf("This node has %d meshes\n", scene_node->entity->model->num_meshes);
     *num_render_items += scene_node->entity->model->num_meshes;
   }
   for (unsigned int i = 0; i < scene_node->num_children; i++){

@@ -365,8 +365,9 @@ void scene_render(struct Scene *scene){
   unsigned int num_additive_items = 0;
 
   // Allocate RenderItem arrays
-  unsigned int num_render_items;
+  unsigned int num_render_items = 0;
   scene_get_render_item_count(scene->root_node, &num_render_items);
+  printf("Num render items: %d\n", num_render_items);
   opaque_items = (struct RenderItem *)malloc(num_render_items * sizeof(struct RenderItem));
   if (!opaque_items){
     fprintf(stderr, "Error: failed to allocate opaque RenderItems in scene_render\n");
@@ -404,7 +405,7 @@ void scene_render(struct Scene *scene){
   // Draw RenderItem arrays in order: opaque, mask, transparent, additive
   glDisable(GL_BLEND);
   draw_render_items(opaque_items, num_opaque_items, &context);
-  // printf("Rendered %d opaque meshes\n", num_opaque_items);
+  printf("Rendered %d opaque meshes\n", num_opaque_items);
 
   draw_render_items(mask_items, num_mask_items, &context);
   // printf("Rendered %d mask meshes\n", num_mask_items);
@@ -670,6 +671,7 @@ void scene_process_node_json(const cJSON *node_json, struct SceneNode *current_n
   }
   int model_index = (int)cJSON_GetNumberValue(model_index_json);
   int shader_index = (int)cJSON_GetNumberValue(shader_index_json);
+  printf("Model index %d\n", model_index);
   if (model_index != -1 && shader_index != -1){
     current_node->entity = (struct Entity *)calloc(1, sizeof(struct Entity));
     if (!current_node->entity){
@@ -677,10 +679,14 @@ void scene_process_node_json(const cJSON *node_json, struct SceneNode *current_n
       return;
     }
     current_node->entity->model = models[model_index];
+    printf("Model has %d meshes\n", current_node->entity->model->num_meshes);
     current_node->entity->shader = shaders[shader_index];
     scene_process_vec3_json(cJSON_GetObjectItemCaseSensitive(node_json, "position"), current_node->entity->position);
     scene_process_vec3_json(cJSON_GetObjectItemCaseSensitive(node_json, "rotation"), current_node->entity->rotation);
     scene_process_vec3_json(cJSON_GetObjectItemCaseSensitive(node_json, "scale"), current_node->entity->scale);
+
+    // AudioComponent (may want to include this in scene json somehow, maybe just a bool)
+    current_node->entity->audio_component = audio_component_create(current_node->entity, 0);
   }
 
   // Process transform
@@ -817,12 +823,14 @@ void scene_process_node_json(const cJSON *node_json, struct SceneNode *current_n
   
   // Process children
   cJSON *children_json = cJSON_GetObjectItemCaseSensitive(node_json, "children");
-  if (!children_json){
+  if (!cJSON_IsArray(children_json)){
     fprintf(stderr, "Error: failed to get node children in scene_process_node_json, invalid or does not exist\n");
     return;
   }
   int num_children = cJSON_GetArraySize(children_json);
   printf("This node has %d children\n", num_children);
+  current_node->num_children = num_children;
+
   if (num_children > 0){
     current_node->children = (struct SceneNode **)calloc(num_children, sizeof(struct SceneNode *));
 
