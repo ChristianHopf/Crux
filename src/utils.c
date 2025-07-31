@@ -35,6 +35,18 @@ unsigned char *read_file(const char *path){
 }
 
 // CGLM helpers
+void print_glm_mat3(mat3 matrix, const char* name) {
+  printf("%s:\n", name);
+    for (int i = 0; i < 3; i++) {
+        printf("  [");
+        for (int j = 0; j < 3; j++) {
+            printf("%9.4f", matrix[i][j]); // Format with 4 decimal places
+            if (j < 2) printf(", ");
+        }
+        printf("]\n");
+    }
+    printf("\n");
+}
 void print_glm_mat4(mat4 matrix, const char* name) {
   printf("%s:\n", name);
     for (int i = 0; i < 4; i++) {

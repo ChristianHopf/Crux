@@ -53,6 +53,7 @@ vec3 lightPos = {1.2f, 0.5f, 2.0f};
 static int last_space_state = GLFW_RELEASE;
 void processInput(GLFWwindow *window){
   Engine *engine = (Engine *)glfwGetWindowUserPointer(window);
+
   // Camera movement
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS){
     player_process_keyboard_input(&engine->active_scene->player, CAMERA_FORWARD, engine->delta_time);
@@ -236,6 +237,11 @@ Engine *engine_create(){
     glfwTerminate();
     return NULL;
   }
+
+  printf("num dynamic bodies %d\n", engine->active_scene->physics_world->num_dynamic_bodies);
+  printf("ENGINE CREATE STATIC SCENENODE ADDRESS %p\n", engine->active_scene->physics_world->static_bodies[0].scene_node);
+  printf("ENGINE CREATE DYNAMIC SCENENODE ADDRESS %p\n", engine->active_scene->physics_world->dynamic_bodies[0].scene_node);
+  printf("ENGINE CREATE PLAYER SCENENODE ADDRESS %p\n", engine->active_scene->physics_world->player_bodies[0].scene_node);
 
   // Timing
   engine->delta_time = 0.0f;

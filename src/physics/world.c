@@ -32,7 +32,7 @@ struct PhysicsWorld *physics_world_create(){
   return world;
 }
 
-struct PhysicsBody *physics_add_body(struct PhysicsWorld *physics_world, struct Entity *entity, struct Collider collider, float restitution, bool dynamic){
+struct PhysicsBody *physics_add_body(struct PhysicsWorld *physics_world, struct SceneNode *scene_node, struct Entity *entity, struct Collider collider, float restitution, bool dynamic){
   // Memory is already allocated: get a pointer, assign values, return the pointer
 struct PhysicsBody *body;
   switch(dynamic){
@@ -53,12 +53,46 @@ struct PhysicsBody *body;
     return NULL;
   }
 
+  mat3 rotation_mat3;
+  vec3 world_position, world_rotation, world_scale;
+  glm_mat4_pick3(scene_node->world_transform, rotation_mat3);
+  if (world_scale[0] != 0.0f){
+    glm_mat3_scale(rotation_mat3, 1.0f / world_scale[0]);
+  }
+  switch(collider.type){
+    case COLLIDER_PLANE: {
+
+      break;
+    }
+    default: {
+      break;
+    }
+  }
+
+
   body->collider = collider;
+  // Get position, rotation, and scale from world transform
+  // mat4 world_transform;
+  // glm_mat4_copy(scene_node->world_transform, world_transform);
+  // vec3 world_position, world_rotation, world_scale;
+  // glm_mat4_mulv3(world_transform, (vec3){0.0f, 0.0f, 0.0f}, 1.0f, world_position);
+  // glm_decompose_scalev(world_transform, world_scale);
+  // mat3 rotation_mat3;
+  // glm_mat4_pick3(world_transform, rotation_mat3);
+  // if (world_scale[0] != 0.0f){
+  //   glm_mat3_scale(rotation_mat3, 1.0f / world_scale[0]);
+  // }
+
+  // glm_vec3_copy(world_position, body->position);
+  // glm_vec3_copy(world_rotation, body->rotation);
+  // glm_vec3_copy(world_scale, body->scale);
+
   glm_vec3_copy(entity->position, body->position);
   glm_vec3_copy(entity->rotation, body->rotation);
   glm_vec3_copy(entity->scale, body->scale);
   body->restitution = restitution;
   body->entity = entity;
+  body->scene_node = scene_node;
 
   return body;
 }
@@ -79,6 +113,7 @@ struct PhysicsBody *physics_add_player(struct PhysicsWorld *physics_world, struc
   body->collider = collider;
   body->restitution = 0.0f;
   body->entity = entity;
+  body->scene_node = NULL;
 
   return body;
 }

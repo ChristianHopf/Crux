@@ -274,7 +274,6 @@ struct Scene *scene_init(char *scene_path){
     }
   };
   scene->player.entity->physics_body = physics_add_player(scene->physics_world, scene->player.entity, player_collider);
-  printf("PLAYER SCENENODE ADDRESS %p\n", scene->player.entity->physics_body->scene_node);
 
   // Init physics debug renderer
   if (scene->physics_debug_mode){
@@ -371,6 +370,7 @@ void scene_render(struct Scene *scene){
   // Allocate RenderItem arrays
   unsigned int num_render_items = 0;
   scene_get_render_item_count(scene->root_node, &num_render_items);
+  printf("Num render items: %d\n", num_render_items);
   opaque_items = (struct RenderItem *)malloc(num_render_items * sizeof(struct RenderItem));
   if (!opaque_items){
     fprintf(stderr, "Error: failed to allocate opaque RenderItems in scene_render\n");
@@ -408,6 +408,7 @@ void scene_render(struct Scene *scene){
   // Draw RenderItem arrays in order: opaque, mask, transparent, additive
   glDisable(GL_BLEND);
   draw_render_items(opaque_items, num_opaque_items, &context);
+  printf("Rendered %d opaque meshes\n", num_opaque_items);
 
   draw_render_items(mask_items, num_mask_items, &context);
   // printf("Rendered %d mask meshes\n", num_mask_items);
@@ -681,6 +682,7 @@ void scene_process_node_json(const cJSON *node_json, struct SceneNode *current_n
       return;
     }
     current_node->entity->model = models[model_index];
+    printf("Model has %d meshes\n", current_node->entity->model->num_meshes);
     current_node->entity->shader = shaders[shader_index];
     scene_process_vec3_json(cJSON_GetObjectItemCaseSensitive(node_json, "position"), current_node->entity->position);
     scene_process_vec3_json(cJSON_GetObjectItemCaseSensitive(node_json, "rotation"), current_node->entity->rotation);
@@ -697,22 +699,17 @@ void scene_process_node_json(const cJSON *node_json, struct SceneNode *current_n
   scene_process_vec3_json(cJSON_GetObjectItemCaseSensitive(node_json, "scale"), current_node->scale);
 
   // Build local and world transforms
-  mat4 translation, rotation, scale;
-  glm_scale_make(scale, current_node->scale);
-
+  glm_mat4_identity(current_node->local_transform);
+  glm_translate(current_node->local_transform, current_node->position);
   vec3 rotation_radians = {
     glm_rad(current_node->rotation[0]),
     glm_rad(current_node->rotation[1]),
     glm_rad(current_node->rotation[2])
   };
+  mat4 rotation;
   glm_euler_xyz(rotation_radians, rotation);
-
-  glm_translate_make(translation, current_node->position);
-
-  glm_mat4_identity(current_node->local_transform);
-  glm_mat4_mul(rotation, scale, current_node->local_transform);
-  glm_mat4_mul(translation, current_node->local_transform, current_node->local_transform);
-
+  glm_mul(current_node->local_transform, rotation, current_node->local_transform);
+  glm_scale(current_node->local_transform, current_node->scale);
   // Combine parent transform
   if (parent_node){
     glm_mat4_mul(parent_node->world_transform, current_node->local_transform, current_node->world_transform);
@@ -821,8 +818,6 @@ void scene_process_node_json(const cJSON *node_json, struct SceneNode *current_n
       }
       restitution = cJSON_GetNumberValue(restitution_json);
       dynamic = true;
-
-      scene_process_vec3_json(cJSON_GetObjectItemCaseSensitive(node_json, "velocity"), current_node->entity->velocity);
     }
     
     // (Assumes every node with a collider also has an entity, maybe this shouldn't always be true?)

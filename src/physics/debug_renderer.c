@@ -443,11 +443,28 @@ void physics_debug_capsule_init(struct PhysicsBody *body){
     return;
   }
 
+  // Transform capsule to world space
   struct Capsule *capsule = &body->collider.data.capsule;
+  struct Capsule world_capsule = {0};
+  // TODO give Player a SceneNode
+  if (body->scene_node){
+    print_glm_mat4(body->scene_node->world_transform, "capsule init world transform");
+    glm_mat4_mulv3(body->scene_node->world_transform, capsule->segment_A, 1.0f, world_capsule.segment_A);
+    glm_mat4_mulv3(body->scene_node->world_transform, capsule->segment_B, 1.0f, world_capsule.segment_B);
+    vec3 world_scale;
+    glm_decompose_scalev(body->scene_node->parent_node->world_transform, world_scale);
+    world_capsule.radius  = capsule->radius * world_scale[0];
+  }
+  else{
+    glm_vec3_copy(capsule->segment_A, world_capsule.segment_A);
+    glm_vec3_copy(capsule->segment_B, world_capsule.segment_B);
+    world_capsule.radius = capsule->radius;
+  }
 
   // Get axis and length of cylinder
   vec3 axis;
-  glm_vec3_sub(capsule->segment_B, capsule->segment_A, axis);
+  glm_vec3_sub(world_capsule.segment_B, world_capsule.segment_A, axis);
+  // glm_vec3_sub(capsule->segment_B, capsule->segment_A, axis);
   float length = glm_vec3_norm(axis);
   glm_vec3_normalize(axis);
 
@@ -511,21 +528,21 @@ void physics_debug_capsule_init(struct PhysicsBody *body){
     if (i < stack_count){
       t = ((float)i / stack_count);
       // glm_vec3_scale(axis, -capsule->radius, center);
-      glm_vec3_copy(capsule->segment_A, center);
-      stack_radius = capsule->radius * cosf(t * M_PI / 2.0f);
-      z = -capsule->radius * sinf(t * M_PI / 2.0f);
+      glm_vec3_copy(world_capsule.segment_A, center);
+      stack_radius = world_capsule.radius * cosf(t * M_PI / 2.0f);
+      z = -world_capsule.radius * sinf(t * M_PI / 2.0f);
     }
     else if (i == stack_count){
-      glm_vec3_copy(capsule->segment_A, center);
-      stack_radius = capsule->radius;
+      glm_vec3_copy(world_capsule.segment_A, center);
+      stack_radius = world_capsule.radius;
       z = 0.0f;
     }
     // Cylinder:
     // - t is from 0 to 1
     // - center of sector is interpolated between segment_A and segment_B
     else if (i == stack_count + 1){
-      glm_vec3_copy(capsule->segment_B, center);
-      stack_radius = capsule->radius;
+      glm_vec3_copy(world_capsule.segment_B, center);
+      stack_radius = world_capsule.radius;
       z = 0.0f;
     }
     // Top hemisphere:
@@ -533,9 +550,9 @@ void physics_debug_capsule_init(struct PhysicsBody *body){
     // - center is segment_B
     else {
       t = ((float)(i - (stack_count + 1)) / stack_count);
-      glm_vec3_copy(capsule->segment_B, center);
-      stack_radius = capsule->radius * cosf(t * M_PI / 2.0f);
-      z = capsule->radius * sinf(t * M_PI / 2.0f);
+      glm_vec3_copy(world_capsule.segment_B, center);
+      stack_radius = world_capsule.radius * cosf(t * M_PI / 2.0f);
+      z = world_capsule.radius * sinf(t * M_PI / 2.0f);
     }
 
     // For each sector, get x and y coordinates to make (sector_count + 1) vertices per stack
