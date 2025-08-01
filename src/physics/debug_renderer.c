@@ -68,6 +68,7 @@ void physics_debug_render(struct PhysicsWorld *physics_world, struct RenderConte
     struct PhysicsBody *body = &physics_world->static_bodies[i];
 
     glBindVertexArray(body->VAO);
+    glBindBuffer(GL_ARRAY_BUFFER, body->VBO);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, body->EBO);
 
     mat4 model;
@@ -660,6 +661,7 @@ void physics_debug_AABB_render(struct AABB *aabb, struct RenderContext *context,
   glDrawElements(GL_LINES, 24, GL_UNSIGNED_INT, 0);
 
   glBindVertexArray(0);
+  // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
 
 void physics_debug_sphere_render(struct Sphere *sphere, struct RenderContext *context, mat4 model){
