@@ -30,7 +30,7 @@ void physics_debug_render(struct PhysicsWorld *physics_world, struct RenderConte
         glm_rotate_z(model, glm_rad(body->rotation[2]), model);
         glm_scale(model, body->scale);
 
-        physics_debug_AABB_render(box, context, model);
+        physics_debug_AABB_render(box, context, body->scene_node->local_transform);
         break;
       case COLLIDER_SPHERE:
         struct Sphere *sphere = &body->collider.data.sphere;
@@ -84,7 +84,7 @@ void physics_debug_render(struct PhysicsWorld *physics_world, struct RenderConte
         glm_rotate_z(model, glm_rad(body->rotation[2]), model);
         glm_scale(model, body->scale);
 
-        physics_debug_AABB_render(box, context, model);
+        physics_debug_AABB_render(box, context, body->scene_node->local_transform);
         break;
       case COLLIDER_SPHERE:
         struct Sphere *sphere = &body->collider.data.sphere;

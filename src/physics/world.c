@@ -151,7 +151,7 @@ void physics_step(struct PhysicsWorld *physics_world, float delta_time){
       if (body_A->collider.type > body_B->collider.type){
         struct PhysicsBody *temp = body_A;
         body_A = body_B;
-        body_B = body_A;
+        body_B = temp;
         body_swap = true;
       }
 
@@ -219,10 +219,12 @@ void physics_step(struct PhysicsWorld *physics_world, float delta_time){
       struct PhysicsBody *body_B = &physics_world->static_bodies[j];
 
       // Order bodies by enum value for function tables
+      bool body_swap = false;
       if (body_A->collider.type > body_B->collider.type){
         struct PhysicsBody *temp = body_A;
         body_A = body_B;
-        body_B = body_A;
+        body_B = temp;
+        body_swap = true;
       }
 
       // BROAD PHASE: Create a hit_time float and perform interval halving
@@ -250,6 +252,12 @@ void physics_step(struct PhysicsWorld *physics_world, float delta_time){
         else{
           resolution_function(body_A, body_B, result, delta_time);
         }
+      }
+      // Reorder bodies by enum value
+      if (body_swap){
+        struct PhysicsBody *temp = body_A;
+        body_A = body_B;
+        body_B = temp;
       }
     }
     // if (!body_A->at_rest){

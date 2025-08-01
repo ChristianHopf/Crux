@@ -755,6 +755,7 @@ void scene_process_node_json(const cJSON *node_json, struct SceneNode *current_n
 
         collider.type = type;
         collider.data.aabb = aabb;
+        printf("Initializing AABB\n");
         break;
       case COLLIDER_SPHERE:
         struct Sphere sphere;

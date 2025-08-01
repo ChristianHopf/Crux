@@ -101,7 +101,37 @@ float min_dist_at_time_AABB_sphere(struct PhysicsBody *body_A, struct PhysicsBod
 }
 
 float min_dist_at_time_AABB_capsule(struct PhysicsBody *body_A, struct PhysicsBody *body_B, float time){
+  // Get pointers to the bodies' colliders
+  struct AABB *box = &body_A->collider.data.aabb;
+  struct Capsule *capsule = &body_B->collider.data.capsule;
 
+  // Get world space AABB to find minimum distance
+  // mat4 eulerA;
+  // mat3 rotationA;
+  // glm_euler_xyz(body_A->rotation, eulerA);
+  // glm_mat4_pick3(eulerA, rotationA);
+  //
+  // vec3 translationA, scaleA;
+  // glm_vec3_copy(body_A->position, translationA);
+  // glm_vec3_muladds(body_A->velocity, time, translationA);
+  // glm_vec3_copy(body_A->scale, scaleA);
+  //
+  // struct AABB worldAABB_A = {0};
+  // AABB_update(box, rotationA, translationA, scaleA, &worldAABB_A);
+  //
+  // // Get world space capsule
+  // glm_vec3_scale(capsule->segment_A, body_A->scale[0], world_capsule.segment_A);
+  // glm_vec3_scale(capsule->segment_B, body_A->scale[0], world_capsule.segment_B);
+  // mat4 eulerA;
+  // mat3 rotationA;
+  // vec3 rotatedA, rotatedB;
+  // glm_euler_xyz(body_A->rotation, eulerA);
+  // glm_mat4_pick3(eulerA, rotationA);
+  // glm_mat3_mulv(rotationA, world_capsule.segment_A, world_capsule.segment_A);
+  // glm_mat3_mulv(rotationA, world_capsule.segment_B, world_capsule.segment_B);
+  // glm_vec3_add(world_capsule.segment_A, body_A->position, world_capsule.segment_A);
+  // glm_vec3_add(world_capsule.segment_B, body_A->position, world_capsule.segment_B);
+  // world_capsule.radius = capsule->radius * body_A->scale[0];
 }
 
 float min_dist_at_time_AABB_plane(struct PhysicsBody *body_A, struct PhysicsBody *body_B, float time){
