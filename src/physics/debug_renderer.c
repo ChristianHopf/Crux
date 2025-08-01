@@ -182,7 +182,8 @@ void physics_debug_render(struct PhysicsWorld *physics_world, struct RenderConte
         glm_rotate_z(model, glm_rad(body->rotation[2]), model);
         glm_scale(model, body->scale);
 
-        physics_debug_capsule_render(capsule, context, model);
+        physics_debug_capsule_render(capsule, context, body->scene_node->world_transform);
+        // physics_debug_capsule_render(capsule, context, model);
         break;
       case COLLIDER_PLANE:
         // debug_plane_render(body);
@@ -447,19 +448,19 @@ void physics_debug_capsule_init(struct PhysicsBody *body){
   struct Capsule *capsule = &body->collider.data.capsule;
   struct Capsule world_capsule = {0};
   // TODO give Player a SceneNode
-  if (body->scene_node){
-    print_glm_mat4(body->scene_node->world_transform, "capsule init world transform");
-    glm_mat4_mulv3(body->scene_node->world_transform, capsule->segment_A, 1.0f, world_capsule.segment_A);
-    glm_mat4_mulv3(body->scene_node->world_transform, capsule->segment_B, 1.0f, world_capsule.segment_B);
-    vec3 world_scale;
-    glm_decompose_scalev(body->scene_node->parent_node->world_transform, world_scale);
-    world_capsule.radius  = capsule->radius * world_scale[0];
-  }
-  else{
+  // if (body->scene_node){
+  //   print_glm_mat4(body->scene_node->world_transform, "capsule init world transform");
+  //   glm_mat4_mulv3(body->scene_node->world_transform, capsule->segment_A, 1.0f, world_capsule.segment_A);
+  //   glm_mat4_mulv3(body->scene_node->world_transform, capsule->segment_B, 1.0f, world_capsule.segment_B);
+  //   vec3 world_scale;
+  //   glm_decompose_scalev(body->scene_node->parent_node->world_transform, world_scale);
+  //   world_capsule.radius  = capsule->radius * world_scale[0];
+  // }
+  // else{
     glm_vec3_copy(capsule->segment_A, world_capsule.segment_A);
     glm_vec3_copy(capsule->segment_B, world_capsule.segment_B);
     world_capsule.radius = capsule->radius;
-  }
+  // }
 
   // Get axis and length of cylinder
   vec3 axis;
