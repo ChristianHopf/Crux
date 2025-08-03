@@ -471,15 +471,9 @@ struct CollisionResult narrow_phase_capsule_plane(struct PhysicsBody *body_capsu
     }
 
     // Transform plane
-    print_glm_vec3(plane->normal, "Wall plane normal before transformation");
-    print_glm_mat3(rotation_mat3, "Rotation mat3");
     glm_mat3_mulv(rotation_mat3, plane->normal, world_plane.normal);
     glm_vec3_normalize(world_plane.normal);
     world_plane.distance = (plane->distance) + glm_vec3_dot(world_position, world_plane.normal);
-    if (plane->distance == -5){
-      print_glm_vec3(plane->normal, "Wall plane normal");
-      print_glm_vec3(world_plane.normal, "World wall plane normal");
-    }
   }
 
   glm_vec3_scale(capsule->segment_A, body_capsule->scale[0], world_capsule.segment_A);
