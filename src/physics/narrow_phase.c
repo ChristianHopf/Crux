@@ -299,6 +299,16 @@ struct CollisionResult narrow_phase_AABB_capsule(struct PhysicsBody *body_AABB, 
   for (int i = 0; i < 3; i++){
     q[i] = glm_clamp(closest_point[i], world_AABB_final.center[i] - world_AABB_final.extents[i], world_AABB_final.center[i] + world_AABB_final.extents[i]);
   }
+  if (body_capsule->scene_node){
+    print_glm_vec3(capsule->segment_A, "NARROW PHASE CAPSULE SEGMENT A");
+    print_glm_vec3(world_capsule.segment_A, "WORLD CAPSULE SEGMENT A");
+    print_glm_vec3(closest_point, "CLOSEST POINT ON SEGMENT");
+    print_glm_vec3(q, "CLOSEST POINT ON AABB");
+    printf("Resolution initial aabb\n");
+    print_aabb(box);
+    printf("World space aabb\n");
+    print_aabb(&world_AABB_final);
+  }
   glm_vec3_sub(q, closest_point, pq);
   float distance = glm_vec3_norm(pq) - world_capsule.radius;
 

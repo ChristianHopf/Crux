@@ -206,8 +206,6 @@ void resolve_collision_AABB_sphere(struct PhysicsBody *body_A, struct PhysicsBod
 }
 
 void resolve_collision_AABB_capsule(struct PhysicsBody *body_A, struct PhysicsBody *body_B, struct CollisionResult result, float delta_time){
-  printf("AABB CAPSULE COLLISION\n");
-
   struct AABB *box = &body_A->collider.data.aabb;
   struct Capsule *capsule = &body_B->collider.data.capsule;
 
@@ -276,28 +274,10 @@ void resolve_collision_AABB_capsule(struct PhysicsBody *body_A, struct PhysicsBo
     // Transform capsule
     glm_mat4_mulv3(body_B->scene_node->world_transform, capsule->segment_A, 1.0f, world_capsule.segment_A);
     glm_mat4_mulv3(body_B->scene_node->world_transform, capsule->segment_B, 1.0f, world_capsule.segment_B);
+    glm_vec3_muladds(velocity_before, result.hit_time, world_capsule.segment_A);
+    glm_vec3_muladds(velocity_before, result.hit_time, world_capsule.segment_B);
   }
 
-  // AABB local transform update
-  mat4 eulerA;
-  mat3 rotationA;
-  // glm_euler_xyz(body_A->rotation, eulerA);
-  // glm_mat4_pick3(eulerA, rotationA);
-  // vec3 translationA, scaleA;
-  // glm_vec3_copy(body_A->position, translationA);
-  // glm_vec3_copy(body_A->scale, scaleA);
-  // AABB_update(&world_AABB, rotationA, translationA, scaleA, &world_AABB_final);
-  //
-  // Get world space capsule
-  // glm_vec3_scale(capsule->segment_A, body_B->scale[0], world_capsule.segment_A);
-  // glm_vec3_scale(capsule->segment_B, body_B->scale[0], world_capsule.segment_B);
-  // vec3 rotatedA, rotatedB;
-  // glm_euler_xyz(body_B->rotation, eulerA);
-  // glm_mat4_pick3(eulerA, rotationA);
-  // glm_mat3_mulv(rotationA, world_capsule.segment_A, world_capsule.segment_A);
-  // glm_mat3_mulv(rotationA, world_capsule.segment_B, world_capsule.segment_B);
-  // glm_vec3_add(world_capsule.segment_A, body_B->position, world_capsule.segment_A);
-  // glm_vec3_add(world_capsule.segment_B, body_B->position, world_capsule.segment_B);
   world_capsule.radius = capsule->radius * body_B->scale[0];
 
   // Penetration correction
@@ -311,22 +291,36 @@ void resolve_collision_AABB_capsule(struct PhysicsBody *body_A, struct PhysicsBo
   // Closest point on the segment is segment_A + segment vector scaled by t
   vec3 closest_point;
   glm_vec3_copy(world_capsule.segment_A, closest_point);
-  glm_vec3_muladds(segment, t, world_capsule.segment_A);
+  glm_vec3_muladds(segment, t, closest_point);
+  // glm_vec3_muladds(segment, t, world_capsule.segment_A);
 
   // Closest point on the AABB is the segment's closest point clamped to AABB extents
   vec3 q, pq;
   for (int i = 0; i < 3; i++){
     q[i] = glm_clamp(closest_point[i], world_AABB_final.center[i] - world_AABB_final.extents[i], world_AABB_final.center[i] + world_AABB_final.extents[i]);
   }
+  if (body_B->scene_node){
+    print_glm_vec3(capsule->segment_A, "RESOLUTION CAPSULE SEGMENT A");
+    print_glm_vec3(world_capsule.segment_A, "WORLD CAPSULE SEGMENT A");
+    print_glm_vec3(closest_point, "CLOSEST POINT ON SEGMENT");
+    print_glm_vec3(q, "CLOSEST POINT ON AABB");
+    printf("Resolution initial aabb\n");
+    print_aabb(box);
+    printf("World space aabb\n");
+    print_aabb(&world_AABB_final);
+  }
+
   glm_vec3_sub(q, closest_point, pq);
-  float distance = glm_vec3_norm(pq) - world_capsule.radius;
+  float distance = glm_vec3_norm(pq);
 
   // Compute discriminant of relative velocity along PQ
   // (vector from closest point on capsule to closest point on AABB)
   glm_vec3_normalize(pq);
   float pq_dot_v = glm_dot(body_B->velocity, pq);
-  float penetration = distance < 0 ? (world_capsule.radius - distance) + 0.0001f : 0.0f;
-
+  float penetration = distance < world_capsule.radius ? (world_capsule.radius - distance) + 0.0001f : 0.0f;
+  printf("RADIUS: %f\n", world_capsule.radius);
+  printf("DISTANCE: %f\n", distance);
+  printf("PENETRATION: %f\n", penetration);
   if (penetration <= 0.0f) return;
 
   // TODO Do penetration correction and velocity updates based on whether

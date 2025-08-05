@@ -50,6 +50,12 @@ void AABB_merge(struct AABB *a, struct AABB *b){
   return;
 }
 
+// Consider when building AABBs that the center is NOT scaled.
+// Defining an AABB such as:
+// - center: [0, -1, 0],
+// - extents: [10, 1, 10]
+// - with a scale vector of [0.5, 0.5, 0.5]
+// will not use a center of [0, -0.5, 0]
 void AABB_update(struct AABB *src, mat3 rotation, vec3 translation, vec3 scale, struct AABB *dest){
   //Ericson's algorithm uses a row-major rotation matrix,
   // but GLM expects column-major. Swap i and j to match model rendering
