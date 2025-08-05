@@ -248,7 +248,7 @@ struct Scene *scene_init(char *scene_path){
 
   // Player
   struct Player *player = player_create(models[1], shaders[0],
-                                (vec3){7.5f, 0.0f, 10.0f},
+                                (vec3){0.0f, 0.0f, 10.0f},
                                 (vec3){0.0f, 180.0f, 0.0f},
                                 (vec3){1.0f, 1.0f, 1.0f},
                                 (vec3){0.0f, 0.0f, 0.0f},

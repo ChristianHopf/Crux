@@ -112,10 +112,10 @@ float min_dist_at_time_AABB_capsule(struct PhysicsBody *body_A, struct PhysicsBo
   // Apply world transform to bodies
   if (body_A->scene_node){
     vec3 world_position, world_rotation, world_scale;
-    glm_mat4_mulv3(body_A->scene_node->parent_node->world_transform, (vec3){0.0f, 0.0f, 0.0f}, 1.0f, world_position);
-    glm_decompose_scalev(body_A->scene_node->parent_node->world_transform, world_scale);
+    glm_mat4_mulv3(body_A->scene_node->world_transform, (vec3){0.0f, 0.0f, 0.0f}, 1.0f, world_position);
+    glm_decompose_scalev(body_A->scene_node->world_transform, world_scale);
     mat3 rotation_mat3;
-    glm_mat4_pick3(body_A->scene_node->parent_node->world_transform, rotation_mat3);
+    glm_mat4_pick3(body_A->scene_node->world_transform, rotation_mat3);
     if (world_scale[0] != 0.0f){
       glm_mat3_scale(rotation_mat3, 1.0f / world_scale[0]);
     }
@@ -154,7 +154,7 @@ float min_dist_at_time_AABB_capsule(struct PhysicsBody *body_A, struct PhysicsBo
     euler_degrees[0] = glm_deg(euler_radians[0]); // Roll (X)
     euler_degrees[1] = glm_deg(euler_radians[1]); // Pitch (Y)
     euler_degrees[2] = glm_deg(euler_radians[2]); // Yaw (Z)
-    AABB_update(box, rotation_mat3, world_position, world_scale, &world_AABB);
+    AABB_update(box, rotation_mat3, world_position, world_scale, &world_AABB_final);
   }
   else{
     world_AABB = *box;
@@ -164,28 +164,30 @@ float min_dist_at_time_AABB_capsule(struct PhysicsBody *body_A, struct PhysicsBo
     glm_mat4_mulv3(body_B->scene_node->world_transform, capsule->segment_A, 1.0f, world_capsule.segment_A);
     glm_mat4_mulv3(body_B->scene_node->world_transform, capsule->segment_B, 1.0f, world_capsule.segment_B);
   }
+  printf("World space aabb\n");
+  print_aabb(&world_AABB_final);
 
   // AABB local transform update
   mat4 eulerA;
   mat3 rotationA;
-  glm_euler_xyz(body_A->rotation, eulerA);
-  glm_mat4_pick3(eulerA, rotationA);
-  vec3 translationA, scaleA;
-  glm_vec3_copy(body_A->position, translationA);
-  glm_vec3_muladds(body_A->velocity, time, translationA);
-  glm_vec3_copy(body_A->scale, scaleA);
-  AABB_update(&world_AABB, rotationA, translationA, scaleA, &world_AABB_final);
-
+  // glm_euler_xyz(body_A->rotation, eulerA);
+  // glm_mat4_pick3(eulerA, rotationA);
+  // vec3 translationA, scaleA;
+  // glm_vec3_copy(body_A->position, translationA);
+  // // glm_vec3_muladds(body_A->velocity, time, translationA);
+  // glm_vec3_copy(body_A->scale, scaleA);
+  // AABB_update(&world_AABB, rotationA, translationA, scaleA, &world_AABB_final);
+  //
   // Get world space capsule
-  glm_vec3_scale(capsule->segment_A, body_B->scale[0], world_capsule.segment_A);
-  glm_vec3_scale(capsule->segment_B, body_B->scale[0], world_capsule.segment_B);
-  vec3 rotatedA, rotatedB;
-  glm_euler_xyz(body_B->rotation, eulerA);
-  glm_mat4_pick3(eulerA, rotationA);
-  glm_mat3_mulv(rotationA, world_capsule.segment_A, world_capsule.segment_A);
-  glm_mat3_mulv(rotationA, world_capsule.segment_B, world_capsule.segment_B);
-  glm_vec3_add(world_capsule.segment_A, body_B->position, world_capsule.segment_A);
-  glm_vec3_add(world_capsule.segment_B, body_B->position, world_capsule.segment_B);
+  // glm_vec3_scale(capsule->segment_A, body_B->scale[0], world_capsule.segment_A);
+  // glm_vec3_scale(capsule->segment_B, body_B->scale[0], world_capsule.segment_B);
+  // vec3 rotatedA, rotatedB;
+  // glm_euler_xyz(body_B->rotation, eulerA);
+  // glm_mat4_pick3(eulerA, rotationA);
+  // glm_mat3_mulv(rotationA, world_capsule.segment_A, world_capsule.segment_A);
+  // glm_mat3_mulv(rotationA, world_capsule.segment_B, world_capsule.segment_B);
+  // glm_vec3_add(world_capsule.segment_A, body_B->position, world_capsule.segment_A);
+  // glm_vec3_add(world_capsule.segment_B, body_B->position, world_capsule.segment_B);
   world_capsule.radius = capsule->radius * body_A->scale[0];
 
   // Find closest point on segment to AABB center
@@ -212,7 +214,7 @@ float min_dist_at_time_AABB_capsule(struct PhysicsBody *body_A, struct PhysicsBo
   vec3 pq;
   glm_vec3_sub(q, closest_point, pq);
   float distance = glm_vec3_norm(pq);
-  printf("Min dist between AABB and capsule is %f\n", glm_max(distance - world_capsule.radius, 0));
+  // printf("Min dist between AABB and capsule is %f\n", glm_max(distance - world_capsule.radius, 0));
   return glm_max(distance - world_capsule.radius, 0);
 
   // Find AABB vertex with minimum distance (point to line segment distance)
@@ -367,7 +369,6 @@ float min_dist_at_time_capsule_plane(struct PhysicsBody *body_A, struct PhysicsB
   glm_vec3_add(world_capsule.segment_A, body_A->position, world_capsule.segment_A);
   glm_vec3_add(world_capsule.segment_B, body_A->position, world_capsule.segment_B);
   world_capsule.radius = capsule->radius * body_A->scale[0];
-
 
   // Get signed distance from capsule to plane: distance from point to plane minus radius
   // - A capsule is a sphere-swept volume, which is just a line segment and a radius

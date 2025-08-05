@@ -55,12 +55,12 @@
             "rotation": [0.0, 0.0, 180.0],
             "scale": [0.5, 0.5, 0.5],
             "collider": {
-              "type": 3,
+              "type": 0,
               "dynamic": false,
               "units": 10,
               "data": {
-                "normal": [0.0, -1.0, 0.0],
-                "distance": -10
+                "center": [0.0, -1.0, 0.0],
+                "extents": [10.0, 1.0, 10.0]
               }
             },
             "children": []
@@ -72,12 +72,12 @@
             "rotation": [0.0, 0.0, -90.0],
             "scale": [0.5, 0.5, 0.5],
             "collider": {
-              "type": 3,
+              "type": 0,
               "dynamic": false,
               "units": 10,
               "data": {
-                "normal": [1.0, 0.0, 0.0],
-                "distance": -5
+                "center": [0.0, -1.0, 0.0],
+                "extents": [10.0, 1.0, 10.0]
               }
             },
             "children": []
@@ -139,7 +139,7 @@
             "position": [0.0, 2.0, 0.0],
             "rotation": [0.0, 0.0, 0.0],
             "scale": [1.0, 1.0, 1.0],
-            "velocity": [3.0, 0.0, 0.0],
+            "velocity": [3.0, 0.0, 2.0],
             "collider": {
               "type": 2,
               "dynamic": true,
@@ -153,119 +153,6 @@
             },
             "children": []
           }
-        ]
-      },
-      {
-        "model_index": -1,
-        "shader_index": -1,
-        "position": [15.0, 0.0, 0.0],
-        "rotation": [45.0, 0.0, 0.0],
-        "scale": [1.0, 1.0, 1.0],
-        "collider": null,
-        "children": [
-          {
-            "model_index": 0,
-            "shader_index": 0,
-            "position": [0.0, 0.0, 0.0],
-            "rotation": [0.0, 0.0, 0.0],
-            "scale": [0.5, 0.5, 0.5],
-            "collider": {
-              "type": 3,
-              "dynamic": false,
-              "units": 10,
-              "data": {
-                "normal": [0.0, 1.0, 0.0],
-                "distance": 0
-              }
-            },
-            "children": []
-          },
-          {
-            "model_index": 0,
-            "shader_index": 0,
-            "position": [0.0, 10.0, 0.0],
-            "rotation": [0.0, 0.0, 180.0],
-            "scale": [0.5, 0.5, 0.5],
-            "collider": {
-              "type": 3,
-              "dynamic": false,
-              "units": 10,
-              "data": {
-                "normal": [0.0, -1.0, 0.0],
-                "distance": -10
-              }
-            },
-            "children": []
-          },
-          {
-            "model_index": 0,
-            "shader_index": 0,
-            "position": [-5.0, 5.0, 0.0],
-            "rotation": [0.0, 0.0, -90.0],
-            "scale": [0.5, 0.5, 0.5],
-            "collider": {
-              "type": 3,
-              "dynamic": false,
-              "units": 10,
-              "data": {
-                "normal": [1.0, 0.0, 0.0],
-                "distance": -5
-              }
-            },
-            "children": []
-          },
-          {
-            "model_index": 0,
-            "shader_index": 0,
-            "position": [5.0, 5.0, 0.0],
-            "rotation": [0.0, 0.0, 90.0],
-            "scale": [0.5, 0.5, 0.5],
-            "collider": {
-              "type": 3,
-              "dynamic": false,
-              "units": 10,
-              "data": {
-                "normal": [-1.0, 0.0, 0.0],
-                "distance": -5
-              }
-            },
-            "children": []
-          },
-          {
-            "model_index": 0,
-            "shader_index": 0,
-            "position": [0.0, 5.0, -5.0],
-            "rotation": [90.0, 0.0, 0.0],
-            "scale": [0.5, 0.5, 0.5],
-            "collider": {
-              "type": 3,
-              "dynamic": false,
-              "units": 10,
-              "data": {
-                "normal": [0.0, 0.0, 1.0],
-                "distance": -5
-              }
-            },
-            "children": []
-          },
-          {
-            "model_index": 0,
-            "shader_index": 0,
-            "position": [0.0, 5.0, 5.0],
-            "rotation": [-90.0, 0.0, 0.0],
-            "scale": [0.5, 0.5, 0.5],
-            "collider": {
-              "type": 3,
-              "dynamic": false,
-              "units": 10,
-              "data": {
-                "normal": [0.0, 0.0, -1.0],
-                "distance": -5
-              }
-            },
-            "children": []
-          }
-
         ]
       }
     ]
