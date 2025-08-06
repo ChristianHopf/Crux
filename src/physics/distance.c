@@ -194,6 +194,9 @@ float min_dist_at_time_AABB_capsule(struct PhysicsBody *body_A, struct PhysicsBo
   vec3 pq;
   glm_vec3_sub(q, closest_point, pq);
   float distance = glm_vec3_norm(pq);
+  // if (body_B->scene_node){
+  //   printf("MINIMUM DISTANCE %f\n", glm_max(distance - world_capsule.radius, 0));
+  // }
   // printf("Min dist between AABB and capsule is %f\n", glm_max(distance - world_capsule.radius, 0));
   return glm_max(distance - world_capsule.radius, 0);
 }

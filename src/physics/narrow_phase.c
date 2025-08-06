@@ -257,26 +257,6 @@ struct CollisionResult narrow_phase_AABB_capsule(struct PhysicsBody *body_AABB, 
     glm_mat4_mulv3(body_capsule->scene_node->world_transform, capsule->segment_B, 1.0f, world_capsule.segment_B);
   }
 
-  // AABB local transform update
-  mat4 eulerA;
-  mat3 rotationA;
-  // glm_euler_xyz(body_AABB->rotation, eulerA);
-  // glm_mat4_pick3(eulerA, rotationA);
-  // vec3 translationA, scaleA;
-  // glm_vec3_copy(body_AABB->position, translationA);
-  // glm_vec3_copy(body_AABB->scale, scaleA);
-  // AABB_update(&world_AABB, rotationA, translationA, scaleA, &world_AABB_final);
-  //
-  // Get world space capsule
-  // glm_vec3_scale(capsule->segment_A, body_capsule->scale[0], world_capsule.segment_A);
-  // glm_vec3_scale(capsule->segment_B, body_capsule->scale[0], world_capsule.segment_B);
-  // vec3 rotatedA, rotatedB;
-  // glm_euler_xyz(body_capsule->rotation, eulerA);
-  // glm_mat4_pick3(eulerA, rotationA);
-  // glm_mat3_mulv(rotationA, world_capsule.segment_A, world_capsule.segment_A);
-  // glm_mat3_mulv(rotationA, world_capsule.segment_B, world_capsule.segment_B);
-  // glm_vec3_add(world_capsule.segment_A, body_capsule->position, world_capsule.segment_A);
-  // glm_vec3_add(world_capsule.segment_B, body_capsule->position, world_capsule.segment_B);
   world_capsule.radius = capsule->radius * body_capsule->scale[0];
 
   // Get distance from closest point on capsule segment to AABB
@@ -292,22 +272,12 @@ struct CollisionResult narrow_phase_AABB_capsule(struct PhysicsBody *body_AABB, 
   // Closest point on the segment is segment_A + segment vector scaled by t
   vec3 closest_point;
   glm_vec3_copy(world_capsule.segment_A, closest_point);
-  glm_vec3_muladds(segment, t, world_capsule.segment_A);
+  glm_vec3_muladds(segment, t, closest_point);
 
   // Closest point on the AABB is the segment's closest point clamped to AABB extents
   vec3 q, pq;
   for (int i = 0; i < 3; i++){
     q[i] = glm_clamp(closest_point[i], world_AABB_final.center[i] - world_AABB_final.extents[i], world_AABB_final.center[i] + world_AABB_final.extents[i]);
-  }
-  if (body_capsule->scene_node){
-    print_glm_vec3(capsule->segment_A, "NARROW PHASE CAPSULE SEGMENT A");
-    print_glm_vec3(world_capsule.segment_A, "WORLD CAPSULE SEGMENT A");
-    print_glm_vec3(closest_point, "CLOSEST POINT ON SEGMENT");
-    print_glm_vec3(q, "CLOSEST POINT ON AABB");
-    printf("Resolution initial aabb\n");
-    print_aabb(box);
-    printf("World space aabb\n");
-    print_aabb(&world_AABB_final);
   }
   glm_vec3_sub(q, closest_point, pq);
   float distance = glm_vec3_norm(pq) - world_capsule.radius;
@@ -322,7 +292,7 @@ struct CollisionResult narrow_phase_AABB_capsule(struct PhysicsBody *body_AABB, 
   // - term < 0 => capsule is moving towards the plane
   // - term == 0 => capsule is moving parallel to the plane
   if (discriminant == 0){
-    if (distance <= world_capsule.radius){
+    if (distance <= 0){
       result.hit_time = 0;
       result.colliding = true;
     }
@@ -333,19 +303,19 @@ struct CollisionResult narrow_phase_AABB_capsule(struct PhysicsBody *body_AABB, 
   }
   else{
     if (discriminant < 0){
-      // t = (r - ((n * C) - d)) / (n * v)
-      result.hit_time = (world_capsule.radius - distance) / pq_dot_v;
+      result.hit_time = distance / pq_dot_v;
+      // result.hit_time = (world_capsule.radius - distance) / pq_dot_v;
       result.colliding = (result.hit_time >= 0 && result.hit_time <= delta_time);
     }
     else{
-      // t = (-r - ((n * C) - d)) / (n * v)
-      result.hit_time = (-world_capsule.radius - distance) / pq_dot_v;
+      result.hit_time = distance / pq_dot_v;
+      // result.hit_time = (-world_capsule.radius - distance) / pq_dot_v;
       result.colliding = (result.hit_time >= 0 && result.hit_time <= delta_time);
     }
 
     // If hit_time is outside of interval, check if already colliding
     if (!result.colliding){
-      if (abs(distance) <= world_capsule.radius){
+      if (distance <= 0){
         result.hit_time = 0;
         result.colliding = true;
       }

@@ -206,6 +206,7 @@ void resolve_collision_AABB_sphere(struct PhysicsBody *body_A, struct PhysicsBod
 }
 
 void resolve_collision_AABB_capsule(struct PhysicsBody *body_A, struct PhysicsBody *body_B, struct CollisionResult result, float delta_time){
+  // printf("AABB CAPSULE COLLISION\n");
   struct AABB *box = &body_A->collider.data.aabb;
   struct Capsule *capsule = &body_B->collider.data.capsule;
 
@@ -299,16 +300,16 @@ void resolve_collision_AABB_capsule(struct PhysicsBody *body_A, struct PhysicsBo
   for (int i = 0; i < 3; i++){
     q[i] = glm_clamp(closest_point[i], world_AABB_final.center[i] - world_AABB_final.extents[i], world_AABB_final.center[i] + world_AABB_final.extents[i]);
   }
-  if (body_B->scene_node){
-    print_glm_vec3(capsule->segment_A, "RESOLUTION CAPSULE SEGMENT A");
-    print_glm_vec3(world_capsule.segment_A, "WORLD CAPSULE SEGMENT A");
-    print_glm_vec3(closest_point, "CLOSEST POINT ON SEGMENT");
-    print_glm_vec3(q, "CLOSEST POINT ON AABB");
-    printf("Resolution initial aabb\n");
-    print_aabb(box);
-    printf("World space aabb\n");
-    print_aabb(&world_AABB_final);
-  }
+  // if (body_B->scene_node){
+  //   print_glm_vec3(capsule->segment_A, "RESOLUTION CAPSULE SEGMENT A");
+  //   print_glm_vec3(world_capsule.segment_A, "WORLD CAPSULE SEGMENT A");
+  //   print_glm_vec3(closest_point, "CLOSEST POINT ON SEGMENT");
+  //   print_glm_vec3(q, "CLOSEST POINT ON AABB");
+  //   printf("Resolution initial aabb\n");
+  //   print_aabb(box);
+  //   printf("World space aabb\n");
+  //   print_aabb(&world_AABB_final);
+  // }
 
   glm_vec3_sub(q, closest_point, pq);
   float distance = glm_vec3_norm(pq);
@@ -318,9 +319,7 @@ void resolve_collision_AABB_capsule(struct PhysicsBody *body_A, struct PhysicsBo
   glm_vec3_normalize(pq);
   float pq_dot_v = glm_dot(body_B->velocity, pq);
   float penetration = distance < world_capsule.radius ? (world_capsule.radius - distance) + 0.0001f : 0.0f;
-  printf("RADIUS: %f\n", world_capsule.radius);
-  printf("DISTANCE: %f\n", distance);
-  printf("PENETRATION: %f\n", penetration);
+
   if (penetration <= 0.0f) return;
 
   // TODO Do penetration correction and velocity updates based on whether
@@ -338,6 +337,7 @@ void resolve_collision_AABB_capsule(struct PhysicsBody *body_A, struct PhysicsBo
 
   // If velocity along the normal is very small,
   // and the normal is opposite gravity, stop (eventually, spheres should be able to roll)
+  glm_vec3_negate(pq);
   v_dot_pq = glm_dot(body_B->velocity, pq);
   if (v_dot_pq < 0.5 && glm_dot(pq, (vec3){0.0f, -1.0f, 0.0f}) < 0){
     glm_vec3_zero(body_B->velocity);
