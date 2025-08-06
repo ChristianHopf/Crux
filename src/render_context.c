@@ -322,7 +322,7 @@ void scene_get_render_items(
       render_item.shader = entity->shader;
 
       // World transform
-      glm_mat4_copy(scene_node->local_transform, render_item.transform);
+      glm_mat4_copy(scene_node->world_transform, render_item.transform);
 
       // Get mesh depth: magnitude of difference between camera pos and mesh center
       // print_glm_vec3(camera_pos, "sort_render_items camera position");

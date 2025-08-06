@@ -223,6 +223,7 @@ struct CollisionResult narrow_phase_AABB_capsule(struct PhysicsBody *body_AABB, 
   }
   // Player capsule
   else{
+    printf("NARROW PHASE PLAYER\n");
     // Scale
     glm_vec3_scale(capsule->segment_A, body_capsule->scale[0], world_capsule.segment_A);
     glm_vec3_scale(capsule->segment_B, body_capsule->scale[0], world_capsule.segment_B);

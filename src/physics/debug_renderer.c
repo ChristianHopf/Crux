@@ -47,13 +47,18 @@ void physics_debug_render(struct PhysicsWorld *physics_world, struct RenderConte
       case COLLIDER_CAPSULE:
         struct Capsule *capsule = &body->collider.data.capsule;
 
-        glm_translate(model, body->position);
-        glm_rotate_y(model, glm_rad(body->rotation[1]), model);
-        glm_rotate_x(model, glm_rad(body->rotation[0]), model);
-        glm_rotate_z(model, glm_rad(body->rotation[2]), model);
-        glm_scale(model, body->scale);
+        if (body->scene_node){
+          physics_debug_capsule_render(capsule, context, body->scene_node->world_transform);
+        }
+        else{
+          glm_translate(model, body->position);
+          glm_rotate_y(model, glm_rad(body->rotation[1]), model);
+          glm_rotate_x(model, glm_rad(body->rotation[0]), model);
+          glm_rotate_z(model, glm_rad(body->rotation[2]), model);
+          glm_scale(model, body->scale);
+          physics_debug_capsule_render(capsule, context, model);
+        }
 
-        physics_debug_capsule_render(capsule, context, model);
         break;
       case COLLIDER_PLANE:
         // debug_plane_render(body);
@@ -85,7 +90,7 @@ void physics_debug_render(struct PhysicsWorld *physics_world, struct RenderConte
         glm_rotate_z(model, glm_rad(body->rotation[2]), model);
         glm_scale(model, body->scale);
 
-        physics_debug_AABB_render(box, context, body->scene_node->local_transform);
+        physics_debug_AABB_render(box, context, body->scene_node->world_transform);
         break;
       case COLLIDER_SPHERE:
         struct Sphere *sphere = &body->collider.data.sphere;
@@ -640,7 +645,6 @@ void physics_debug_AABB_render(struct AABB *aabb, struct RenderContext *context,
   mat4 identity;
   glm_mat4_identity(identity);
   shader_set_mat4(wireframeShader, "model", identity);
-  print_glm_mat4(model, "AABB RENDER WORLD TRANSFORM");
   // shader_set_mat4(wireframeShader, "view", context->view_ptr);
   // shader_set_mat4(wireframeShader, "projection", context->projection_ptr);
   struct AABB world_AABB = {0};
@@ -653,10 +657,7 @@ void physics_debug_AABB_render(struct AABB *aabb, struct RenderContext *context,
     glm_mat3_scale(rotation_mat3, 1.0f / world_scale[0]);
   }
   AABB_update(aabb, rotation_mat3, world_position, world_scale, &world_AABB);
-  printf("AABB being used to get vertices\n");
-  print_aabb(aabb);
-  printf("World AABB\n");
-  print_aabb(&world_AABB);
+
   // Buffer new vertex data
   float vertices[24] = {
     world_AABB.center[0] + world_AABB.extents[0], world_AABB.center[1] + world_AABB.extents[1], world_AABB.center[2] + world_AABB.extents[2],

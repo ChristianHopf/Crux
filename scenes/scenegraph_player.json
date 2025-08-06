@@ -1,0 +1,67 @@
+{
+	"shaders": [
+		{
+			"vertex": "shaders/shader.vs",
+			"fragment": "shaders/dirlight/shader.fs"
+		}
+	],
+	"models": [
+		"resources/basic/grass_plane/grass_plane.gltf",
+		"resources/objects/wizard/WizardusMaximus.glb"
+	],
+  "sounds": {
+    "music": "resources/music/mookid.wav",
+    "effects": [
+      "resources/sfx/vineboom.wav"
+    ]
+  },
+	"nodes": {
+    "model_index": -1,
+    "shader_index": -1,
+    "position": [0.0, 0.0, 0.0],
+    "rotation": [0.0, 0.0, 0.0],
+    "scale": [1.0, 1.0, 1.0],
+    "collider": null,
+    "children": [
+      {
+        "model_index": -1,
+        "shader_index": -1,
+        "position": [0.0, 0.0, 15.0],
+        "rotation": [0.0, 0.0, 0.0],
+        "scale": [1.0, 1.0, 1.0],
+        "collider": null,
+        "children": [
+          {
+            "model_index": 0,
+            "shader_index": 0,
+            "position": [0.0, 0.0, 0.0],
+            "rotation": [0.0, 0.0, 0.0],
+            "scale": [0.5, 0.5, 0.5],
+            "collider": {
+              "type": 0,
+              "dynamic": false,
+              "units": 10,
+              "data": {
+                "center": [0.0, -0.5, 0.0],
+                "extents": [10.0, 1.0, 10.0]
+              }
+            },
+            "children": []
+          }
+        ]
+      }
+    ]
+  },
+	"lights": [
+		{
+			"type": "directional",
+			"data": {
+				"direction": [-0.2, 0.0, -0.3],
+				"ambient": [0.5, 0.5, 0.5],
+				"diffuse": [0.8, 0.8, 0.8],
+				"specular": [1.0, 1.0, 1.0]
+			}
+		}
+	],
+	"skybox": "resources/skybox/"
+}

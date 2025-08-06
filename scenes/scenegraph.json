@@ -26,6 +26,33 @@
       {
         "model_index": -1,
         "shader_index": -1,
+        "position": [0.0, 0.0, 15.0],
+        "rotation": [0.0, 0.0, 0.0],
+        "scale": [1.0, 1.0, 1.0],
+        "collider": null,
+        "children": [
+          {
+            "model_index": 0,
+            "shader_index": 0,
+            "position": [0.0, 0.0, 0.0],
+            "rotation": [0.0, 0.0, 0.0],
+            "scale": [0.5, 0.5, 0.5],
+            "collider": {
+              "type": 0,
+              "dynamic": false,
+              "units": 10,
+              "data": {
+                "center": [0.0, -0.5, 0.0],
+                "extents": [10.0, 1.0, 10.0]
+              }
+            },
+            "children": []
+          }
+        ]
+      },
+      {
+        "model_index": -1,
+        "shader_index": -1,
         "position": [0.0, 0.0, 0.0],
         "rotation": [0.0, 0.0, 0.0],
         "scale": [1.0, 1.0, 1.0],

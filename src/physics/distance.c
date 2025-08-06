@@ -121,6 +121,8 @@ float min_dist_at_time_AABB_capsule(struct PhysicsBody *body_A, struct PhysicsBo
       glm_mat3_scale(rotation_mat3, 1.0f / world_scale[0]);
     }
     AABB_update(box, rotation_mat3, world_position, world_scale, &world_AABB_final);
+    printf("WORLD AABB FINAL\n");
+    print_aabb(&world_AABB_final);
   }
   else{
     world_AABB = *box;
@@ -129,11 +131,10 @@ float min_dist_at_time_AABB_capsule(struct PhysicsBody *body_A, struct PhysicsBo
     // Transform capsule
     glm_mat4_mulv3(body_B->scene_node->world_transform, capsule->segment_A, 1.0f, world_capsule.segment_A);
     glm_mat4_mulv3(body_B->scene_node->world_transform, capsule->segment_B, 1.0f, world_capsule.segment_B);
-    glm_vec3_muladds(body_B->velocity, time, world_capsule.segment_A);
-    glm_vec3_muladds(body_B->velocity, time, world_capsule.segment_B);
   }
   // Player capsule
   else{
+    printf("MIN DIST PLAYER\n");
     // Scale
     glm_vec3_scale(capsule->segment_A, body_B->scale[0], world_capsule.segment_A);
     glm_vec3_scale(capsule->segment_B, body_B->scale[0], world_capsule.segment_B);
@@ -149,7 +150,12 @@ float min_dist_at_time_AABB_capsule(struct PhysicsBody *body_A, struct PhysicsBo
     glm_vec3_add(world_capsule.segment_B, body_B->position, world_capsule.segment_B);
   }
 
+  glm_vec3_muladds(body_B->velocity, time, world_capsule.segment_A);
+  glm_vec3_muladds(body_B->velocity, time, world_capsule.segment_B);
   world_capsule.radius = capsule->radius * body_B->scale[0];
+  if (!body_B->scene_node){
+    print_glm_vec3(world_capsule.segment_A, "World capsule segment A");
+  }
 
   // Find closest point on segment to AABB center
   vec3 segment, A_to_center;
@@ -175,9 +181,9 @@ float min_dist_at_time_AABB_capsule(struct PhysicsBody *body_A, struct PhysicsBo
   vec3 pq;
   glm_vec3_sub(q, closest_point, pq);
   float distance = glm_vec3_norm(pq);
-  // if (body_B->scene_node){
-  //   printf("MINIMUM DISTANCE %f\n", glm_max(distance - world_capsule.radius, 0));
-  // }
+  if (!body_B->scene_node){
+    printf("MINIMUM DISTANCE %f\n", glm_max(distance - world_capsule.radius, 0));
+  }
   // printf("Min dist between AABB and capsule is %f\n", glm_max(distance - world_capsule.radius, 0));
   return glm_max(distance - world_capsule.radius, 0);
 }

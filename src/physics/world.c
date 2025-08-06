@@ -99,13 +99,13 @@ struct PhysicsBody *body;
   euler_degrees[2] = glm_deg(euler_radians[2]); // Yaw (Z)
 
 
-  glm_vec3_copy(world_position, body->position);
-  glm_vec3_copy(euler_degrees, body->rotation);
-  glm_vec3_copy(world_scale, body->scale);
+  // glm_vec3_copy(world_position, body->position);
+  // glm_vec3_copy(euler_degrees, body->rotation);
+  // glm_vec3_copy(world_scale, body->scale);
 
-  // glm_vec3_copy(entity->position, body->position);
-  // glm_vec3_copy(entity->rotation, body->rotation);
-  // glm_vec3_copy(entity->scale, body->scale);
+  glm_vec3_copy(entity->position, body->position);
+  glm_vec3_copy(entity->rotation, body->rotation);
+  glm_vec3_copy(entity->scale, body->scale);
   body->collider = collider;
   body->restitution = restitution;
   body->entity = entity;
