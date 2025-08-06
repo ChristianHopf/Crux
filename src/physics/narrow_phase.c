@@ -193,7 +193,120 @@ struct CollisionResult narrow_phase_AABB_sphere(struct PhysicsBody *body_AABB, s
 }
 
 struct CollisionResult narrow_phase_AABB_capsule(struct PhysicsBody *body_AABB, struct PhysicsBody *body_capsule, float delta_time){
+  struct AABB *box = &body_AABB->collider.data.aabb;
+  struct Capsule *capsule = &body_capsule->collider.data.capsule;
+  struct CollisionResult result = {0};
 
+  struct AABB world_AABB = {0};
+  struct AABB world_AABB_final = {0};
+  struct Capsule world_capsule = {0};
+
+  // Apply world transform to bodies
+  if (body_AABB->scene_node){
+    vec3 world_position, world_rotation, world_scale;
+    glm_mat4_mulv3(body_AABB->scene_node->world_transform, (vec3){0.0f, 0.0f, 0.0f}, 1.0f, world_position);
+    glm_decompose_scalev(body_AABB->scene_node->world_transform, world_scale);
+    mat3 rotation_mat3;
+    glm_mat4_pick3(body_AABB->scene_node->world_transform, rotation_mat3);
+    if (world_scale[0] != 0.0f){
+      glm_mat3_scale(rotation_mat3, 1.0f / world_scale[0]);
+    }
+    AABB_update(box, rotation_mat3, world_position, world_scale, &world_AABB_final);
+  }
+  else{
+    world_AABB = *box;
+  }
+  if (body_capsule->scene_node){
+    // Transform capsule
+    glm_mat4_mulv3(body_capsule->scene_node->world_transform, capsule->segment_A, 1.0f, world_capsule.segment_A);
+    glm_mat4_mulv3(body_capsule->scene_node->world_transform, capsule->segment_B, 1.0f, world_capsule.segment_B);
+  }
+  // Player capsule
+  else{
+    // Scale
+    glm_vec3_scale(capsule->segment_A, body_capsule->scale[0], world_capsule.segment_A);
+    glm_vec3_scale(capsule->segment_B, body_capsule->scale[0], world_capsule.segment_B);
+    // Rotate
+    mat4 eulerA;
+    mat3 rotationA;
+    vec3 rotatedA, rotatedB;
+    glm_euler_xyz(body_capsule->rotation, eulerA);
+    glm_mat4_pick3(eulerA, rotationA);
+    glm_mat3_mulv(rotationA, world_capsule.segment_A, world_capsule.segment_A);
+    glm_mat3_mulv(rotationA, world_capsule.segment_B, world_capsule.segment_B);
+    glm_vec3_add(world_capsule.segment_A, body_capsule->position, world_capsule.segment_A);
+    glm_vec3_add(world_capsule.segment_B, body_capsule->position, world_capsule.segment_B);
+  }
+
+  world_capsule.radius = capsule->radius * body_capsule->scale[0];
+
+  // Get distance from closest point on capsule segment to AABB
+  // Find closest point on segment to AABB center
+  vec3 segment, A_to_center;
+  glm_vec3_sub(world_capsule.segment_B, world_capsule.segment_A, segment);
+  glm_vec3_sub(world_AABB_final.center, world_capsule.segment_A, A_to_center);
+  float proj = glm_dot(segment, A_to_center);
+  // Normalize projection of A->center onto segment, clamp between 0 and 1
+  float t = proj / glm_dot(segment, segment);
+  t = glm_clamp(t, 0.0f, 1.0f);
+
+  // Closest point on the segment is segment_A + segment vector scaled by t
+  vec3 closest_point;
+  glm_vec3_copy(world_capsule.segment_A, closest_point);
+  glm_vec3_muladds(segment, t, closest_point);
+
+  // Closest point on the AABB is the segment's closest point clamped to AABB extents
+  vec3 q, pq;
+  for (int i = 0; i < 3; i++){
+    q[i] = glm_clamp(closest_point[i], world_AABB_final.center[i] - world_AABB_final.extents[i], world_AABB_final.center[i] + world_AABB_final.extents[i]);
+  }
+  glm_vec3_sub(q, closest_point, pq);
+  float distance = glm_vec3_norm(pq) - world_capsule.radius;
+
+  // Compute discriminant of relative velocity along PQ
+  // (vector from closest point on capsule to closest point on AABB)
+  glm_vec3_normalize(pq);
+  float pq_dot_v = glm_dot(body_capsule->velocity, pq);
+  float discriminant = distance * pq_dot_v;
+
+  // - term > 0 => capsule is moving away from the AABB
+  // - term < 0 => capsule is moving towards the plane
+  // - term == 0 => capsule is moving parallel to the plane
+  if (discriminant == 0){
+    if (distance <= 0){
+      result.hit_time = 0;
+      result.colliding = true;
+    }
+    else{
+      result.hit_time = -1;
+      result.colliding = false;
+    }
+  }
+  else{
+    if (discriminant < 0){
+      result.hit_time = distance / pq_dot_v;
+      // result.hit_time = (world_capsule.radius - distance) / pq_dot_v;
+      result.colliding = (result.hit_time >= 0 && result.hit_time <= delta_time);
+    }
+    else{
+      result.hit_time = distance / pq_dot_v;
+      // result.hit_time = (-world_capsule.radius - distance) / pq_dot_v;
+      result.colliding = (result.hit_time >= 0 && result.hit_time <= delta_time);
+    }
+
+    // If hit_time is outside of interval, check if already colliding
+    if (!result.colliding){
+      if (distance <= 0){
+        result.hit_time = 0;
+        result.colliding = true;
+      }
+      else{
+        result.hit_time = -1;
+      }
+    }
+  }
+
+  return result;
 }
 
 struct CollisionResult narrow_phase_AABB_plane(struct PhysicsBody *body_AABB, struct PhysicsBody *body_plane, float delta_time){
@@ -453,6 +566,29 @@ struct CollisionResult narrow_phase_capsule_plane(struct PhysicsBody *body_capsu
 
   // Get world space capsule
   struct Capsule world_capsule = {0};
+  struct Plane world_plane = {0};
+  // Apply world transform to capsule segments
+  if (body_capsule->scene_node){
+    glm_mat4_mulv3(body_capsule->scene_node->world_transform, capsule->segment_A, 1.0f, world_capsule.segment_A);
+    glm_mat4_mulv3(body_capsule->scene_node->world_transform, capsule->segment_B, 1.0f, world_capsule.segment_B);
+  }
+  if (body_plane->scene_node){
+    mat3 rotation_mat3;
+    vec3 world_position, world_rotation, world_scale;
+    // Plane normal and distance include an already-applied local transformation
+    glm_mat4_mulv3(body_plane->scene_node->parent_node->world_transform, (vec3){0.0f, 0.0f, 0.0f}, 1.0f, world_position);
+    glm_decompose_scalev(body_plane->scene_node->parent_node->world_transform, world_scale);
+    glm_mat4_pick3(body_plane->scene_node->parent_node->world_transform, rotation_mat3);
+    if (world_scale[0] != 0.0f){
+      glm_mat3_scale(rotation_mat3, 1.0f / world_scale[0]);
+    }
+
+    // Transform plane
+    glm_mat3_mulv(rotation_mat3, plane->normal, world_plane.normal);
+    glm_vec3_normalize(world_plane.normal);
+    world_plane.distance = (plane->distance) + glm_vec3_dot(world_position, world_plane.normal);
+  }
+
   glm_vec3_scale(capsule->segment_A, body_capsule->scale[0], world_capsule.segment_A);
   glm_vec3_scale(capsule->segment_B, body_capsule->scale[0], world_capsule.segment_B);
   mat4 eulerA;
@@ -468,21 +604,21 @@ struct CollisionResult narrow_phase_capsule_plane(struct PhysicsBody *body_capsu
   world_capsule.radius = capsule->radius * body_capsule->scale[0];
 
   // Get distance from closest point on capsule to plane
-  float n_dot_A = glm_dot(plane->normal, world_capsule.segment_A);
+  float n_dot_A = glm_dot(world_plane.normal, world_capsule.segment_A);
   vec3 segment;
   glm_vec3_sub(world_capsule.segment_B, world_capsule.segment_A, segment);
-  float n_dot_segment = glm_dot(plane->normal, segment);
+  float n_dot_segment = glm_dot(world_plane.normal, segment);
 
   vec3 closest_point;
-  float t = (plane->distance - n_dot_A) / n_dot_segment;
+  float t = (world_plane.distance - n_dot_A) / n_dot_segment;
   if (t <= 0) glm_vec3_copy(world_capsule.segment_A, closest_point);
   else if (t >= 1) glm_vec3_copy(world_capsule.segment_B, closest_point);
   else glm_vec3_lerp(world_capsule.segment_A, world_capsule.segment_B, t, closest_point);
 
-  float s = glm_dot(closest_point, plane->normal) - plane->distance;
+  float s = glm_dot(closest_point, world_plane.normal) - world_plane.distance;
 
   // Get velocity along normal
-  float n_dot_v = glm_dot(body_capsule->velocity, plane->normal);
+  float n_dot_v = glm_dot(body_capsule->velocity, world_plane.normal);
 
   // Compute product of signed distance and normal velocity
   float discriminant = s * n_dot_v;

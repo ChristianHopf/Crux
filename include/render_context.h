@@ -27,13 +27,12 @@ struct RenderContext {
 
 // Rendering
 void draw_render_items(struct RenderItem *render_items, unsigned int num_render_items, struct RenderContext *context);
-void entity_render(struct Entity *entity, struct RenderContext *context);
 void skybox_render(struct Skybox *skybox, struct RenderContext *context);
 
 // RenderItems functions
-void sort_render_items(
-  struct Entity *entities,
-  unsigned int num_entities,
+void scene_get_render_item_count(struct SceneNode *scene_node, unsigned int *num_render_items);
+void scene_get_render_items(
+  struct SceneNode *scene_node,
   vec3 camera_pos,
   struct RenderItem **opaque_items, unsigned int *num_opaque_items,
   struct RenderItem **mask_items, unsigned int *num_mask_items,

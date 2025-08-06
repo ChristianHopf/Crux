@@ -53,6 +53,7 @@ vec3 lightPos = {1.2f, 0.5f, 2.0f};
 static int last_space_state = GLFW_RELEASE;
 void processInput(GLFWwindow *window){
   Engine *engine = (Engine *)glfwGetWindowUserPointer(window);
+
   // Camera movement
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS){
     player_process_keyboard_input(&engine->active_scene->player, CAMERA_FORWARD, engine->delta_time);
@@ -229,7 +230,7 @@ Engine *engine_create(){
   attach_observer(ui_game_state_observer);
 
   // Load scene
-  engine->active_scene = scene_init("scenes/wizard.json");
+  engine->active_scene = scene_init("scenes/scenegraph3.json");
   if (!engine->active_scene){
     fprintf(stderr, "Error: failed to create scene\n");
     free(engine);
@@ -306,14 +307,6 @@ int main(){
 
   // Teardown
   audio_manager_free();
-  // struct AudioManager *audio_manager = audio_manager_get_global();
-  // if (audio_manager->audio_stream){
-  //   audio_stream_destroy(audio_manager->audio_stream);
-  // }
-  // alcDestroyContext(audio_manager->context);
-  // alcCloseDevice(audio_manager->device);
-  // free(audio_manager);
-
   engine_free(engine);
   glfwTerminate();
 

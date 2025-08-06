@@ -108,51 +108,6 @@ void draw_render_items(struct RenderItem *render_items, unsigned int num_render_
   glBindVertexArray(0);
 }
 
-
-void entity_render(struct Entity *entity, struct RenderContext *context){
-  shader_use(entity->shader);
-
-  // Get its model matrix
-  mat4 model;
-  glm_mat4_identity(model);
-  // Translate
-  glm_translate(model, entity->position);
-  // Rotate
-  vec3 rotation_radians = {glm_rad(entity->rotation[0]), glm_rad(entity->rotation[1]), glm_rad(entity->rotation[2])};
-  mat4 rotation;
-  glm_euler_xyz(rotation_radians, rotation);
-  glm_mul(model, rotation, model);
-  // glm_rotate_x(model, glm_rad(entity->rotation[0]), model);
-  // glm_rotate_y(model, glm_rad(entity->rotation[1]), model);
-  // glm_rotate_z(model, glm_rad(entity->rotation[2]), model);
-  // Scale
-  glm_scale(model, entity->scale);
-
-  // Set normal matrix uniform
-  mat3 transposed_mat3;
-  mat3 normal;
-  glm_mat4_pick3t(model, transposed_mat3);
-  glm_mat3_inv(transposed_mat3, normal);
-  shader_set_mat3(entity->shader, "normal", normal);
-
-  // Set its model, view, and projection matrix uniforms
-  shader_set_mat4(entity->shader, "model", model);
-  // shader_set_mat4(entity->shader, "view", context->view_ptr);
-  // shader_set_mat4(entity->shader, "projection", context->projection_ptr);
-
-  // Lighting uniforms
-  shader_set_vec3(entity->shader, "dirLight.direction", context->light_ptr->direction);
-  shader_set_vec3(entity->shader, "dirLight.ambient", context->light_ptr->ambient);
-  shader_set_vec3(entity->shader, "dirLight.diffuse", context->light_ptr->diffuse);
-  shader_set_vec3(entity->shader, "dirLight.specular", context->light_ptr->specular);
-
-  // Set camera position as viewPos in the fragment shader
-  shader_set_vec3(entity->shader, "viewPos", *context->camera_position_ptr);
-
-  // Draw model
-  model_draw(entity->model, entity->shader);
-}
-
 void skybox_render(struct Skybox *skybox, struct RenderContext *context){
   // Modify depth test to render skybox "at the edge"
   glDepthFunc(GL_LEQUAL);
@@ -181,53 +136,31 @@ void skybox_render(struct Skybox *skybox, struct RenderContext *context){
   glDepthFunc(GL_LESS);
 }
 
-void sort_render_items(
-  struct Entity *entities,
-  unsigned int num_entities,
+// First draft algorithm:
+// - traverse the graph to get the total number of meshes, allocate RenderItem arrays as above
+// - pass allocated arrays as arguments to scene_get_render_items
+// - process current node's entity
+// - process current node's children
+void scene_get_render_item_count(struct SceneNode *scene_node, unsigned int *num_render_items){
+  // Get this node's meshes
+  if (scene_node->entity){
+    *num_render_items += scene_node->entity->model->num_meshes;
+  }
+  for (unsigned int i = 0; i < scene_node->num_children; i++){
+    scene_get_render_item_count(scene_node->children[i], num_render_items);
+  }
+}
+void scene_get_render_items(
+  struct SceneNode *scene_node,
   vec3 camera_pos,
   struct RenderItem **opaque_items, unsigned int *num_opaque_items,
   struct RenderItem **mask_items, unsigned int *num_mask_items,
   struct RenderItem **transparent_items, unsigned int *num_transparent_items,
   struct RenderItem **additive_items, unsigned int *num_additive_items)
 {
-  // Total number of items is the number of meshes for each Entity
-  unsigned int num_items = 0;
-  for (unsigned int i = 0; i < num_entities; i++){
-    num_items += entities[i].model->num_meshes;
-  }
-
-  // Allocate memory for each array of RenderItems (could maybe optimize by somehow figuring out the number for each array beforehand)
-  *opaque_items = (struct RenderItem *)malloc(num_items * sizeof(struct RenderItem));
-  if (!opaque_items){
-    fprintf(stderr, "Error: failed to allocate opaque RenderItems in sort_render_items\n");
-    // When rendering, make sure to check whether opaque_items is valid before trying to render them
-  }
-  *mask_items = (struct RenderItem *)malloc(num_items * sizeof(struct RenderItem));
-  if (!mask_items){
-    fprintf(stderr, "Error: failed to allocate mask RenderItems in sort_render_items\n");
-  }
-  *transparent_items = (struct RenderItem *)malloc(num_items * sizeof(struct RenderItem));
-  if (!transparent_items){
-    fprintf(stderr, "Error: failed to allocate transparent RenderItems in sort_render_items\n");
-  }
-  *additive_items = (struct RenderItem *)malloc(num_items * sizeof(struct RenderItem));
-  if (!additive_items){
-    fprintf(stderr, "Error: failed to allocate additive RenderItems in sort_render_items\n");
-  }
-  // printf("Successfully allocated RenderItem arrays\n");
-  // Zero length of each array
-  *num_opaque_items = 0;
-  *num_mask_items = 0;
-  *num_transparent_items = 0;
-  *num_additive_items = 0;
-
-  // For each Entity, get its Model
-  // For each of the Model's Meshes, create a RenderItem:
-  // - pointer to mesh
-  // - transform (Entity's model matrix)
-  // - get depth as distance from camera to mesh (think I need the center, aiMesh has an aiAABB, can probably get it from that)
-  for (unsigned int i = 0; i < num_entities; i++){
-    struct Entity *entity = &entities[i];
+  if (scene_node->entity){
+    // Get this node's RenderItems
+    struct Entity *entity = scene_node->entity;
     struct Model *model = entity->model;
 
     for (unsigned int j = 0; j < model->num_meshes; j++){
@@ -235,24 +168,16 @@ void sort_render_items(
 
       struct RenderItem render_item;
       render_item.mesh = mesh;
-      // Would be nice for the mesh struct to have a reference to its Material, rather than just the material index. For now, giving it a reference to its model works.
       render_item.model = model;
       render_item.shader = entity->shader;
 
-      // Compute transform from the Entity's position, rotation, and scale
-      glm_mat4_identity(render_item.transform);
-      glm_translate(render_item.transform, entity->position);
-      vec3 rotation_radians = {glm_rad(entity->rotation[0]), glm_rad(entity->rotation[1]), glm_rad(entity->rotation[2])};
-      mat4 rotation;
-      glm_euler_xyz(rotation_radians, rotation);
-      glm_mul(render_item.transform, rotation, render_item.transform);
-      glm_scale(render_item.transform, entity->scale);
+      // World transform
+      glm_mat4_copy(scene_node->world_transform, render_item.transform);
 
       // Get mesh depth: magnitude of difference between camera pos and mesh center
       // print_glm_vec3(camera_pos, "sort_render_items camera position");
       vec3 world_mesh_center, difference;
       glm_mat4_mulv3(render_item.transform, mesh->center, 1.0f, world_mesh_center);
-      // glm_vec3_copy(world_mesh_center, mesh->center);
       glm_vec3_sub(camera_pos, world_mesh_center, difference);
       render_item.depth = glm_vec3_norm(difference);
 
@@ -279,12 +204,12 @@ void sort_render_items(
           break;
         }
       }
-    }
+    } 
   }
-
-  // Sort transparent_items back to front
-  qsort(*transparent_items, *num_transparent_items, sizeof(struct RenderItem), compare_render_item_depth);
-  // printf("Successfully sorted %d transparent_items\n", *num_transparent_items);
+  
+  for (unsigned int i = 0; i < scene_node->num_children; i++){
+    scene_get_render_items(scene_node->children[i], camera_pos, opaque_items, num_opaque_items, mask_items, num_mask_items, transparent_items, num_transparent_items, additive_items, num_additive_items);
+  }
 }
 
 // Helper for sorting transparent RenderItems by depth

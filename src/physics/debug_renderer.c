@@ -30,7 +30,7 @@ void physics_debug_render(struct PhysicsWorld *physics_world, struct RenderConte
         glm_rotate_z(model, glm_rad(body->rotation[2]), model);
         glm_scale(model, body->scale);
 
-        physics_debug_AABB_render(box, context, model);
+        physics_debug_AABB_render(box, context, body->scene_node->world_transform);
         break;
       case COLLIDER_SPHERE:
         struct Sphere *sphere = &body->collider.data.sphere;
@@ -47,13 +47,18 @@ void physics_debug_render(struct PhysicsWorld *physics_world, struct RenderConte
       case COLLIDER_CAPSULE:
         struct Capsule *capsule = &body->collider.data.capsule;
 
-        glm_translate(model, body->position);
-        glm_rotate_y(model, glm_rad(body->rotation[1]), model);
-        glm_rotate_x(model, glm_rad(body->rotation[0]), model);
-        glm_rotate_z(model, glm_rad(body->rotation[2]), model);
-        glm_scale(model, body->scale);
+        if (body->scene_node){
+          physics_debug_capsule_render(capsule, context, body->scene_node->world_transform);
+        }
+        else{
+          glm_translate(model, body->position);
+          glm_rotate_y(model, glm_rad(body->rotation[1]), model);
+          glm_rotate_x(model, glm_rad(body->rotation[0]), model);
+          glm_rotate_z(model, glm_rad(body->rotation[2]), model);
+          glm_scale(model, body->scale);
+          physics_debug_capsule_render(capsule, context, model);
+        }
 
-        physics_debug_capsule_render(capsule, context, model);
         break;
       case COLLIDER_PLANE:
         // debug_plane_render(body);
@@ -68,6 +73,7 @@ void physics_debug_render(struct PhysicsWorld *physics_world, struct RenderConte
     struct PhysicsBody *body = &physics_world->static_bodies[i];
 
     glBindVertexArray(body->VAO);
+    glBindBuffer(GL_ARRAY_BUFFER, body->VBO);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, body->EBO);
 
     mat4 model;
@@ -84,7 +90,7 @@ void physics_debug_render(struct PhysicsWorld *physics_world, struct RenderConte
         glm_rotate_z(model, glm_rad(body->rotation[2]), model);
         glm_scale(model, body->scale);
 
-        physics_debug_AABB_render(box, context, model);
+        physics_debug_AABB_render(box, context, body->scene_node->world_transform);
         break;
       case COLLIDER_SPHERE:
         struct Sphere *sphere = &body->collider.data.sphere;
@@ -155,7 +161,7 @@ void physics_debug_render(struct PhysicsWorld *physics_world, struct RenderConte
 
         glBindVertexArray(body->VAO);
         glBindBuffer(GL_ARRAY_BUFFER, body->VBO);
-        physics_debug_AABB_render(&rotated_AABB, context, model);
+        physics_debug_AABB_render(&rotated_AABB, context, body->scene_node->world_transform);
         break;
       case COLLIDER_SPHERE:
         struct Sphere *sphere = &body->collider.data.sphere;
@@ -182,7 +188,8 @@ void physics_debug_render(struct PhysicsWorld *physics_world, struct RenderConte
         glm_rotate_z(model, glm_rad(body->rotation[2]), model);
         glm_scale(model, body->scale);
 
-        physics_debug_capsule_render(capsule, context, model);
+        physics_debug_capsule_render(capsule, context, body->scene_node->world_transform);
+        // physics_debug_capsule_render(capsule, context, model);
         break;
       case COLLIDER_PLANE:
         // debug_plane_render(body);
@@ -443,11 +450,28 @@ void physics_debug_capsule_init(struct PhysicsBody *body){
     return;
   }
 
+  // Transform capsule to world space
   struct Capsule *capsule = &body->collider.data.capsule;
+  struct Capsule world_capsule = {0};
+  // TODO give Player a SceneNode
+  // if (body->scene_node){
+  //   print_glm_mat4(body->scene_node->world_transform, "capsule init world transform");
+  //   glm_mat4_mulv3(body->scene_node->world_transform, capsule->segment_A, 1.0f, world_capsule.segment_A);
+  //   glm_mat4_mulv3(body->scene_node->world_transform, capsule->segment_B, 1.0f, world_capsule.segment_B);
+  //   vec3 world_scale;
+  //   glm_decompose_scalev(body->scene_node->parent_node->world_transform, world_scale);
+  //   world_capsule.radius  = capsule->radius * world_scale[0];
+  // }
+  // else{
+    glm_vec3_copy(capsule->segment_A, world_capsule.segment_A);
+    glm_vec3_copy(capsule->segment_B, world_capsule.segment_B);
+    world_capsule.radius = capsule->radius;
+  // }
 
   // Get axis and length of cylinder
   vec3 axis;
-  glm_vec3_sub(capsule->segment_B, capsule->segment_A, axis);
+  glm_vec3_sub(world_capsule.segment_B, world_capsule.segment_A, axis);
+  // glm_vec3_sub(capsule->segment_B, capsule->segment_A, axis);
   float length = glm_vec3_norm(axis);
   glm_vec3_normalize(axis);
 
@@ -511,21 +535,21 @@ void physics_debug_capsule_init(struct PhysicsBody *body){
     if (i < stack_count){
       t = ((float)i / stack_count);
       // glm_vec3_scale(axis, -capsule->radius, center);
-      glm_vec3_copy(capsule->segment_A, center);
-      stack_radius = capsule->radius * cosf(t * M_PI / 2.0f);
-      z = -capsule->radius * sinf(t * M_PI / 2.0f);
+      glm_vec3_copy(world_capsule.segment_A, center);
+      stack_radius = world_capsule.radius * cosf(t * M_PI / 2.0f);
+      z = -world_capsule.radius * sinf(t * M_PI / 2.0f);
     }
     else if (i == stack_count){
-      glm_vec3_copy(capsule->segment_A, center);
-      stack_radius = capsule->radius;
+      glm_vec3_copy(world_capsule.segment_A, center);
+      stack_radius = world_capsule.radius;
       z = 0.0f;
     }
     // Cylinder:
     // - t is from 0 to 1
     // - center of sector is interpolated between segment_A and segment_B
     else if (i == stack_count + 1){
-      glm_vec3_copy(capsule->segment_B, center);
-      stack_radius = capsule->radius;
+      glm_vec3_copy(world_capsule.segment_B, center);
+      stack_radius = world_capsule.radius;
       z = 0.0f;
     }
     // Top hemisphere:
@@ -533,9 +557,9 @@ void physics_debug_capsule_init(struct PhysicsBody *body){
     // - center is segment_B
     else {
       t = ((float)(i - (stack_count + 1)) / stack_count);
-      glm_vec3_copy(capsule->segment_B, center);
-      stack_radius = capsule->radius * cosf(t * M_PI / 2.0f);
-      z = capsule->radius * sinf(t * M_PI / 2.0f);
+      glm_vec3_copy(world_capsule.segment_B, center);
+      stack_radius = world_capsule.radius * cosf(t * M_PI / 2.0f);
+      z = world_capsule.radius * sinf(t * M_PI / 2.0f);
     }
 
     // For each sector, get x and y coordinates to make (sector_count + 1) vertices per stack
@@ -613,25 +637,50 @@ void physics_debug_plane_init(struct PhysicsBody *body){
 
 }
 
+// Using SceneNode world transforms, since the center is not scaled, vertices must be generated
+// based on a world space AABB.
 void physics_debug_AABB_render(struct AABB *aabb, struct RenderContext *context, mat4 model){
   // Shader and uniforms
   shader_use(wireframeShader);
-  shader_set_mat4(wireframeShader, "model", model);
+  mat4 identity;
+  glm_mat4_identity(identity);
+  shader_set_mat4(wireframeShader, "model", identity);
   // shader_set_mat4(wireframeShader, "view", context->view_ptr);
   // shader_set_mat4(wireframeShader, "projection", context->projection_ptr);
+  struct AABB world_AABB = {0};
+  vec3 world_position, world_rotation, world_scale;
+  glm_mat4_mulv3(model, (vec3){0.0f, 0.0f, 0.0f}, 1.0f, world_position);
+  glm_decompose_scalev(model, world_scale);
+  mat3 rotation_mat3;
+  glm_mat4_pick3(model, rotation_mat3);
+  if (world_scale[0] != 0.0f){
+    glm_mat3_scale(rotation_mat3, 1.0f / world_scale[0]);
+  }
+  AABB_update(aabb, rotation_mat3, world_position, world_scale, &world_AABB);
 
   // Buffer new vertex data
   float vertices[24] = {
-    aabb->center[0] + aabb->extents[0], aabb->center[1] + aabb->extents[1], aabb->center[2] + aabb->extents[2],
-    aabb->center[0] + aabb->extents[0], aabb->center[1] + aabb->extents[1], aabb->center[2] - aabb->extents[2],
-    aabb->center[0] + aabb->extents[0], aabb->center[1] - aabb->extents[1], aabb->center[2] - aabb->extents[2],
-    aabb->center[0] + aabb->extents[0], aabb->center[1] - aabb->extents[1], aabb->center[2] + aabb->extents[2],
+    world_AABB.center[0] + world_AABB.extents[0], world_AABB.center[1] + world_AABB.extents[1], world_AABB.center[2] + world_AABB.extents[2],
+    world_AABB.center[0] + world_AABB.extents[0], world_AABB.center[1] + world_AABB.extents[1], world_AABB.center[2] - world_AABB.extents[2],
+    world_AABB.center[0] + world_AABB.extents[0], world_AABB.center[1] - world_AABB.extents[1], world_AABB.center[2] - world_AABB.extents[2],
+    world_AABB.center[0] + world_AABB.extents[0], world_AABB.center[1] - world_AABB.extents[1], world_AABB.center[2] + world_AABB.extents[2],
 
-    aabb->center[0] - aabb->extents[0], aabb->center[1] - aabb->extents[1], aabb->center[2] - aabb->extents[2],
-    aabb->center[0] - aabb->extents[0], aabb->center[1] - aabb->extents[1], aabb->center[2] + aabb->extents[2],
-    aabb->center[0] - aabb->extents[0], aabb->center[1] + aabb->extents[1], aabb->center[2] + aabb->extents[2],
-    aabb->center[0] - aabb->extents[0], aabb->center[1] + aabb->extents[1], aabb->center[2] - aabb->extents[2],
+    world_AABB.center[0] - world_AABB.extents[0], world_AABB.center[1] - world_AABB.extents[1], world_AABB.center[2] - world_AABB.extents[2],
+    world_AABB.center[0] - world_AABB.extents[0], world_AABB.center[1] - world_AABB.extents[1], world_AABB.center[2] + world_AABB.extents[2],
+    world_AABB.center[0] - world_AABB.extents[0], world_AABB.center[1] + world_AABB.extents[1], world_AABB.center[2] + world_AABB.extents[2],
+    world_AABB.center[0] - world_AABB.extents[0], world_AABB.center[1] + world_AABB.extents[1], world_AABB.center[2] - world_AABB.extents[2],
   };
+  // float vertices[24] = {
+  //   aabb->center[0] + aabb->extents[0], aabb->center[1] + aabb->extents[1], aabb->center[2] + aabb->extents[2],
+  //   aabb->center[0] + aabb->extents[0], aabb->center[1] + aabb->extents[1], aabb->center[2] - aabb->extents[2],
+  //   aabb->center[0] + aabb->extents[0], aabb->center[1] - aabb->extents[1], aabb->center[2] - aabb->extents[2],
+  //   aabb->center[0] + aabb->extents[0], aabb->center[1] - aabb->extents[1], aabb->center[2] + aabb->extents[2],
+  //
+  //   aabb->center[0] - aabb->extents[0], aabb->center[1] - aabb->extents[1], aabb->center[2] - aabb->extents[2],
+  //   aabb->center[0] - aabb->extents[0], aabb->center[1] - aabb->extents[1], aabb->center[2] + aabb->extents[2],
+  //   aabb->center[0] - aabb->extents[0], aabb->center[1] + aabb->extents[1], aabb->center[2] + aabb->extents[2],
+  //   aabb->center[0] - aabb->extents[0], aabb->center[1] + aabb->extents[1], aabb->center[2] - aabb->extents[2],
+  // };
   // for(int i = 0; i < 8; i++){
   //   printf("Vertex (%f %f %f)\n", vertices[i*3], vertices[i*3+1], vertices[i*3+2]);
   // }
@@ -642,6 +691,7 @@ void physics_debug_AABB_render(struct AABB *aabb, struct RenderContext *context,
   glDrawElements(GL_LINES, 24, GL_UNSIGNED_INT, 0);
 
   glBindVertexArray(0);
+  // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
 
 void physics_debug_sphere_render(struct Sphere *sphere, struct RenderContext *context, mat4 model){

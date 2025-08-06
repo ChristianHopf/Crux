@@ -8,6 +8,7 @@
 #include "physics/utils.h"
 #include "entity.h"
 #include "player.h"
+#include "scene.h"
 
 struct PhysicsBody {
   // Collision
@@ -22,6 +23,7 @@ struct PhysicsBody {
 
   // Associated entity
   struct Entity *entity;
+  struct SceneNode *scene_node;
 
   // Debug rendering
   GLuint VAO, VBO, EBO;
@@ -39,10 +41,11 @@ struct PhysicsWorld {
 
 // World, bodies
 struct PhysicsWorld *physics_world_create();
-struct PhysicsBody  *physics_add_body(struct PhysicsWorld *physics_world, struct Entity *entity, struct Collider collider, float restitution, bool dynamic);
+struct PhysicsBody  *physics_add_body(struct PhysicsWorld *physics_world, struct SceneNode *scene_node, struct Entity *entity, struct Collider collider, float restitution, bool dynamic);
 struct PhysicsBody *physics_add_player(struct PhysicsWorld *physics_world, struct Entity *entity, struct Collider collider);
 
 void physics_step(struct PhysicsWorld *physics_world, float delta_time);
+void physics_sync_entities(struct PhysicsWorld *physics_world);
 
 bool interval_collision(struct PhysicsBody *body_A, struct PhysicsBody *body_B, float start_time, float end_time, float *hit_time);
 

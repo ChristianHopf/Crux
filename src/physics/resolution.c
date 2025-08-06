@@ -206,7 +206,127 @@ void resolve_collision_AABB_sphere(struct PhysicsBody *body_A, struct PhysicsBod
 }
 
 void resolve_collision_AABB_capsule(struct PhysicsBody *body_A, struct PhysicsBody *body_B, struct CollisionResult result, float delta_time){
+  // printf("AABB CAPSULE COLLISION\n");
+  struct AABB *box = &body_A->collider.data.aabb;
+  struct Capsule *capsule = &body_B->collider.data.capsule;
 
+  struct AABB world_AABB = {0};
+  struct AABB world_AABB_final = {0};
+  struct Capsule world_capsule = {0};
+
+  // Move bodies according to velocity
+  float gravity = 9.8f;
+  vec3 velocity_before;
+  glm_vec3_copy(body_B->velocity, velocity_before);
+  velocity_before[1] -= gravity * result.hit_time;
+  glm_vec3_muladds(velocity_before, result.hit_time, body_B->position);
+
+  // Apply world transform to bodies
+  if (body_A->scene_node){
+    vec3 world_position, world_rotation, world_scale;
+    glm_mat4_mulv3(body_A->scene_node->world_transform, (vec3){0.0f, 0.0f, 0.0f}, 1.0f, world_position);
+    glm_decompose_scalev(body_A->scene_node->world_transform, world_scale);
+    mat3 rotation_mat3;
+    glm_mat4_pick3(body_A->scene_node->world_transform, rotation_mat3);
+    if (world_scale[0] != 0.0f){
+      glm_mat3_scale(rotation_mat3, 1.0f / world_scale[0]);
+    }
+    AABB_update(box, rotation_mat3, world_position, world_scale, &world_AABB_final);
+  }
+  else{
+    world_AABB = *box;
+  }
+  if (body_B->scene_node){
+    // Transform capsule
+    glm_mat4_mulv3(body_B->scene_node->world_transform, capsule->segment_A, 1.0f, world_capsule.segment_A);
+    glm_mat4_mulv3(body_B->scene_node->world_transform, capsule->segment_B, 1.0f, world_capsule.segment_B);
+    glm_vec3_muladds(velocity_before, result.hit_time, world_capsule.segment_A);
+    glm_vec3_muladds(velocity_before, result.hit_time, world_capsule.segment_B);
+  }
+  // Player capsule
+  else{
+    // Scale
+    glm_vec3_scale(capsule->segment_A, body_B->scale[0], world_capsule.segment_A);
+    glm_vec3_scale(capsule->segment_B, body_B->scale[0], world_capsule.segment_B);
+    // Rotate
+    mat4 eulerA;
+    mat3 rotationA;
+    vec3 rotatedA, rotatedB;
+    glm_euler_xyz(body_B->rotation, eulerA);
+    glm_mat4_pick3(eulerA, rotationA);
+    glm_mat3_mulv(rotationA, world_capsule.segment_A, world_capsule.segment_A);
+    glm_mat3_mulv(rotationA, world_capsule.segment_B, world_capsule.segment_B);
+    glm_vec3_add(world_capsule.segment_A, body_B->position, world_capsule.segment_A);
+    glm_vec3_add(world_capsule.segment_B, body_B->position, world_capsule.segment_B);
+  }
+
+  world_capsule.radius = capsule->radius * body_B->scale[0];
+
+  // Penetration correction
+  vec3 segment, A_to_center;
+  glm_vec3_sub(world_capsule.segment_B, world_capsule.segment_A, segment);
+  glm_vec3_sub(world_AABB_final.center, world_capsule.segment_A, A_to_center);
+  float proj = glm_dot(segment, A_to_center);
+  float t = proj / glm_dot(segment, segment);
+  t = glm_clamp(t, 0.0f, 1.0f);
+
+  // Closest point on the segment is segment_A + segment vector scaled by t
+  vec3 closest_point;
+  glm_vec3_copy(world_capsule.segment_A, closest_point);
+  glm_vec3_muladds(segment, t, closest_point);
+  // glm_vec3_muladds(segment, t, world_capsule.segment_A);
+
+  // Closest point on the AABB is the segment's closest point clamped to AABB extents
+  vec3 q, pq;
+  for (int i = 0; i < 3; i++){
+    q[i] = glm_clamp(closest_point[i], world_AABB_final.center[i] - world_AABB_final.extents[i], world_AABB_final.center[i] + world_AABB_final.extents[i]);
+  }
+  // if (body_B->scene_node){
+  //   print_glm_vec3(capsule->segment_A, "RESOLUTION CAPSULE SEGMENT A");
+  //   print_glm_vec3(world_capsule.segment_A, "WORLD CAPSULE SEGMENT A");
+  //   print_glm_vec3(closest_point, "CLOSEST POINT ON SEGMENT");
+  //   print_glm_vec3(q, "CLOSEST POINT ON AABB");
+  //   printf("Resolution initial aabb\n");
+  //   print_aabb(box);
+  //   printf("World space aabb\n");
+  //   print_aabb(&world_AABB_final);
+  // }
+
+  glm_vec3_sub(q, closest_point, pq);
+  float distance = glm_vec3_norm(pq);
+
+  // Compute discriminant of relative velocity along PQ
+  // (vector from closest point on capsule to closest point on AABB)
+  glm_vec3_normalize(pq);
+  float pq_dot_v = glm_dot(body_B->velocity, pq);
+  float penetration = distance < world_capsule.radius ? (world_capsule.radius - distance) + 0.0001f : 0.0f;
+
+  if (penetration <= 0.0f) return;
+
+  // TODO Do penetration correction and velocity updates based on whether
+  // each body is static or dynamic. For now just assume the AABB is static
+  vec3 correction;
+  glm_vec3_scale(pq, penetration, correction);
+  glm_vec3_sub(body_B->position, correction, body_B->position);
+
+  // Reflect velocity over normal
+  float rest_velocity_threshold = 0.1f;
+  float v_dot_pq = glm_dot(velocity_before, pq);
+  vec3 reflection;
+  glm_vec3_scale(pq, -2.0f * v_dot_pq * body_B->restitution, reflection);
+  glm_vec3_add(velocity_before, reflection, body_B->velocity);
+
+  // If velocity along the normal is very small,
+  // and the normal is opposite gravity, stop (eventually, spheres should be able to roll)
+  glm_vec3_negate(pq);
+  v_dot_pq = glm_dot(body_B->velocity, pq);
+  if (v_dot_pq < 0.5 && glm_dot(pq, (vec3){0.0f, -1.0f, 0.0f}) < 0){
+    glm_vec3_zero(body_B->velocity);
+    body_B->at_rest = true;
+  }
+  if (body_B->entity != NULL){
+    entity_play_sound_effect(body_B->entity);
+  }
 }
 
 void resolve_collision_AABB_plane(struct PhysicsBody *body_A, struct PhysicsBody *body_B, struct CollisionResult result, float delta_time){
@@ -434,6 +554,28 @@ void resolve_collision_capsule_plane(struct PhysicsBody *body_A, struct PhysicsB
 
   // Get world space capsule
   struct Capsule world_capsule = {0};
+  struct Plane world_plane = {0};
+  // Apply world transform to capsule segments
+  if (body_A->scene_node){
+    glm_mat4_mulv3(body_A->scene_node->world_transform, capsule->segment_A, 1.0f, world_capsule.segment_A);
+    glm_mat4_mulv3(body_A->scene_node->world_transform, capsule->segment_B, 1.0f, world_capsule.segment_B);
+  }
+  if (body_B->scene_node){
+    mat3 rotation_mat3;
+    vec3 world_position, world_rotation, world_scale;
+    glm_mat4_mulv3(body_B->scene_node->parent_node->world_transform, (vec3){0.0f, 0.0f, 0.0f}, 1.0f, world_position);
+    glm_decompose_scalev(body_B->scene_node->parent_node->world_transform, world_scale);
+    glm_mat4_pick3(body_B->scene_node->parent_node->world_transform, rotation_mat3);
+    if (world_scale[0] != 0.0f){
+      glm_mat3_scale(rotation_mat3, 1.0f / world_scale[0]);
+    }
+
+    // Transform plane
+    glm_mat3_mulv(rotation_mat3, plane->normal, world_plane.normal);
+    glm_vec3_normalize(world_plane.normal);
+    world_plane.distance = (plane->distance) + glm_vec3_dot(world_position, world_plane.normal);
+  }
+
   glm_vec3_scale(capsule->segment_A, body_A->scale[0], world_capsule.segment_A);
   glm_vec3_scale(capsule->segment_B, body_A->scale[0], world_capsule.segment_B);
   mat4 eulerA;
@@ -448,39 +590,40 @@ void resolve_collision_capsule_plane(struct PhysicsBody *body_A, struct PhysicsB
   world_capsule.radius = capsule->radius * body_A->scale[0];
 
   // Correct penetration
-  float n_dot_A = glm_dot(plane->normal, world_capsule.segment_A);
+  float n_dot_A = glm_dot(world_plane.normal, world_capsule.segment_A);
   vec3 segment;
   glm_vec3_sub(world_capsule.segment_B, world_capsule.segment_A, segment);
-  float n_dot_segment = glm_dot(plane->normal, segment);
+  float n_dot_segment = glm_dot(world_plane.normal, segment);
   vec3 closest_point;
-  float t = (plane->distance - n_dot_A) / n_dot_segment;
+  float t = (world_plane.distance - n_dot_A) / n_dot_segment;
   if (t <= 0) glm_vec3_copy(world_capsule.segment_A, closest_point);
   else if (t >= 1) glm_vec3_copy(world_capsule.segment_B, closest_point);
   else glm_vec3_lerp(world_capsule.segment_A, world_capsule.segment_B, t, closest_point);
 
-  float s = glm_dot(closest_point, plane->normal) - plane->distance;
-  float n_dot_v = glm_dot(body_A->velocity, plane->normal);
+  float s = glm_dot(closest_point, world_plane.normal) - world_plane.distance;
+  float n_dot_v = glm_dot(body_A->velocity, world_plane.normal);
   float penetration = (s < world_capsule.radius) ? (world_capsule.radius - s) + 0.001 : 0.0f;
 
   if (penetration <= 0.0f) return;
 
   vec3 correction;
-  glm_vec3_scale(plane->normal, penetration, correction);
+  glm_vec3_scale(world_plane.normal, penetration, correction);
   glm_vec3_add(body_A->position, correction, body_A->position);
+  // glm_vec3_add(body_A->position, correction, body_A->position);
 
   // Reflect velocity over normal
   // float restitution = 0.8f;
   float rest_velocity_threshold = 0.1f;
-  float v_dot_n = glm_dot(velocity_before, plane->normal);
+  float v_dot_n = glm_dot(velocity_before, world_plane.normal);
   vec3 reflection;
-  glm_vec3_scale(plane->normal, -2.0f * v_dot_n * body_A->restitution, reflection);
+  glm_vec3_scale(world_plane.normal, -2.0f * v_dot_n * body_A->restitution, reflection);
   glm_vec3_add(velocity_before, reflection, body_A->velocity);
 
   // If velocity along the normal is very small,
   // and the normal is opposite gravity, stop (eventually, spheres should be able to roll)
-  v_dot_n = glm_dot(plane->normal, body_A->velocity);
-  if (v_dot_n < 0.5 && glm_dot(plane->normal, (vec3){0.0f, -1.0f, 0.0f}) < 0){
-    float distance_to_plane = glm_dot(body_A->position, plane->normal) - plane->distance;
+  v_dot_n = glm_dot(world_plane.normal, body_A->velocity);
+  if (v_dot_n < 0.5 && glm_dot(world_plane.normal, (vec3){0.0f, -1.0f, 0.0f}) < 0){
+    float distance_to_plane = glm_dot(body_A->position, world_plane.normal) - world_plane.distance;
     glm_vec3_zero(body_A->velocity);
     body_A->at_rest = true;
   }
