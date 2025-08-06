@@ -42,8 +42,8 @@
               "dynamic": false,
               "units": 10,
               "data": {
-                "center": [0.0, -0.5, 0.0],
-                "extents": [10.0, 1.0, 10.0]
+                "center": [0.0, 0.0, 0.0],
+                "extents": [10.0, 0.0, 10.0]
               }
             },
             "children": []
@@ -69,8 +69,8 @@
               "dynamic": false,
               "units": 10,
               "data": {
-                "center": [0.0, -0.5, 0.0],
-                "extents": [10.0, 1.0, 10.0]
+                "center": [0.0, 0.0, 0.0],
+                "extents": [10.0, 0.0, 10.0]
               }
             },
             "children": []
@@ -86,8 +86,8 @@
               "dynamic": false,
               "units": 10,
               "data": {
-                "center": [0.0, -0.5, 0.0],
-                "extents": [10.0, 1.0, 10.0]
+                "center": [0.0, 0.0, 0.0],
+                "extents": [10.0, 0.0, 10.0]
               }
             },
             "children": []
@@ -103,8 +103,8 @@
               "dynamic": false,
               "units": 10,
               "data": {
-                "center": [0.0, -0.5, 0.0],
-                "extents": [10.0, 1.0, 10.0]
+                "center": [0.0, 0.0, 0.0],
+                "extents": [10.0, 0.0, 10.0]
               }
             },
             "children": []
@@ -120,8 +120,8 @@
               "dynamic": false,
               "units": 10,
               "data": {
-                "center": [0.0, -0.5, 0.0],
-                "extents": [10.0, 1.0, 10.0]
+                "center": [0.0, 0.0, 0.0],
+                "extents": [10.0, 0.0, 10.0]
               }
             },
             "children": []
@@ -137,8 +137,8 @@
               "dynamic": false,
               "units": 10,
               "data": {
-                "center": [0.0, -0.5, 0.0],
-                "extents": [10.0, 1.0, 10.0]
+                "center": [0.0, 0.0, 0.0],
+                "extents": [10.0, 0.0, 10.0]
               }
             },
             "children": []
@@ -154,8 +154,8 @@
               "dynamic": false,
               "units": 10,
               "data": {
-                "center": [0.0, -0.5, 0.0],
-                "extents": [10.0, 1.0, 10.0]
+                "center": [0.0, 0.0, 0.0],
+                "extents": [10.0, 0.0, 10.0]
               }
             },
             "children": []
@@ -166,7 +166,7 @@
             "position": [0.0, 2.0, 0.0],
             "rotation": [0.0, 0.0, 0.0],
             "scale": [1.0, 1.0, 1.0],
-            "velocity": [4.0, -12.0, 3.0],
+            "velocity": [-4.0, 12.0, 8.0],
             "collider": {
               "type": 2,
               "dynamic": true,
@@ -201,8 +201,8 @@
               "dynamic": false,
               "units": 10,
               "data": {
-                "center": [0.0, -0.5, 0.0],
-                "extents": [10.0, 1.0, 10.0]
+                "center": [0.0, 0.0, 0.0],
+                "extents": [10.0, 0.0, 10.0]
               }
             },
             "children": []
@@ -218,8 +218,8 @@
               "dynamic": false,
               "units": 10,
               "data": {
-                "center": [0.0, -0.5, 0.0],
-                "extents": [10.0, 1.0, 10.0]
+                "center": [0.0, 0.0, 0.0],
+                "extents": [10.0, 0.0, 10.0]
               }
             },
             "children": []
@@ -235,8 +235,8 @@
               "dynamic": false,
               "units": 10,
               "data": {
-                "center": [0.0, -0.5, 0.0],
-                "extents": [10.0, 1.0, 10.0]
+                "center": [0.0, 0.0, 0.0],
+                "extents": [10.0, 0.0, 10.0]
               }
             },
             "children": []
@@ -252,8 +252,8 @@
               "dynamic": false,
               "units": 10,
               "data": {
-                "center": [0.0, -0.5, 0.0],
-                "extents": [10.0, 1.0, 10.0]
+                "center": [0.0, 0.0, 0.0],
+                "extents": [10.0, 0.0, 10.0]
               }
             },
             "children": []
@@ -269,8 +269,8 @@
               "dynamic": false,
               "units": 10,
               "data": {
-                "center": [0.0, -0.5, 0.0],
-                "extents": [10.0, 1.0, 10.0]
+                "center": [0.0, 0.0, 0.0],
+                "extents": [10.0, 0.0, 10.0]
               }
             },
             "children": []
@@ -286,8 +286,8 @@
               "dynamic": false,
               "units": 10,
               "data": {
-                "center": [0.0, -0.5, 0.0],
-                "extents": [10.0, 1.0, 10.0]
+                "center": [0.0, 0.0, 0.0],
+                "extents": [10.0, 0.0, 10.0]
               }
             },
             "children": []
@@ -333,8 +333,8 @@
               "dynamic": false,
               "units": 10,
               "data": {
-                "center": [0.0, -0.5, 0.0],
-                "extents": [10.0, 1.0, 10.0]
+                "center": [0.0, 0.0, 0.0],
+                "extents": [10.0, 0.0, 10.0]
               }
             },
             "children": []
@@ -350,8 +350,8 @@
               "dynamic": false,
               "units": 10,
               "data": {
-                "center": [0.0, -0.5, 0.0],
-                "extents": [10.0, 1.0, 10.0]
+                "center": [0.0, 0.0, 0.0],
+                "extents": [10.0, 0.0, 10.0]
               }
             },
             "children": []
@@ -367,8 +367,8 @@
               "dynamic": false,
               "units": 10,
               "data": {
-                "center": [0.0, -0.5, 0.0],
-                "extents": [10.0, 1.0, 10.0]
+                "center": [0.0, 0.0, 0.0],
+                "extents": [10.0, 0.0, 10.0]
               }
             },
             "children": []
@@ -384,8 +384,8 @@
               "dynamic": false,
               "units": 10,
               "data": {
-                "center": [0.0, -0.5, 0.0],
-                "extents": [10.0, 1.0, 10.0]
+                "center": [0.0, 0.0, 0.0],
+                "extents": [10.0, 0.0, 10.0]
               }
             },
             "children": []
@@ -401,8 +401,8 @@
               "dynamic": false,
               "units": 10,
               "data": {
-                "center": [0.0, -0.5, 0.0],
-                "extents": [10.0, 1.0, 10.0]
+                "center": [0.0, 0.0, 0.0],
+                "extents": [10.0, 0.0, 10.0]
               }
             },
             "children": []
@@ -418,8 +418,8 @@
               "dynamic": false,
               "units": 10,
               "data": {
-                "center": [0.0, -0.5, 0.0],
-                "extents": [10.0, 1.0, 10.0]
+                "center": [0.0, 0.0, 0.0],
+                "extents": [10.0, 0.0, 10.0]
               }
             },
             "children": []
@@ -430,7 +430,7 @@
             "position": [0.0, 2.0, 0.0],
             "rotation": [0.0, 0.0, 0.0],
             "scale": [1.0, 1.0, 1.0],
-            "velocity": [4.0, -12.0, 3.0],
+            "velocity": [-6.0, 14.0, -9.0],
             "collider": {
               "type": 2,
               "dynamic": true,

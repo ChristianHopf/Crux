@@ -238,11 +238,6 @@ Engine *engine_create(){
     return NULL;
   }
 
-  printf("num dynamic bodies %d\n", engine->active_scene->physics_world->num_dynamic_bodies);
-  printf("ENGINE CREATE STATIC SCENENODE ADDRESS %p\n", engine->active_scene->physics_world->static_bodies[0].scene_node);
-  printf("ENGINE CREATE DYNAMIC SCENENODE ADDRESS %p\n", engine->active_scene->physics_world->dynamic_bodies[0].scene_node);
-  printf("ENGINE CREATE PLAYER SCENENODE ADDRESS %p\n", engine->active_scene->physics_world->player_bodies[0].scene_node);
-
   // Timing
   engine->delta_time = 0.0f;
   engine->last_frame = 0.0f;
@@ -312,14 +307,6 @@ int main(){
 
   // Teardown
   audio_manager_free();
-  // struct AudioManager *audio_manager = audio_manager_get_global();
-  // if (audio_manager->audio_stream){
-  //   audio_stream_destroy(audio_manager->audio_stream);
-  // }
-  // alcDestroyContext(audio_manager->context);
-  // alcCloseDevice(audio_manager->device);
-  // free(audio_manager);
-
   engine_free(engine);
   glfwTerminate();
 

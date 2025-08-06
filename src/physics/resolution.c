@@ -245,7 +245,6 @@ void resolve_collision_AABB_capsule(struct PhysicsBody *body_A, struct PhysicsBo
   }
   // Player capsule
   else{
-    printf("RESOLUTION PLAYER\n");
     // Scale
     glm_vec3_scale(capsule->segment_A, body_B->scale[0], world_capsule.segment_A);
     glm_vec3_scale(capsule->segment_B, body_B->scale[0], world_capsule.segment_B);

@@ -61,12 +61,9 @@ struct Scene *scene_create(bool physics_view_mode);
 void scene_update(struct Scene *scene, float deltaTime);
 void scene_node_update(struct SceneNode *current_node);
 void scene_render(struct Scene *scene);
-void scene_pause(struct Scene *scene);
-void scene_unpause(struct Scene *scene);
 void scene_free(struct Scene *scene);
 
 // JSON processing helpers
-void scene_process_node_json(const cJSON *node_json, struct SceneNode *current_node, struct SceneNode *parent_node, struct Model **models, Shader **shaders, struct PhysicsWorld *physics_world);
-void scene_process_meshes_json(cJSON *meshes, struct Model **models, Shader **shaders, struct Entity *entities, struct PhysicsWorld *physics_world, bool dynamic);
 void scene_process_light_json(cJSON *light_json, struct Light *light);
 void scene_process_vec3_json(cJSON *vec3_json, vec3 dest);
+void scene_process_node_json(const cJSON *node_json, struct SceneNode *current_node, struct SceneNode *parent_node, struct Model **models, Shader **shaders, struct PhysicsWorld *physics_world);
