@@ -231,41 +231,6 @@ void resolve_collision_AABB_capsule(struct PhysicsBody *body_A, struct PhysicsBo
     if (world_scale[0] != 0.0f){
       glm_mat3_scale(rotation_mat3, 1.0f / world_scale[0]);
     }
-
-    vec3 euler_radians, euler_degrees;
-    
-    // Assuming rotation_mat is normalized (scale removed)
-    // XYZ order: Rx * Ry * Rz
-    // rotation_mat = [r11 r12 r13]
-    //               [r21 r22 r23]
-    //               [r31 r32 r33]
-    float r11 = rotation_mat3[0][0];
-    float r12 = rotation_mat3[0][1];
-    float r13 = rotation_mat3[0][2];
-    float r21 = rotation_mat3[1][0];
-    float r31 = rotation_mat3[2][0];
-    float r32 = rotation_mat3[2][1];
-    float r33 = rotation_mat3[2][2];
-
-    // Pitch (Y) = asin(-r31)
-    euler_radians[1] = asinf(-r31); // -pi/2 to pi/2
-
-    // Handle gimbal lock cases (r31 ≈ ±1)
-    if (fabsf(r31) > 0.9999f) {
-      // Gimbal lock: pitch is ±90 degrees
-      euler_radians[0] = 0.0f; // Roll (X) is undefined, set to 0
-      euler_radians[2] = atan2f(r12, r11); // Yaw (Z)
-    } else {
-      // Roll (X) = atan2(r32, r33)
-      euler_radians[0] = -atan2f(r32, r33);
-      // Yaw (Z) = atan2(r21, r11)
-      euler_radians[2] = -atan2f(r21, r11);
-    }
-
-    // Convert to degrees
-    euler_degrees[0] = glm_deg(euler_radians[0]); // Roll (X)
-    euler_degrees[1] = glm_deg(euler_radians[1]); // Pitch (Y)
-    euler_degrees[2] = glm_deg(euler_radians[2]); // Yaw (Z)
     AABB_update(box, rotation_mat3, world_position, world_scale, &world_AABB_final);
   }
   else{
@@ -277,6 +242,22 @@ void resolve_collision_AABB_capsule(struct PhysicsBody *body_A, struct PhysicsBo
     glm_mat4_mulv3(body_B->scene_node->world_transform, capsule->segment_B, 1.0f, world_capsule.segment_B);
     glm_vec3_muladds(velocity_before, result.hit_time, world_capsule.segment_A);
     glm_vec3_muladds(velocity_before, result.hit_time, world_capsule.segment_B);
+  }
+  // Player capsule
+  else{
+    // Scale
+    glm_vec3_scale(capsule->segment_A, body_B->scale[0], world_capsule.segment_A);
+    glm_vec3_scale(capsule->segment_B, body_B->scale[0], world_capsule.segment_B);
+    // Rotate
+    mat4 eulerA;
+    mat3 rotationA;
+    vec3 rotatedA, rotatedB;
+    glm_euler_xyz(body_B->rotation, eulerA);
+    glm_mat4_pick3(eulerA, rotationA);
+    glm_mat3_mulv(rotationA, world_capsule.segment_A, world_capsule.segment_A);
+    glm_mat3_mulv(rotationA, world_capsule.segment_B, world_capsule.segment_B);
+    glm_vec3_add(world_capsule.segment_A, body_B->position, world_capsule.segment_A);
+    glm_vec3_add(world_capsule.segment_B, body_B->position, world_capsule.segment_B);
   }
 
   world_capsule.radius = capsule->radius * body_B->scale[0];

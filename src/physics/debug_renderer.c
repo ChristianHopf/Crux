@@ -85,7 +85,7 @@ void physics_debug_render(struct PhysicsWorld *physics_world, struct RenderConte
         glm_rotate_z(model, glm_rad(body->rotation[2]), model);
         glm_scale(model, body->scale);
 
-        physics_debug_AABB_render(box, context, body->scene_node->world_transform);
+        physics_debug_AABB_render(box, context, body->scene_node->local_transform);
         break;
       case COLLIDER_SPHERE:
         struct Sphere *sphere = &body->collider.data.sphere;
@@ -632,25 +632,54 @@ void physics_debug_plane_init(struct PhysicsBody *body){
 
 }
 
+// Using SceneNode world transforms, since the center is not scaled, vertices must be generated
+// based on a world space AABB.
 void physics_debug_AABB_render(struct AABB *aabb, struct RenderContext *context, mat4 model){
   // Shader and uniforms
   shader_use(wireframeShader);
-  shader_set_mat4(wireframeShader, "model", model);
+  mat4 identity;
+  glm_mat4_identity(identity);
+  shader_set_mat4(wireframeShader, "model", identity);
+  print_glm_mat4(model, "AABB RENDER WORLD TRANSFORM");
   // shader_set_mat4(wireframeShader, "view", context->view_ptr);
   // shader_set_mat4(wireframeShader, "projection", context->projection_ptr);
-
+  struct AABB world_AABB = {0};
+  vec3 world_position, world_rotation, world_scale;
+  glm_mat4_mulv3(model, (vec3){0.0f, 0.0f, 0.0f}, 1.0f, world_position);
+  glm_decompose_scalev(model, world_scale);
+  mat3 rotation_mat3;
+  glm_mat4_pick3(model, rotation_mat3);
+  if (world_scale[0] != 0.0f){
+    glm_mat3_scale(rotation_mat3, 1.0f / world_scale[0]);
+  }
+  AABB_update(aabb, rotation_mat3, world_position, world_scale, &world_AABB);
+  printf("AABB being used to get vertices\n");
+  print_aabb(aabb);
+  printf("World AABB\n");
+  print_aabb(&world_AABB);
   // Buffer new vertex data
   float vertices[24] = {
-    aabb->center[0] + aabb->extents[0], aabb->center[1] + aabb->extents[1], aabb->center[2] + aabb->extents[2],
-    aabb->center[0] + aabb->extents[0], aabb->center[1] + aabb->extents[1], aabb->center[2] - aabb->extents[2],
-    aabb->center[0] + aabb->extents[0], aabb->center[1] - aabb->extents[1], aabb->center[2] - aabb->extents[2],
-    aabb->center[0] + aabb->extents[0], aabb->center[1] - aabb->extents[1], aabb->center[2] + aabb->extents[2],
+    world_AABB.center[0] + world_AABB.extents[0], world_AABB.center[1] + world_AABB.extents[1], world_AABB.center[2] + world_AABB.extents[2],
+    world_AABB.center[0] + world_AABB.extents[0], world_AABB.center[1] + world_AABB.extents[1], world_AABB.center[2] - world_AABB.extents[2],
+    world_AABB.center[0] + world_AABB.extents[0], world_AABB.center[1] - world_AABB.extents[1], world_AABB.center[2] - world_AABB.extents[2],
+    world_AABB.center[0] + world_AABB.extents[0], world_AABB.center[1] - world_AABB.extents[1], world_AABB.center[2] + world_AABB.extents[2],
 
-    aabb->center[0] - aabb->extents[0], aabb->center[1] - aabb->extents[1], aabb->center[2] - aabb->extents[2],
-    aabb->center[0] - aabb->extents[0], aabb->center[1] - aabb->extents[1], aabb->center[2] + aabb->extents[2],
-    aabb->center[0] - aabb->extents[0], aabb->center[1] + aabb->extents[1], aabb->center[2] + aabb->extents[2],
-    aabb->center[0] - aabb->extents[0], aabb->center[1] + aabb->extents[1], aabb->center[2] - aabb->extents[2],
+    world_AABB.center[0] - world_AABB.extents[0], world_AABB.center[1] - world_AABB.extents[1], world_AABB.center[2] - world_AABB.extents[2],
+    world_AABB.center[0] - world_AABB.extents[0], world_AABB.center[1] - world_AABB.extents[1], world_AABB.center[2] + world_AABB.extents[2],
+    world_AABB.center[0] - world_AABB.extents[0], world_AABB.center[1] + world_AABB.extents[1], world_AABB.center[2] + world_AABB.extents[2],
+    world_AABB.center[0] - world_AABB.extents[0], world_AABB.center[1] + world_AABB.extents[1], world_AABB.center[2] - world_AABB.extents[2],
   };
+  // float vertices[24] = {
+  //   aabb->center[0] + aabb->extents[0], aabb->center[1] + aabb->extents[1], aabb->center[2] + aabb->extents[2],
+  //   aabb->center[0] + aabb->extents[0], aabb->center[1] + aabb->extents[1], aabb->center[2] - aabb->extents[2],
+  //   aabb->center[0] + aabb->extents[0], aabb->center[1] - aabb->extents[1], aabb->center[2] - aabb->extents[2],
+  //   aabb->center[0] + aabb->extents[0], aabb->center[1] - aabb->extents[1], aabb->center[2] + aabb->extents[2],
+  //
+  //   aabb->center[0] - aabb->extents[0], aabb->center[1] - aabb->extents[1], aabb->center[2] - aabb->extents[2],
+  //   aabb->center[0] - aabb->extents[0], aabb->center[1] - aabb->extents[1], aabb->center[2] + aabb->extents[2],
+  //   aabb->center[0] - aabb->extents[0], aabb->center[1] + aabb->extents[1], aabb->center[2] + aabb->extents[2],
+  //   aabb->center[0] - aabb->extents[0], aabb->center[1] + aabb->extents[1], aabb->center[2] - aabb->extents[2],
+  // };
   // for(int i = 0; i < 8; i++){
   //   printf("Vertex (%f %f %f)\n", vertices[i*3], vertices[i*3+1], vertices[i*3+2]);
   // }

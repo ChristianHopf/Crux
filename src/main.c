@@ -230,7 +230,7 @@ Engine *engine_create(){
   attach_observer(ui_game_state_observer);
 
   // Load scene
-  engine->active_scene = scene_init("scenes/scenegraph.json");
+  engine->active_scene = scene_init("scenes/scenegraph3.json");
   if (!engine->active_scene){
     fprintf(stderr, "Error: failed to create scene\n");
     free(engine);
