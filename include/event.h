@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <stdbool.h>
 
 typedef enum {
   EVENT_COLLISION,
@@ -38,5 +39,8 @@ void game_event_queue_init();
 void game_event_queue_destroy();
 
 // Enqueue/dequeue
-void game_event_queue_enqueue(struct GameEvent *game_event);
-struct GameEvent *game_event_queue_dequeue();
+void game_event_queue_enqueue(struct GameEvent game_event);
+bool game_event_queue_dequeue();
+void game_event_queue_clear();
+bool game_event_queue_is_full();
+bool game_event_queue_is_empty();
