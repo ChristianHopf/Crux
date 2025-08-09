@@ -15,6 +15,7 @@
 #include "menu/menu.h"
 #include "game_state.h"
 #include "window_manager.h"
+#include "event.h"
 
 typedef struct {
   // Window
@@ -25,6 +26,8 @@ typedef struct {
   bool mouse_down;
   // Scene
   struct Scene *active_scene;
+  // Events
+  struct GameEventQueue game_event_queue;
   // Timing
   float delta_time;
   float last_frame;
@@ -211,6 +214,9 @@ Engine *engine_create(){
   ui_load_font("resources/fonts/HackNerdFontMono-Regular.ttf", 24);
   ui_load_font("resources/fonts/HackNerdFontMono-Bold.ttf", 48);
   ui_load_font("resources/fonts/HackNerdFontMono-Regular.ttf", 48);
+
+  // Initialize Event queue
+  game_event_queue_init();
 
   // Initialize game state
   game_state_init();
