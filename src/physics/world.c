@@ -2,6 +2,7 @@
 #include "narrow_phase.h"
 #include "distance.h"
 #include "resolution.h"
+#include "event.h"
 #include "utils.h"
 #include <cglm/vec3.h>
 #include <stdbool.h>
@@ -177,6 +178,16 @@ void physics_step(struct PhysicsWorld *physics_world, float delta_time){
         }
         else{
           resolution_function(body_A, body_B, result, delta_time);
+
+          struct GameEvent collision = {
+            .type = EVENT_COLLISION,
+            .timestamp = (uint32_t)time(NULL),
+            .data.collision = {
+              .entity_A = 0,
+              .entity_B = 1
+            }
+          };
+          game_event_queue_enqueue(collision);
         }
       }
       // Reorder bodies by enum value
@@ -251,6 +262,16 @@ void physics_step(struct PhysicsWorld *physics_world, float delta_time){
         }
         else{
           resolution_function(body_A, body_B, result, delta_time);
+
+          struct GameEvent collision = {
+            .type = EVENT_COLLISION,
+            .timestamp = (uint32_t)time(NULL),
+            .data.collision = {
+              .entity_A = 0,
+              .entity_B = 1
+            }
+          };
+          game_event_queue_enqueue(collision);
         }
       }
       // Reorder bodies by enum value
@@ -304,6 +325,16 @@ void physics_step(struct PhysicsWorld *physics_world, float delta_time){
         }
         else{
           resolution_function(body_A, body_B, result, delta_time);
+
+          struct GameEvent collision = {
+            .type = EVENT_COLLISION,
+            .timestamp = (uint32_t)time(NULL),
+            .data.collision = {
+              .entity_A = 0,
+              .entity_B = 1
+            }
+          };
+          game_event_queue_enqueue(collision);
         }
       }
       // Reorder bodies by enum value

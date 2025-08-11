@@ -274,23 +274,12 @@ void resolve_collision_AABB_capsule(struct PhysicsBody *body_A, struct PhysicsBo
   vec3 closest_point;
   glm_vec3_copy(world_capsule.segment_A, closest_point);
   glm_vec3_muladds(segment, t, closest_point);
-  // glm_vec3_muladds(segment, t, world_capsule.segment_A);
 
   // Closest point on the AABB is the segment's closest point clamped to AABB extents
   vec3 q, pq;
   for (int i = 0; i < 3; i++){
     q[i] = glm_clamp(closest_point[i], world_AABB_final.center[i] - world_AABB_final.extents[i], world_AABB_final.center[i] + world_AABB_final.extents[i]);
   }
-  // if (body_B->scene_node){
-  //   print_glm_vec3(capsule->segment_A, "RESOLUTION CAPSULE SEGMENT A");
-  //   print_glm_vec3(world_capsule.segment_A, "WORLD CAPSULE SEGMENT A");
-  //   print_glm_vec3(closest_point, "CLOSEST POINT ON SEGMENT");
-  //   print_glm_vec3(q, "CLOSEST POINT ON AABB");
-  //   printf("Resolution initial aabb\n");
-  //   print_aabb(box);
-  //   printf("World space aabb\n");
-  //   print_aabb(&world_AABB_final);
-  // }
 
   glm_vec3_sub(q, closest_point, pq);
   float distance = glm_vec3_norm(pq);

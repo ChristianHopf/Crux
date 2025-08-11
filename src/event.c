@@ -51,13 +51,21 @@ void game_event_queue_enqueue(struct GameEvent game_event){
   game_event_queue.events[game_event_queue.back] = game_event;
   game_event_queue.back = (game_event_queue.back + 1) % game_event_queue.capacity;
   game_event_queue.size++;
+
+  for(int i = 0; i < game_event_queue.size; i++){
+    printf("Event index %d", i);
+    game_event_print(&game_event_queue.events[(game_event_queue.front + i) % game_event_queue.capacity]);
+  }
 }
 
-bool game_event_queue_dequeue(){
+bool game_event_queue_dequeue(struct GameEvent *game_event){
   if (game_event_queue.size == 0){
-    fprintf(stderr, "Error: failed to dequeue GameEvent from queue: queue is empty\n");
+    // fprintf(stderr, "Error: failed to dequeue GameEvent from queue: queue is empty\n");
     return false;
   }
+
+  // Assign current front event to given event
+  *game_event = game_event_queue.events[game_event_queue.front];
 
   // Move front back, decrement size
   game_event_queue.front = (game_event_queue.front + 1) % game_event_queue.capacity;
@@ -77,4 +85,33 @@ bool game_event_queue_is_full(){
 
 bool game_event_queue_is_empty(){
   return game_event_queue.size == 0;
+}
+
+void game_event_queue_process(){
+  struct GameEvent game_event;
+  while (game_event_queue_dequeue(&game_event)){
+    switch (game_event.type){
+      case EVENT_COLLISION: {
+        printf("Processed collision event\n");
+        break;
+      }
+      default: {
+        printf("Default\n");
+        break;
+      }
+    }
+  }
+}
+
+void game_event_print(struct GameEvent *game_event){
+  switch(game_event->type){
+    case EVENT_COLLISION: {
+      printf("COLLISION EVENT\n");
+      break;
+    }
+    default: {
+      printf("DEFAULT\n");
+      break;
+    }
+  }
 }

@@ -13,6 +13,7 @@
 #include "physics/debug_renderer.h"
 #include "physics/utils.h"
 #include "audio_manager.h"
+#include "event.h"
 #include "utils.h"
 
 struct Scene *scene_init(char *scene_path){
@@ -216,7 +217,7 @@ struct Scene *scene_init(char *scene_path){
 
   // Player
   struct Player *player = player_create(models[1], shaders[0],
-                                (vec3){0.0f, 0.0f, 15.0f},
+                                (vec3){0.0f, 0.0f, 2.0f},
                                 (vec3){0.0f, 180.0f, 0.0f},
                                 (vec3){1.0f, 1.0f, 1.0f},
                                 (vec3){0.0f, 0.0f, 0.0f},
@@ -271,6 +272,9 @@ void scene_update(struct Scene *scene, float delta_time){
 
   // Perform collision detection
   physics_step(scene->physics_world, delta_time);
+
+  // Process event queue
+  game_event_queue_process();
 
   // Update player
   player_update(&scene->player, delta_time);

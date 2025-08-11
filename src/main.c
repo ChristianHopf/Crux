@@ -57,26 +57,29 @@ static int last_space_state = GLFW_RELEASE;
 void processInput(GLFWwindow *window){
   Engine *engine = (Engine *)glfwGetWindowUserPointer(window);
 
-  // Camera movement
-	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS){
-    player_process_keyboard_input(&engine->active_scene->player, CAMERA_FORWARD, engine->delta_time);
-	}
-	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS){
-    player_process_keyboard_input(&engine->active_scene->player, CAMERA_BACKWARD, engine->delta_time);
-	}
-	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS){
-    player_process_keyboard_input(&engine->active_scene->player, CAMERA_LEFT, engine->delta_time);
-  }
-	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS){
-    player_process_keyboard_input(&engine->active_scene->player, CAMERA_RIGHT, engine->delta_time);
-	}
 
-  // Only process these inputs a single time per press
-  int space_state = glfwGetKey(window, GLFW_KEY_SPACE);
-	if (space_state == GLFW_PRESS && last_space_state == GLFW_RELEASE){
-    player_jump(&engine->active_scene->player);
+  if (!game_state_is_paused()){
+    // Camera movement
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS){
+      player_process_keyboard_input(&engine->active_scene->player, CAMERA_FORWARD, engine->delta_time);
+    }
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS){
+      player_process_keyboard_input(&engine->active_scene->player, CAMERA_BACKWARD, engine->delta_time);
+    }
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS){
+      player_process_keyboard_input(&engine->active_scene->player, CAMERA_LEFT, engine->delta_time);
+    }
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS){
+      player_process_keyboard_input(&engine->active_scene->player, CAMERA_RIGHT, engine->delta_time);
+    }
+
+    // Only process these inputs a single time per press
+    int space_state = glfwGetKey(window, GLFW_KEY_SPACE);
+    if (space_state == GLFW_PRESS && last_space_state == GLFW_RELEASE){
+      player_jump(&engine->active_scene->player);
+    }
+    last_space_state = space_state;
   }
-  last_space_state = space_state;
 }
 
 void framebuffer_size_callback(GLFWwindow *window, int width, int height){
@@ -236,7 +239,7 @@ Engine *engine_create(){
   attach_observer(ui_game_state_observer);
 
   // Load scene
-  engine->active_scene = scene_init("scenes/scenegraph3.json");
+  engine->active_scene = scene_init("scenes/item.json");
   if (!engine->active_scene){
     fprintf(stderr, "Error: failed to create scene\n");
     free(engine);

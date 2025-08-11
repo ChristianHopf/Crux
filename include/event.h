@@ -40,7 +40,9 @@ void game_event_queue_destroy();
 
 // Enqueue/dequeue
 void game_event_queue_enqueue(struct GameEvent game_event);
-bool game_event_queue_dequeue();
+bool game_event_queue_dequeue(struct GameEvent *game_event);
 void game_event_queue_clear();
 bool game_event_queue_is_full();
 bool game_event_queue_is_empty();
+void game_event_queue_process();
+void game_event_print(struct GameEvent *game_event);
