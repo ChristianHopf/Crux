@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include "time.h"
 
 typedef enum {
   EVENT_COLLISION,
@@ -12,7 +13,7 @@ typedef enum {
 
 struct GameEvent {
   EventType type;
-  uint32_t timestamp;
+  struct timespec timestamp;
   union {
     struct {
       int entity_A;

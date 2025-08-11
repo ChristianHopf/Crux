@@ -92,7 +92,7 @@ void game_event_queue_process(){
   while (game_event_queue_dequeue(&game_event)){
     switch (game_event.type){
       case EVENT_COLLISION: {
-        printf("Processed collision event\n");
+        printf("Processing collision event\n");
         break;
       }
       default: {
@@ -100,6 +100,7 @@ void game_event_queue_process(){
         break;
       }
     }
+    printf("Timestamp seconds: %ld, timestamp nanoseconds: %ld\n", game_event.timestamp.tv_sec, game_event.timestamp.tv_nsec);
   }
 }
 

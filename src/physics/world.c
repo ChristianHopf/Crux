@@ -6,6 +6,7 @@
 #include "utils.h"
 #include <cglm/vec3.h>
 #include <stdbool.h>
+#include "time.h"
 
 #define MAX_PHYSICS_BODIES 128
 
@@ -179,9 +180,14 @@ void physics_step(struct PhysicsWorld *physics_world, float delta_time){
         else{
           resolution_function(body_A, body_B, result, delta_time);
 
+          struct timespec timestamp;
+          if (clock_gettime(CLOCK_REALTIME, &timestamp) == -1){
+            perror("clock_gettime");
+            timestamp.tv_nsec = 0;
+          }
           struct GameEvent collision = {
             .type = EVENT_COLLISION,
-            .timestamp = (uint32_t)time(NULL),
+            .timestamp = timestamp,
             .data.collision = {
               .entity_A = 0,
               .entity_B = 1
@@ -263,9 +269,14 @@ void physics_step(struct PhysicsWorld *physics_world, float delta_time){
         else{
           resolution_function(body_A, body_B, result, delta_time);
 
+          struct timespec timestamp;
+          if (clock_gettime(CLOCK_REALTIME, &timestamp) == -1){
+            perror("clock_gettime");
+            timestamp.tv_nsec = 0;
+          }
           struct GameEvent collision = {
             .type = EVENT_COLLISION,
-            .timestamp = (uint32_t)time(NULL),
+            .timestamp = timestamp,
             .data.collision = {
               .entity_A = 0,
               .entity_B = 1
@@ -326,9 +337,14 @@ void physics_step(struct PhysicsWorld *physics_world, float delta_time){
         else{
           resolution_function(body_A, body_B, result, delta_time);
 
+          struct timespec timestamp;
+          if (clock_gettime(CLOCK_REALTIME, &timestamp) == -1){
+            perror("clock_gettime");
+            timestamp.tv_nsec = 0;
+          }
           struct GameEvent collision = {
             .type = EVENT_COLLISION,
-            .timestamp = (uint32_t)time(NULL),
+            .timestamp = timestamp,
             .data.collision = {
               .entity_A = 0,
               .entity_B = 1
