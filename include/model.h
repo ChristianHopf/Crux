@@ -1,6 +1,6 @@
 #pragma once
 
-#include <glad/glad.h>
+// #include <glad/glad.h>
 #include <cglm/cglm.h>
 #include <stdbool.h>
 #include <assimp/scene.h>
@@ -10,7 +10,6 @@
 #include <assimp/material.h>
 #include "shader.h"
 #include "material.h"
-#include "physics/aabb.h"
 
 typedef struct {
     vec3 position;

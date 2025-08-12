@@ -8,9 +8,11 @@
 #include "model.h"
 #include "shader.h"
 #include "audio_manager.h"
+#include "types.h"
 
 struct Entity {
   unsigned int ID;
+  EntityType type;
   vec3 position;
   vec3 rotation;
   vec3 scale;
@@ -23,4 +25,3 @@ struct Entity {
 };
 
 void entity_play_sound_effect(struct Entity *entity);
-// void entity_play_sound_effect(struct Entity *entity, struct SoundEffect *sound_effect);

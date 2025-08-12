@@ -1,9 +1,7 @@
 #pragma once
 
-// #include <glad/glad.h>
 #include <cglm/cglm.h>
 #include <stdbool.h>
-// #include "shader.h"
 #include "plane.h"
 
 // struct AABB {

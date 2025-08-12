@@ -234,6 +234,8 @@ struct Scene *scene_init(char *scene_path){
     scene->num_player_entities = 1;
     scene->player_entities = scene->player.entity;
   }
+  scene->player.entity->type = ENTITY_WORLD;
+  printf("Player entity type is %d\n", scene->player.entity->type);
   struct Collider player_collider = {
     .type = 2,
     .data.capsule = {
@@ -538,6 +540,18 @@ void scene_process_node_json(const cJSON *node_json, struct SceneNode *current_n
 
     // AudioComponent (may want to include this in scene json somehow, maybe just a bool)
     current_node->entity->audio_component = audio_component_create(current_node->entity, 0);
+
+    // Entity type
+    cJSON *entity_type_json = cJSON_GetObjectItemCaseSensitive(node_json, "entity_type");
+    if (!cJSON_IsNumber(entity_type_json)){
+      fprintf(stderr, "Error: failed to get entity type in scene_process_node_json, either invalid or does not exist\n");
+      return;
+    }
+
+    int entity_type = cJSON_GetNumberValue(entity_type_json);
+    if (entity_type >= 0){
+      current_node->entity->type = cJSON_GetNumberValue(entity_type_json);
+    }
   }
 
   // Process transform

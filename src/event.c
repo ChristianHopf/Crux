@@ -53,7 +53,7 @@ void game_event_queue_enqueue(struct GameEvent game_event){
   game_event_queue.size++;
 
   for(int i = 0; i < game_event_queue.size; i++){
-    printf("Event index %d", i);
+    printf("Event index %d ", i);
     game_event_print(&game_event_queue.events[(game_event_queue.front + i) % game_event_queue.capacity]);
   }
 }
@@ -95,12 +95,16 @@ void game_event_queue_process(){
         printf("Processing collision event\n");
         break;
       }
+      case EVENT_PLAYER_ITEM_PICKUP: {
+        printf("Processing player item pickup event\n");
+        break;
+      }
       default: {
         printf("Default\n");
         break;
       }
     }
-    printf("Timestamp seconds: %ld, timestamp nanoseconds: %ld\n", game_event.timestamp.tv_sec, game_event.timestamp.tv_nsec);
+    printf("Timestamp seconds: %ld, timestamp nanoseconds: %ld\n\n", game_event.timestamp.tv_sec, game_event.timestamp.tv_nsec);
   }
 }
 

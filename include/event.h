@@ -7,8 +7,8 @@
 #include "time.h"
 
 typedef enum {
-  EVENT_COLLISION,
-  EVENT_PICKUP
+  EVENT_COLLISION = 0,
+  EVENT_PLAYER_ITEM_PICKUP
 } EventType;
 
 struct GameEvent {
