@@ -222,7 +222,7 @@ struct Scene *scene_init(char *scene_path){
                                 (vec3){1.0f, 1.0f, 1.0f},
                                 (vec3){0.0f, 0.0f, 0.0f},
                                 (vec3){0.0f, 0.0f, 0.0f},
-                                1.75f, false);
+                                1.75f, false, 5);
   if (!player){
     fprintf(stderr, "Error: failed to create player in scene_init\n");
     return NULL;
