@@ -551,6 +551,40 @@ void scene_process_node_json(const cJSON *node_json, struct SceneNode *current_n
     int entity_type = cJSON_GetNumberValue(entity_type_json);
     if (entity_type >= 0){
       current_node->entity->type = cJSON_GetNumberValue(entity_type_json);
+      
+      // Item
+      if (entity_type == 1){
+        cJSON *item_id_json = cJSON_GetObjectItemCaseSensitive(node_json, "item_id");
+        if (!cJSON_IsNumber(item_id_json)){
+          fprintf(stderr, "Error: failed to get item id in scene_process_node_json, either invalid or does not exist\n");
+          return;
+        }
+        cJSON *item_name_json = cJSON_GetObjectItemCaseSensitive(node_json, "item_name");
+        if (!cJSON_IsString(item_name_json)){
+          fprintf(stderr, "Error: failed to get item name in scene_process_node_json, either invalid or does not exist\n");
+          return;
+        }
+        cJSON *item_count_json = cJSON_GetObjectItemCaseSensitive(node_json, "item_count");
+        if (!cJSON_IsNumber(item_count_json)){
+          fprintf(stderr, "Error: failed to get item count in scene_process_node_json, either invalid or does not exist\n");
+          return;
+        }
+        cJSON *item_max_count_json = cJSON_GetObjectItemCaseSensitive(node_json, "item_max_count");
+        if (!cJSON_IsNumber(item_max_count_json)){
+          fprintf(stderr, "Error: failed to get item max count in scene_process_node_json, either invalid or does not exist\n");
+          return;
+        }
+
+        current_node->entity->item = (struct Item *)calloc(1, sizeof(struct Item));
+        if (!current_node->entity->item){
+          fprintf(stderr, "Error: failed to allocate Item in scene_process_node_json\n");
+          return;
+        }
+        current_node->entity->item->id = cJSON_GetNumberValue(item_id_json);
+        strncpy(current_node->entity->item->name, cJSON_GetStringValue(item_name_json), 64);
+        current_node->entity->item->count = cJSON_GetNumberValue(item_count_json);
+        current_node->entity->item->max_count = cJSON_GetNumberValue(item_max_count_json);
+      }
     }
   }
 

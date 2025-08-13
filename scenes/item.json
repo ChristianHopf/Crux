@@ -159,6 +159,10 @@
               }
             },
             "entity_type": 1,
+            "item_id": 1,
+            "item_name": "Magic Potion",
+            "item_count": 1,
+            "item_max_count": 1,
             "children": []
           }
 

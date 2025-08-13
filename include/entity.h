@@ -22,6 +22,7 @@ struct Entity {
   Shader *shader;
   // Audio
   struct AudioComponent *audio_component;
+  struct Item *item;
 };
 
 void entity_play_sound_effect(struct Entity *entity);
