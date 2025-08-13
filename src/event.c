@@ -3,6 +3,12 @@
 static struct GameEventQueue game_event_queue;
 static bool game_event_queue_initialized;
 
+static EventType event_types[ENTITY_TYPE_COUNT][ENTITY_TYPE_COUNT] = {
+  //            WORLD                       ITEM
+  /* WORLD */ {EVENT_COLLISION,           EVENT_PLAYER_ITEM_PICKUP},
+  /* ITEM */  {EVENT_PLAYER_ITEM_PICKUP,  EVENT_COLLISION}
+};
+
 
 void game_event_queue_init(){
   if (game_event_queue_initialized) return;
@@ -53,7 +59,7 @@ void game_event_queue_enqueue(struct GameEvent game_event){
   game_event_queue.size++;
 
   for(int i = 0; i < game_event_queue.size; i++){
-    printf("Event index %d ", i);
+    printf("Event index %d: ", i);
     game_event_print(&game_event_queue.events[(game_event_queue.front + i) % game_event_queue.capacity]);
   }
 }
@@ -97,6 +103,13 @@ void game_event_queue_process(){
       }
       case EVENT_PLAYER_ITEM_PICKUP: {
         printf("Processing player item pickup event\n");
+        printf("Player id: %d\n", game_event.data.item_pickup.player_id);
+        printf("Item id: %d\n", game_event.data.item_pickup.item_id);
+        char uuid_str[37];
+        uuid_unparse_lower(game_event.data.item_pickup.item_entity_id, uuid_str);
+        printf("Item entity id: %s\n", uuid_str);
+        
+        // if (player_add_item(player, game_event.data.item_pickup.item_id, ))
         break;
       }
       default: {
@@ -108,10 +121,18 @@ void game_event_queue_process(){
   }
 }
 
+EventType get_event_type(EntityType type_A, EntityType type_B){
+  return event_types[type_A][type_B];
+}
+
 void game_event_print(struct GameEvent *game_event){
   switch(game_event->type){
     case EVENT_COLLISION: {
       printf("COLLISION EVENT\n");
+      break;
+    }
+    case EVENT_PLAYER_ITEM_PICKUP: {
+      printf("PLAYER ITEM PICKUP EVENT\n");
       break;
     }
     default: {

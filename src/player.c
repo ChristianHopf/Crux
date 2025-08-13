@@ -27,7 +27,7 @@ struct Player *player_create(struct Model *model, Shader *shader, vec3 position,
   player->camera = camera;
 
   // Add entity information (model, shader, etc)
-  player->entity = (struct Entity *)malloc(sizeof(struct Entity));
+  player->entity = (struct Entity *)calloc(1, sizeof(struct Entity));
   if (!player->entity){
     fprintf(stderr, "Error: failed to allocate entity in player_init\n");
     return NULL;
@@ -210,3 +210,9 @@ void player_inventory_init(struct Player *player, int capacity){
   player->inventory.size = 0;
   player->inventory.capacity = capacity;
 }
+
+// bool player_add_item(struct Player *player, int item_id, int count){
+//   if (player->inventory.size >= player->inventory.capacity){
+//     return false;
+//   }
+// }

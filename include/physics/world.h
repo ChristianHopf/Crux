@@ -6,6 +6,7 @@
 #include "collider.h"
 #include "physics/utils.h"
 #include "entity.h"
+#include "item.h"
 
 // Forward declaration to avoid redefinition of EntityType from scene including entity
 struct SceneNode {
@@ -47,6 +48,7 @@ struct PhysicsWorld {
   unsigned int num_static_bodies;
   unsigned int num_dynamic_bodies;
   unsigned int num_player_bodies;
+  struct PlayerMapping *player_mappings;
 };
 
 

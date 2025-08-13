@@ -82,7 +82,7 @@ void camera_process_mouse_input(struct Camera *camera, float xoffset, float yoff
 void camera_process_scroll_input(struct Camera *camera, double yoffset){
 	camera->fov -= (float)yoffset;
 	if (camera->fov <= 1.0f) camera->fov = 1.0f;
-	if (camera->fov >= 45.0f) camera->fov = 45.0f;
+	if (camera->fov >= 90.0f) camera->fov = 90.0f;
 }
 
 void camera_update_vectors(struct Camera *camera){

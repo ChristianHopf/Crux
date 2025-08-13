@@ -235,7 +235,6 @@ struct Scene *scene_init(char *scene_path){
     scene->player_entities = scene->player.entity;
   }
   scene->player.entity->type = ENTITY_WORLD;
-  printf("Player entity type is %d\n", scene->player.entity->type);
   struct Collider player_collider = {
     .type = 2,
     .data.capsule = {
@@ -532,6 +531,7 @@ void scene_process_node_json(const cJSON *node_json, struct SceneNode *current_n
       fprintf(stderr, "Error: failed to allocate entity in scene_process_node_json\n");
       return;
     }
+    uuid_generate(current_node->entity->id);
     current_node->entity->model = models[model_index];
     current_node->entity->shader = shaders[shader_index];
     scene_process_vec3_json(cJSON_GetObjectItemCaseSensitive(node_json, "position"), current_node->entity->position);
@@ -548,6 +548,7 @@ void scene_process_node_json(const cJSON *node_json, struct SceneNode *current_n
       return;
     }
 
+    // Process entity type and appropriate information if present
     int entity_type = cJSON_GetNumberValue(entity_type_json);
     if (entity_type >= 0){
       current_node->entity->type = cJSON_GetNumberValue(entity_type_json);
@@ -584,6 +585,13 @@ void scene_process_node_json(const cJSON *node_json, struct SceneNode *current_n
         strncpy(current_node->entity->item->name, cJSON_GetStringValue(item_name_json), 64);
         current_node->entity->item->count = cJSON_GetNumberValue(item_count_json);
         current_node->entity->item->max_count = cJSON_GetNumberValue(item_max_count_json);
+
+        char uuid_str[37];
+        uuid_unparse_lower(current_node->entity->id, uuid_str);
+        printf("Item id is %s\n", uuid_str);
+        // printf("Item name is %s\n", current_node->entity->item->name);
+        // printf("Item count is %d\n", current_node->entity->item->count);
+        // printf("Item max count is %d\n", current_node->entity->item->max_count);
       }
     }
   }

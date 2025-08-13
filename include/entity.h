@@ -2,6 +2,7 @@
 
 // #include <glad/glad.h>
 #include <cglm/cglm.h>
+#include <uuid/uuid.h>
 #include <AL/al.h>
 #include <AL/alc.h>
 #include "physics/world.h"
@@ -11,7 +12,7 @@
 #include "types.h"
 
 struct Entity {
-  unsigned int ID;
+  uuid_t id;
   EntityType type;
   vec3 position;
   vec3 rotation;

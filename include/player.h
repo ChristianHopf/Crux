@@ -44,3 +44,4 @@ void player_update(struct Player *player, float delta_time);
 
 // Inventory
 void player_inventory_init(struct Player *player, int capacity);
+void player_add_item(struct Player *player, int item_id, int count);

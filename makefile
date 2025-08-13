@@ -6,7 +6,7 @@ CC = gcc
 CFLAGS = -Iinclude -Iinclude/physics -Iinclude/menu $(addprefix -I,$(shell find third_party -type d)) $(shell pkg-config --cflags freetype2 glfw3 openal assimp) -Wall -Wextra -g
 # LDFLAGS = -L/usr/lib $(shell pkg-config --libs freetype2) -lglfw -lGL -lcglm -lm -ldl -lassimp -lopenal -lsndfile
 # LDFLAGS = $(shoreplace -L/usr/lib $(shell pkg-config --libs freetype2 glfw3 openal assimp libsndfile) -lcglm -lm -ldl
-LDFLAGS = $(shell pkg-config --libs freetype2 glfw3 openal assimp) -lcglm -lm -ldl -lsndfile
+LDFLAGS = $(shell pkg-config --libs freetype2 glfw3 openal assimp) -lcglm -lm -ldl -lsndfile -luuid
 
 # Directories
 SRC_DIR = src

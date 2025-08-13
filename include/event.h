@@ -4,7 +4,9 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <uuid/uuid.h>
 #include "time.h"
+#include "types.h"
 
 typedef enum {
   EVENT_COLLISION = 0,
@@ -22,6 +24,7 @@ struct GameEvent {
     struct {
       int player_id;
       int item_id;
+      uuid_t item_entity_id;
     } item_pickup;
   } data;
 };
@@ -46,4 +49,5 @@ void game_event_queue_clear();
 bool game_event_queue_is_full();
 bool game_event_queue_is_empty();
 void game_event_queue_process();
+EventType get_event_type(EntityType type_A, EntityType type_B);
 void game_event_print(struct GameEvent *game_event);
