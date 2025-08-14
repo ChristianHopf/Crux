@@ -427,6 +427,7 @@ void scene_render(struct Scene *scene){
   }
 }
 
+// TODO refactor to free scene graph
 void scene_free(struct Scene *scene){
   // Free models
   for (int i = 0; i < scene->num_models; i++){
@@ -436,15 +437,19 @@ void scene_free(struct Scene *scene){
   for (int i = 0; i < scene->num_shaders; i++){
     free(scene->shaders[i]);
   }
+  // for(unsigned int i = 0; i < scene->num_entities; i++){
+  //   free(scene->entities[i]);
+  // }
+
   // Free entities
-  for (unsigned int i = 0; i < scene->num_dynamic_entities; i++){
-    free(scene->dynamic_entities[i].audio_component);
-  }
-  free(scene->dynamic_entities);
-  for (unsigned int i = 0; i < scene->num_static_entities; i++){
-    free(scene->static_entities[i].audio_component);
-  }
-  free(scene->static_entities);
+  // for (unsigned int i = 0; i < scene->num_dynamic_entities; i++){
+  //   free(scene->dynamic_entities[i].audio_component);
+  // }
+  // free(scene->dynamic_entities);
+  // for (unsigned int i = 0; i < scene->num_static_entities; i++){
+  //   free(scene->static_entities[i].audio_component);
+  // }
+  // free(scene->static_entities);
 
   // Free skybox
   free(scene->skybox->shader);
@@ -576,7 +581,7 @@ void scene_process_node_json(const cJSON *node_json, struct SceneNode *current_n
           return;
         }
 
-        current_node->entity->item = (struct Item *)calloc(1, sizeof(struct Item));
+        current_node->entity->item = (struct ItemComponent *)calloc(1, sizeof(struct ItemComponent));
         if (!current_node->entity->item){
           fprintf(stderr, "Error: failed to allocate Item in scene_process_node_json\n");
           return;
@@ -762,4 +767,44 @@ void scene_process_node_json(const cJSON *node_json, struct SceneNode *current_n
       index++;
     }
   }
+}
+
+void scene_remove_scene_node_by_entity_id(struct Scene *scene, uuid_t id){
+  struct SceneNode *current_node = scene->root_node;
+
+  // If this node has an entity, check if it has the given id. If so, remove it
+  // and its children.
+  while(current_node){
+    if (current_node->entity){
+      if (uuid_compare(current_node->entity->id, id)){
+        struct SceneNode *parent_node = current_node->parent_node;
+
+        scene_remove_scene_node(current_node);
+
+        break;
+      }
+      for (unsigned int i = 0; i < current_node->num_children; i++){
+
+      }
+    }
+  }
+}
+
+void scene_remove_scene_node(struct SceneNode *scene_node){
+  // Remove this node's children
+  if (scene_node->children){
+    for (unsigned int i = 0; i < scene_node->num_children; i++){
+      scene_remove_scene_node(scene_node->children[i]);
+    }
+  }
+
+  // Remove this node
+  free(scene_node->entity);
+  free(scene_node);
+}
+
+// Trivial for now with only one Player.
+// TODO Will need to refactor this, Scene struct, and initialization for multiplayer
+struct Player *scene_get_player_by_entity_id(struct Scene *scene, uuid_t id){
+  return &scene->player;
 }

@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include <AL/al.h>
 #include <AL/alc.h>
+#include <uuid/uuid.h>
 #include "audio_manager.h"
 #include "camera.h"
 #include "entity.h"
@@ -10,7 +11,7 @@
 #include "utils.h"
 
 struct InventoryComponent {
-  struct Item *items;
+  struct ItemComponent *items;
   int size;
   int capacity;
 };
@@ -27,7 +28,6 @@ struct Player {
   float camera_distance;
   vec3 camera_offset;
   vec3 rotated_offset;
-  bool is_grounded;
   bool render_entity;
 };
 
@@ -44,4 +44,4 @@ void player_update(struct Player *player, float delta_time);
 
 // Inventory
 void player_inventory_init(struct Player *player, int capacity);
-void player_add_item(struct Player *player, int item_id, int count);
+bool player_add_item(struct Player *player, int item_id, int count);

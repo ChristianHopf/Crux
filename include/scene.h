@@ -36,11 +36,9 @@ struct Scene {
   int num_models;
   int num_shaders;
   struct SceneNode *root_node;
-  struct Entity *static_entities;
-  struct Entity *dynamic_entities;
   struct Entity *player_entities;
-  int num_static_entities;
-  int num_dynamic_entities;
+  struct Entity **entities;
+  int num_entities;
   int num_player_entities;
   int max_entities;
   struct Skybox *skybox;
@@ -60,6 +58,8 @@ struct Scene *scene_create(bool physics_view_mode);
 
 void scene_update(struct Scene *scene, float deltaTime);
 void scene_node_update(struct SceneNode *current_node);
+void scene_remove_scene_node_by_entity_id(struct Scene *scene, uuid_t id);
+void scene_remove_scene_node(struct SceneNode *scene_node);
 void scene_render(struct Scene *scene);
 void scene_free(struct Scene *scene);
 
@@ -67,3 +67,6 @@ void scene_free(struct Scene *scene);
 void scene_process_light_json(cJSON *light_json, struct Light *light);
 void scene_process_vec3_json(cJSON *vec3_json, vec3 dest);
 void scene_process_node_json(const cJSON *node_json, struct SceneNode *current_node, struct SceneNode *parent_node, struct Model **models, Shader **shaders, struct PhysicsWorld *physics_world);
+
+// Misc
+struct Player *scene_get_player_by_entity_id(struct Scene *scene, uuid_t id);

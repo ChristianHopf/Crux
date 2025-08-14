@@ -1,6 +1,6 @@
 #pragma once
 
-struct Item {
+struct ItemComponent {
   int id;
   char name[64];
   int count;

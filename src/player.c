@@ -1,4 +1,5 @@
 #include <cglm/vec3.h>
+#include <uuid/uuid.h>
 #include "player.h"
 #include "physics/world.h"
 
@@ -32,6 +33,12 @@ struct Player *player_create(struct Model *model, Shader *shader, vec3 position,
     fprintf(stderr, "Error: failed to allocate entity in player_init\n");
     return NULL;
   }
+  uuid_generate(player->entity->id);
+
+  char uuid_str[37];
+  uuid_unparse_lower(player->entity->id, uuid_str);
+  printf("Player id is %s\n", uuid_str);
+
   player->entity->model = model;
   player->entity->shader = shader;
   glm_vec3_copy(position, player->entity->position);
@@ -202,7 +209,7 @@ void player_update(struct Player *player, float delta_time){
 }
 
 void player_inventory_init(struct Player *player, int capacity){
-  player->inventory.items = (struct Item *)calloc(capacity, sizeof(struct Item));
+  player->inventory.items = (struct ItemComponent *)calloc(capacity, sizeof(struct ItemComponent));
   if (!player->inventory.items){
     fprintf(stderr, "Error: failed to allocate Items in player_inventory_init\n");
     return;
@@ -211,8 +218,9 @@ void player_inventory_init(struct Player *player, int capacity){
   player->inventory.capacity = capacity;
 }
 
-// bool player_add_item(struct Player *player, int item_id, int count){
-//   if (player->inventory.size >= player->inventory.capacity){
-//     return false;
-//   }
-// }
+bool player_add_item(struct Player *player, int item_id, int count){
+  if (player->inventory.size >= player->inventory.capacity){
+    return false;
+  }
+  return true;
+}

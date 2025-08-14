@@ -5,7 +5,9 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <uuid/uuid.h>
+#include "scene.h"
 #include "time.h"
+#include "player.h"
 #include "types.h"
 
 typedef enum {
@@ -22,8 +24,9 @@ struct GameEvent {
       int entity_B;
     } collision;
     struct {
-      int player_id;
+      uuid_t player_entity_id;
       int item_id;
+      int item_count;
       uuid_t item_entity_id;
     } item_pickup;
   } data;
@@ -35,11 +38,12 @@ struct GameEventQueue {
   int front;
   int back;
   int size;
+  struct Scene *scene;
 };
 
 
 // Setup/teardown
-void game_event_queue_init();
+void game_event_queue_init(struct Scene *scene);
 void game_event_queue_destroy();
 
 // Enqueue/dequeue

@@ -218,9 +218,6 @@ Engine *engine_create(){
   ui_load_font("resources/fonts/HackNerdFontMono-Bold.ttf", 48);
   ui_load_font("resources/fonts/HackNerdFontMono-Regular.ttf", 48);
 
-  // Initialize Event queue
-  game_event_queue_init();
-
   // Initialize game state
   game_state_init();
 
@@ -246,6 +243,9 @@ Engine *engine_create(){
     glfwTerminate();
     return NULL;
   }
+
+  // Initialize Event queue
+  game_event_queue_init(engine->active_scene);
 
   // Timing
   engine->delta_time = 0.0f;
