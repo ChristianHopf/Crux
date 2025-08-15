@@ -234,7 +234,7 @@ struct Scene *scene_init(char *scene_path){
     scene->num_player_entities = 1;
     scene->player_entities = scene->player.entity;
   }
-  scene->player.entity->type = ENTITY_WORLD;
+  scene->player.entity->type = ENTITY_PLAYER;
   struct Collider player_collider = {
     .type = 2,
     .data.capsule = {

@@ -4,9 +4,10 @@ static struct GameEventQueue game_event_queue;
 static bool game_event_queue_initialized;
 
 static EventType event_types[ENTITY_TYPE_COUNT][ENTITY_TYPE_COUNT] = {
-  //            WORLD                       ITEM
-  /* WORLD */ {EVENT_COLLISION,           EVENT_PLAYER_ITEM_PICKUP},
-  /* ITEM */  {EVENT_PLAYER_ITEM_PICKUP,  EVENT_COLLISION}
+  //              WORLD             ITEM                      PLAYER
+  /* WORLD */   {EVENT_COLLISION,   EVENT_COLLISION,          EVENT_COLLISION},
+  /* ITEM */    {EVENT_COLLISION,   EVENT_COLLISION,          EVENT_PLAYER_ITEM_PICKUP},
+  /* PLAYER */  {EVENT_COLLISION,   EVENT_PLAYER_ITEM_PICKUP, EVENT_COLLISION}
 };
 
 
@@ -59,11 +60,6 @@ void game_event_queue_enqueue(struct GameEvent game_event){
   game_event_queue.events[game_event_queue.back] = game_event;
   game_event_queue.back = (game_event_queue.back + 1) % game_event_queue.capacity;
   game_event_queue.size++;
-
-  for(int i = 0; i < game_event_queue.size; i++){
-    printf("Event index %d: ", i);
-    game_event_print(&game_event_queue.events[(game_event_queue.front + i) % game_event_queue.capacity]);
-  }
 }
 
 bool game_event_queue_dequeue(struct GameEvent *game_event){
@@ -119,7 +115,7 @@ void game_event_queue_process(){
         // then figure out creating items decoupled from the engine itself
         if (player_add_item(player, game_event.data.item_pickup.item_id, game_event.data.item_pickup.item_count)){
           // Remove the item's entity from the scene graph.
-          scene_remove_scene_node_by_entity_id(game_event_queue.scene, game_event.data.item_pickup.item_entity_id);
+          // scene_remove_scene_node_by_entity_id(game_event_queue.scene, game_event.data.item_pickup.item_entity_id);
           // Could also use some kind of "persistent" bool in the future if I want
           // items that don't disappear when a player picks them up.
           printf("Successfully added %d item to the player's inventory\n", game_event.data.item_pickup.item_count);
@@ -131,7 +127,7 @@ void game_event_queue_process(){
         break;
       }
     }
-    printf("Timestamp seconds: %ld, timestamp nanoseconds: %ld\n\n", game_event.timestamp.tv_sec, game_event.timestamp.tv_nsec);
+    game_event_print(&game_event);
   }
 }
 
@@ -142,11 +138,13 @@ EventType get_event_type(EntityType type_A, EntityType type_B){
 void game_event_print(struct GameEvent *game_event){
   switch(game_event->type){
     case EVENT_COLLISION: {
-      printf("COLLISION EVENT\n");
+      printf("Event type: EVENT_COLLISION\n");
+      printf("Timestamp seconds: %ld, timestamp nanoseconds: %ld\n\n", game_event->timestamp.tv_sec, game_event->timestamp.tv_nsec);
       break;
     }
     case EVENT_PLAYER_ITEM_PICKUP: {
-      printf("PLAYER ITEM PICKUP EVENT\n");
+      printf("Event type: EVENT_PLAYER_ITEM_PICKUP\n");
+      printf("Timestamp seconds: %ld, timestamp nanoseconds: %ld\n\n", game_event->timestamp.tv_sec, game_event->timestamp.tv_nsec);
       break;
     }
     default: {
