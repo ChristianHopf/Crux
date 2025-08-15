@@ -5,6 +5,15 @@
 #include "sphere.h"
 #include "capsule.h"
 #include "plane.h"
+#include "types.h"
+
+// Enum for resolution strategy for colliding PhysicsBodies
+// - COLLISION_BEHAVIOR_PHYSICS: physics-based collision resolution
+// - COLLISION_BEHAVIOR_TRIGGER: simply trigger an event, no physics necessary
+typedef enum {
+  COLLISION_BEHAVIOR_PHYSICS = 0,
+  COLLISION_BEHAVIOR_TRIGGER
+} CollisionBehavior;
 
 typedef enum {
   COLLIDER_AABB = 0,
@@ -25,3 +34,6 @@ struct Collider{
   ColliderType type;
   union ColliderData data;
 };
+
+
+CollisionBehavior get_collision_behavior(EntityType type_A, EntityType type_B);

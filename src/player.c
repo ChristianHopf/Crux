@@ -1,8 +1,9 @@
 #include <cglm/vec3.h>
+#include <uuid/uuid.h>
 #include "player.h"
 #include "physics/world.h"
 
-struct Player *player_create(struct Model *model, Shader *shader, vec3 position, vec3 rotation, vec3 scale, vec3 velocity, vec3 camera_offset, float camera_height, bool render_entity){
+struct Player *player_create(struct Model *model, Shader *shader, vec3 position, vec3 rotation, vec3 scale, vec3 velocity, vec3 camera_offset, float camera_height, bool render_entity, int inventory_capacity){
 
   // Allocate player
   struct Player *player = (struct Player *)calloc(1, sizeof(struct Player));
@@ -27,11 +28,12 @@ struct Player *player_create(struct Model *model, Shader *shader, vec3 position,
   player->camera = camera;
 
   // Add entity information (model, shader, etc)
-  player->entity = (struct Entity *)malloc(sizeof(struct Entity));
+  player->entity = (struct Entity *)calloc(1, sizeof(struct Entity));
   if (!player->entity){
     fprintf(stderr, "Error: failed to allocate entity in player_init\n");
     return NULL;
   }
+  uuid_generate(player->entity->id);
   player->entity->model = model;
   player->entity->shader = shader;
   glm_vec3_copy(position, player->entity->position);
@@ -48,6 +50,9 @@ struct Player *player_create(struct Model *model, Shader *shader, vec3 position,
 
   // Set listener position to camera position
   audio_listener_update(player);
+
+  // Initialize inventory
+  player_inventory_init(player, inventory_capacity);
 
   return player;
 }
@@ -196,4 +201,21 @@ void player_update(struct Player *player, float delta_time){
 
   // Update listener position and orientation
   audio_listener_update(player);
+}
+
+void player_inventory_init(struct Player *player, int capacity){
+  player->inventory.items = (struct ItemComponent *)calloc(capacity, sizeof(struct ItemComponent));
+  if (!player->inventory.items){
+    fprintf(stderr, "Error: failed to allocate Items in player_inventory_init\n");
+    return;
+  }
+  player->inventory.size = 0;
+  player->inventory.capacity = capacity;
+}
+
+bool player_add_item(struct Player *player, int item_id, int count){
+  if (player->inventory.size >= player->inventory.capacity){
+    return false;
+  }
+  return true;
 }

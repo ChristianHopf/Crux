@@ -2,9 +2,11 @@
 #include "narrow_phase.h"
 #include "distance.h"
 #include "resolution.h"
+#include "event.h"
 #include "utils.h"
 #include <cglm/vec3.h>
 #include <stdbool.h>
+#include "time.h"
 
 #define MAX_PHYSICS_BODIES 128
 
@@ -171,14 +173,58 @@ void physics_step(struct PhysicsWorld *physics_world, float delta_time){
 
       // COLLISION RESOLUTION
       if (result.colliding && result.hit_time >= 0){
-        ResolutionFunction resolution_function = resolution_functions[body_A->collider.type][body_B->collider.type];
-        if (!resolution_function){
-          fprintf(stderr, "Error: no collision resolution function found for types %d and %d\n", body_A->collider.type, body_B->collider.type);
+        // Determine resolution strategy
+        EntityType type_A = body_A->entity->type;
+        EntityType type_B = body_B->entity->type;
+        CollisionBehavior behavior = get_collision_behavior(type_A, type_B);
+
+        // Get appropriate resolution function for the given CollisionBehavior
+        switch(behavior){
+          case COLLISION_BEHAVIOR_PHYSICS:
+            ResolutionFunction resolution_function = resolution_functions[body_A->collider.type][body_B->collider.type];
+            if (!resolution_function){
+              fprintf(stderr, "Error: no collision resolution function found for types %d, %d\n", body_A->collider.type, body_B->collider.type);
+            }
+            else{
+              resolution_function(body_A, body_B, result, delta_time);
+            }
+            break;
+          case COLLISION_BEHAVIOR_TRIGGER:
+            break;
         }
-        else{
-          resolution_function(body_A, body_B, result, delta_time);
+
+        // Generate Event
+        struct GameEvent event;
+        struct timespec timestamp;
+        if (clock_gettime(CLOCK_REALTIME, &timestamp) == -1){
+          perror("clock_gettime");
+          timestamp.tv_nsec = 0;
         }
+        event.timestamp = timestamp;
+
+        // TODO refactor to a more robust soln that determines which is the item.
+        // This works in my case because a Player is always a capsule,
+        // and an item will always be an AABB.
+        // (We CAN still assume one of the bodies is a Player because we're looping over player_bodies here.)
+        event.type = get_event_type(type_A, type_B);
+        switch(event.type){
+          case EVENT_COLLISION:
+            event.data.collision.entity_A = 0;
+            event.data.collision.entity_B = 0;
+            break;
+          case EVENT_PLAYER_ITEM_PICKUP:
+            // TODO player ID, physicsbody/world has knowledge of it somehow
+            memcpy(event.data.item_pickup.player_entity_id, body_B->entity->id, 16);
+            // event.data.item_pickup.player_entity_id = body_B->entity->id;
+            event.data.item_pickup.item_id = body_A->entity->item->id;
+            event.data.item_pickup.item_count = body_A->entity->item->count;
+            memcpy(event.data.item_pickup.item_entity_id, body_A->entity->id, 16);
+            break;
+        }
+
+        game_event_queue_enqueue(event);
       }
+
       // Reorder bodies by enum value
       if (body_swap){
         struct PhysicsBody *temp = body_A;
@@ -244,14 +290,44 @@ void physics_step(struct PhysicsWorld *physics_world, float delta_time){
 
       // COLLISION RESOLUTION
       if (result.colliding && result.hit_time >= 0){
-        ResolutionFunction resolution_function = resolution_functions[body_A->collider.type][body_B->collider.type];
-        if (!resolution_function){
-          fprintf(stderr, "Error: no collision resolution function found for types %d and %d\n",
-                  body_A->collider.type, body_B->collider.type);
+        // Determine resolution strategy
+        EntityType type_A = body_A->entity->type;
+        EntityType type_B = body_B->entity->type;
+        CollisionBehavior behavior = get_collision_behavior(type_A, type_B);
+
+        // Get appropriate resolution function for the given CollisionBehavior
+        switch(behavior){
+          case COLLISION_BEHAVIOR_PHYSICS:
+            ResolutionFunction resolution_function = resolution_functions[body_A->collider.type][body_B->collider.type];
+            if (!resolution_function){
+              fprintf(stderr, "Error: no collision resolution function found for types %d, %d\n", body_A->collider.type, body_B->collider.type);
+            }
+            else{
+              resolution_function(body_A, body_B, result, delta_time);
+            }
+            break;
+          case COLLISION_BEHAVIOR_TRIGGER:
+            break;
         }
-        else{
-          resolution_function(body_A, body_B, result, delta_time);
+
+        // Generate Event
+        struct GameEvent event;
+        struct timespec timestamp;
+        if (clock_gettime(CLOCK_REALTIME, &timestamp) == -1){
+          perror("clock_gettime");
+          timestamp.tv_nsec = 0;
         }
+        event.timestamp = timestamp;
+        event.type = get_event_type(type_A, type_B);
+
+        switch(event.type){
+          case EVENT_COLLISION:
+            event.data.collision.entity_A = 0;
+            event.data.collision.entity_B = 0;
+            break;
+        }
+
+        game_event_queue_enqueue(event);
       }
       // Reorder bodies by enum value
       if (body_swap){
@@ -304,6 +380,25 @@ void physics_step(struct PhysicsWorld *physics_world, float delta_time){
         }
         else{
           resolution_function(body_A, body_B, result, delta_time);
+
+          struct timespec timestamp;
+          EventType event_type = EVENT_COLLISION;
+          if (clock_gettime(CLOCK_REALTIME, &timestamp) == -1){
+            perror("clock_gettime");
+            timestamp.tv_nsec = 0;
+          }
+          if (body_A->entity->type == ENTITY_ITEM){
+            event_type = EVENT_PLAYER_ITEM_PICKUP;
+          }
+          struct GameEvent collision = {
+            .type = EVENT_COLLISION,
+            .timestamp = timestamp,
+            .data.collision = {
+              .entity_A = 0,
+              .entity_B = 1
+            }
+          };
+          game_event_queue_enqueue(collision);
         }
       }
       // Reorder bodies by enum value

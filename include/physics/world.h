@@ -3,12 +3,24 @@
 // #include <glad/glad.h>
 #include <cglm/cglm.h>
 #include <stdbool.h>
-#include "aabb.h"
 #include "collider.h"
 #include "physics/utils.h"
 #include "entity.h"
-#include "player.h"
-#include "scene.h"
+#include "item.h"
+
+// Forward declaration to avoid redefinition of EntityType from scene including entity
+struct SceneNode {
+  unsigned int ID;
+  mat4 local_transform;
+  mat4 world_transform;
+  vec3 position;
+  vec3 rotation;
+  vec3 scale;
+  struct Entity *entity;
+  struct SceneNode *parent_node;
+  struct SceneNode **children;
+  unsigned int num_children;
+};
 
 struct PhysicsBody {
   // Collision
@@ -36,6 +48,7 @@ struct PhysicsWorld {
   unsigned int num_static_bodies;
   unsigned int num_dynamic_bodies;
   unsigned int num_player_bodies;
+  struct PlayerMapping *player_mappings;
 };
 
 

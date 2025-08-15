@@ -2,15 +2,18 @@
 
 // #include <glad/glad.h>
 #include <cglm/cglm.h>
+#include <uuid/uuid.h>
 #include <AL/al.h>
 #include <AL/alc.h>
 #include "physics/world.h"
 #include "model.h"
 #include "shader.h"
 #include "audio_manager.h"
+#include "types.h"
 
 struct Entity {
-  unsigned int ID;
+  uuid_t id;
+  EntityType type;
   vec3 position;
   vec3 rotation;
   vec3 scale;
@@ -20,7 +23,7 @@ struct Entity {
   Shader *shader;
   // Audio
   struct AudioComponent *audio_component;
+  struct ItemComponent *item;
 };
 
 void entity_play_sound_effect(struct Entity *entity);
-// void entity_play_sound_effect(struct Entity *entity, struct SoundEffect *sound_effect);

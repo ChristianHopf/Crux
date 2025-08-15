@@ -6,7 +6,7 @@ CC = gcc
 CFLAGS = -Iinclude -Iinclude/physics -Iinclude/menu $(addprefix -I,$(shell find third_party -type d)) $(shell pkg-config --cflags freetype2 glfw3 openal assimp) -Wall -Wextra -g
 # LDFLAGS = -L/usr/lib $(shell pkg-config --libs freetype2) -lglfw -lGL -lcglm -lm -ldl -lassimp -lopenal -lsndfile
 # LDFLAGS = $(shoreplace -L/usr/lib $(shell pkg-config --libs freetype2 glfw3 openal assimp libsndfile) -lcglm -lm -ldl
-LDFLAGS = $(shell pkg-config --libs freetype2 glfw3 openal assimp) -lcglm -lm -ldl -lsndfile
+LDFLAGS = $(shell pkg-config --libs freetype2 glfw3 openal assimp) -lcglm -lm -ldl -lsndfile -luuid
 
 # Directories
 SRC_DIR = src
@@ -27,7 +27,7 @@ TEST_OBJS = $(patsubst $(TEST_DIR)/%.c,$(OBJ_DIR)/test/%.o,$(TEST_FILES))
 UNITY_OBJ = $(OBJ_DIR)/unity.o
 
 # Output binaries
-MAIN_OUT = $(OUT_DIR)/scenegraph1
+MAIN_OUT = $(OUT_DIR)/item2
 TEST_OUT = $(OUT_DIR)/test_runner
 
 # Dependency check

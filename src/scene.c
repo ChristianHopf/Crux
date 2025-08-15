@@ -13,6 +13,7 @@
 #include "physics/debug_renderer.h"
 #include "physics/utils.h"
 #include "audio_manager.h"
+#include "event.h"
 #include "utils.h"
 
 struct Scene *scene_init(char *scene_path){
@@ -216,12 +217,12 @@ struct Scene *scene_init(char *scene_path){
 
   // Player
   struct Player *player = player_create(models[1], shaders[0],
-                                (vec3){0.0f, 0.0f, 15.0f},
+                                (vec3){0.0f, 0.0f, 2.0f},
                                 (vec3){0.0f, 180.0f, 0.0f},
                                 (vec3){1.0f, 1.0f, 1.0f},
                                 (vec3){0.0f, 0.0f, 0.0f},
                                 (vec3){0.0f, 0.0f, 0.0f},
-                                1.75f, false);
+                                1.75f, false, 5);
   if (!player){
     fprintf(stderr, "Error: failed to create player in scene_init\n");
     return NULL;
@@ -233,6 +234,7 @@ struct Scene *scene_init(char *scene_path){
     scene->num_player_entities = 1;
     scene->player_entities = scene->player.entity;
   }
+  scene->player.entity->type = ENTITY_PLAYER;
   struct Collider player_collider = {
     .type = 2,
     .data.capsule = {
@@ -271,6 +273,9 @@ void scene_update(struct Scene *scene, float delta_time){
 
   // Perform collision detection
   physics_step(scene->physics_world, delta_time);
+
+  // Process event queue
+  game_event_queue_process();
 
   // Update player
   player_update(&scene->player, delta_time);
@@ -422,6 +427,7 @@ void scene_render(struct Scene *scene){
   }
 }
 
+// TODO refactor to free scene graph
 void scene_free(struct Scene *scene){
   // Free models
   for (int i = 0; i < scene->num_models; i++){
@@ -431,15 +437,19 @@ void scene_free(struct Scene *scene){
   for (int i = 0; i < scene->num_shaders; i++){
     free(scene->shaders[i]);
   }
+  // for(unsigned int i = 0; i < scene->num_entities; i++){
+  //   free(scene->entities[i]);
+  // }
+
   // Free entities
-  for (unsigned int i = 0; i < scene->num_dynamic_entities; i++){
-    free(scene->dynamic_entities[i].audio_component);
-  }
-  free(scene->dynamic_entities);
-  for (unsigned int i = 0; i < scene->num_static_entities; i++){
-    free(scene->static_entities[i].audio_component);
-  }
-  free(scene->static_entities);
+  // for (unsigned int i = 0; i < scene->num_dynamic_entities; i++){
+  //   free(scene->dynamic_entities[i].audio_component);
+  // }
+  // free(scene->dynamic_entities);
+  // for (unsigned int i = 0; i < scene->num_static_entities; i++){
+  //   free(scene->static_entities[i].audio_component);
+  // }
+  // free(scene->static_entities);
 
   // Free skybox
   free(scene->skybox->shader);
@@ -526,6 +536,7 @@ void scene_process_node_json(const cJSON *node_json, struct SceneNode *current_n
       fprintf(stderr, "Error: failed to allocate entity in scene_process_node_json\n");
       return;
     }
+    uuid_generate(current_node->entity->id);
     current_node->entity->model = models[model_index];
     current_node->entity->shader = shaders[shader_index];
     scene_process_vec3_json(cJSON_GetObjectItemCaseSensitive(node_json, "position"), current_node->entity->position);
@@ -534,6 +545,59 @@ void scene_process_node_json(const cJSON *node_json, struct SceneNode *current_n
 
     // AudioComponent (may want to include this in scene json somehow, maybe just a bool)
     current_node->entity->audio_component = audio_component_create(current_node->entity, 0);
+
+    // Entity type
+    cJSON *entity_type_json = cJSON_GetObjectItemCaseSensitive(node_json, "entity_type");
+    if (!cJSON_IsNumber(entity_type_json)){
+      fprintf(stderr, "Error: failed to get entity type in scene_process_node_json, either invalid or does not exist\n");
+      return;
+    }
+
+    // Process entity type and appropriate information if present
+    int entity_type = cJSON_GetNumberValue(entity_type_json);
+    if (entity_type >= 0){
+      current_node->entity->type = cJSON_GetNumberValue(entity_type_json);
+      
+      // Item
+      if (entity_type == 1){
+        cJSON *item_id_json = cJSON_GetObjectItemCaseSensitive(node_json, "item_id");
+        if (!cJSON_IsNumber(item_id_json)){
+          fprintf(stderr, "Error: failed to get item id in scene_process_node_json, either invalid or does not exist\n");
+          return;
+        }
+        cJSON *item_name_json = cJSON_GetObjectItemCaseSensitive(node_json, "item_name");
+        if (!cJSON_IsString(item_name_json)){
+          fprintf(stderr, "Error: failed to get item name in scene_process_node_json, either invalid or does not exist\n");
+          return;
+        }
+        cJSON *item_count_json = cJSON_GetObjectItemCaseSensitive(node_json, "item_count");
+        if (!cJSON_IsNumber(item_count_json)){
+          fprintf(stderr, "Error: failed to get item count in scene_process_node_json, either invalid or does not exist\n");
+          return;
+        }
+        cJSON *item_max_count_json = cJSON_GetObjectItemCaseSensitive(node_json, "item_max_count");
+        if (!cJSON_IsNumber(item_max_count_json)){
+          fprintf(stderr, "Error: failed to get item max count in scene_process_node_json, either invalid or does not exist\n");
+          return;
+        }
+
+        current_node->entity->item = (struct ItemComponent *)calloc(1, sizeof(struct ItemComponent));
+        if (!current_node->entity->item){
+          fprintf(stderr, "Error: failed to allocate Item in scene_process_node_json\n");
+          return;
+        }
+        current_node->entity->item->id = cJSON_GetNumberValue(item_id_json);
+        strncpy(current_node->entity->item->name, cJSON_GetStringValue(item_name_json), 64);
+        current_node->entity->item->count = cJSON_GetNumberValue(item_count_json);
+        current_node->entity->item->max_count = cJSON_GetNumberValue(item_max_count_json);
+
+        char uuid_str[37];
+        uuid_unparse_lower(current_node->entity->id, uuid_str);
+        // printf("Item name is %s\n", current_node->entity->item->name);
+        // printf("Item count is %d\n", current_node->entity->item->count);
+        // printf("Item max count is %d\n", current_node->entity->item->max_count);
+      }
+    }
   }
 
   // Process transform
@@ -702,4 +766,44 @@ void scene_process_node_json(const cJSON *node_json, struct SceneNode *current_n
       index++;
     }
   }
+}
+
+void scene_remove_scene_node_by_entity_id(struct Scene *scene, uuid_t id){
+  struct SceneNode *current_node = scene->root_node;
+
+  // If this node has an entity, check if it has the given id. If so, remove it
+  // and its children.
+  while(current_node){
+    if (current_node->entity){
+      if (uuid_compare(current_node->entity->id, id)){
+        struct SceneNode *parent_node = current_node->parent_node;
+
+        scene_remove_scene_node(current_node);
+
+        break;
+      }
+      for (unsigned int i = 0; i < current_node->num_children; i++){
+
+      }
+    }
+  }
+}
+
+void scene_remove_scene_node(struct SceneNode *scene_node){
+  // Remove this node's children
+  if (scene_node->children){
+    for (unsigned int i = 0; i < scene_node->num_children; i++){
+      scene_remove_scene_node(scene_node->children[i]);
+    }
+  }
+
+  // Remove this node
+  free(scene_node->entity);
+  free(scene_node);
+}
+
+// Trivial for now with only one Player.
+// TODO Will need to refactor this, Scene struct, and initialization for multiplayer
+struct Player *scene_get_player_by_entity_id(struct Scene *scene, uuid_t id){
+  return &scene->player;
 }
