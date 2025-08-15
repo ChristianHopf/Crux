@@ -190,7 +190,22 @@ struct Scene *scene_init(char *scene_path){
     return NULL;
   }
 
-  scene_process_node_json(nodes_json, scene->root_node, NULL, models, shaders, scene->physics_world);
+  // Allocate array of entities
+  cJSON *entity_count_json = cJSON_GetObjectItemCaseSensitive(scene_json, "entity_count");
+  if (!cJSON_IsNumber(entity_count_json)){
+    fprintf(stderr, "Error: failed to get entity_count in scene_init, either invalid or does not exist\n");
+    return NULL;
+  }
+  int entity_count = cJSON_GetNumberValue(entity_count_json);
+  scene->entities = (struct Entity **)calloc(entity_count, sizeof(struct Entity *));
+  if (!scene->entities){
+    fprintf(stderr, "Error: failed to allocate scene->entities in scene_init\n");
+    return NULL;
+  }
+  scene->num_entities = 0;
+
+  // Build scene graph and fill entities array
+  scene_process_node_json(nodes_json, scene->root_node, NULL, scene->entities, &scene->num_entities, models, shaders, scene->physics_world);
   scene->max_entities = 64;
   
   // Lights
@@ -516,7 +531,15 @@ struct SceneNode *scene_node_create(unsigned int id){
   return node;
 }
 
-void scene_process_node_json(const cJSON *node_json, struct SceneNode *current_node, struct SceneNode *parent_node, struct Model **models, Shader **shaders, struct PhysicsWorld *physics_world){
+void scene_process_node_json(
+  const cJSON *node_json,
+  struct SceneNode *current_node,
+  struct SceneNode *parent_node,
+  struct Entity **scene_entities,
+  unsigned int *scene_num_entities,
+  struct Model **models,
+  Shader **shaders,
+  struct PhysicsWorld *physics_world){
   // Model and shader for Entity
   cJSON *model_index_json = cJSON_GetObjectItemCaseSensitive(node_json, "model_index");
   cJSON *shader_index_json = cJSON_GetObjectItemCaseSensitive(node_json, "shader_index");
@@ -598,6 +621,8 @@ void scene_process_node_json(const cJSON *node_json, struct SceneNode *current_n
         // printf("Item max count is %d\n", current_node->entity->item->max_count);
       }
     }
+    // Add reference to this entity to scene's entities array
+    scene_entities[(*scene_num_entities)++] = current_node->entity;
   }
 
   // Process transform
@@ -762,7 +787,7 @@ void scene_process_node_json(const cJSON *node_json, struct SceneNode *current_n
       current_node->children[index]->parent_node = current_node;
 
       // Recursively process each child node
-      scene_process_node_json(child_node_json, current_node->children[index], current_node, models, shaders, physics_world);
+      scene_process_node_json(child_node_json, current_node->children[index], current_node, scene_entities, scene_num_entities, models, shaders, physics_world);
       index++;
     }
   }

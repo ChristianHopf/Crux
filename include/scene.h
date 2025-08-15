@@ -38,9 +38,10 @@ struct Scene {
   struct SceneNode *root_node;
   struct Entity *player_entities;
   struct Entity **entities;
-  int num_entities;
+  unsigned int num_entities;
   int num_player_entities;
   int max_entities;
+  // struct PlayerComponent *player_components;
   struct Skybox *skybox;
   struct Player player;
   struct Light *lights;
@@ -66,7 +67,7 @@ void scene_free(struct Scene *scene);
 // JSON processing helpers
 void scene_process_light_json(cJSON *light_json, struct Light *light);
 void scene_process_vec3_json(cJSON *vec3_json, vec3 dest);
-void scene_process_node_json(const cJSON *node_json, struct SceneNode *current_node, struct SceneNode *parent_node, struct Model **models, Shader **shaders, struct PhysicsWorld *physics_world);
+void scene_process_node_json(const cJSON *node_json, struct SceneNode *current_node, struct SceneNode *parent_node, struct Entity **scene_entities, unsigned int *scene_num_entities, struct Model **models, Shader **shaders, struct PhysicsWorld *physics_world);
 
 // Misc
 struct Player *scene_get_player_by_entity_id(struct Scene *scene, uuid_t id);

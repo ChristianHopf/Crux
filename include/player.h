@@ -16,6 +16,10 @@ struct InventoryComponent {
   int capacity;
 };
 
+struct PlayerComponent {
+
+};
+
 struct Player {
   struct Camera *camera;
   struct Entity *entity;
