@@ -205,7 +205,7 @@ struct Scene *scene_init(char *scene_path){
   scene->num_entities = 0;
 
   // Build scene graph and fill entities array
-  scene_process_node_json(nodes_json, scene->root_node, NULL, scene->entities, &scene->num_entities, models, shaders, scene->physics_world);
+  scene_process_node_json(scene, nodes_json, scene->root_node, NULL, models, shaders, scene->physics_world);
   scene->max_entities = 64;
   
   // Lights
@@ -532,11 +532,10 @@ struct SceneNode *scene_node_create(unsigned int id){
 }
 
 void scene_process_node_json(
+  struct Scene *scene,
   const cJSON *node_json,
   struct SceneNode *current_node,
   struct SceneNode *parent_node,
-  struct Entity **scene_entities,
-  unsigned int *scene_num_entities,
   struct Model **models,
   Shader **shaders,
   struct PhysicsWorld *physics_world){
@@ -577,12 +576,15 @@ void scene_process_node_json(
     }
 
     // Process entity type and appropriate information if present
-    int entity_type = cJSON_GetNumberValue(entity_type_json);
-    if (entity_type >= 0){
-      current_node->entity->type = cJSON_GetNumberValue(entity_type_json);
-      
+    EntityType entity_type = cJSON_GetNumberValue(entity_type_json);
+    switch(entity_type){
+      case ENTITY_WORLD: {
+        current_node->entity->type = entity_type;
+        break;
+      }
       // Item
-      if (entity_type == 1){
+      case ENTITY_ITEM: {
+        current_node->entity->type = entity_type;
         cJSON *item_id_json = cJSON_GetObjectItemCaseSensitive(node_json, "item_id");
         if (!cJSON_IsNumber(item_id_json)){
           fprintf(stderr, "Error: failed to get item id in scene_process_node_json, either invalid or does not exist\n");
@@ -602,27 +604,35 @@ void scene_process_node_json(
         if (!cJSON_IsNumber(item_max_count_json)){
           fprintf(stderr, "Error: failed to get item max count in scene_process_node_json, either invalid or does not exist\n");
           return;
-        }
+          }
 
-        current_node->entity->item = (struct ItemComponent *)calloc(1, sizeof(struct ItemComponent));
-        if (!current_node->entity->item){
-          fprintf(stderr, "Error: failed to allocate Item in scene_process_node_json\n");
-          return;
-        }
-        current_node->entity->item->id = cJSON_GetNumberValue(item_id_json);
-        strncpy(current_node->entity->item->name, cJSON_GetStringValue(item_name_json), 64);
-        current_node->entity->item->count = cJSON_GetNumberValue(item_count_json);
-        current_node->entity->item->max_count = cJSON_GetNumberValue(item_max_count_json);
+          current_node->entity->item = (struct ItemComponent *)calloc(1, sizeof(struct ItemComponent));
+          if (!current_node->entity->item){
+            fprintf(stderr, "Error: failed to allocate Item in scene_process_node_json\n");
+            return;
+          }
+          current_node->entity->item->id = cJSON_GetNumberValue(item_id_json);
+          strncpy(current_node->entity->item->name, cJSON_GetStringValue(item_name_json), 64);
+          current_node->entity->item->count = cJSON_GetNumberValue(item_count_json);
+          current_node->entity->item->max_count = cJSON_GetNumberValue(item_max_count_json);
 
-        char uuid_str[37];
-        uuid_unparse_lower(current_node->entity->id, uuid_str);
-        // printf("Item name is %s\n", current_node->entity->item->name);
-        // printf("Item count is %d\n", current_node->entity->item->count);
-        // printf("Item max count is %d\n", current_node->entity->item->max_count);
+          // char uuid_str[37];
+          // uuid_unparse_lower(current_node->entity->id, uuid_str);
+          // printf("Item name is %s\n", current_node->entity->item->name);
+          // printf("Item count is %d\n", current_node->entity->item->count);
+          // printf("Item max count is %d\n", current_node->entity->item->max_count);
+          break;
+      }
+      // TODO More refactoring here when I actually implement multiplayer support
+      case ENTITY_PLAYER: {
+        // Process player entity
+        current_node->entity->type = entity_type;
+        scene->player_components = (struct PlayerComponent *)calloc(1, sizeof(struct PlayerComponent));
+        break;
       }
     }
     // Add reference to this entity to scene's entities array
-    scene_entities[(*scene_num_entities)++] = current_node->entity;
+    scene->entities[scene->num_entities++] = current_node->entity;
   }
 
   // Process transform
@@ -787,7 +797,7 @@ void scene_process_node_json(
       current_node->children[index]->parent_node = current_node;
 
       // Recursively process each child node
-      scene_process_node_json(child_node_json, current_node->children[index], current_node, scene_entities, scene_num_entities, models, shaders, physics_world);
+      scene_process_node_json(scene, child_node_json, current_node->children[index], current_node, models, shaders, physics_world);
       index++;
     }
   }

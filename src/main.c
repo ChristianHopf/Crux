@@ -57,7 +57,6 @@ static int last_space_state = GLFW_RELEASE;
 void processInput(GLFWwindow *window){
   Engine *engine = (Engine *)glfwGetWindowUserPointer(window);
 
-
   if (!game_state_is_paused()){
     // Camera movement
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS){
