@@ -593,7 +593,6 @@ void scene_process_node_json(const cJSON *node_json, struct SceneNode *current_n
 
         char uuid_str[37];
         uuid_unparse_lower(current_node->entity->id, uuid_str);
-        printf("Item id is %s\n", uuid_str);
         // printf("Item name is %s\n", current_node->entity->item->name);
         // printf("Item count is %d\n", current_node->entity->item->count);
         // printf("Item max count is %d\n", current_node->entity->item->max_count);

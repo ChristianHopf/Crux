@@ -34,11 +34,6 @@ struct Player *player_create(struct Model *model, Shader *shader, vec3 position,
     return NULL;
   }
   uuid_generate(player->entity->id);
-
-  char uuid_str[37];
-  uuid_unparse_lower(player->entity->id, uuid_str);
-  printf("Player id is %s\n", uuid_str);
-
   player->entity->model = model;
   player->entity->shader = shader;
   glm_vec3_copy(position, player->entity->position);
