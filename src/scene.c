@@ -231,25 +231,33 @@ struct Scene *scene_init(char *scene_path){
   }
 
   // Player
+  scene->max_player_components = 8;
+  scene->player_components = (struct PlayerComponent **)calloc(scene->max_player_components, sizeof(struct PlayerComponent *));
+  if (!scene->player_components){
+    fprintf(stderr, "Error: failed to allocate scene PlayerComponent pointer array in scene_init\n");
+    return NULL;
+  }
+  scene->num_player_components = 0;
   struct PlayerComponent *player = scene_player_create(scene, models[1], shaders[0],
                                 (vec3){0.0f, 0.0f, 2.0f},
                                 (vec3){0.0f, 180.0f, 0.0f},
                                 (vec3){1.0f, 1.0f, 1.0f},
                                 (vec3){0.0f, 0.0f, 0.0f},
                                 (vec3){0.0f, 0.0f, 0.0f},
-                                1.75f, false, 5);
+                                1.75f, false, 5, true);
   if (!player){
     fprintf(stderr, "Error: failed to create player in scene_init\n");
     return NULL;
   }
-  scene->player = *player;
+  scene->player_components[0] = player;
+  // scene->player = *player;
 
-  if (scene->player.render_entity){
+  if (scene->player_components[0]->render_entity){
     scene->player_entities = (struct Entity *)calloc(1, sizeof(struct Entity));
     scene->num_player_entities = 1;
-    scene->player_entities = scene->player.entity;
+    scene->player_entities = scene->player_components[0]->entity;
   }
-  scene->player.entity->type = ENTITY_PLAYER;
+  // scene->player.entity->type = ENTITY_PLAYER;
   struct Collider player_collider = {
     .type = 2,
     .data.capsule = {
@@ -258,7 +266,9 @@ struct Scene *scene_init(char *scene_path){
       .radius = 0.25f
     }
   };
-  scene->player.entity->physics_body = physics_add_player(scene->physics_world, scene->player.entity, player_collider);
+
+  // scene->player_components = player;
+  scene->player_components[0]->entity->physics_body = physics_add_player(scene->physics_world, scene->player_components[0]->entity, player_collider);
 
   // Init physics debug renderer
   if (scene->physics_debug_mode){
@@ -293,7 +303,7 @@ void scene_update(struct Scene *scene, float delta_time){
   game_event_queue_process();
 
   // Update player
-  player_update(&scene->player, delta_time);
+  player_update(scene->player_components[0], delta_time);
 
   scene_node_update(scene->root_node);
 
@@ -355,8 +365,8 @@ void scene_render(struct Scene *scene){
   // Get view and projection matrices
   mat4 view;
   mat4 projection;
-  camera_get_view_matrix(scene->player.camera, view);
-  glm_perspective(glm_rad(scene->player.camera->fov), 1920.0f / 1080.0f, 0.1f, 100.0f, projection);
+  camera_get_view_matrix(scene->player_components[0]->camera, view);
+  glm_perspective(glm_rad(scene->player_components[0]->camera->fov), 1920.0f / 1080.0f, 0.1f, 100.0f, projection);
 
   // Create a RenderContext, which is simply
   // a collection of parameters for rendering the Level and Entities
@@ -364,7 +374,7 @@ void scene_render(struct Scene *scene){
     .light_ptr = scene->lights,
     .view_ptr = &view,
     .projection_ptr = &projection,
-    .camera_position_ptr = &scene->player.camera->position,
+    .camera_position_ptr = &scene->player_components[0]->camera->position,
   };
 
   // Set view and projection matrices in matrices UBO
@@ -386,6 +396,8 @@ void scene_render(struct Scene *scene){
   // Allocate RenderItem arrays
   unsigned int num_render_items = 0;
   scene_get_render_item_count(scene->root_node, &num_render_items);
+  printf("scene_get_render_item_count: %d items\n", num_render_items);
+  printf("scene->num_entities: %d items\n", scene->num_entities);
   opaque_items = (struct RenderItem *)malloc(num_render_items * sizeof(struct RenderItem));
   if (!opaque_items){
     fprintf(stderr, "Error: failed to allocate opaque RenderItems in scene_render\n");
@@ -404,7 +416,7 @@ void scene_render(struct Scene *scene){
     fprintf(stderr, "Error: failed to allocate additive RenderItems in scene_render\n");
   }
 
-  scene_get_render_items(scene->root_node, scene->player.camera->position, &opaque_items, &num_opaque_items, &mask_items, &num_mask_items, &transparent_items, &num_transparent_items, &additive_items, &num_additive_items);
+  scene_get_render_items(scene->root_node, scene->player_components[0]->camera->position, &opaque_items, &num_opaque_items, &mask_items, &num_mask_items, &transparent_items, &num_transparent_items, &additive_items, &num_additive_items);
 
   // Sort transparent_items back to front
   qsort(transparent_items, num_transparent_items, sizeof(struct RenderItem), compare_render_item_depth);
@@ -626,9 +638,9 @@ void scene_process_node_json(
       // TODO More refactoring here when I actually implement multiplayer support
       case ENTITY_PLAYER: {
         // Process player entity
-        current_node->entity->type = entity_type;
-        scene->player_components = (struct PlayerComponent *)calloc(1, sizeof(struct PlayerComponent));
-        memcpy(current_node->entity->id, scene->player_components->entity_id, 16);
+        // current_node->entity->type = entity_type;
+        // scene->player_components = (struct PlayerComponent *)calloc(1, sizeof(struct PlayerComponent));
+        // memcpy(current_node->entity->id, scene->player_components->entity_id, 16);
         break;
       }
     }
@@ -815,7 +827,8 @@ struct PlayerComponent *scene_player_create(
   vec3 camera_offset,
   float camera_height,
   bool render_entity,
-  int inventory_capacity){
+  int inventory_capacity,
+  bool is_local){
   struct PlayerComponent *player = (struct PlayerComponent *)calloc(1, sizeof(struct PlayerComponent));
   if (!player){
     fprintf(stderr, "Error: failed to allocate player in player_create\n");
@@ -861,6 +874,7 @@ struct PlayerComponent *scene_player_create(
   // Add player entity to scene entities array
   scene->entities[scene->num_entities++] = player->entity;
 
+
   // AudioComponent
   player->entity->audio_component = audio_component_create(player->entity, 0);
 
@@ -869,6 +883,11 @@ struct PlayerComponent *scene_player_create(
 
   // Initialize inventory
   player_inventory_init(player, inventory_capacity);
+
+  player->is_local = is_local;
+
+  // Add player component to scene player components array
+  scene->player_components[scene->num_player_components++] = player;
 
   return player;
 }

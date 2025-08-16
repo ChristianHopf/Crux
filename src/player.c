@@ -3,61 +3,61 @@
 #include "player.h"
 #include "physics/world.h"
 
-struct Player *player_create(struct Model *model, Shader *shader, vec3 position, vec3 rotation, vec3 scale, vec3 velocity, vec3 camera_offset, float camera_height, bool render_entity, int inventory_capacity){
+// struct Player *player_create(struct Model *model, Shader *shader, vec3 position, vec3 rotation, vec3 scale, vec3 velocity, vec3 camera_offset, float camera_height, bool render_entity, int inventory_capacity){
+//
+//   // Allocate player
+//   struct Player *player = (struct Player *)calloc(1, sizeof(struct Player));
+//   if (!player){
+//     fprintf(stderr, "Error: failed to allocate player in player_create\n");
+//     return NULL;
+//   }
+//
+//   // Init camera
+//   vec3 cameraPos = {0.0f, 0.0f, 0.0f};
+//   vec3 cameraUp = {0.0f, 1.0f, 0.0f};
+//   float yaw = -90.0f;
+//   float pitch = 0.0f;
+//   float fov = 90.0f;
+//   float sensitivity = 0.1f;
+//   float speed = 2.5f;
+//   struct Camera *camera = camera_create(cameraPos, cameraUp, yaw, pitch, fov, sensitivity, speed);
+//   if (!camera){
+//     printf("Error: failed to create camera in player init\n");
+//     return NULL;
+//   }
+//   player->camera = camera;
+//
+//   // Add entity information (model, shader, etc)
+//   player->entity = (struct Entity *)calloc(1, sizeof(struct Entity));
+//   if (!player->entity){
+//     fprintf(stderr, "Error: failed to allocate entity in player_init\n");
+//     return NULL;
+//   }
+//   uuid_generate(player->entity->id);
+//   player->entity->model = model;
+//   player->entity->shader = shader;
+//   glm_vec3_copy(position, player->entity->position);
+//   glm_vec3_copy(rotation, player->entity->rotation);
+//   glm_vec3_copy(scale, player->entity->scale);
+//   glm_vec3_copy(velocity, player->entity->velocity);
+//   glm_vec3_copy(camera_offset, player->camera_offset);
+//   glm_vec3_copy(camera_offset, player->rotated_offset);
+//   player->camera_height = camera_height;
+//   player->render_entity = render_entity;
+//
+//   // AudioComponent
+//   player->entity->audio_component = audio_component_create(player->entity, 0);
+//
+//   // Set listener position to camera position
+//   audio_listener_update(player);
+//
+//   // Initialize inventory
+//   player_inventory_init(player, inventory_capacity);
+//
+//   return player;
+// }
 
-  // Allocate player
-  struct Player *player = (struct Player *)calloc(1, sizeof(struct Player));
-  if (!player){
-    fprintf(stderr, "Error: failed to allocate player in player_create\n");
-    return NULL;
-  }
-
-  // Init camera
-  vec3 cameraPos = {0.0f, 0.0f, 0.0f};
-  vec3 cameraUp = {0.0f, 1.0f, 0.0f};
-  float yaw = -90.0f;
-  float pitch = 0.0f;
-  float fov = 90.0f;
-  float sensitivity = 0.1f;
-  float speed = 2.5f;
-  struct Camera *camera = camera_create(cameraPos, cameraUp, yaw, pitch, fov, sensitivity, speed);
-  if (!camera){
-    printf("Error: failed to create camera in player init\n");
-    return NULL;
-  }
-  player->camera = camera;
-
-  // Add entity information (model, shader, etc)
-  player->entity = (struct Entity *)calloc(1, sizeof(struct Entity));
-  if (!player->entity){
-    fprintf(stderr, "Error: failed to allocate entity in player_init\n");
-    return NULL;
-  }
-  uuid_generate(player->entity->id);
-  player->entity->model = model;
-  player->entity->shader = shader;
-  glm_vec3_copy(position, player->entity->position);
-  glm_vec3_copy(rotation, player->entity->rotation);
-  glm_vec3_copy(scale, player->entity->scale);
-  glm_vec3_copy(velocity, player->entity->velocity);
-  glm_vec3_copy(camera_offset, player->camera_offset);
-  glm_vec3_copy(camera_offset, player->rotated_offset);
-  player->camera_height = camera_height;
-  player->render_entity = render_entity;
-
-  // AudioComponent
-  player->entity->audio_component = audio_component_create(player->entity, 0);
-
-  // Set listener position to camera position
-  audio_listener_update(player);
-
-  // Initialize inventory
-  player_inventory_init(player, inventory_capacity);
-
-  return player;
-}
-
-void player_process_keyboard_input(struct Player *player, CameraDirection direction, float delta_time){
+void player_process_keyboard_input(struct PlayerComponent *player, CameraDirection direction, float delta_time){
   float velocity = (float)(player->camera->speed * delta_time);
 	if (direction == CAMERA_FORWARD){
     vec3 forward = {player->camera->front[0], 0.0f, player->camera->front[2]};
@@ -97,7 +97,7 @@ void player_process_keyboard_input(struct Player *player, CameraDirection direct
 	//}
 }
 
-void player_process_mouse_input(struct Player *player, float xoffset, float yoffset){
+void player_process_mouse_input(struct PlayerComponent *player, float xoffset, float yoffset){
   struct Camera *camera = player->camera;
 
   // Multiply offset by sensitivity
@@ -175,7 +175,7 @@ void player_process_mouse_input(struct Player *player, float xoffset, float yoff
   player->entity->physics_body->rotation[2] = 0.0f;
 }
 
-void player_jump(struct Player *player){
+void player_jump(struct PlayerComponent *player){
   // Reset at_rest
   struct PhysicsBody *body = player->entity->physics_body;
   body->at_rest = false;
@@ -184,7 +184,7 @@ void player_jump(struct Player *player){
   body->velocity[1] = 3.0f;
 }
 
-void player_update(struct Player *player, float delta_time){
+void player_update(struct PlayerComponent *player, float delta_time){
   glm_vec3_copy(player->entity->physics_body->position, player->entity->position);
   glm_vec3_copy(player->entity->physics_body->rotation, player->entity->rotation);
   glm_vec3_copy(player->entity->physics_body->velocity, player->entity->velocity);
@@ -203,7 +203,7 @@ void player_update(struct Player *player, float delta_time){
   audio_listener_update(player);
 }
 
-void player_inventory_init(struct Player *player, int capacity){
+void player_inventory_init(struct PlayerComponent *player, int capacity){
   player->inventory.items = (struct ItemComponent *)calloc(capacity, sizeof(struct ItemComponent));
   if (!player->inventory.items){
     fprintf(stderr, "Error: failed to allocate Items in player_inventory_init\n");
@@ -213,7 +213,7 @@ void player_inventory_init(struct Player *player, int capacity){
   player->inventory.capacity = capacity;
 }
 
-bool player_add_item(struct Player *player, int item_id, int count){
+bool player_add_item(struct PlayerComponent *player, int item_id, int count){
   if (player->inventory.size >= player->inventory.capacity){
     return false;
   }

@@ -35,6 +35,7 @@ struct PlayerComponent {
   vec3 camera_offset;
   vec3 rotated_offset;
   bool render_entity;
+  bool is_local;
 };
 
 struct PlayerManager {
