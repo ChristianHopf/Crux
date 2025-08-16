@@ -442,8 +442,9 @@ struct AudioComponent *audio_component_create(struct Entity *entity, int sound_e
 }
 
 void audio_component_destroy(struct AudioComponent *audio_component){
-  alDeleteSources(1, audio_component->source);
-  free(audio_component);
+  if (audio_remove_source(audio_component->source_id)){
+    free(audio_component);
+  }
 }
 
 void audio_component_play(struct AudioComponent *audio_component){

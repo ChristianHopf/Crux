@@ -60,7 +60,8 @@ struct Scene *scene_create(bool physics_view_mode);
 
 void scene_update(struct Scene *scene, float deltaTime);
 void scene_node_update(struct SceneNode *current_node);
-void scene_remove_scene_node_by_entity_id(struct Scene *scene, uuid_t id);
+void scene_get_node_by_entity_id(struct SceneNode *current_node, uuid_t entity_id, int *child_index, int *final_child_index, struct SceneNode *dest);
+void scene_remove_entity(struct Scene *scene, uuid_t id);
 void scene_remove_scene_node(struct SceneNode *scene_node);
 void scene_render(struct Scene *scene);
 void scene_free(struct Scene *scene);
