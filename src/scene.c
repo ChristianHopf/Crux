@@ -891,10 +891,11 @@ struct PlayerComponent *scene_player_create(
 }
 
 // Recursive function to search the scene graph for the node with the entity with the given entity_id
-void scene_get_node_by_entity_id(struct SceneNode *current_node, uuid_t entity_id, int *child_index, int *final_child_index, struct SceneNode *dest){
+void scene_get_node_by_entity_id(struct SceneNode *current_node, uuid_t entity_id, int *child_index, int *final_child_index, struct SceneNode **dest){
   if (current_node->entity){
     if (uuid_compare(current_node->entity->id, entity_id) == 0){
-      dest = current_node;
+      *dest = current_node;
+      printf("dest node address: %p\n", current_node);
       *final_child_index = *child_index;
     }
   }
@@ -909,12 +910,15 @@ void scene_remove_entity(struct Scene *scene, uuid_t entity_id){
   // Find and remove the correct SceneNode
   struct SceneNode *node_to_remove = NULL;
   int child_index, final_child_index;
-  scene_get_node_by_entity_id(scene->root_node, entity_id, &child_index, &final_child_index, node_to_remove);
+  scene_get_node_by_entity_id(scene->root_node, entity_id, &child_index, &final_child_index, &node_to_remove);
+  printf("Address of node_to_remove: %p\n", node_to_remove);
   if (node_to_remove){
     // If the node we want to remove has a parent node,
     // swap and pop its last child to the place of the node we removed
     struct SceneNode *parent_node = node_to_remove->parent_node;
     scene_remove_scene_node(node_to_remove);
+    printf("Removed scene node\n");
+    printf("Child index of node to remove: %d\n", final_child_index);
     if (parent_node){
       parent_node->children[final_child_index] = parent_node->children[parent_node->num_children - 1];
       parent_node->num_children--;
