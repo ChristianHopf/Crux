@@ -137,6 +137,34 @@ struct PhysicsBody *physics_add_player(struct PhysicsWorld *physics_world, struc
   return body;
 }
 
+void physics_remove_body(struct PhysicsWorld *physics_world, struct PhysicsBody *physics_body){
+  for (unsigned int i = 0; i < physics_world->num_player_bodies; i++){
+    if (uuid_compare(physics_world->player_bodies[i]->entity->id, physics_body->entity->id) == 0){
+      // TODO realloc here
+      free(physics_world->player_bodies[i]);
+      physics_world->player_bodies[i] = physics_world->player_bodies[physics_world->num_player_bodies - 1];
+      physics_world->num_player_bodies--;
+      return;
+    }
+  }
+  for (unsigned int i = 0; i < physics_world->num_static_bodies; i++){
+    if (uuid_compare(physics_world->static_bodies[i]->entity->id, physics_body->entity->id) == 0){
+      free(physics_world->static_bodies[i]);
+      physics_world->static_bodies[i] = physics_world->static_bodies[physics_world->num_static_bodies - 1];
+      physics_world->num_static_bodies--;
+      return;
+    }
+  }
+  for (unsigned int i = 0; i < physics_world->num_dynamic_bodies; i++){
+    if (uuid_compare(physics_world->dynamic_bodies[i]->entity->id, physics_body->entity->id) == 0){
+      free(physics_world->dynamic_bodies[i]);
+      physics_world->dynamic_bodies[i] = physics_world->dynamic_bodies[physics_world->num_dynamic_bodies - 1];
+      physics_world->num_dynamic_bodies--;
+      return;
+    }
+  }
+}
+
 void physics_step(struct PhysicsWorld *physics_world, float delta_time){
   if (delta_time > MAX_DELTA_TIME){
     delta_time = MAX_DELTA_TIME;

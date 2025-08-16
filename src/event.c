@@ -101,25 +101,25 @@ void game_event_queue_process(){
       }
       case EVENT_PLAYER_ITEM_PICKUP: {
         printf("Processing player item pickup event\n");
-        // char player_entity_uuid_str[37];
-        // uuid_unparse_lower(game_event.data.item_pickup.player_entity_id, player_entity_uuid_str);
-        // printf("Player id: %s\n", player_entity_uuid_str);
-        // printf("Item id: %d\n", game_event.data.item_pickup.item_id);
-        // char uuid_str[37];
-        // uuid_unparse_lower(game_event.data.item_pickup.item_entity_id, uuid_str);
-        // printf("Item entity id: %s\n", uuid_str);
+        char player_entity_uuid_str[37];
+        uuid_unparse_lower(game_event.data.item_pickup.player_entity_id, player_entity_uuid_str);
+        printf("Player id: %s\n", player_entity_uuid_str);
+        printf("Item id: %d\n", game_event.data.item_pickup.item_id);
+        char uuid_str[37];
+        uuid_unparse_lower(game_event.data.item_pickup.item_entity_id, uuid_str);
+        printf("Item entity id: %s\n", uuid_str);
 
-        // struct Player *player = scene_get_player_by_entity_id(game_event_queue.scene, game_event.data.item_pickup.player_entity_id);
+        struct PlayerComponent *player = scene_get_player_by_entity_id(game_event_queue.scene, game_event.data.item_pickup.player_entity_id);
 
         // Toy hardcoded version for now. Refactor to a more ECS style structure,
         // then figure out creating items decoupled from the engine itself
-        // if (player_add_item(player, game_event.data.item_pickup.item_id, game_event.data.item_pickup.item_count)){
-        //   // Remove the item's entity from the scene graph.
-        //   // scene_remove_scene_node_by_entity_id(game_event_queue.scene, game_event.data.item_pickup.item_entity_id);
-        //   // Could also use some kind of "persistent" bool in the future if I want
-        //   // items that don't disappear when a player picks them up.
-        //   printf("Successfully added %d item to the player's inventory\n", game_event.data.item_pickup.item_count);
-        // }
+        if (player_add_item(player, game_event.data.item_pickup.item_id, game_event.data.item_pickup.item_count)){
+          // Remove the item's entity from the scene graph.
+          scene_remove_scene_node_by_entity_id(game_event_queue.scene, game_event.data.item_pickup.item_entity_id);
+          // Could also use some kind of "persistent" bool in the future if I want
+          // items that don't disappear when a player picks them up.
+          printf("Successfully added %d item to the player's inventory\n", game_event.data.item_pickup.item_count);
+        }
         break;
       }
       default: {

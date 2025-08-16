@@ -85,4 +85,4 @@ struct PlayerComponent *scene_player_create(
   bool is_local);
 
 // Misc
-// struct Player *scene_get_player_by_entity_id(struct Scene *scene, uuid_t id);
+struct PlayerComponent *scene_get_player_by_entity_id(struct Scene *scene, uuid_t id);

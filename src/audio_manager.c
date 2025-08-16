@@ -441,6 +441,11 @@ struct AudioComponent *audio_component_create(struct Entity *entity, int sound_e
   return audio_component;
 }
 
+void audio_component_destroy(struct AudioComponent *audio_component){
+  alDeleteSources(1, audio_component->source);
+  free(audio_component);
+}
+
 void audio_component_play(struct AudioComponent *audio_component){
   // Set context if not set
   if (!alcGetCurrentContext()) {

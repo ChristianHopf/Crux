@@ -250,7 +250,6 @@ struct Scene *scene_init(char *scene_path){
     return NULL;
   }
   scene->player_components[0] = player;
-  // scene->player = *player;
 
   if (scene->player_components[0]->render_entity){
     scene->player_entities = (struct Entity *)calloc(1, sizeof(struct Entity));
@@ -396,8 +395,6 @@ void scene_render(struct Scene *scene){
   // Allocate RenderItem arrays
   unsigned int num_render_items = 0;
   scene_get_render_item_count(scene->root_node, &num_render_items);
-  printf("scene_get_render_item_count: %d items\n", num_render_items);
-  printf("scene->num_entities: %d items\n", scene->num_entities);
   opaque_items = (struct RenderItem *)malloc(num_render_items * sizeof(struct RenderItem));
   if (!opaque_items){
     fprintf(stderr, "Error: failed to allocate opaque RenderItems in scene_render\n");
@@ -416,6 +413,7 @@ void scene_render(struct Scene *scene){
     fprintf(stderr, "Error: failed to allocate additive RenderItems in scene_render\n");
   }
 
+  // TODO will eventually just look at some kind of array of "RenderComponents"
   scene_get_render_items(scene->root_node, scene->player_components[0]->camera->position, &opaque_items, &num_opaque_items, &mask_items, &num_mask_items, &transparent_items, &num_transparent_items, &additive_items, &num_additive_items);
 
   // Sort transparent_items back to front
@@ -859,7 +857,7 @@ struct PlayerComponent *scene_player_create(
   // UUID
   uuid_generate(player->entity->id);
   memcpy(player->entity_id, player->entity->id, 16);
-
+  player->entity->type = ENTITY_PLAYER;
   player->entity->model = model;
   player->entity->shader = shader;
   glm_vec3_copy(position, player->entity->position);
@@ -892,23 +890,57 @@ struct PlayerComponent *scene_player_create(
   return player;
 }
 
-void scene_remove_scene_node_by_entity_id(struct Scene *scene, uuid_t id){
-  struct SceneNode *current_node = scene->root_node;
+// Recursive function to search the scene graph for the node with the entity with the given entity_id
+void scene_get_node_by_entity_id(struct SceneNode *current_node, uuid_t entity_id, int *child_index, int *final_child_index, struct SceneNode *dest){
+  if (current_node->entity){
+    if (uuid_compare(current_node->entity->id, entity_id) == 0){
+      dest = current_node;
+      *final_child_index = *child_index;
+    }
+  }
 
-  // If this node has an entity, check if it has the given id. If so, remove it
-  // and its children.
-  while(current_node){
-    if (current_node->entity){
-      if (uuid_compare(current_node->entity->id, id)){
-        struct SceneNode *parent_node = current_node->parent_node;
+  for (unsigned int i = 0; i < current_node->num_children; i++){
+    *child_index = i;
+    scene_get_node_by_entity_id(current_node->children[i], entity_id, child_index, final_child_index, dest);
+  }
+}
 
-        scene_remove_scene_node(current_node);
+void scene_remove_entity(struct Scene *scene, uuid_t entity_id){
+  // Find and remove the correct SceneNode
+  struct SceneNode *node_to_remove = NULL;
+  int child_index, final_child_index;
+  scene_get_node_by_entity_id(scene->root_node, entity_id, &child_index, &final_child_index, node_to_remove);
+  if (node_to_remove){
+    // If the node we want to remove has a parent node,
+    // swap and pop its last child to the place of the node we removed
+    struct SceneNode *parent_node = node_to_remove->parent_node;
+    scene_remove_scene_node(node_to_remove);
+    if (parent_node){
+      parent_node->children[final_child_index] = parent_node->children[parent_node->num_children - 1];
+      parent_node->num_children--;
+    }
+  }
 
-        break;
+  // Remove entity and its components
+  for(int i = 0; i < scene->num_entities; i++){
+    if (uuid_compare(scene->entities[i]->id, entity_id) == 0){
+      // PhysicsBody
+      physics_remove_body(scene->physics_world, scene->entities[i]->physics_body);
+
+      // AudioComponent
+      if (scene->entities[i]->audio_component){
+        audio_component_destroy(scene->entities[i]->audio_component);
       }
-      for (unsigned int i = 0; i < current_node->num_children; i++){
 
+      // ItemComponent
+      if (scene->entities[i]->item){
+        free(scene->entities[i]->item);
       }
+
+      // Entity
+      free(scene->entities[i]);
+      scene->entities[i] = scene->entities[scene->num_entities - 1];
+      scene->num_entities--;
     }
   }
 }
@@ -922,14 +954,14 @@ void scene_remove_scene_node(struct SceneNode *scene_node){
   }
 
   // Remove this node
-  free(scene_node->entity);
+  // free(scene_node->entity);
   free(scene_node);
 }
 
-// struct Player *scene_get_player_by_entity_id(struct Scene *scene, uuid_t entity_id){
-//   for (unsigned int i = 0; i < scene->num_player_components; i++){
-//     if (uuid_compare(scene->player_components[i].entity_id, entity_id) == 0){
-//       return &scene->player_components[i];
-//     }
-//   }
-// }
+struct PlayerComponent *scene_get_player_by_entity_id(struct Scene *scene, uuid_t entity_id){
+  for (unsigned int i = 0; i < scene->num_player_components; i++){
+    if (uuid_compare(scene->player_components[i]->entity_id, entity_id) == 0){
+      return scene->player_components[i];
+    }
+  }
+}

@@ -150,6 +150,7 @@ void scene_get_render_item_count(struct SceneNode *scene_node, unsigned int *num
     scene_get_render_item_count(scene_node->children[i], num_render_items);
   }
 }
+
 void scene_get_render_items(
   struct SceneNode *scene_node,
   vec3 camera_pos,
