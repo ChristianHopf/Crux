@@ -489,21 +489,21 @@ void audio_component_play(struct AudioComponent *audio_component){
   }
 }
 
-void audio_listener_update(struct Player *player){
+void audio_listener_update(struct PlayerComponent *player){
   struct Camera *camera = player->camera;
 
   // Set context
   alcMakeContextCurrent(global_audio_manager->context);
   ALenum player_error = alGetError();
   if (player_error != AL_NO_ERROR){
-    fprintf(stderr, "Error: failed to set audio context in player_init\n");
+    fprintf(stderr, "Error: failed to set audio context in audio_listener_update\n");
   }
 
   // Set listener position
   alListenerfv(AL_POSITION, camera->position);
   player_error = alGetError();
   if (player_error != AL_NO_ERROR){
-    fprintf(stderr, "Error: failed to set audio context in player_init\n");
+    fprintf(stderr, "Error: failed to set listener position in audio_listener_update\n");
   }
 
   // Get listener up vector

@@ -42,8 +42,10 @@ struct Scene {
   int num_player_entities;
   int max_entities;
   struct PlayerComponent *player_components;
+  unsigned int num_player_components;
+  unsigned int max_player_components;
   struct Skybox *skybox;
-  struct Player player;
+  struct PlayerComponent player;
   struct Light *lights;
   // UBOs
   unsigned int ubo_matrices;
@@ -69,5 +71,18 @@ void scene_process_light_json(cJSON *light_json, struct Light *light);
 void scene_process_vec3_json(cJSON *vec3_json, vec3 dest);
 void scene_process_node_json(struct Scene *scene, const cJSON *node_json, struct SceneNode *current_node, struct SceneNode *parent_node, struct Model **models, Shader **shaders, struct PhysicsWorld *physics_world);
 
+struct PlayerComponent *scene_player_create(
+  struct Scene *scene,
+  struct Model *model,
+  Shader *shader,
+  vec3 position,
+  vec3 rotation,
+  vec3 scale,
+  vec3 velocity,
+  vec3 camera_offset,
+  float camera_height,
+  bool render_entity,
+  int inventory_capacity);
+
 // Misc
-struct Player *scene_get_player_by_entity_id(struct Scene *scene, uuid_t id);
+// struct Player *scene_get_player_by_entity_id(struct Scene *scene, uuid_t id);

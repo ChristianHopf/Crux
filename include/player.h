@@ -16,11 +16,13 @@ struct InventoryComponent {
   int capacity;
 };
 
+// struct PlayerComponent {
+//   uuid_t entity_id;
+//   bool is_local;
+// };
+
 struct PlayerComponent {
-
-};
-
-struct Player {
+  uuid_t entity_id;
   struct Camera *camera;
   struct Entity *entity;
   struct InventoryComponent inventory;
@@ -36,16 +38,16 @@ struct Player {
 };
 
 struct PlayerManager {
-  struct Player player;
+  struct PlayerComponent player;
 };
 
 
-struct Player *player_create(struct Model *model, Shader *shader, vec3 position, vec3 rotation, vec3 scale, vec3 velocity, vec3 camera_offset, float camera_height, bool render_entity, int inventory_capacity);
-void player_process_keyboard_input(struct Player *player, CameraDirection camera_direction, float delta_time);
-void player_process_mouse_input(struct Player *player, float xoffset, float yoffset);
-void player_jump(struct Player *player);
-void player_update(struct Player *player, float delta_time);
+struct PlayerComponent *player_create(struct Model *model, Shader *shader, vec3 position, vec3 rotation, vec3 scale, vec3 velocity, vec3 camera_offset, float camera_height, bool render_entity, int inventory_capacity);
+void player_process_keyboard_input(struct PlayerComponent *player, CameraDirection camera_direction, float delta_time);
+void player_process_mouse_input(struct PlayerComponent *player, float xoffset, float yoffset);
+void player_jump(struct PlayerComponent *player);
+void player_update(struct PlayerComponent *player, float delta_time);
 
 // Inventory
-void player_inventory_init(struct Player *player, int capacity);
-bool player_add_item(struct Player *player, int item_id, int count);
+void player_inventory_init(struct PlayerComponent *player, int capacity);
+bool player_add_item(struct PlayerComponent *player, int item_id, int count);

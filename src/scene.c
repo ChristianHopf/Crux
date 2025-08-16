@@ -231,7 +231,7 @@ struct Scene *scene_init(char *scene_path){
   }
 
   // Player
-  struct Player *player = player_create(models[1], shaders[0],
+  struct PlayerComponent *player = scene_player_create(scene, models[1], shaders[0],
                                 (vec3){0.0f, 0.0f, 2.0f},
                                 (vec3){0.0f, 180.0f, 0.0f},
                                 (vec3){1.0f, 1.0f, 1.0f},
@@ -628,6 +628,7 @@ void scene_process_node_json(
         // Process player entity
         current_node->entity->type = entity_type;
         scene->player_components = (struct PlayerComponent *)calloc(1, sizeof(struct PlayerComponent));
+        memcpy(current_node->entity->id, scene->player_components->entity_id, 16);
         break;
       }
     }
@@ -803,6 +804,75 @@ void scene_process_node_json(
   }
 }
 
+struct PlayerComponent *scene_player_create(
+  struct Scene *scene,
+  struct Model *model,
+  Shader *shader,
+  vec3 position,
+  vec3 rotation,
+  vec3 scale,
+  vec3 velocity,
+  vec3 camera_offset,
+  float camera_height,
+  bool render_entity,
+  int inventory_capacity){
+  struct PlayerComponent *player = (struct PlayerComponent *)calloc(1, sizeof(struct PlayerComponent));
+  if (!player){
+    fprintf(stderr, "Error: failed to allocate player in player_create\n");
+    return NULL;
+  }
+
+  // Init camera
+  vec3 cameraPos = {0.0f, 0.0f, 0.0f};
+  vec3 cameraUp = {0.0f, 1.0f, 0.0f};
+  float yaw = -90.0f;
+  float pitch = 0.0f;
+  float fov = 90.0f;
+  float sensitivity = 0.1f;
+  float speed = 2.5f;
+  struct Camera *camera = camera_create(cameraPos, cameraUp, yaw, pitch, fov, sensitivity, speed);
+  if (!camera){
+    printf("Error: failed to create camera in player init\n");
+    return NULL;
+  }
+  player->camera = camera;
+
+  // Add entity information (model, shader, etc)
+  player->entity = (struct Entity *)calloc(1, sizeof(struct Entity));
+  if (!player->entity){
+    fprintf(stderr, "Error: failed to allocate entity in player_init\n");
+    return NULL;
+  }
+  // UUID
+  uuid_generate(player->entity->id);
+  memcpy(player->entity_id, player->entity->id, 16);
+
+  player->entity->model = model;
+  player->entity->shader = shader;
+  glm_vec3_copy(position, player->entity->position);
+  glm_vec3_copy(rotation, player->entity->rotation);
+  glm_vec3_copy(scale, player->entity->scale);
+  glm_vec3_copy(velocity, player->entity->velocity);
+  glm_vec3_copy(camera_offset, player->camera_offset);
+  glm_vec3_copy(camera_offset, player->rotated_offset);
+  player->camera_height = camera_height;
+  player->render_entity = render_entity;
+
+  // Add player entity to scene entities array
+  scene->entities[scene->num_entities++] = player->entity;
+
+  // AudioComponent
+  player->entity->audio_component = audio_component_create(player->entity, 0);
+
+  // Set listener position to camera position
+  audio_listener_update(player);
+
+  // Initialize inventory
+  player_inventory_init(player, inventory_capacity);
+
+  return player;
+}
+
 void scene_remove_scene_node_by_entity_id(struct Scene *scene, uuid_t id){
   struct SceneNode *current_node = scene->root_node;
 
@@ -837,8 +907,10 @@ void scene_remove_scene_node(struct SceneNode *scene_node){
   free(scene_node);
 }
 
-// Trivial for now with only one Player.
-// TODO Will need to refactor this, Scene struct, and initialization for multiplayer
-struct Player *scene_get_player_by_entity_id(struct Scene *scene, uuid_t id){
-  return &scene->player;
-}
+// struct Player *scene_get_player_by_entity_id(struct Scene *scene, uuid_t entity_id){
+//   for (unsigned int i = 0; i < scene->num_player_components; i++){
+//     if (uuid_compare(scene->player_components[i].entity_id, entity_id) == 0){
+//       return &scene->player_components[i];
+//     }
+//   }
+// }

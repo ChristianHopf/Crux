@@ -16,7 +16,7 @@
 #define MAX_SOURCES 64
 
 // Forward declarations
-struct Player;
+struct PlayerComponent;
 struct Entity;
 
 struct AudioStream {
@@ -92,7 +92,7 @@ struct AudioComponent *audio_component_create(struct Entity *entity, int sound_e
 void audio_component_play(struct AudioComponent *audio_component);
 
 // Listener
-void audio_listener_update(struct Player *player);
+void audio_listener_update(struct PlayerComponent *player);
 
 // Observing game state
 struct GameStateObserver *audio_game_state_observer_create();
