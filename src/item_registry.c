@@ -12,10 +12,12 @@ void item_registry_init(struct ItemRegistry *item_registry, int num_items){
 }
 
 struct ItemDefinition *item_registry_get_item(struct ItemRegistry *item_registry, int item_id){
+  printf("item_registry_get_item: num items is %d\n", item_registry->num_items);
   for (unsigned int i = 0; i < item_registry->num_items; i++){
     if (item_registry->items[i].id == item_id){
       return &item_registry->items[i];
     }
   }
+  printf("Failed to get item from item registry\n");
   return NULL;
 }

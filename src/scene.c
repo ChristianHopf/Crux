@@ -331,7 +331,7 @@ void scene_update(struct Scene *scene, float delta_time){
   scene_node_update(scene->root_node);
 
   struct PlayerComponent *player = scene->player_components[0];
-  inventory_print(scene_get_inventory_by_entity_id(scene, player->entity_id));
+  inventory_print(&scene->item_registry, scene_get_inventory_by_entity_id(scene, player->entity_id));
 
   // Update light
   float lightSpeed = 1.0f;
@@ -627,32 +627,20 @@ void scene_process_node_json(
           fprintf(stderr, "Error: failed to get item id in scene_process_node_json, either invalid or does not exist\n");
           return;
         }
-        cJSON *item_name_json = cJSON_GetObjectItemCaseSensitive(node_json, "item_name");
-        if (!cJSON_IsString(item_name_json)){
-          fprintf(stderr, "Error: failed to get item name in scene_process_node_json, either invalid or does not exist\n");
-          return;
-        }
         cJSON *item_count_json = cJSON_GetObjectItemCaseSensitive(node_json, "item_count");
         if (!cJSON_IsNumber(item_count_json)){
           fprintf(stderr, "Error: failed to get item count in scene_process_node_json, either invalid or does not exist\n");
           return;
         }
-        cJSON *item_max_count_json = cJSON_GetObjectItemCaseSensitive(node_json, "item_max_count");
-        if (!cJSON_IsNumber(item_max_count_json)){
-          fprintf(stderr, "Error: failed to get item max count in scene_process_node_json, either invalid or does not exist\n");
-          return;
-          }
 
-          current_node->entity->item = (struct ItemComponent *)calloc(1, sizeof(struct ItemComponent));
-          if (!current_node->entity->item){
-            fprintf(stderr, "Error: failed to allocate Item in scene_process_node_json\n");
-            return;
-          }
-          current_node->entity->item->id = cJSON_GetNumberValue(item_id_json);
-          strncpy(current_node->entity->item->name, cJSON_GetStringValue(item_name_json), 64);
-          current_node->entity->item->count = cJSON_GetNumberValue(item_count_json);
-          current_node->entity->item->max_count = cJSON_GetNumberValue(item_max_count_json);
-          break;
+        current_node->entity->item = (struct ItemComponent *)calloc(1, sizeof(struct ItemComponent));
+        if (!current_node->entity->item){
+          fprintf(stderr, "Error: failed to allocate Item in scene_process_node_json\n");
+          return;
+        }
+        current_node->entity->item->id = cJSON_GetNumberValue(item_id_json);
+        current_node->entity->item->count = cJSON_GetNumberValue(item_count_json);
+        break;
       }
       // TODO More refactoring here when I actually implement multiplayer support
       case ENTITY_PLAYER: {
@@ -843,6 +831,7 @@ void scene_process_items_json(struct Scene *scene, cJSON *items_json){
     fprintf(stderr, "Error: failed to allocate ItemRegistry items in scene_process_items_json\n");
     return;
   }
+  item_registry->num_items = num_items;
 
   int index = 0;
   const cJSON *item_json;
@@ -880,6 +869,12 @@ void scene_process_items_json(struct Scene *scene, cJSON *items_json){
     }
     int item_max_count = cJSON_GetNumberValue(item_max_count_json);
     item_definition->max_count = item_max_count;
+
+    index++;
+
+    printf("Item definition id: %d\n", item_definition->id);
+    printf("Item definition name: %s\n", item_definition->name);
+    printf("Item definition max count: %d\n", item_definition->max_count);
   }
 }
 

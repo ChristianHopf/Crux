@@ -17,7 +17,7 @@ bool inventory_add_item(struct Scene *scene, uuid_t player_entity_id, int item_i
   return false;
 }
 
-void inventory_print(struct InventoryComponent *inventory_component){
+void inventory_print(struct ItemRegistry *item_registry, struct InventoryComponent *inventory_component){
   // Print size and capacity
   printf("\nINVENTORY\n");
   printf("Size: %d\nCapacity: %d\n", inventory_component->size, inventory_component->capacity);
@@ -25,8 +25,11 @@ void inventory_print(struct InventoryComponent *inventory_component){
   // Print items
   for (unsigned int i = 0; i < inventory_component->size; i++){
     struct ItemComponent *item = &inventory_component->items[i];
+    struct ItemDefinition *item_definition = item_registry_get_item(item_registry, item->id);
     printf("Item %d:\n", i);
-    printf("id: %d\n", item->id);
-    printf("count: %d\n", item->count);
+    printf("ID: %d\n", item->id);
+    printf("Name: %s\n", item_definition->name);
+    printf("Count: %d\n", item->count);
+    printf("Max count: %d\n", item_definition->max_count);
   }
 }
