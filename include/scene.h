@@ -8,6 +8,7 @@
 #include "entity.h"
 #include "player.h"
 #include "inventory.h"
+#include "item_registry.h"
 #include "shader.h"
 
 struct Light {
@@ -58,6 +59,8 @@ struct Scene {
   struct InventoryComponent *inventory_components;
   unsigned int num_inventory_components;
   unsigned int max_inventory_components;
+
+  struct ItemRegistry item_registry;
 };
 
 
@@ -76,6 +79,7 @@ void scene_free(struct Scene *scene);
 void scene_process_light_json(cJSON *light_json, struct Light *light);
 void scene_process_vec3_json(cJSON *vec3_json, vec3 dest);
 void scene_process_node_json(struct Scene *scene, const cJSON *node_json, struct SceneNode *current_node, struct SceneNode *parent_node, struct Model **models, Shader **shaders, struct PhysicsWorld *physics_world);
+void scene_process_items_json(struct Scene *scene, cJSON *items_json);
 
 struct PlayerComponent *scene_player_create(
   struct Scene *scene,

@@ -285,6 +285,14 @@ struct Scene *scene_init(char *scene_path){
     scene->num_inventory_components++;
   }
 
+  // ItemRegistry
+  const cJSON *items_json = cJSON_GetObjectItemCaseSensitive(scene_json, "items");
+  if (!cJSON_IsArray(items_json)){
+    fprintf(stderr, "Error: failed to get items object from scene_json, either invalid or does not exist\n");
+    return NULL;
+  }
+  scene_process_items_json(scene, items_json);
+
   // Init physics debug renderer
   if (scene->physics_debug_mode){
     physics_debug_renderer_init(scene->physics_world);
@@ -644,12 +652,6 @@ void scene_process_node_json(
           strncpy(current_node->entity->item->name, cJSON_GetStringValue(item_name_json), 64);
           current_node->entity->item->count = cJSON_GetNumberValue(item_count_json);
           current_node->entity->item->max_count = cJSON_GetNumberValue(item_max_count_json);
-
-          // char uuid_str[37];
-          // uuid_unparse_lower(current_node->entity->id, uuid_str);
-          // printf("Item name is %s\n", current_node->entity->item->name);
-          // printf("Item count is %d\n", current_node->entity->item->count);
-          // printf("Item max count is %d\n", current_node->entity->item->max_count);
           break;
       }
       // TODO More refactoring here when I actually implement multiplayer support
@@ -833,6 +835,54 @@ void scene_process_node_json(
   }
 }
 
+void scene_process_items_json(struct Scene *scene, cJSON *items_json){
+  int num_items = cJSON_GetArraySize(items_json);
+  struct ItemRegistry *item_registry = &scene->item_registry;
+  item_registry->items = (struct ItemDefinition *)calloc(num_items, sizeof(struct ItemDefinition));
+  if (!item_registry->items){
+    fprintf(stderr, "Error: failed to allocate ItemRegistry items in scene_process_items_json\n");
+    return;
+  }
+
+  int index = 0;
+  const cJSON *item_json;
+  cJSON_ArrayForEach(item_json, items_json){
+    struct ItemDefinition *item_definition = &item_registry->items[index];
+    // id
+    cJSON *item_id_json = cJSON_GetObjectItemCaseSensitive(item_json, "id");
+    if (!cJSON_IsNumber(item_id_json)){
+      fprintf(stderr, "Error: failed to get item id in scene_process_items_json, either invalid or does not exist\n");
+      return;
+    }
+    int item_id = cJSON_GetNumberValue(item_id_json);
+    item_definition->id = item_id;
+
+    // Name
+    cJSON *item_name_json = cJSON_GetObjectItemCaseSensitive(item_json, "name");
+    if (!cJSON_IsString(item_name_json)){
+      fprintf(stderr, "Error: failed to get item name in scene_process_items_json, either invalid or does not exist\n");
+      return;
+    }
+    char *item_name = cJSON_GetStringValue(item_name_json);
+    size_t item_name_length = strlen(item_name);
+    if (item_name_length >= MAX_ITEM_NAME_LENGTH){
+      fprintf(stderr, "Error: item name exceeds max length of %d characters\n", MAX_ITEM_NAME_LENGTH - 1);
+      return;
+    }
+    strncpy(item_definition->name, item_name, MAX_ITEM_NAME_LENGTH - 1);
+    item_definition->name[MAX_ITEM_NAME_LENGTH - 1] = '\0';
+
+    // Max count
+    cJSON *item_max_count_json = cJSON_GetObjectItemCaseSensitive(item_json, "max_count");
+    if (!cJSON_IsNumber(item_max_count_json)){
+      fprintf(stderr, "Error: failed to get item max_count in scene_process_items_json, either invalid or does not exist\n");
+      return;
+    }
+    int item_max_count = cJSON_GetNumberValue(item_max_count_json);
+    item_definition->max_count = item_max_count;
+  }
+}
+
 struct PlayerComponent *scene_player_create(
   struct Scene *scene,
   struct Model *model,
@@ -988,6 +1038,7 @@ struct PlayerComponent *scene_get_player_by_entity_id(struct Scene *scene, uuid_
       return scene->player_components[i];
     }
   }
+  return NULL;
 }
 
 struct InventoryComponent *scene_get_inventory_by_entity_id(struct Scene *scene, uuid_t entity_id){
@@ -996,4 +1047,5 @@ struct InventoryComponent *scene_get_inventory_by_entity_id(struct Scene *scene,
       return &scene->inventory_components[i];
     }
   }
+  return NULL;
 }

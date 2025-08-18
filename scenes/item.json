@@ -191,6 +191,13 @@
       }
     ]
   },
+  "items": [
+    {
+      "id": 1,
+      "name": "Magic Potion",
+      "max_count": 3
+    }
+  ],
 	"lights": [
 		{
 			"type": "directional",
