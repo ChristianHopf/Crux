@@ -47,11 +47,11 @@ Clay_RenderCommandArray compute_clay_layout_overlay(void *arg){
       .chars = version_text,
       .length = strlen(version_text)
     };
-    Clay_String oiiai_count_string = {
-       .isStaticallyAllocated = false,
-       .chars = "OIIAI count: 8",
-       .length = 14
-    };
+    // Clay_String oiiai_count_string = {
+    //    .isStaticallyAllocated = false,
+    //    .chars = "OIIAI count: 8",
+    //    .length = 14
+    // };
     CLAY_TEXT(version_text_string, &overlay_version_text_config);
     CLAY({
         .layout = {
@@ -60,7 +60,7 @@ Clay_RenderCommandArray compute_clay_layout_overlay(void *arg){
           }
         }
     }){}
-    CLAY_TEXT(oiiai_count_string, &overlay_version_text_config);
+    // CLAY_TEXT(oiiai_count_string, &overlay_version_text_config);
   }
 
   return Clay_EndLayout();

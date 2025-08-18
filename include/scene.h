@@ -7,6 +7,7 @@
 #include "skybox.h"
 #include "entity.h"
 #include "player.h"
+#include "inventory.h"
 #include "shader.h"
 
 struct Light {
@@ -41,9 +42,6 @@ struct Scene {
   unsigned int num_entities;
   int num_player_entities;
   int max_entities;
-  struct PlayerComponent **player_components;
-  unsigned int num_player_components;
-  unsigned int max_player_components;
   struct Skybox *skybox;
   struct Light *lights;
   // UBOs
@@ -52,6 +50,14 @@ struct Scene {
   struct PhysicsWorld *physics_world;
   // Options
   bool physics_debug_mode;
+
+  // Components
+  struct PlayerComponent **player_components;
+  unsigned int num_player_components;
+  unsigned int max_player_components;
+  struct InventoryComponent *inventory_components;
+  unsigned int num_inventory_components;
+  unsigned int max_inventory_components;
 };
 
 
@@ -85,5 +91,6 @@ struct PlayerComponent *scene_player_create(
   int inventory_capacity,
   bool is_local);
 
-// Misc
-struct PlayerComponent *scene_get_player_by_entity_id(struct Scene *scene, uuid_t id);
+// Components
+struct PlayerComponent *scene_get_player_by_entity_id(struct Scene *scene, uuid_t entity_id);
+struct InventoryComponent *scene_get_inventory_by_entity_id(struct Scene *scene, uuid_t entity_id);

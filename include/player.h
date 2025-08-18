@@ -6,26 +6,15 @@
 #include <uuid/uuid.h>
 #include "audio_manager.h"
 #include "camera.h"
+// #include "inventory.h"
 #include "entity.h"
-#include "item.h"
 #include "utils.h"
-
-struct InventoryComponent {
-  struct ItemComponent *items;
-  int size;
-  int capacity;
-};
-
-// struct PlayerComponent {
-//   uuid_t entity_id;
-//   bool is_local;
-// };
 
 struct PlayerComponent {
   uuid_t entity_id;
   struct Camera *camera;
   struct Entity *entity;
-  struct InventoryComponent inventory;
+  // struct InventoryComponent inventory;
   // If camera position syncs with entity position,
   // the camera points at the player's "feet."
   // If the camera_offset is updated by its magnitude and
@@ -51,4 +40,4 @@ void player_update(struct PlayerComponent *player, float delta_time);
 
 // Inventory
 void player_inventory_init(struct PlayerComponent *player, int capacity);
-bool player_add_item(struct PlayerComponent *player, int item_id, int count);
+// bool scene_player_add_item(struct Scene *scene, uuid_t player_entity_id, int item_id, int count);

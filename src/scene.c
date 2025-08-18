@@ -269,6 +269,22 @@ struct Scene *scene_init(char *scene_path){
   // scene->player_components = player;
   scene->player_components[0]->entity->physics_body = physics_add_player(scene->physics_world, scene->player_components[0]->entity, player_collider);
 
+  // InventoryComponents
+  scene->max_inventory_components = scene->max_player_components;
+  scene->inventory_components = (struct InventoryComponent *)calloc(scene->max_inventory_components, sizeof(struct InventoryComponent));
+  if (!scene->inventory_components){
+    fprintf(stderr, "Error: failed to allocate InventoryComponents in scene_init\n");
+    return NULL;
+  }
+  for (unsigned int i = 0; i < scene->num_player_components; i++){
+    struct InventoryComponent *inventory_component = &scene->inventory_components[i];
+    memcpy(inventory_component->entity_id, scene->player_components[i]->entity_id, 16);
+    inventory_component->capacity = 5;
+    inventory_component->items = (struct ItemComponent *)calloc(inventory_component->capacity, sizeof(struct ItemComponent));
+    inventory_component->size = 0;
+    scene->num_inventory_components++;
+  }
+
   // Init physics debug renderer
   if (scene->physics_debug_mode){
     physics_debug_renderer_init(scene->physics_world);
@@ -305,6 +321,9 @@ void scene_update(struct Scene *scene, float delta_time){
   player_update(scene->player_components[0], delta_time);
 
   scene_node_update(scene->root_node);
+
+  struct PlayerComponent *player = scene->player_components[0];
+  inventory_print(scene_get_inventory_by_entity_id(scene, player->entity_id));
 
   // Update light
   float lightSpeed = 1.0f;
@@ -880,7 +899,7 @@ struct PlayerComponent *scene_player_create(
   audio_listener_update(player);
 
   // Initialize inventory
-  player_inventory_init(player, inventory_capacity);
+  // player_inventory_init(player, inventory_capacity);
 
   player->is_local = is_local;
 
@@ -917,8 +936,6 @@ void scene_remove_entity(struct Scene *scene, uuid_t entity_id){
     // swap and pop its last child to the place of the node we removed
     struct SceneNode *parent_node = node_to_remove->parent_node;
     scene_remove_scene_node(node_to_remove);
-    printf("Removed scene node\n");
-    printf("Child index of node to remove: %d\n", final_child_index);
     if (parent_node){
       parent_node->children[final_child_index] = parent_node->children[parent_node->num_children - 1];
       parent_node->num_children--;
@@ -930,21 +947,25 @@ void scene_remove_entity(struct Scene *scene, uuid_t entity_id){
     if (uuid_compare(scene->entities[i]->id, entity_id) == 0){
       // PhysicsBody
       physics_remove_body(scene->physics_world, scene->entities[i]->physics_body);
+      printf("Successfully removed physics body\n");
 
       // AudioComponent
       if (scene->entities[i]->audio_component){
         audio_component_destroy(scene->entities[i]->audio_component);
       }
+      printf("Successfully removed audio component\n");
 
       // ItemComponent
       if (scene->entities[i]->item){
         free(scene->entities[i]->item);
       }
+      printf("Successfully removed item component\n");
 
       // Entity
       free(scene->entities[i]);
       scene->entities[i] = scene->entities[scene->num_entities - 1];
       scene->num_entities--;
+      printf("Successfully removed entity\n");
     }
   }
 }
@@ -958,7 +979,6 @@ void scene_remove_scene_node(struct SceneNode *scene_node){
   }
 
   // Remove this node
-  // free(scene_node->entity);
   free(scene_node);
 }
 
@@ -966,6 +986,14 @@ struct PlayerComponent *scene_get_player_by_entity_id(struct Scene *scene, uuid_
   for (unsigned int i = 0; i < scene->num_player_components; i++){
     if (uuid_compare(scene->player_components[i]->entity_id, entity_id) == 0){
       return scene->player_components[i];
+    }
+  }
+}
+
+struct InventoryComponent *scene_get_inventory_by_entity_id(struct Scene *scene, uuid_t entity_id){
+  for (unsigned int i = 0; i < scene->num_inventory_components; i++){
+    if (uuid_compare(scene->inventory_components[i].entity_id, entity_id) == 0){
+      return &scene->inventory_components[i];
     }
   }
 }

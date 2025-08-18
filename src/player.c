@@ -203,19 +203,20 @@ void player_update(struct PlayerComponent *player, float delta_time){
   audio_listener_update(player);
 }
 
-void player_inventory_init(struct PlayerComponent *player, int capacity){
-  player->inventory.items = (struct ItemComponent *)calloc(capacity, sizeof(struct ItemComponent));
-  if (!player->inventory.items){
-    fprintf(stderr, "Error: failed to allocate Items in player_inventory_init\n");
-    return;
-  }
-  player->inventory.size = 0;
-  player->inventory.capacity = capacity;
-}
+// void player_inventory_init(struct PlayerComponent *player, int capacity){
+//   player->inventory.items = (struct ItemComponent *)calloc(capacity, sizeof(struct ItemComponent));
+//   if (!player->inventory.items){
+//     fprintf(stderr, "Error: failed to allocate Items in player_inventory_init\n");
+//     return;
+//   }
+//   player->inventory.size = 0;
+//   player->inventory.capacity = capacity;
+// }
 
-bool player_add_item(struct PlayerComponent *player, int item_id, int count){
-  if (player->inventory.size >= player->inventory.capacity){
-    return false;
-  }
-  return true;
-}
+// bool scene_player_add_item(struct Scene *scene, uuid_t player_entity_id, int item_id, int count){
+//   // if (player->inventory.size >= player->inventory.capacity){
+//   //   return false;
+//   // }
+//   //
+//   return true;
+// }
