@@ -93,6 +93,7 @@ bool game_event_queue_is_empty(){
 }
 
 void game_event_queue_process(){
+  printf("game_event_queue_process\n");
   struct GameEvent game_event;
   while (game_event_queue_dequeue(&game_event)){
     switch (game_event.type){
@@ -111,10 +112,11 @@ void game_event_queue_process(){
         printf("Item entity id: %s\n", uuid_str);
 
         struct PlayerComponent *player = scene_get_player_by_entity_id(game_event_queue.scene, game_event.data.item_pickup.player_entity_id);
+        struct InventoryComponent *inventory_component = scene_get_inventory_by_entity_id(game_event_queue.scene, game_event.data.item_pickup.player_entity_id);
 
         // Toy hardcoded version for now. Refactor to a more ECS style structure,
         // then figure out creating items decoupled from the engine itself
-        if (inventory_add_item(game_event_queue.scene, game_event.data.item_pickup.player_entity_id, game_event.data.item_pickup.item_id, game_event.data.item_pickup.item_count)){
+        if (inventory_add_item(inventory_component, &game_event_queue.scene->item_registry, game_event.data.item_pickup.item_id, game_event.data.item_pickup.item_count)){
           // Remove the item's entity from the scene graph.
           scene_remove_entity(game_event_queue.scene, game_event.data.item_pickup.item_entity_id);
           // Could also use some kind of "persistent" bool in the future if I want

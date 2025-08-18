@@ -244,6 +244,7 @@ void physics_step(struct PhysicsWorld *physics_world, float delta_time){
             memcpy(event.data.item_pickup.player_entity_id, body_B->entity->id, 16);
             // event.data.item_pickup.player_entity_id = body_B->entity->id;
             event.data.item_pickup.item_id = body_A->entity->item->id;
+            printf("body_A->entity->item->count is %d\n", body_A->entity->item->count);
             event.data.item_pickup.item_count = body_A->entity->item->count;
             memcpy(event.data.item_pickup.item_entity_id, body_A->entity->id, 16);
             break;

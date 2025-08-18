@@ -292,11 +292,14 @@ struct Scene *scene_init(char *scene_path){
     return NULL;
   }
   scene_process_items_json(scene, items_json);
+  printf("Successfully processed items_json\n");
+  inventory_print(&scene->item_registry, &scene->inventory_components[0]);
 
   // Init physics debug renderer
   if (scene->physics_debug_mode){
     physics_debug_renderer_init(scene->physics_world);
   }
+  printf("physics_debug_renderer_init success\n");
   
   // Skybox
   //
@@ -310,6 +313,7 @@ struct Scene *scene_init(char *scene_path){
 
   char *skybox_dir = cJSON_GetStringValue(skybox_json);
   scene->skybox = skybox_create(skybox_dir);
+  printf("Successfully initialized skybox\n");
 
   return scene;
 }
@@ -332,6 +336,7 @@ void scene_update(struct Scene *scene, float delta_time){
 
   struct PlayerComponent *player = scene->player_components[0];
   inventory_print(&scene->item_registry, scene_get_inventory_by_entity_id(scene, player->entity_id));
+  printf("Successfully printed inventory\n");
 
   // Update light
   float lightSpeed = 1.0f;
@@ -514,6 +519,7 @@ void scene_free(struct Scene *scene){
   free(scene->physics_world->static_bodies);
   free(scene->physics_world->dynamic_bodies);
   free(scene->physics_world->player_bodies);
+  printf("Successfully freed physics bodies\n");
 
   free(scene);
 }
@@ -823,7 +829,7 @@ void scene_process_node_json(
   }
 }
 
-void scene_process_items_json(struct Scene *scene, cJSON *items_json){
+void scene_process_items_json(struct Scene *scene, const cJSON *items_json){
   int num_items = cJSON_GetArraySize(items_json);
   struct ItemRegistry *item_registry = &scene->item_registry;
   item_registry->items = (struct ItemDefinition *)calloc(num_items, sizeof(struct ItemDefinition));
@@ -832,6 +838,7 @@ void scene_process_items_json(struct Scene *scene, cJSON *items_json){
     return;
   }
   item_registry->num_items = num_items;
+  printf("Item registry num items is %d\n", item_registry->num_items);
 
   int index = 0;
   const cJSON *item_json;
@@ -859,7 +866,7 @@ void scene_process_items_json(struct Scene *scene, cJSON *items_json){
       return;
     }
     strncpy(item_definition->name, item_name, MAX_ITEM_NAME_LENGTH - 1);
-    item_definition->name[MAX_ITEM_NAME_LENGTH - 1] = '\0';
+    item_definition->name[item_name_length] = '\0';
 
     // Max count
     cJSON *item_max_count_json = cJSON_GetObjectItemCaseSensitive(item_json, "max_count");
