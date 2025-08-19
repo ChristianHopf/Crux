@@ -292,14 +292,11 @@ struct Scene *scene_init(char *scene_path){
     return NULL;
   }
   scene_process_items_json(scene, items_json);
-  printf("Successfully processed items_json\n");
-  inventory_print(&scene->item_registry, &scene->inventory_components[0]);
 
   // Init physics debug renderer
   if (scene->physics_debug_mode){
     physics_debug_renderer_init(scene->physics_world);
   }
-  printf("physics_debug_renderer_init success\n");
   
   // Skybox
   //
@@ -313,7 +310,6 @@ struct Scene *scene_init(char *scene_path){
 
   char *skybox_dir = cJSON_GetStringValue(skybox_json);
   scene->skybox = skybox_create(skybox_dir);
-  printf("Successfully initialized skybox\n");
 
   return scene;
 }
@@ -334,9 +330,9 @@ void scene_update(struct Scene *scene, float delta_time){
 
   scene_node_update(scene->root_node);
 
-  struct PlayerComponent *player = scene->player_components[0];
-  inventory_print(&scene->item_registry, scene_get_inventory_by_entity_id(scene, player->entity_id));
-  printf("Successfully printed inventory\n");
+  // struct PlayerComponent *player = scene->player_components[0];
+  // inventory_print(&scene->item_registry, scene_get_inventory_by_entity_id(scene, player->entity_id));
+  // printf("Successfully printed inventory\n");
 
   // Update light
   float lightSpeed = 1.0f;

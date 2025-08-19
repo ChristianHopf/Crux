@@ -3,11 +3,6 @@
 
 // TODO: pass item entity id, allow player to pick up a partial amount of this item
 bool inventory_add_item(struct InventoryComponent *inventory_component, struct ItemRegistry *item_registry, int item_id, int count){
-  printf("Time to add a new item with id %d and count %d\n", item_id, count);
-  // Get InventoryComponent with given player's entity_id
-  // struct InventoryComponent *inventory_component = scene_get_inventory_by_entity_id(scene, player_entity_id);
-  // if (!inventory_component) return false;
-
   struct ItemDefinition *item_definition = item_registry_get_item(item_registry, item_id);
 
   // If the inventory already has an item with this ID,
@@ -19,6 +14,7 @@ bool inventory_add_item(struct InventoryComponent *inventory_component, struct I
         item_component->count += count;
         return true;
       }
+      return false;
     }
   }
 

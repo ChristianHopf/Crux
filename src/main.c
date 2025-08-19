@@ -246,7 +246,6 @@ Engine *engine_create(){
     glfwTerminate();
     return NULL;
   }
-  printf("Time for game_event_queue_init\n");
 
   // Initialize Event queue
   game_event_queue_init(engine->active_scene);
@@ -297,11 +296,9 @@ int main(){
       ui_render_frame();
     }
     else{
-      printf("Time for scene_update\n");
       scene_update(engine->active_scene, engine->delta_time);
 
       // Render scene
-      printf("Time for scene_render\n");
       scene_render(engine->active_scene);
 
       // Update Clay layout dimensions

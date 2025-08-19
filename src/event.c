@@ -93,12 +93,11 @@ bool game_event_queue_is_empty(){
 }
 
 void game_event_queue_process(){
-  printf("game_event_queue_process\n");
   struct GameEvent game_event;
   while (game_event_queue_dequeue(&game_event)){
     switch (game_event.type){
       case EVENT_COLLISION: {
-        printf("Processing collision event\n");
+        // printf("Processing collision event\n");
         break;
       }
       case EVENT_PLAYER_ITEM_PICKUP: {
@@ -114,14 +113,18 @@ void game_event_queue_process(){
         struct PlayerComponent *player = scene_get_player_by_entity_id(game_event_queue.scene, game_event.data.item_pickup.player_entity_id);
         struct InventoryComponent *inventory_component = scene_get_inventory_by_entity_id(game_event_queue.scene, game_event.data.item_pickup.player_entity_id);
 
-        // Toy hardcoded version for now. Refactor to a more ECS style structure,
-        // then figure out creating items decoupled from the engine itself
+        // Attempt to add item to the player's inventory
         if (inventory_add_item(inventory_component, &game_event_queue.scene->item_registry, game_event.data.item_pickup.item_id, game_event.data.item_pickup.item_count)){
           // Remove the item's entity from the scene graph.
           scene_remove_entity(game_event_queue.scene, game_event.data.item_pickup.item_entity_id);
           // Could also use some kind of "persistent" bool in the future if I want
           // items that don't disappear when a player picks them up.
-          printf("Successfully added %d item to the player's inventory\n", game_event.data.item_pickup.item_count);
+          printf("Successfully added %d item(s) to the player's inventory\n", game_event.data.item_pickup.item_count);
+
+          inventory_print(&game_event_queue.scene->item_registry, inventory_component);
+        }
+        else{
+          printf("Failed to add %d item(s) to the player's inventory\n", game_event.data.item_pickup.item_count);
         }
         break;
       }

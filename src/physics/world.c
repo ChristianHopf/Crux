@@ -236,15 +236,14 @@ void physics_step(struct PhysicsWorld *physics_world, float delta_time){
         event.type = get_event_type(type_A, type_B);
         switch(event.type){
           case EVENT_COLLISION:
-            event.data.collision.entity_A = 0;
-            event.data.collision.entity_B = 0;
+            memcpy(event.data.collision.entity_A_id, body_A->entity->id, 16);
+            memcpy(event.data.collision.entity_A_id, body_B->entity->id, 16);
             break;
           case EVENT_PLAYER_ITEM_PICKUP:
             // TODO player ID, physicsbody/world has knowledge of it somehow
             memcpy(event.data.item_pickup.player_entity_id, body_B->entity->id, 16);
             // event.data.item_pickup.player_entity_id = body_B->entity->id;
             event.data.item_pickup.item_id = body_A->entity->item->id;
-            printf("body_A->entity->item->count is %d\n", body_A->entity->item->count);
             event.data.item_pickup.item_count = body_A->entity->item->count;
             memcpy(event.data.item_pickup.item_entity_id, body_A->entity->id, 16);
             break;
@@ -350,8 +349,8 @@ void physics_step(struct PhysicsWorld *physics_world, float delta_time){
 
         switch(event.type){
           case EVENT_COLLISION:
-            event.data.collision.entity_A = 0;
-            event.data.collision.entity_B = 0;
+            memcpy(event.data.collision.entity_A_id, body_A->entity->id, 16);
+            memcpy(event.data.collision.entity_A_id, body_B->entity->id, 16);
             break;
         }
 
@@ -401,33 +400,44 @@ void physics_step(struct PhysicsWorld *physics_world, float delta_time){
         }
       }
       if (result.colliding && result.hit_time >= 0){
-        ResolutionFunction resolution_function = resolution_functions[body_A->collider.type][body_B->collider.type];
-        if (!resolution_function){
-          fprintf(stderr, "Error: no collision resolution function found for types %d and %d\n",
-                  body_A->collider.type, body_B->collider.type);
-        }
-        else{
-          resolution_function(body_A, body_B, result, delta_time);
+        // Determine resolution strategy
+        EntityType type_A = body_A->entity->type;
+        EntityType type_B = body_B->entity->type;
+        CollisionBehavior behavior = get_collision_behavior(type_A, type_B);
 
-          struct timespec timestamp;
-          EventType event_type = EVENT_COLLISION;
-          if (clock_gettime(CLOCK_REALTIME, &timestamp) == -1){
-            perror("clock_gettime");
-            timestamp.tv_nsec = 0;
-          }
-          if (body_A->entity->type == ENTITY_ITEM){
-            event_type = EVENT_PLAYER_ITEM_PICKUP;
-          }
-          struct GameEvent collision = {
-            .type = EVENT_COLLISION,
-            .timestamp = timestamp,
-            .data.collision = {
-              .entity_A = 0,
-              .entity_B = 1
+        // Get appropriate resolution function for the given CollisionBehavior
+        switch(behavior){
+          case COLLISION_BEHAVIOR_PHYSICS:
+            ResolutionFunction resolution_function = resolution_functions[body_A->collider.type][body_B->collider.type];
+            if (!resolution_function){
+              fprintf(stderr, "Error: no collision resolution function found for types %d, %d\n", body_A->collider.type, body_B->collider.type);
             }
-          };
-          game_event_queue_enqueue(collision);
+            else{
+              resolution_function(body_A, body_B, result, delta_time);
+            }
+            break;
+          case COLLISION_BEHAVIOR_TRIGGER:
+            break;
         }
+
+        // Generate Event
+        struct GameEvent event;
+        struct timespec timestamp;
+        if (clock_gettime(CLOCK_REALTIME, &timestamp) == -1){
+          perror("clock_gettime");
+          timestamp.tv_nsec = 0;
+        }
+        event.timestamp = timestamp;
+        event.type = get_event_type(type_A, type_B);
+
+        switch(event.type){
+          case EVENT_COLLISION:
+            memcpy(event.data.collision.entity_A_id, body_A->entity->id, 16);
+            memcpy(event.data.collision.entity_A_id, body_B->entity->id, 16);
+            break;
+        }
+
+        game_event_queue_enqueue(event);
       }
       // Reorder bodies by enum value
       if (body_swap){

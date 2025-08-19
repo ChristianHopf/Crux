@@ -20,8 +20,8 @@ struct GameEvent {
   struct timespec timestamp;
   union {
     struct {
-      int entity_A;
-      int entity_B;
+      uuid_t entity_A_id;
+      uuid_t entity_B_id;
     } collision;
     struct {
       uuid_t player_entity_id;
