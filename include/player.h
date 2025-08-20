@@ -5,9 +5,13 @@
 #include <AL/alc.h>
 #include <uuid/uuid.h>
 #include "audio_manager.h"
-#include "camera.h"
 #include "entity.h"
+#include "camera.h"
+#include "types.h"
 #include "utils.h"
+#include "scene.h"
+
+// struct Scene;
 
 struct PlayerComponent {
   uuid_t entity_id;
@@ -32,9 +36,9 @@ struct PlayerManager {
 
 
 struct PlayerComponent *player_create(struct Model *model, Shader *shader, vec3 position, vec3 rotation, vec3 scale, vec3 velocity, vec3 camera_offset, float camera_height, bool render_entity, int inventory_capacity);
-void player_process_keyboard_input(struct PlayerComponent *player, CameraDirection camera_direction, float delta_time);
-void player_process_mouse_input(struct PlayerComponent *player, float xoffset, float yoffset);
-void player_jump(struct PlayerComponent *player);
+void player_process_keyboard_input(struct Scene *scene, uuid_t entity_id, CameraDirection camera_direction, float delta_time);
+void player_process_mouse_input(struct Scene *scene, uuid_t entity_id, float xoffset, float yoffset);
+void player_jump(struct Scene *scene, uuid_t entity_id);
 void player_update(struct PlayerComponent *player, float delta_time);
 
 // Inventory

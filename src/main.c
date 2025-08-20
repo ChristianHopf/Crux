@@ -60,26 +60,26 @@ void processInput(GLFWwindow *window){
   if (!game_state_is_paused()){
     // Camera movement
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS){
-      player_process_keyboard_input(engine->active_scene->player_components[0], CAMERA_FORWARD, engine->delta_time);
+      player_process_keyboard_input(engine->active_scene, engine->active_scene->local_player_entity_id, CAMERA_FORWARD, engine->delta_time);
       // player_process_keyboard_input(&engine->active_scene->player, CAMERA_FORWARD, engine->delta_time);
     }
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS){
-      player_process_keyboard_input(engine->active_scene->player_components[0], CAMERA_BACKWARD, engine->delta_time);
+      player_process_keyboard_input(engine->active_scene, engine->active_scene->local_player_entity_id, CAMERA_BACKWARD, engine->delta_time);
       // player_process_keyboard_input(&engine->active_scene->player, CAMERA_BACKWARD, engine->delta_time);
     }
     if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS){
-      player_process_keyboard_input(engine->active_scene->player_components[0], CAMERA_LEFT, engine->delta_time);
+      player_process_keyboard_input(engine->active_scene, engine->active_scene->local_player_entity_id, CAMERA_LEFT, engine->delta_time);
       // player_process_keyboard_input(&engine->active_scene->player, CAMERA_LEFT, engine->delta_time);
     }
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS){
-      player_process_keyboard_input(engine->active_scene->player_components[0], CAMERA_RIGHT, engine->delta_time);
+      player_process_keyboard_input(engine->active_scene, engine->active_scene->local_player_entity_id, CAMERA_RIGHT, engine->delta_time);
       // player_process_keyboard_input(&engine->active_scene->player, CAMERA_RIGHT, engine->delta_time);
     }
 
     // Only process these inputs a single time per press
     int space_state = glfwGetKey(window, GLFW_KEY_SPACE);
     if (space_state == GLFW_PRESS && last_space_state == GLFW_RELEASE){
-      player_jump(engine->active_scene->player_components[0]);
+      player_jump(engine->active_scene, engine->active_scene->local_player_entity_id);
     }
     last_space_state = space_state;
   }
@@ -115,7 +115,7 @@ void mouse_callback(GLFWwindow *window, double xpos, double ypos){
 
   // Update camera
   if (!game_state_is_paused()){
-    player_process_mouse_input(engine->active_scene->player_components[0], xoffset, yoffset);
+    player_process_mouse_input(engine->active_scene, engine->active_scene->local_player_entity_id, xoffset, yoffset);
   }
 }
 

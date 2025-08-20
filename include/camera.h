@@ -2,16 +2,10 @@
 
 #include <GLFW/glfw3.h>
 #include <cglm/cglm.h>
-//#include "glad/glad.h"
+#include <uuid/uuid.h>
+#include "types.h"
 
-typedef enum {
-    CAMERA_FORWARD = 1,
-    CAMERA_BACKWARD,
-    CAMERA_LEFT,
-    CAMERA_RIGHT,
-    CAMERA_UP,
-    CAMERA_DOWN
-} CameraDirection;
+struct Scene;
 
 // Default camera values
 //const vec3 POSITION = {0.0f, 0.0f, 0.0f};
@@ -25,6 +19,7 @@ typedef enum {
 //const float SPEED       =  2.5f;
 
 struct Camera {
+  uuid_t entity_id;
   vec3 position;
   vec3 front;
   vec3 up;
@@ -38,7 +33,7 @@ struct Camera {
 };
 
 // Create camera with default values
-struct Camera *camera_create(vec3 position, vec3 up, float yaw, float pitch, float fov, float sensitivity, float speed);
+void camera_create(struct Scene *scene, uuid_t entity_id, vec3 position, vec3 up, float yaw, float pitch, float fov, float sensitivity, float speed);
 
 // Get view matrix
 void camera_get_view_matrix(struct Camera *camera, mat4 view);

@@ -1,12 +1,18 @@
 #include <GLFW/glfw3.h>
+#include <string.h>
 #include "camera.h"
 
-struct Camera *camera_create(vec3 position, vec3 up, float yaw, float pitch, float fov, float sensitivity, float speed){
-  struct Camera *camera = (struct Camera *)malloc(sizeof(struct Camera));
-  if (!camera){
-    printf("Error: failed to allocate camera\n");
-    return NULL;
+void camera_create(struct Scene *scene, uuid_t entity_id, vec3 position, vec3 up, float yaw, float pitch, float fov, float sensitivity, float speed){
+
+  // Reallocate CameraComponent array if full
+  if (scene->num_camera_components >= scene->max_camera_components){
+    scene->max_camera_components *= 2;
+    scene->camera_components = realloc(scene->camera_components, scene->max_camera_components * sizeof(struct Camera));
   }
+
+  // Initialize CameraComponent
+  struct Camera *camera = &scene->camera_components[scene->num_camera_components++];
+  memcpy(camera->entity_id, entity_id, 16);
   glm_vec3_copy(position, camera->position);
   glm_vec3_copy(up, camera->up);
   camera->yaw = yaw;
@@ -15,7 +21,6 @@ struct Camera *camera_create(vec3 position, vec3 up, float yaw, float pitch, flo
   camera->sensitivity = sensitivity;
   camera->speed = speed;
   camera_update_vectors(camera);
-  return camera;
 }
 
 void camera_get_view_matrix(struct Camera *camera, mat4 view){

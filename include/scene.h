@@ -7,14 +7,14 @@
 #include "skybox.h"
 #include "entity.h"
 #include "player.h"
+#include "camera.h"
 #include "inventory.h"
 #include "shader.h"
 
 struct Light {
   vec3 direction;
 
-  vec3 ambient;
-  vec3 diffuse;
+  vec3 ambient; vec3 diffuse;
   vec3 specular;
 };
 
@@ -58,8 +58,12 @@ struct Scene {
   struct InventoryComponent *inventory_components;
   unsigned int num_inventory_components;
   unsigned int max_inventory_components;
+  struct Camera *camera_components;
+  unsigned int num_camera_components;
+  unsigned int max_camera_components;
 
   struct ItemRegistry item_registry;
+  uuid_t local_player_entity_id;
 };
 
 
@@ -69,6 +73,7 @@ struct Scene *scene_create(bool physics_view_mode);
 void scene_update(struct Scene *scene, float deltaTime);
 void scene_node_update(struct SceneNode *current_node);
 void scene_get_node_by_entity_id(struct SceneNode *current_node, uuid_t entity_id, int *child_index, int *final_child_index, struct SceneNode **dest);
+struct Entity *scene_get_entity_by_entity_id(struct Scene *scene, uuid_t entity_id);
 void scene_remove_entity(struct Scene *scene, uuid_t id);
 void scene_remove_scene_node(struct SceneNode *scene_node);
 void scene_render(struct Scene *scene);
@@ -97,3 +102,4 @@ struct PlayerComponent *scene_player_create(
 // Components
 struct PlayerComponent *scene_get_player_by_entity_id(struct Scene *scene, uuid_t entity_id);
 struct InventoryComponent *scene_get_inventory_by_entity_id(struct Scene *scene, uuid_t entity_id);
+struct Camera *scene_get_camera_by_entity_id(struct Scene *scene, uuid_t entity_id);

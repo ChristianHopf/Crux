@@ -230,6 +230,15 @@ struct Scene *scene_init(char *scene_path){
     index++;
   }
 
+  // Allocate Components
+  scene->max_camera_components = 8;
+  scene->camera_components = (struct Camera *)calloc(scene->max_camera_components, sizeof(struct Camera));
+  if (!scene->camera_components){
+    fprintf(stderr, "Error: failed to allocate scene CameraComponent pointer array in scene_init\n");
+    return NULL;
+  }
+  scene->num_camera_components = 0;
+
   // Player
   scene->max_player_components = 8;
   scene->player_components = (struct PlayerComponent **)calloc(scene->max_player_components, sizeof(struct PlayerComponent *));
@@ -256,7 +265,6 @@ struct Scene *scene_init(char *scene_path){
     scene->num_player_entities = 1;
     scene->player_entities = scene->player_components[0]->entity;
   }
-  // scene->player.entity->type = ENTITY_PLAYER;
   struct Collider player_collider = {
     .type = 2,
     .data.capsule = {
@@ -266,8 +274,10 @@ struct Scene *scene_init(char *scene_path){
     }
   };
 
-  // scene->player_components = player;
-  scene->player_components[0]->entity->physics_body = physics_add_player(scene->physics_world, scene->player_components[0]->entity, player_collider);
+  // Add Player PhysicsBodies
+  for (unsigned int i = 0; i < scene->num_player_components; i++){
+    scene->player_components[i]->entity->physics_body = physics_add_player(scene->physics_world, scene->player_components[i]->entity, player_collider);
+  }
 
   // InventoryComponents
   scene->max_inventory_components = scene->max_player_components;
@@ -900,21 +910,6 @@ struct PlayerComponent *scene_player_create(
     return NULL;
   }
 
-  // Init camera
-  vec3 cameraPos = {0.0f, 0.0f, 0.0f};
-  vec3 cameraUp = {0.0f, 1.0f, 0.0f};
-  float yaw = -90.0f;
-  float pitch = 0.0f;
-  float fov = 90.0f;
-  float sensitivity = 0.1f;
-  float speed = 2.5f;
-  struct Camera *camera = camera_create(cameraPos, cameraUp, yaw, pitch, fov, sensitivity, speed);
-  if (!camera){
-    printf("Error: failed to create camera in player init\n");
-    return NULL;
-  }
-  player->camera = camera;
-
   // Add entity information (model, shader, etc)
   player->entity = (struct Entity *)calloc(1, sizeof(struct Entity));
   if (!player->entity){
@@ -939,6 +934,23 @@ struct PlayerComponent *scene_player_create(
   // Add player entity to scene entities array
   scene->entities[scene->num_entities++] = player->entity;
 
+  // Local player entity uuid
+  if (is_local){
+    printf("LOCAL PLAYER\n");
+    memcpy(scene->local_player_entity_id, player->entity->id, 16);
+  }
+
+  // CameraComponent
+  vec3 cameraPos = {0.0f, 0.0f, 0.0f};
+  vec3 cameraUp = {0.0f, 1.0f, 0.0f};
+  float yaw = -90.0f;
+  float pitch = 0.0f;
+  float fov = 90.0f;
+  float sensitivity = 0.1f;
+  float speed = 2.5f;
+  camera_create(scene, player->entity_id, cameraPos, cameraUp, yaw, pitch, fov, sensitivity, speed);
+
+  player->camera = &scene->camera_components[0];
 
   // AudioComponent
   player->entity->audio_component = audio_component_create(player->entity, 0);
@@ -972,6 +984,8 @@ void scene_get_node_by_entity_id(struct SceneNode *current_node, uuid_t entity_i
     scene_get_node_by_entity_id(current_node->children[i], entity_id, child_index, final_child_index, dest);
   }
 }
+
+
 
 void scene_remove_entity(struct Scene *scene, uuid_t entity_id){
   // Find and remove the correct SceneNode
@@ -1030,6 +1044,15 @@ void scene_remove_scene_node(struct SceneNode *scene_node){
   free(scene_node);
 }
 
+struct Entity *scene_get_entity_by_entity_id(struct Scene *scene, uuid_t entity_id){
+  for (unsigned int i = 0; i < scene->num_entities; i++){
+    if (uuid_compare(scene->entities[i]->id, entity_id) == 0){
+      return scene->entities[i];
+    }
+  }
+  return NULL;
+}
+
 struct PlayerComponent *scene_get_player_by_entity_id(struct Scene *scene, uuid_t entity_id){
   for (unsigned int i = 0; i < scene->num_player_components; i++){
     if (uuid_compare(scene->player_components[i]->entity_id, entity_id) == 0){
@@ -1043,6 +1066,15 @@ struct InventoryComponent *scene_get_inventory_by_entity_id(struct Scene *scene,
   for (unsigned int i = 0; i < scene->num_inventory_components; i++){
     if (uuid_compare(scene->inventory_components[i].entity_id, entity_id) == 0){
       return &scene->inventory_components[i];
+    }
+  }
+  return NULL;
+}
+
+struct Camera *scene_get_camera_by_entity_id(struct Scene *scene, uuid_t entity_id){
+  for (unsigned int i = 0; i < scene->num_camera_components; i++){
+    if (uuid_compare(scene->camera_components[i].entity_id, entity_id) == 0){
+      return &scene->camera_components[i];
     }
   }
   return NULL;
