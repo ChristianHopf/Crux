@@ -231,34 +231,31 @@ struct Scene *scene_init(char *scene_path){
   }
 
   // Allocate Components
+
+  // - CameraComponents
   scene->max_camera_components = 8;
   scene->camera_components = (struct Camera *)calloc(scene->max_camera_components, sizeof(struct Camera));
   if (!scene->camera_components){
-    fprintf(stderr, "Error: failed to allocate scene CameraComponent pointer array in scene_init\n");
+    fprintf(stderr, "Error: failed to allocate scene CameraComponents in scene_init\n");
     return NULL;
   }
   scene->num_camera_components = 0;
 
-  // Player
+  // - PlayerComponents
   scene->max_player_components = 8;
-  scene->player_components = (struct PlayerComponent **)calloc(scene->max_player_components, sizeof(struct PlayerComponent *));
+  scene->player_components = (struct PlayerComponent *)calloc(scene->max_player_components, sizeof(struct PlayerComponent));
   if (!scene->player_components){
-    fprintf(stderr, "Error: failed to allocate scene PlayerComponent pointer array in scene_init\n");
+    fprintf(stderr, "Error: failed to allocate scene PlayerComponents in scene_init\n");
     return NULL;
   }
   scene->num_player_components = 0;
-  struct PlayerComponent *player = scene_player_create(scene, models[1], shaders[0],
+  scene_player_create(scene, models[1], shaders[0],
                                 (vec3){0.0f, 0.0f, 2.0f},
                                 (vec3){0.0f, 180.0f, 0.0f},
                                 (vec3){1.0f, 1.0f, 1.0f},
                                 (vec3){0.0f, 0.0f, 0.0f},
                                 (vec3){0.0f, 0.0f, 0.0f},
                                 1.75f, false, 5, true);
-  if (!player){
-    fprintf(stderr, "Error: failed to create player in scene_init\n");
-    return NULL;
-  }
-  scene->player_components[0] = player;
 
   if (scene->player_components[0]->render_entity){
     scene->player_entities = (struct Entity *)calloc(1, sizeof(struct Entity));
@@ -336,7 +333,7 @@ void scene_update(struct Scene *scene, float delta_time){
   game_event_queue_process();
 
   // Update player
-  player_update(scene->player_components[0], delta_time);
+  player_update(scene, scene->local_player_entity_id, delta_time);
 
   scene_node_update(scene->root_node);
 
@@ -891,7 +888,7 @@ void scene_process_items_json(struct Scene *scene, const cJSON *items_json){
   }
 }
 
-struct PlayerComponent *scene_player_create(
+void scene_player_create(
   struct Scene *scene,
   struct Model *model,
   Shader *shader,
@@ -904,40 +901,48 @@ struct PlayerComponent *scene_player_create(
   bool render_entity,
   int inventory_capacity,
   bool is_local){
-  struct PlayerComponent *player = (struct PlayerComponent *)calloc(1, sizeof(struct PlayerComponent));
-  if (!player){
-    fprintf(stderr, "Error: failed to allocate player in player_create\n");
-    return NULL;
+  // Reallocate PlayerComponent array if full
+  if (scene->num_camera_components >= scene->max_camera_components){
+    scene->max_camera_components *= 2;
+    scene->camera_components = realloc(scene->camera_components, scene->max_camera_components * sizeof(struct Camera));
   }
+  struct PlayerComponent *player = &scene->player_components[scene->num_player_components++];
 
-  // Add entity information (model, shader, etc)
-  player->entity = (struct Entity *)calloc(1, sizeof(struct Entity));
-  if (!player->entity){
+  // Allocate Entity
+  struct Entity *entity = (struct Entity *)calloc(1, sizeof(struct Entity));
+  if (!entity){
     fprintf(stderr, "Error: failed to allocate entity in player_init\n");
-    return NULL;
+    return;
   }
-  // UUID
-  uuid_generate(player->entity->id);
-  memcpy(player->entity_id, player->entity->id, 16);
-  player->entity->type = ENTITY_PLAYER;
-  player->entity->model = model;
-  player->entity->shader = shader;
-  glm_vec3_copy(position, player->entity->position);
-  glm_vec3_copy(rotation, player->entity->rotation);
-  glm_vec3_copy(scale, player->entity->scale);
-  glm_vec3_copy(velocity, player->entity->velocity);
+  scene->entities[scene->num_entities++] = entity;
+
+  // Assign values to Entity
+  uuid_generate(entity->id);
+  memcpy(player->entity_id, entity->id, 16);
+  entity->type = ENTITY_PLAYER;
+  entity->model = model;
+  entity->shader = shader;
+  glm_vec3_copy(position, entity->position);
+  glm_vec3_copy(rotation, entity->rotation);
+  glm_vec3_copy(scale, entity->scale);
+  glm_vec3_copy(velocity, entity->velocity);
   glm_vec3_copy(camera_offset, player->camera_offset);
   glm_vec3_copy(camera_offset, player->rotated_offset);
   player->camera_height = camera_height;
   player->render_entity = render_entity;
 
-  // Add player entity to scene entities array
-  scene->entities[scene->num_entities++] = player->entity;
+  // Assign values to PlayerComponent
+  memcpy(player->entity_id, entity->id, 16);
+  glm_vec3_copy(camera_offset, player->camera_offset);
+  glm_vec3_copy(camera_offset, player->rotated_offset);
+  player->camera_height = camera_height;
+  player->render_entity = render_entity;
+  player->is_local = is_local;
 
   // Local player entity uuid
   if (is_local){
     printf("LOCAL PLAYER\n");
-    memcpy(scene->local_player_entity_id, player->entity->id, 16);
+    memcpy(scene->local_player_entity_id, entity->id, 16);
   }
 
   // CameraComponent
@@ -948,25 +953,13 @@ struct PlayerComponent *scene_player_create(
   float fov = 90.0f;
   float sensitivity = 0.1f;
   float speed = 2.5f;
-  camera_create(scene, player->entity_id, cameraPos, cameraUp, yaw, pitch, fov, sensitivity, speed);
-
-  player->camera = &scene->camera_components[0];
+  camera_create(scene, entity->id, cameraPos, cameraUp, yaw, pitch, fov, sensitivity, speed);
 
   // AudioComponent
   player->entity->audio_component = audio_component_create(player->entity, 0);
 
   // Set listener position to camera position
   audio_listener_update(player);
-
-  // Initialize inventory
-  // player_inventory_init(player, inventory_capacity);
-
-  player->is_local = is_local;
-
-  // Add player component to scene player components array
-  scene->player_components[scene->num_player_components++] = player;
-
-  return player;
 }
 
 // Recursive function to search the scene graph for the node with the entity with the given entity_id

@@ -160,21 +160,37 @@ void player_jump(struct Scene *scene, uuid_t entity_id){
   body->velocity[1] = 3.0f;
 }
 
-void player_update(struct PlayerComponent *player, float delta_time){
-  glm_vec3_copy(player->entity->physics_body->position, player->entity->position);
-  glm_vec3_copy(player->entity->physics_body->rotation, player->entity->rotation);
-  glm_vec3_copy(player->entity->physics_body->velocity, player->entity->velocity);
+void player_update(struct Scene *scene, uuid_t entity_id, float delta_time){
+  // Possibly remove this if in the future audio_listener_update is refactored
+  // to not take a pointer to a PlayerComponent
+  struct PlayerComponent *player_component = scene_get_player_by_entity_id(scene, entity_id);
+  if (!player_component){
+    fprintf(stderr, "Error: failed to get PlayerComponent in player_update\n");
+    return;
+  }
+  struct Entity *player_entity = scene_get_entity_by_entity_id(scene, entity_id);
+  if (!player_entity){
+    fprintf(stderr, "Error: failed to get player Entity in player_update\n");
+  }
+  struct Camera *camera_component = scene_get_camera_by_entity_id(scene, entity_id);
+  if (!camera_component){
+    fprintf(stderr, "Error: failed to get CameraComponent in player_update\n")
+  }
+
+  glm_vec3_copy(player_entity->physics_body->position, player_entity->position);
+  glm_vec3_copy(player_entity->physics_body->rotation, player_entity->rotation);
+  glm_vec3_copy(player_entity->physics_body->velocity, player_entity->velocity);
   // Add Camera offset
-  glm_vec3_add(player->entity->position, player->rotated_offset, player->camera->position);
-  player->camera->position[1] += player->camera_height;
+  glm_vec3_add(player_entity->position, player->rotated_offset, camera->position);
+  camera_component->position[1] += player->camera_height;
 
   // Update audio source position
-  alSource3f(player->entity->audio_component->source_id, AL_POSITION, player->entity->position[0], player->entity->position[1], player->entity->position[2]);
+  alSource3f(player_entity->audio_component->source_id, AL_POSITION, player_entity->position[0], player_entity->position[1], player_entity->position[2]);
   ALenum position_error = alGetError();
   if (position_error != AL_NO_ERROR){
     fprintf(stderr, "Error matching Entity audio_source position with entity position in scene_update: %d\n", position_error);
   }
 
   // Update listener position and orientation
-  audio_listener_update(player);
+  audio_listener_update(player_component);
 }
