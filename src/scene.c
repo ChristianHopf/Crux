@@ -178,18 +178,6 @@ struct Scene *scene_init(char *scene_path){
 
   scene->physics_world = physics_world_create();
 
-  // Process nodes for scene graph
-  cJSON *nodes_json = cJSON_GetObjectItemCaseSensitive(scene_json, "nodes");
-  if (!nodes_json){
-    fprintf(stderr, "Error: failed to get nodes object in scene_init, invalid or does not exist\n");
-    return NULL;
-  }
-  scene->root_node = (struct SceneNode *)calloc(1, sizeof(struct SceneNode));
-  if (!scene->root_node){
-    fprintf(stderr, "Error: failed to allocate root SceneNode in scene_init\n");
-    return NULL;
-  }
-
   // Allocate array of entities
   cJSON *entity_count_json = cJSON_GetObjectItemCaseSensitive(scene_json, "entity_count");
   if (!cJSON_IsNumber(entity_count_json)){
@@ -204,33 +192,16 @@ struct Scene *scene_init(char *scene_path){
   }
   scene->num_entities = 0;
 
-  // Build scene graph and fill entities array
-  scene_process_node_json(scene, nodes_json, scene->root_node, NULL, models, shaders, scene->physics_world);
-  scene->max_entities = 64;
-  
-  // Lights
-  lights_json = cJSON_GetObjectItemCaseSensitive(scene_json, "lights");
-  if (!lights_json){
-    fprintf(stderr, "Error: failed to get lights object in scene_json, lights is either invalid or does not exist\n");
-    return NULL;
-  }
-
-  int num_lights = cJSON_GetArraySize(lights_json);
-  scene->lights = (struct Light *)malloc(num_lights * sizeof(struct Light));
-  if (!scene->lights){
-    fprintf(stderr, "Error: failed to allocate scene lights\n");
-    return NULL;
-  }
-
-  index = 0;
-  cJSON *light_json;
-  cJSON_ArrayForEach(light_json, lights_json){
-    struct Light *light = &scene->lights[index];
-    scene_process_light_json(light_json, light);
-    index++;
-  }
-
   // Allocate Components
+
+  // - AudioComponents
+  scene->max_audio_components = 32;
+  scene->audio_components = (struct AudioComponent *)calloc(scene->max_audio_components, sizeof(struct AudioComponent));
+  if (!scene->audio_components){
+    fprintf(stderr, "Error: failed to allocate scene AudioComponents in scene_init\n");
+    return NULL;
+  }
+  scene->num_audio_components = 0;
 
   // - CameraComponents
   scene->max_camera_components = 8;
@@ -257,11 +228,14 @@ struct Scene *scene_init(char *scene_path){
                                 (vec3){0.0f, 0.0f, 0.0f},
                                 1.75f, false, 5, true);
 
-  if (scene->player_components[0]->render_entity){
+  if (scene->player_components[0].render_entity){
     scene->player_entities = (struct Entity *)calloc(1, sizeof(struct Entity));
     scene->num_player_entities = 1;
-    scene->player_entities = scene->player_components[0]->entity;
+    // scene->player_entities = scene->player_components[0]->entity;
   }
+
+
+
   struct Collider player_collider = {
     .type = 2,
     .data.capsule = {
@@ -273,7 +247,9 @@ struct Scene *scene_init(char *scene_path){
 
   // Add Player PhysicsBodies
   for (unsigned int i = 0; i < scene->num_player_components; i++){
-    scene->player_components[i]->entity->physics_body = physics_add_player(scene->physics_world, scene->player_components[i]->entity, player_collider);
+    struct PlayerComponent *player_component = &scene->player_components[i];
+    struct Entity *entity = scene_get_entity_by_entity_id(scene, player_component->entity_id);
+    entity->physics_body = physics_add_player(scene->physics_world, entity, player_collider);
   }
 
   // InventoryComponents
@@ -285,11 +261,50 @@ struct Scene *scene_init(char *scene_path){
   }
   for (unsigned int i = 0; i < scene->num_player_components; i++){
     struct InventoryComponent *inventory_component = &scene->inventory_components[i];
-    memcpy(inventory_component->entity_id, scene->player_components[i]->entity_id, 16);
+    memcpy(inventory_component->entity_id, scene->player_components[i].entity_id, 16);
     inventory_component->capacity = 5;
     inventory_component->items = (struct ItemComponent *)calloc(inventory_component->capacity, sizeof(struct ItemComponent));
     inventory_component->size = 0;
     scene->num_inventory_components++;
+  }
+
+
+  // Process nodes for scene graph
+  cJSON *nodes_json = cJSON_GetObjectItemCaseSensitive(scene_json, "nodes");
+  if (!nodes_json){
+    fprintf(stderr, "Error: failed to get nodes object in scene_init, invalid or does not exist\n");
+    return NULL;
+  }
+  scene->root_node = (struct SceneNode *)calloc(1, sizeof(struct SceneNode));
+  if (!scene->root_node){
+    fprintf(stderr, "Error: failed to allocate root SceneNode in scene_init\n");
+    return NULL;
+  }
+
+  // Build scene graph and fill entities array
+  scene_process_node_json(scene, nodes_json, scene->root_node, NULL, models, shaders, scene->physics_world);
+  scene->max_entities = 64;
+  
+  // Lights
+  lights_json = cJSON_GetObjectItemCaseSensitive(scene_json, "lights");
+  if (!lights_json){
+    fprintf(stderr, "Error: failed to get lights object in scene_json, lights is either invalid or does not exist\n");
+    return NULL;
+  }
+
+  int num_lights = cJSON_GetArraySize(lights_json);
+  scene->lights = (struct Light *)malloc(num_lights * sizeof(struct Light));
+  if (!scene->lights){
+    fprintf(stderr, "Error: failed to allocate scene lights\n");
+    return NULL;
+  }
+
+  index = 0;
+  cJSON *light_json;
+  cJSON_ArrayForEach(light_json, lights_json){
+    struct Light *light = &scene->lights[index];
+    scene_process_light_json(light_json, light);
+    index++;
   }
 
   // ItemRegistry
@@ -399,8 +414,9 @@ void scene_render(struct Scene *scene){
   // Get view and projection matrices
   mat4 view;
   mat4 projection;
-  camera_get_view_matrix(scene->player_components[0]->camera, view);
-  glm_perspective(glm_rad(scene->player_components[0]->camera->fov), 1920.0f / 1080.0f, 0.1f, 100.0f, projection);
+  struct Camera *camera = scene_get_camera_by_entity_id(scene, scene->local_player_entity_id);
+  camera_get_view_matrix(camera, view);
+  glm_perspective(glm_rad(camera->fov), 1920.0f / 1080.0f, 0.1f, 100.0f, projection);
 
   // Create a RenderContext, which is simply
   // a collection of parameters for rendering the Level and Entities
@@ -408,7 +424,7 @@ void scene_render(struct Scene *scene){
     .light_ptr = scene->lights,
     .view_ptr = &view,
     .projection_ptr = &projection,
-    .camera_position_ptr = &scene->player_components[0]->camera->position,
+    .camera_position_ptr = &camera->position,
   };
 
   // Set view and projection matrices in matrices UBO
@@ -449,7 +465,7 @@ void scene_render(struct Scene *scene){
   }
 
   // TODO will eventually just look at some kind of array of "RenderComponents"
-  scene_get_render_items(scene->root_node, scene->player_components[0]->camera->position, &opaque_items, &num_opaque_items, &mask_items, &num_mask_items, &transparent_items, &num_transparent_items, &additive_items, &num_additive_items);
+  scene_get_render_items(scene->root_node, camera->position, &opaque_items, &num_opaque_items, &mask_items, &num_mask_items, &transparent_items, &num_transparent_items, &additive_items, &num_additive_items);
 
   // Sort transparent_items back to front
   qsort(transparent_items, num_transparent_items, sizeof(struct RenderItem), compare_render_item_depth);
@@ -612,7 +628,7 @@ void scene_process_node_json(
     scene_process_vec3_json(cJSON_GetObjectItemCaseSensitive(node_json, "scale"), current_node->entity->scale);
 
     // AudioComponent (may want to include this in scene json somehow, maybe just a bool)
-    current_node->entity->audio_component = audio_component_create(current_node->entity, 0);
+    audio_component_create(scene, current_node->entity->id, 0);
 
     // Entity type
     cJSON *entity_type_json = cJSON_GetObjectItemCaseSensitive(node_json, "entity_type");
@@ -902,9 +918,9 @@ void scene_player_create(
   int inventory_capacity,
   bool is_local){
   // Reallocate PlayerComponent array if full
-  if (scene->num_camera_components >= scene->max_camera_components){
-    scene->max_camera_components *= 2;
-    scene->camera_components = realloc(scene->camera_components, scene->max_camera_components * sizeof(struct Camera));
+  if (scene->num_player_components >= scene->max_player_components){
+    scene->max_player_components *= 2;
+    scene->player_components = realloc(scene->player_components, scene->max_player_components * sizeof(struct PlayerComponent));
   }
   struct PlayerComponent *player = &scene->player_components[scene->num_player_components++];
 
@@ -941,7 +957,6 @@ void scene_player_create(
 
   // Local player entity uuid
   if (is_local){
-    printf("LOCAL PLAYER\n");
     memcpy(scene->local_player_entity_id, entity->id, 16);
   }
 
@@ -956,10 +971,10 @@ void scene_player_create(
   camera_create(scene, entity->id, cameraPos, cameraUp, yaw, pitch, fov, sensitivity, speed);
 
   // AudioComponent
-  player->entity->audio_component = audio_component_create(player->entity, 0);
+  audio_component_create(scene, player->entity_id, 0);
 
   // Set listener position to camera position
-  audio_listener_update(player);
+  audio_listener_update(scene, player->entity_id);
 }
 
 // Recursive function to search the scene graph for the node with the entity with the given entity_id
@@ -998,7 +1013,7 @@ void scene_remove_entity(struct Scene *scene, uuid_t entity_id){
   }
 
   // Remove entity and its components
-  for(int i = 0; i < scene->num_entities; i++){
+  for(unsigned int i = 0; i < scene->num_entities; i++){
     if (uuid_compare(scene->entities[i]->id, entity_id) == 0){
       // PhysicsBody
       physics_remove_body(scene->physics_world, scene->entities[i]->physics_body);
@@ -1048,8 +1063,8 @@ struct Entity *scene_get_entity_by_entity_id(struct Scene *scene, uuid_t entity_
 
 struct PlayerComponent *scene_get_player_by_entity_id(struct Scene *scene, uuid_t entity_id){
   for (unsigned int i = 0; i < scene->num_player_components; i++){
-    if (uuid_compare(scene->player_components[i]->entity_id, entity_id) == 0){
-      return scene->player_components[i];
+    if (uuid_compare(scene->player_components[i].entity_id, entity_id) == 0){
+      return &scene->player_components[i];
     }
   }
   return NULL;

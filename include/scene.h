@@ -61,6 +61,9 @@ struct Scene {
   struct Camera *camera_components;
   unsigned int num_camera_components;
   unsigned int max_camera_components;
+  struct AudioComponent *audio_components;
+  unsigned int num_audio_components;
+  unsigned int max_audio_components;
 
   struct ItemRegistry item_registry;
   uuid_t local_player_entity_id;

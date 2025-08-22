@@ -12,31 +12,32 @@ void player_process_keyboard_input(struct Scene *scene, uuid_t entity_id, Camera
 
   // TODO Some kind of physics API so that I can remove the direct reference to the PhysicsBody from Entity
   struct Entity *player_entity = scene_get_entity_by_entity_id(scene, entity_id);
+  struct Camera *camera_component = scene_get_camera_by_entity_id(scene, entity_id);
 
-  float velocity = (float)(player->camera->speed * delta_time);
+  float velocity = (float)(camera_component->speed * delta_time);
 	if (direction == CAMERA_FORWARD){
-    vec3 forward = {player->camera->front[0], 0.0f, player->camera->front[2]};
+    vec3 forward = {camera_component->front[0], 0.0f, camera_component->front[2]};
     glm_vec3_normalize(forward);
 		glm_vec3_scale(forward, velocity, forward);
-		glm_vec3_add(player_entity->physics_body->position, forward, player->entity->physics_body->position);
+		glm_vec3_add(player_entity->physics_body->position, forward, player_entity->physics_body->position);
 	}
 	if (direction == CAMERA_BACKWARD){
-    vec3 backward = {player->camera->front[0], 0.0f, player->camera->front[2]};
+    vec3 backward = {camera_component->front[0], 0.0f, camera_component->front[2]};
     glm_vec3_normalize(backward);
 		glm_vec3_scale(backward, velocity, backward);
-		glm_vec3_sub(player_entity->physics_body->position, backward, player->entity->physics_body->position);
+		glm_vec3_sub(player_entity->physics_body->position, backward, player_entity->physics_body->position);
 	}
 	if (direction == CAMERA_LEFT){
     // I could just leave these since left and right don't affect pitch,
     // but I might want to implement leaning in the future
-    vec3 left = {player->camera->right[0], 0.0f, player->camera->right[2]};
+    vec3 left = {camera_component->right[0], 0.0f, camera_component->right[2]};
     glm_vec3_scale(left, velocity, left);
-    glm_vec3_sub(player_entity->physics_body->position, left, player->entity->physics_body->position);
+    glm_vec3_sub(player_entity->physics_body->position, left, player_entity->physics_body->position);
 	}
 	if (direction == CAMERA_RIGHT){
-    vec3 right = {player->camera->right[0], 0.0f, player->camera->right[2]};
+    vec3 right = {camera_component->right[0], 0.0f, camera_component->right[2]};
     glm_vec3_scale(right, velocity, right);
-    glm_vec3_add(player_entity->physics_body->position, right, player->entity->physics_body->position);
+    glm_vec3_add(player_entity->physics_body->position, right, player_entity->physics_body->position);
 	}
 	// if (direction == CAMERA_DOWN){
 	// 	vec3 down;
@@ -174,15 +175,15 @@ void player_update(struct Scene *scene, uuid_t entity_id, float delta_time){
   }
   struct Camera *camera_component = scene_get_camera_by_entity_id(scene, entity_id);
   if (!camera_component){
-    fprintf(stderr, "Error: failed to get CameraComponent in player_update\n")
+    fprintf(stderr, "Error: failed to get CameraComponent in player_update\n");
   }
 
   glm_vec3_copy(player_entity->physics_body->position, player_entity->position);
   glm_vec3_copy(player_entity->physics_body->rotation, player_entity->rotation);
   glm_vec3_copy(player_entity->physics_body->velocity, player_entity->velocity);
   // Add Camera offset
-  glm_vec3_add(player_entity->position, player->rotated_offset, camera->position);
-  camera_component->position[1] += player->camera_height;
+  glm_vec3_add(player_entity->position, player_component->rotated_offset, camera_component->position);
+  camera_component->position[1] += player_component->camera_height;
 
   // Update audio source position
   alSource3f(player_entity->audio_component->source_id, AL_POSITION, player_entity->position[0], player_entity->position[1], player_entity->position[2]);
@@ -192,5 +193,5 @@ void player_update(struct Scene *scene, uuid_t entity_id, float delta_time){
   }
 
   // Update listener position and orientation
-  audio_listener_update(player_component);
+  audio_listener_update(scene, entity_id);
 }
