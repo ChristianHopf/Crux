@@ -1,5 +1,6 @@
 #include "event.h"
 #include "inventory.h"
+#include "audio_manager.h"
 
 static struct GameEventQueue game_event_queue;
 static bool game_event_queue_initialized;
@@ -97,7 +98,20 @@ void game_event_queue_process(){
   while (game_event_queue_dequeue(&game_event)){
     switch (game_event.type){
       case EVENT_COLLISION: {
-        // printf("Processing collision event\n");
+        // Get colliding entities' AudioComponents
+        struct AudioComponent *audio_component_A = scene_get_audio_component_by_entity_id(game_event_queue.scene, game_event.data.collision.entity_A_id);
+        struct AudioComponent *audio_component_B = scene_get_audio_component_by_entity_id(game_event_queue.scene, game_event.data.collision.entity_B_id);
+        if (!audio_component_A){
+          fprintf(stderr, "Error: failed to get audio_component_A in game_event_queue_process\n");
+          return;
+        }
+        if (!audio_component_B){
+          fprintf(stderr, "Error: failed to get audio_component_B in game_event_queue_process\n");
+          return;
+        }
+        // Play audio
+        audio_component_play(audio_component_A);
+        audio_component_play(audio_component_B);
         break;
       }
       case EVENT_PLAYER_ITEM_PICKUP: {

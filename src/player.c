@@ -177,6 +177,7 @@ void player_update(struct Scene *scene, uuid_t entity_id, float delta_time){
   if (!camera_component){
     fprintf(stderr, "Error: failed to get CameraComponent in player_update\n");
   }
+  struct AudioComponent *audio_component = scene_get_audio_component_by_entity_id(scene, entity_id);
 
   glm_vec3_copy(player_entity->physics_body->position, player_entity->position);
   glm_vec3_copy(player_entity->physics_body->rotation, player_entity->rotation);
@@ -186,7 +187,7 @@ void player_update(struct Scene *scene, uuid_t entity_id, float delta_time){
   camera_component->position[1] += player_component->camera_height;
 
   // Update audio source position
-  alSource3f(player_entity->audio_component->source_id, AL_POSITION, player_entity->position[0], player_entity->position[1], player_entity->position[2]);
+  alSource3f(audio_component->source_id, AL_POSITION, player_entity->position[0], player_entity->position[1], player_entity->position[2]);
   ALenum position_error = alGetError();
   if (position_error != AL_NO_ERROR){
     fprintf(stderr, "Error matching Entity audio_source position with entity position in scene_update: %d\n", position_error);

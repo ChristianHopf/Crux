@@ -74,7 +74,7 @@ struct Scene *scene_init(char *scene_path);
 struct Scene *scene_create(bool physics_view_mode);
 
 void scene_update(struct Scene *scene, float deltaTime);
-void scene_node_update(struct SceneNode *current_node);
+void scene_node_update(struct Scene *scene, struct SceneNode *current_node);
 void scene_get_node_by_entity_id(struct SceneNode *current_node, uuid_t entity_id, int *child_index, int *final_child_index, struct SceneNode **dest);
 struct Entity *scene_get_entity_by_entity_id(struct Scene *scene, uuid_t entity_id);
 void scene_remove_entity(struct Scene *scene, uuid_t id);
@@ -106,3 +106,4 @@ void scene_player_create(
 struct PlayerComponent *scene_get_player_by_entity_id(struct Scene *scene, uuid_t entity_id);
 struct InventoryComponent *scene_get_inventory_by_entity_id(struct Scene *scene, uuid_t entity_id);
 struct Camera *scene_get_camera_by_entity_id(struct Scene *scene, uuid_t entity_id);
+struct AudioComponent *scene_get_audio_component_by_entity_id(struct Scene *scene, uuid_t entity_id);

@@ -314,7 +314,7 @@ void resolve_collision_AABB_capsule(struct PhysicsBody *body_A, struct PhysicsBo
     body_B->at_rest = true;
   }
   if (body_B->entity != NULL){
-    entity_play_sound_effect(body_B->entity);
+    // entity_play_sound_effect(body_B->entity);
   }
 }
 
@@ -522,7 +522,7 @@ void resolve_collision_sphere_plane(struct PhysicsBody *body_A, struct PhysicsBo
     body_A->at_rest = true;
   }
   if (body_A->entity != NULL){
-    entity_play_sound_effect(body_A->entity);
+    // entity_play_sound_effect(body_A->entity);
   }
 }
 
@@ -617,6 +617,6 @@ void resolve_collision_capsule_plane(struct PhysicsBody *body_A, struct PhysicsB
     body_A->at_rest = true;
   }
   if (body_A->entity != NULL){
-    entity_play_sound_effect(body_A->entity);
+    // entity_play_sound_effect(body_A->entity);
   }
 }

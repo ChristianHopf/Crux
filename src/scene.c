@@ -350,7 +350,7 @@ void scene_update(struct Scene *scene, float delta_time){
   // Update player
   player_update(scene, scene->local_player_entity_id, delta_time);
 
-  scene_node_update(scene->root_node);
+  scene_node_update(scene, scene->root_node);
 
   // struct PlayerComponent *player = scene->player_components[0];
   // inventory_print(&scene->item_registry, scene_get_inventory_by_entity_id(scene, player->entity_id));
@@ -363,7 +363,7 @@ void scene_update(struct Scene *scene, float delta_time){
   scene->lights[0].direction[2] = (float)cos(lightSpeed * total_time);
 }
 
-void scene_node_update(struct SceneNode *current_node){
+void scene_node_update(struct Scene *scene, struct SceneNode *current_node){
   if (current_node->entity){
     // Update position, rotation
     glm_vec3_copy(current_node->entity->physics_body->position, current_node->position);
@@ -391,7 +391,8 @@ void scene_node_update(struct SceneNode *current_node){
     }
 
     // Update audio component
-    alSource3f(current_node->entity->audio_component->source_id, AL_POSITION,
+    struct AudioComponent *audio_component = scene_get_audio_component_by_entity_id(scene, current_node->entity->id);
+    alSource3f(audio_component->source_id, AL_POSITION,
                current_node->entity->position[0],
                current_node->entity->position[1],
                current_node->entity->position[2]);
@@ -402,7 +403,7 @@ void scene_node_update(struct SceneNode *current_node){
   }
 
   for (unsigned int i = 0; i < current_node->num_children; i++){
-    scene_node_update(current_node->children[i]);
+    scene_node_update(scene, current_node->children[i]);
   }
 }
 
@@ -627,9 +628,6 @@ void scene_process_node_json(
     scene_process_vec3_json(cJSON_GetObjectItemCaseSensitive(node_json, "rotation"), current_node->entity->rotation);
     scene_process_vec3_json(cJSON_GetObjectItemCaseSensitive(node_json, "scale"), current_node->entity->scale);
 
-    // AudioComponent (may want to include this in scene json somehow, maybe just a bool)
-    audio_component_create(scene, current_node->entity->id, 0);
-
     // Entity type
     cJSON *entity_type_json = cJSON_GetObjectItemCaseSensitive(node_json, "entity_type");
     if (!cJSON_IsNumber(entity_type_json)){
@@ -678,6 +676,9 @@ void scene_process_node_json(
     }
     // Add reference to this entity to scene's entities array
     scene->entities[scene->num_entities++] = current_node->entity;
+
+    // AudioComponent (may want to include this in scene json somehow, maybe just a bool)
+    audio_component_create(scene, current_node->entity->id, 0);
   }
 
   // Process transform
@@ -1083,6 +1084,15 @@ struct Camera *scene_get_camera_by_entity_id(struct Scene *scene, uuid_t entity_
   for (unsigned int i = 0; i < scene->num_camera_components; i++){
     if (uuid_compare(scene->camera_components[i].entity_id, entity_id) == 0){
       return &scene->camera_components[i];
+    }
+  }
+  return NULL;
+}
+
+struct AudioComponent *scene_get_audio_component_by_entity_id(struct Scene *scene, uuid_t entity_id){
+  for (unsigned int i = 0; i < scene->num_audio_components; i++){
+    if (uuid_compare(scene->audio_components[i].entity_id, entity_id) == 0){
+      return &scene->audio_components[i];
     }
   }
   return NULL;
