@@ -3,6 +3,7 @@
 
 // TODO: pass item entity id, allow player to pick up a partial amount of this item
 bool inventory_add_item(struct InventoryComponent *inventory_component, struct ItemRegistry *item_registry, int item_id, int count){
+  printf("inventory_add_item: item registry has %d items\n", item_registry->num_items);
   struct ItemDefinition *item_definition = item_registry_get_item(item_registry, item_id);
 
   // If the inventory already has an item with this ID,

@@ -119,6 +119,7 @@ void game_event_queue_process(){
         struct InventoryComponent *inventory_component = scene_get_inventory_by_entity_id(game_event_queue.scene, game_event.data.item_pickup.player_entity_id);
 
         // Attempt to add item to the player's inventory
+        printf("item registry has %d items\n", game_event_queue.scene->item_registry.num_items);
         if (inventory_add_item(inventory_component, &game_event_queue.scene->item_registry, game_event.data.item_pickup.item_id, game_event.data.item_pickup.item_count)){
           // Remove the item's entity from the scene graph.
           scene_remove_entity(game_event_queue.scene, game_event.data.item_pickup.item_entity_id);

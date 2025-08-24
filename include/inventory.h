@@ -14,6 +14,6 @@ struct InventoryComponent {
   int capacity;
 };
 
-bool inventory_add_item(struct InventoryComponent *inventory_component, struct ItemRegistry *item_regsitry, int item_id, int count);
+bool inventory_add_item(struct InventoryComponent *inventory_component, struct ItemRegistry *item_registry, int item_id, int count);
 
 void inventory_print(struct ItemRegistry *item_registry, struct InventoryComponent *inventory_component);

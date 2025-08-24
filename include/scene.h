@@ -52,13 +52,16 @@ struct Scene {
   bool physics_debug_mode;
 
   // Components
+  struct RenderComponent *render_components;
+  unsigned int num_render_components;
+  unsigned int max_render_components;
   struct PlayerComponent *player_components;
   unsigned int num_player_components;
   unsigned int max_player_components;
   struct InventoryComponent *inventory_components;
   unsigned int num_inventory_components;
   unsigned int max_inventory_components;
-  struct Camera *camera_components;
+  struct CameraComponent *camera_components;
   unsigned int num_camera_components;
   unsigned int max_camera_components;
   struct AudioComponent *audio_components;
@@ -103,7 +106,8 @@ void scene_player_create(
   bool is_local);
 
 // Components
+struct RenderComponent *scene_get_render_component_by_entity_id(struct Scene *scene, uuid_t entity_id);
 struct PlayerComponent *scene_get_player_by_entity_id(struct Scene *scene, uuid_t entity_id);
 struct InventoryComponent *scene_get_inventory_by_entity_id(struct Scene *scene, uuid_t entity_id);
-struct Camera *scene_get_camera_by_entity_id(struct Scene *scene, uuid_t entity_id);
+struct CameraComponent *scene_get_camera_by_entity_id(struct Scene *scene, uuid_t entity_id);
 struct AudioComponent *scene_get_audio_component_by_entity_id(struct Scene *scene, uuid_t entity_id);

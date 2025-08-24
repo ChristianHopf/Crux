@@ -395,6 +395,7 @@ void audio_sound_effect_play(struct SoundEffect *sound_effect){
 void audio_component_create(struct Scene *scene, uuid_t entity_id, int sound_effect_index){
   // Reallocate AudioComponent array if full
   if (scene->num_audio_components >= scene->max_audio_components){
+    printf("audio component realloc time\n");
     scene->max_audio_components *= 2;
     scene->audio_components = realloc(scene->audio_components, scene->max_audio_components * sizeof(struct AudioComponent));
   }
@@ -500,7 +501,7 @@ void audio_component_play(struct AudioComponent *audio_component){
 }
 
 void audio_listener_update(struct Scene *scene, uuid_t entity_id){
-  struct Camera *camera = scene_get_camera_by_entity_id(scene, entity_id);
+  struct CameraComponent *camera = scene_get_camera_by_entity_id(scene, entity_id);
 
   // Set context
   alcMakeContextCurrent(global_audio_manager->context);

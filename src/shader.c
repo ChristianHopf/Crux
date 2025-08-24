@@ -27,7 +27,7 @@ static unsigned int compile_shader(unsigned int type, const char *shaderCode){
 
 Shader *shader_create(const char *vertexPath, const char *fragmentPath) {
 	// Initialize with ID 0
-	Shader *shader = (Shader *)malloc(sizeof(Shader));
+	Shader *shader = (Shader *)calloc(1, sizeof(Shader));
   if (!shader){
     printf("Error: failed to allocate shader\n");
     return NULL;

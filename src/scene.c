@@ -55,7 +55,7 @@ struct Scene *scene_init(char *scene_path){
   }
   int num_shaders = cJSON_GetArraySize(shaders_json);
   Shader *shaders[num_shaders];
-  scene->shaders = (Shader **)malloc(num_shaders * sizeof(Shader *));
+  scene->shaders = (Shader **)calloc(num_shaders, sizeof(Shader *));
   if (!scene->shaders){
     fprintf(stderr, "Error: failed to allocate scene->shaders in scene_init\n");
     return NULL;
@@ -87,7 +87,6 @@ struct Scene *scene_init(char *scene_path){
     scene->shaders[index] = shader;
     index++;
   }
-  // scene->shaders = shaders;
 
   // Link shader uniform blocks to binding points
   for (int i = 0; i < num_shaders; i++){
@@ -114,7 +113,7 @@ struct Scene *scene_init(char *scene_path){
   }
   int num_models = cJSON_GetArraySize(models_json);
   struct Model *models[num_models];
-  scene->models = (struct Model **)malloc(num_models * sizeof(struct Model *));
+  scene->models = (struct Model **)calloc(num_models, sizeof(struct Model *));
   if (!scene->models){
     fprintf(stderr, "Error: failed to allocate scene->shaders in scene_init\n");
     return NULL;
@@ -133,7 +132,7 @@ struct Scene *scene_init(char *scene_path){
     }
     char *model_path = cJSON_GetStringValue(model_json);
 
-    struct Model *loaded_model = (struct Model *)malloc(sizeof(struct Model));
+    struct Model *loaded_model = (struct Model *)calloc(1, sizeof(struct Model));
     if (!loaded_model){
       fprintf(stderr, "Error: failed to allocate model with path %s in scene_init\n", model_path);
       return NULL;
@@ -193,6 +192,13 @@ struct Scene *scene_init(char *scene_path){
   scene->num_entities = 0;
 
   // Allocate Components
+  scene->max_render_components = 32;
+  scene->render_components = (struct RenderComponent *)calloc(scene->max_render_components, sizeof(struct RenderComponent));
+  if (!scene->render_components){
+    fprintf(stderr, "Error: failed to allocate scene RenderComponents in scene_init\n");
+    return NULL;
+  }
+  scene->num_render_components = 0;
 
   // - AudioComponents
   scene->max_audio_components = 32;
@@ -205,7 +211,7 @@ struct Scene *scene_init(char *scene_path){
 
   // - CameraComponents
   scene->max_camera_components = 8;
-  scene->camera_components = (struct Camera *)calloc(scene->max_camera_components, sizeof(struct Camera));
+  scene->camera_components = (struct CameraComponent *)calloc(scene->max_camera_components, sizeof(struct CameraComponent));
   if (!scene->camera_components){
     fprintf(stderr, "Error: failed to allocate scene CameraComponents in scene_init\n");
     return NULL;
@@ -293,7 +299,7 @@ struct Scene *scene_init(char *scene_path){
   }
 
   int num_lights = cJSON_GetArraySize(lights_json);
-  scene->lights = (struct Light *)malloc(num_lights * sizeof(struct Light));
+  scene->lights = (struct Light *)calloc(num_lights, sizeof(struct Light));
   if (!scene->lights){
     fprintf(stderr, "Error: failed to allocate scene lights\n");
     return NULL;
@@ -415,7 +421,7 @@ void scene_render(struct Scene *scene){
   // Get view and projection matrices
   mat4 view;
   mat4 projection;
-  struct Camera *camera = scene_get_camera_by_entity_id(scene, scene->local_player_entity_id);
+  struct CameraComponent *camera = scene_get_camera_by_entity_id(scene, scene->local_player_entity_id);
   camera_get_view_matrix(camera, view);
   glm_perspective(glm_rad(camera->fov), 1920.0f / 1080.0f, 0.1f, 100.0f, projection);
 
@@ -447,20 +453,20 @@ void scene_render(struct Scene *scene){
   // Allocate RenderItem arrays
   unsigned int num_render_items = 0;
   scene_get_render_item_count(scene->root_node, &num_render_items);
-  opaque_items = (struct RenderItem *)malloc(num_render_items * sizeof(struct RenderItem));
+  opaque_items = (struct RenderItem *)calloc(num_render_items, sizeof(struct RenderItem));
   if (!opaque_items){
     fprintf(stderr, "Error: failed to allocate opaque RenderItems in scene_render\n");
     // When rendering, make sure to check whether opaque_items is valid before trying to render them
   }
-  mask_items = (struct RenderItem *)malloc(num_render_items * sizeof(struct RenderItem));
+  mask_items = (struct RenderItem *)calloc(num_render_items, sizeof(struct RenderItem));
   if (!mask_items){
     fprintf(stderr, "Error: failed to allocate mask RenderItems in scene_render\n");
   }
-  transparent_items = (struct RenderItem *)malloc(num_render_items * sizeof(struct RenderItem));
+  transparent_items = (struct RenderItem *)calloc(num_render_items, sizeof(struct RenderItem));
   if (!transparent_items){
     fprintf(stderr, "Error: failed to allocate transparent RenderItems in scene_render\n");
   }
-  additive_items = (struct RenderItem *)malloc(num_render_items * sizeof(struct RenderItem));
+  additive_items = (struct RenderItem *)calloc(num_render_items, sizeof(struct RenderItem));
   if (!additive_items){
     fprintf(stderr, "Error: failed to allocate additive RenderItems in scene_render\n");
   }
@@ -489,7 +495,6 @@ void scene_render(struct Scene *scene){
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
   // Free allocated RenderItem arrays (optimize because this seems like a lot more work than I should have to do for this every single frame)
-  // free(combined_entities);
   free(opaque_items);
   free(mask_items);
   free(transparent_items);
@@ -575,7 +580,7 @@ void scene_process_vec3_json(cJSON *vec3_json, vec3 dest){
 }
 
 struct SceneNode *scene_node_create(unsigned int id){
-  struct SceneNode *node = (struct SceneNode *)malloc(sizeof(struct SceneNode));
+  struct SceneNode *node = (struct SceneNode *)calloc(1, sizeof(struct SceneNode));
   if (!node){
     fprintf(stderr, "Error: failed to allocate SceneNode in scene_node_create\n");
     return NULL;
@@ -616,17 +621,18 @@ void scene_process_node_json(
   int model_index = (int)cJSON_GetNumberValue(model_index_json);
   int shader_index = (int)cJSON_GetNumberValue(shader_index_json);
   if (model_index != -1 && shader_index != -1){
-    current_node->entity = (struct Entity *)calloc(1, sizeof(struct Entity));
-    if (!current_node->entity){
+    struct Entity *entity = (struct Entity *)calloc(1, sizeof(struct Entity));
+    if (!entity){
       fprintf(stderr, "Error: failed to allocate entity in scene_process_node_json\n");
       return;
     }
-    uuid_generate(current_node->entity->id);
-    current_node->entity->model = models[model_index];
-    current_node->entity->shader = shaders[shader_index];
-    scene_process_vec3_json(cJSON_GetObjectItemCaseSensitive(node_json, "position"), current_node->entity->position);
-    scene_process_vec3_json(cJSON_GetObjectItemCaseSensitive(node_json, "rotation"), current_node->entity->rotation);
-    scene_process_vec3_json(cJSON_GetObjectItemCaseSensitive(node_json, "scale"), current_node->entity->scale);
+    uuid_generate(entity->id);
+    entity->model = models[model_index];
+    entity->shader = shaders[shader_index];
+    render_component_create(scene, entity->id, models[model_index], shaders[shader_index]);
+    scene_process_vec3_json(cJSON_GetObjectItemCaseSensitive(node_json, "position"), entity->position);
+    scene_process_vec3_json(cJSON_GetObjectItemCaseSensitive(node_json, "rotation"), entity->rotation);
+    scene_process_vec3_json(cJSON_GetObjectItemCaseSensitive(node_json, "scale"), entity->scale);
 
     // Entity type
     cJSON *entity_type_json = cJSON_GetObjectItemCaseSensitive(node_json, "entity_type");
@@ -639,12 +645,12 @@ void scene_process_node_json(
     EntityType entity_type = cJSON_GetNumberValue(entity_type_json);
     switch(entity_type){
       case ENTITY_WORLD: {
-        current_node->entity->type = entity_type;
+        entity->type = entity_type;
         break;
       }
       // Item
       case ENTITY_ITEM: {
-        current_node->entity->type = entity_type;
+        entity->type = entity_type;
         cJSON *item_id_json = cJSON_GetObjectItemCaseSensitive(node_json, "item_id");
         if (!cJSON_IsNumber(item_id_json)){
           fprintf(stderr, "Error: failed to get item id in scene_process_node_json, either invalid or does not exist\n");
@@ -656,13 +662,13 @@ void scene_process_node_json(
           return;
         }
 
-        current_node->entity->item = (struct ItemComponent *)calloc(1, sizeof(struct ItemComponent));
-        if (!current_node->entity->item){
+        entity->item = (struct ItemComponent *)calloc(1, sizeof(struct ItemComponent));
+        if (!entity->item){
           fprintf(stderr, "Error: failed to allocate Item in scene_process_node_json\n");
           return;
         }
-        current_node->entity->item->id = cJSON_GetNumberValue(item_id_json);
-        current_node->entity->item->count = cJSON_GetNumberValue(item_count_json);
+        entity->item->id = cJSON_GetNumberValue(item_id_json);
+        entity->item->count = cJSON_GetNumberValue(item_count_json);
         break;
       }
       // TODO More refactoring here when I actually implement multiplayer support
@@ -674,11 +680,12 @@ void scene_process_node_json(
         break;
       }
     }
-    // Add reference to this entity to scene's entities array
-    scene->entities[scene->num_entities++] = current_node->entity;
+    // Add reference to this entity to scene's entities array and node
+    current_node->entity = entity;
+    scene->entities[scene->num_entities++] = entity;
 
     // AudioComponent (may want to include this in scene json somehow, maybe just a bool)
-    audio_component_create(scene, current_node->entity->id, 0);
+    audio_component_create(scene, entity->id, 0);
   }
 
   // Process transform
@@ -858,7 +865,6 @@ void scene_process_items_json(struct Scene *scene, const cJSON *items_json){
     return;
   }
   item_registry->num_items = num_items;
-  printf("Item registry num items is %d\n", item_registry->num_items);
 
   int index = 0;
   const cJSON *item_json;
@@ -920,9 +926,13 @@ void scene_player_create(
   bool is_local){
   // Reallocate PlayerComponent array if full
   if (scene->num_player_components >= scene->max_player_components){
-    printf("REALLOC\n");
     scene->max_player_components *= 2;
+    printf("player realloc time\n");
     scene->player_components = realloc(scene->player_components, scene->max_player_components * sizeof(struct PlayerComponent));
+    if (!scene->player_components){
+      fprintf(stderr, "Error: failed to reallocate scene PlayerComponents in scene_player_create\n");
+      return;
+    }
   }
   struct PlayerComponent *player = &scene->player_components[scene->num_player_components++];
 
@@ -936,7 +946,6 @@ void scene_player_create(
 
   // Assign values to Entity
   uuid_generate(entity->id);
-  memcpy(player->entity_id, entity->id, 16);
   entity->type = ENTITY_PLAYER;
   entity->model = model;
   entity->shader = shader;
@@ -1063,6 +1072,15 @@ struct Entity *scene_get_entity_by_entity_id(struct Scene *scene, uuid_t entity_
   return NULL;
 }
 
+struct RenderComponent *scene_get_render_component_by_entity_id(struct Scene *scene, uuid_t entity_id){
+  for (unsigned int i = 0; i < scene->num_render_components; i++){
+    if (uuid_compare(scene->render_components[i].entity_id, entity_id) == 0){
+      return &scene->render_components[i];
+    }
+  }
+  return NULL;
+}
+
 struct PlayerComponent *scene_get_player_by_entity_id(struct Scene *scene, uuid_t entity_id){
   for (unsigned int i = 0; i < scene->num_player_components; i++){
     if (uuid_compare(scene->player_components[i].entity_id, entity_id) == 0){
@@ -1081,7 +1099,7 @@ struct InventoryComponent *scene_get_inventory_by_entity_id(struct Scene *scene,
   return NULL;
 }
 
-struct Camera *scene_get_camera_by_entity_id(struct Scene *scene, uuid_t entity_id){
+struct CameraComponent *scene_get_camera_by_entity_id(struct Scene *scene, uuid_t entity_id){
   for (unsigned int i = 0; i < scene->num_camera_components; i++){
     if (uuid_compare(scene->camera_components[i].entity_id, entity_id) == 0){
       return &scene->camera_components[i];

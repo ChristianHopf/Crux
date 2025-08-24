@@ -12,7 +12,7 @@ void player_process_keyboard_input(struct Scene *scene, uuid_t entity_id, Camera
 
   // TODO Some kind of physics API so that I can remove the direct reference to the PhysicsBody from Entity
   struct Entity *player_entity = scene_get_entity_by_entity_id(scene, entity_id);
-  struct Camera *camera_component = scene_get_camera_by_entity_id(scene, entity_id);
+  struct CameraComponent *camera_component = scene_get_camera_by_entity_id(scene, entity_id);
 
   float velocity = (float)(camera_component->speed * delta_time);
 	if (direction == CAMERA_FORWARD){
@@ -59,7 +59,7 @@ void player_process_mouse_input(struct Scene *scene, uuid_t entity_id, float xof
     fprintf(stderr, "Error: failed to get PlayerComponent in player_process_mouse_input\n");
     return;
   }
-  struct Camera *camera = scene_get_camera_by_entity_id(scene, entity_id);
+  struct CameraComponent *camera = scene_get_camera_by_entity_id(scene, entity_id);
   if (!camera){
     fprintf(stderr, "Error: failed to get CameraComponent in player_process_mouse_input\n");
     return;
@@ -173,7 +173,7 @@ void player_update(struct Scene *scene, uuid_t entity_id, float delta_time){
   if (!player_entity){
     fprintf(stderr, "Error: failed to get player Entity in player_update\n");
   }
-  struct Camera *camera_component = scene_get_camera_by_entity_id(scene, entity_id);
+  struct CameraComponent *camera_component = scene_get_camera_by_entity_id(scene, entity_id);
   if (!camera_component){
     fprintf(stderr, "Error: failed to get CameraComponent in player_update\n");
   }

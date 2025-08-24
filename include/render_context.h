@@ -17,6 +17,12 @@ struct RenderItem {
   float depth;
 };
 
+struct RenderComponent {
+  uuid_t entity_id;
+  struct Model *model;
+  Shader *shader;
+};
+
 struct RenderContext {
   // Values for shader uniforms (pointers, this struct only exists to pass parameters in a pretty way)
   mat4 *view_ptr;
@@ -39,3 +45,6 @@ void scene_get_render_items(
   struct RenderItem **transparent_items, unsigned int *num_transparent_items,
   struct RenderItem **additive_items, unsigned int *num_additive_items);
 int compare_render_item_depth(const void *a, const void *b);
+
+// RenderComponent
+void render_component_create(struct Scene *scene, uuid_t entity_id, struct Model *model, Shader *shader);

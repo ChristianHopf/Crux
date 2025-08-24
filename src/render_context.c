@@ -176,7 +176,6 @@ void scene_get_render_items(
       glm_mat4_copy(scene_node->world_transform, render_item.transform);
 
       // Get mesh depth: magnitude of difference between camera pos and mesh center
-      // print_glm_vec3(camera_pos, "sort_render_items camera position");
       vec3 world_mesh_center, difference;
       glm_mat4_mulv3(render_item.transform, mesh->center, 1.0f, world_mesh_center);
       glm_vec3_sub(camera_pos, world_mesh_center, difference);
@@ -222,4 +221,20 @@ int compare_render_item_depth(const void *a, const void *b){
   if (depth_A > depth_B) return -1;
   if (depth_A < depth_B) return 1;
   return 0;
+}
+
+void render_component_create(struct Scene *scene, uuid_t entity_id, struct Model *model, Shader *shader){
+  if (scene->num_render_components >= scene->max_render_components){
+    scene->max_render_components *= 2;
+    scene->render_components = realloc(scene->render_components, scene->max_render_components * sizeof(struct RenderComponent));
+    if (!scene->render_components){
+      fprintf(stderr, "Error: failed to reallocate scene RenderComponents in render_component_create\n");
+      return;
+    }
+  }
+
+  struct RenderComponent *render_component = &scene->render_components[scene->num_render_components++];
+  memcpy(render_component->entity_id, entity_id, 16);
+  render_component->model = model;
+  render_component->shader = shader;
 }
