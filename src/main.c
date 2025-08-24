@@ -131,7 +131,7 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 
 void scroll_callback(GLFWwindow *window, double xoffset, double yoffset){
   Engine *engine = (Engine *)glfwGetWindowUserPointer(window);
-  struct Camera *camera = engine->active_scene->player_components[0]->camera;
+  struct Camera *camera = scene_get_camera_by_entity_id(engine->active_scene, engine->active_scene->local_player_entity_id);
   if (!game_state_is_paused()){
     camera_process_scroll_input(camera, yoffset);
   }

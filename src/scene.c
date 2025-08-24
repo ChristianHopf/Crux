@@ -920,6 +920,7 @@ void scene_player_create(
   bool is_local){
   // Reallocate PlayerComponent array if full
   if (scene->num_player_components >= scene->max_player_components){
+    printf("REALLOC\n");
     scene->max_player_components *= 2;
     scene->player_components = realloc(scene->player_components, scene->max_player_components * sizeof(struct PlayerComponent));
   }
@@ -1090,7 +1091,15 @@ struct Camera *scene_get_camera_by_entity_id(struct Scene *scene, uuid_t entity_
 }
 
 struct AudioComponent *scene_get_audio_component_by_entity_id(struct Scene *scene, uuid_t entity_id){
+  // printf("scene_get_audio_component_by_entity_id\n");
+  // printf("Num audio components: %d\n", scene->num_audio_components);
+  // char entity_id_str[37];
+  // uuid_unparse(entity_id, entity_id_str);
+  // printf("entity_id to find: %s\n", entity_id_str);
   for (unsigned int i = 0; i < scene->num_audio_components; i++){
+    // char player_entity_id_str[37];
+    // uuid_unparse(scene->audio_components[i].entity_id, player_entity_id_str);
+    // printf("Audio component %d entity id: %s\n", i, player_entity_id_str);
     if (uuid_compare(scene->audio_components[i].entity_id, entity_id) == 0){
       return &scene->audio_components[i];
     }

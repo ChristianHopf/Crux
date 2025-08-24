@@ -109,21 +109,12 @@ void game_event_queue_process(){
           fprintf(stderr, "Error: failed to get audio_component_B in game_event_queue_process\n");
           return;
         }
-        // Play audio
+
         audio_component_play(audio_component_A);
-        audio_component_play(audio_component_B);
+        // audio_component_play(audio_component_B);
         break;
       }
       case EVENT_PLAYER_ITEM_PICKUP: {
-        printf("Processing player item pickup event\n");
-        char player_entity_uuid_str[37];
-        uuid_unparse_lower(game_event.data.item_pickup.player_entity_id, player_entity_uuid_str);
-        printf("Player id: %s\n", player_entity_uuid_str);
-        printf("Item id: %d\n", game_event.data.item_pickup.item_id);
-        char uuid_str[37];
-        uuid_unparse_lower(game_event.data.item_pickup.item_entity_id, uuid_str);
-        printf("Item entity id: %s\n", uuid_str);
-
         struct PlayerComponent *player = scene_get_player_by_entity_id(game_event_queue.scene, game_event.data.item_pickup.player_entity_id);
         struct InventoryComponent *inventory_component = scene_get_inventory_by_entity_id(game_event_queue.scene, game_event.data.item_pickup.player_entity_id);
 

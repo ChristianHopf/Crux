@@ -56,18 +56,18 @@ void player_process_keyboard_input(struct Scene *scene, uuid_t entity_id, Camera
 void player_process_mouse_input(struct Scene *scene, uuid_t entity_id, float xoffset, float yoffset){
   struct PlayerComponent *player = scene_get_player_by_entity_id(scene, entity_id);
   if (!player){
-    fprintf(stderr, "Error: failed to get PlayerComponent in player_process_keyboard_input\n");
+    fprintf(stderr, "Error: failed to get PlayerComponent in player_process_mouse_input\n");
     return;
   }
   struct Camera *camera = scene_get_camera_by_entity_id(scene, entity_id);
   if (!camera){
-    fprintf(stderr, "Error: failed to get CameraComponent in player_process_keyboard_input\n");
+    fprintf(stderr, "Error: failed to get CameraComponent in player_process_mouse_input\n");
     return;
   }
 
   struct Entity *player_entity = scene_get_entity_by_entity_id(scene, entity_id);
   if (!player_entity){
-    fprintf(stderr, "Error: failed to get player Entity in player_process_keyboard_input\n");
+    fprintf(stderr, "Error: failed to get player Entity in player_process_mouse_input\n");
     return;
   }
 

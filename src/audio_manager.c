@@ -415,7 +415,6 @@ void audio_component_create(struct Scene *scene, uuid_t entity_id, int sound_eff
   }
 
   // Set source position and options for spatial audio
-  printf("audio_component_create: scene has %d entities\n", scene->num_entities);
   struct Entity *entity = scene_get_entity_by_entity_id(scene, entity_id);
   if (!entity){
     fprintf(stderr, "Error: failed to fetch entity in audio_component_create\n");

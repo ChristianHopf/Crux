@@ -237,7 +237,7 @@ void physics_step(struct PhysicsWorld *physics_world, float delta_time){
         switch(event.type){
           case EVENT_COLLISION:
             memcpy(event.data.collision.entity_A_id, body_A->entity->id, 16);
-            memcpy(event.data.collision.entity_A_id, body_B->entity->id, 16);
+            memcpy(event.data.collision.entity_B_id, body_B->entity->id, 16);
             break;
           case EVENT_PLAYER_ITEM_PICKUP:
             // TODO player ID, physicsbody/world has knowledge of it somehow
@@ -350,7 +350,7 @@ void physics_step(struct PhysicsWorld *physics_world, float delta_time){
         switch(event.type){
           case EVENT_COLLISION:
             memcpy(event.data.collision.entity_A_id, body_A->entity->id, 16);
-            memcpy(event.data.collision.entity_A_id, body_B->entity->id, 16);
+            memcpy(event.data.collision.entity_B_id, body_B->entity->id, 16);
             break;
         }
 
@@ -433,7 +433,7 @@ void physics_step(struct PhysicsWorld *physics_world, float delta_time){
         switch(event.type){
           case EVENT_COLLISION:
             memcpy(event.data.collision.entity_A_id, body_A->entity->id, 16);
-            memcpy(event.data.collision.entity_A_id, body_B->entity->id, 16);
+            memcpy(event.data.collision.entity_B_id, body_B->entity->id, 16);
             break;
         }
 
