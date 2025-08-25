@@ -396,6 +396,7 @@ void audio_component_create(struct Scene *scene, uuid_t entity_id, int sound_eff
   // Reallocate AudioComponent array if full
   if (scene->num_audio_components >= scene->max_audio_components){
     printf("audio component realloc time\n");
+    // printf("scene->num_audio_components: %d\n", scene->num_audio_components);
     scene->max_audio_components *= 2;
     scene->audio_components = realloc(scene->audio_components, scene->max_audio_components * sizeof(struct AudioComponent));
   }
@@ -511,6 +512,7 @@ void audio_listener_update(struct Scene *scene, uuid_t entity_id){
   }
 
   // Set listener position
+  printf("Time to set listener position\n");
   alListenerfv(AL_POSITION, camera->position);
   player_error = alGetError();
   if (player_error != AL_NO_ERROR){

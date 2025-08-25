@@ -5,8 +5,11 @@
 #include <cglm/mat3.h>
 #include "scene.h"
 #include "render_context.h"
+#include "entity.h"
+#include "model.h"
 #include "player.h"
 #include "skybox.h"
+#include "camera.h"
 #include "text.h"
 #include "physics/world.h"
 #include "physics/aabb.h"
@@ -629,7 +632,7 @@ void scene_process_node_json(
     uuid_generate(entity->id);
     entity->model = models[model_index];
     entity->shader = shaders[shader_index];
-    render_component_create(scene, entity->id, models[model_index], shaders[shader_index]);
+    // render_component_create(scene, entity->id, models[model_index], shaders[shader_index]);
     scene_process_vec3_json(cJSON_GetObjectItemCaseSensitive(node_json, "position"), entity->position);
     scene_process_vec3_json(cJSON_GetObjectItemCaseSensitive(node_json, "rotation"), entity->rotation);
     scene_process_vec3_json(cJSON_GetObjectItemCaseSensitive(node_json, "scale"), entity->scale);
@@ -682,7 +685,11 @@ void scene_process_node_json(
     }
     // Add reference to this entity to scene's entities array and node
     current_node->entity = entity;
+    memcpy(current_node->entity_id, entity->id, 16);
     scene->entities[scene->num_entities++] = entity;
+    if (scene->entities[scene->num_entities]->model){
+      printf("Scene entity has model\n");
+    }
 
     // AudioComponent (may want to include this in scene json somehow, maybe just a bool)
     audio_component_create(scene, entity->id, 0);
@@ -953,10 +960,6 @@ void scene_player_create(
   glm_vec3_copy(rotation, entity->rotation);
   glm_vec3_copy(scale, entity->scale);
   glm_vec3_copy(velocity, entity->velocity);
-  glm_vec3_copy(camera_offset, player->camera_offset);
-  glm_vec3_copy(camera_offset, player->rotated_offset);
-  player->camera_height = camera_height;
-  player->render_entity = render_entity;
 
   // Assign values to PlayerComponent
   memcpy(player->entity_id, entity->id, 16);
@@ -985,7 +988,7 @@ void scene_player_create(
   audio_component_create(scene, player->entity_id, 0);
 
   // Set listener position to camera position
-  audio_listener_update(scene, player->entity_id);
+  audio_listener_update(scene, entity->id);
 }
 
 // Recursive function to search the scene graph for the node with the entity with the given entity_id

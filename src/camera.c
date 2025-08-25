@@ -12,6 +12,7 @@ void camera_create(struct Scene *scene, uuid_t entity_id, vec3 position, vec3 up
 
   // Initialize CameraComponent
   struct CameraComponent *camera = &scene->camera_components[scene->num_camera_components++];
+  printf("camera_create\n");
   memcpy(camera->entity_id, entity_id, 16);
   glm_vec3_copy(position, camera->position);
   glm_vec3_copy(up, camera->up);

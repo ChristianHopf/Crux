@@ -43,7 +43,7 @@ bool model_load(struct Model *model, const char *path){
     printf("Error: found 0 meshes in scene\n");
     return false;
   }
-  model->meshes = (Mesh *)calloc(scene->mNumMeshes, sizeof(Mesh));
+  model->meshes = (struct Mesh *)calloc(scene->mNumMeshes, sizeof(struct Mesh));
   if (!model->meshes){
     printf("Error: failed to allocate meshes\n");
   return false;
@@ -100,7 +100,7 @@ void model_process_node(struct Model *model, struct aiNode *node, const struct a
   }
 }
 
-void model_process_mesh(struct aiMesh *ai_mesh, const struct aiScene *scene, struct aiMatrix4x4 node_transform, Mesh *dest_mesh){
+void model_process_mesh(struct aiMesh *ai_mesh, const struct aiScene *scene, struct aiMatrix4x4 node_transform, struct Mesh *dest_mesh){
 
   // Allocate memory for vertices
   Vertex *vertices = (Vertex *)malloc(ai_mesh->mNumVertices * sizeof(Vertex));

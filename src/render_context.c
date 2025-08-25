@@ -1,4 +1,7 @@
 #include "render_context.h"
+#include "scene.h"
+#include "skybox.h"
+#include "model.h"
 
 void draw_render_items(struct RenderItem *render_items, unsigned int num_render_items, struct RenderContext *context){
 
@@ -165,7 +168,7 @@ void scene_get_render_items(
     struct Model *model = entity->model;
 
     for (unsigned int j = 0; j < model->num_meshes; j++){
-      Mesh *mesh = &model->meshes[j];
+      struct Mesh *mesh = &model->meshes[j];
 
       struct RenderItem render_item;
       render_item.mesh = mesh;

@@ -5,22 +5,23 @@
 #include <stdbool.h>
 #include "collider.h"
 #include "physics/utils.h"
-#include "entity.h"
+// #include "entity.h"
 #include "item.h"
 
 // Forward declaration to avoid redefinition of EntityType from scene including entity
-struct SceneNode {
-  unsigned int ID;
-  mat4 local_transform;
-  mat4 world_transform;
-  vec3 position;
-  vec3 rotation;
-  vec3 scale;
-  struct Entity *entity;
-  struct SceneNode *parent_node;
-  struct SceneNode **children;
-  unsigned int num_children;
-};
+// struct SceneNode {
+//   // uuid_t entity_id;
+//   unsigned int ID;
+//   mat4 local_transform;
+//   mat4 world_transform;
+//   vec3 position;
+//   vec3 rotation;
+//   vec3 scale;
+//   struct Entity *entity;
+//   struct SceneNode *parent_node;
+//   struct SceneNode **children;
+//   unsigned int num_children;
+// };
 
 struct PhysicsBody {
   // Collision
@@ -53,7 +54,7 @@ struct PhysicsWorld {
 
 // World, bodies
 struct PhysicsWorld *physics_world_create();
-struct PhysicsBody  *physics_add_body(struct PhysicsWorld *physics_world, struct SceneNode *scene_node, struct Entity *entity, struct Collider collider, float restitution, bool dynamic);
+struct PhysicsBody *physics_add_body(struct PhysicsWorld *physics_world, struct SceneNode *scene_node, struct Entity *entity, struct Collider collider, float restitution, bool dynamic);
 struct PhysicsBody *physics_add_player(struct PhysicsWorld *physics_world, struct Entity *entity, struct Collider collider);
 void physics_remove_body(struct PhysicsWorld *physics_world, struct PhysicsBody *physics_body);
 

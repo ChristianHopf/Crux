@@ -3,22 +3,25 @@
 // #include <glad/glad.h>
 #include <cJSON/cJSON.h>
 #include <stdbool.h>
-#include "physics/world.h"
-#include "skybox.h"
-#include "entity.h"
-#include "player.h"
-#include "camera.h"
+#include <uuid/uuid.h>
+// #include "physics/world.h"
+// #include "skybox.h"
+// #include "entity.h"
+// #include "player.h"
+// #include "camera.h"
 #include "inventory.h"
-#include "shader.h"
+// #include "shader.h"
 
 struct Light {
   vec3 direction;
 
-  vec3 ambient; vec3 diffuse;
+  vec3 ambient;
+  vec3 diffuse;
   vec3 specular;
 };
 
 struct SceneNode {
+  uuid_t entity_id;
   unsigned int ID;
   mat4 local_transform;
   mat4 world_transform;
@@ -55,18 +58,18 @@ struct Scene {
   struct RenderComponent *render_components;
   unsigned int num_render_components;
   unsigned int max_render_components;
+  struct AudioComponent *audio_components;
+  unsigned int num_audio_components;
+  unsigned int max_audio_components;
+  struct CameraComponent *camera_components;
+  unsigned int num_camera_components;
+  unsigned int max_camera_components;
   struct PlayerComponent *player_components;
   unsigned int num_player_components;
   unsigned int max_player_components;
   struct InventoryComponent *inventory_components;
   unsigned int num_inventory_components;
   unsigned int max_inventory_components;
-  struct CameraComponent *camera_components;
-  unsigned int num_camera_components;
-  unsigned int max_camera_components;
-  struct AudioComponent *audio_components;
-  unsigned int num_audio_components;
-  unsigned int max_audio_components;
 
   struct ItemRegistry item_registry;
   uuid_t local_player_entity_id;

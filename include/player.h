@@ -5,13 +5,13 @@
 #include <AL/alc.h>
 #include <uuid/uuid.h>
 #include "audio_manager.h"
-#include "entity.h"
-#include "camera.h"
+// #include "camera.h"
+// #include "model.h"
+// #include "shader.h"
 #include "types.h"
 #include "utils.h"
-#include "scene.h"
+// #include "scene.h"
 
-// struct Scene;
 
 struct PlayerComponent {
   uuid_t entity_id;

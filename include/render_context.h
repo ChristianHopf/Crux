@@ -3,14 +3,14 @@
 #include <stdbool.h>
 #include <cglm/cglm.h>
 #include <assimp/material.h>
-#include "scene.h"
-#include "skybox.h"
-#include "model.h"
+// #include "scene.h"
+// #include "skybox.h"
+// #include "model.h"
 #include "entity.h"
 
 // For sorting meshes for multiple rendering passes
 struct RenderItem {
-  Mesh *mesh;
+  struct Mesh *mesh;
   struct Model *model;
   Shader *shader;
   mat4 transform;

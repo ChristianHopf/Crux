@@ -5,9 +5,9 @@
 #include <uuid/uuid.h>
 #include <AL/al.h>
 #include <AL/alc.h>
-#include "physics/world.h"
-#include "model.h"
-#include "shader.h"
+// #include "physics/world.h"
+// #include "model.h"
+// #include "shader.h"
 #include "audio_manager.h"
 #include "types.h"
 
