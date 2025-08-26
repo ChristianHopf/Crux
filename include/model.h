@@ -3,11 +3,11 @@
 #include <glad/glad.h>
 #include <cglm/cglm.h>
 #include <stdbool.h>
-#include <assimp/scene.h>
-#include <assimp/postprocess.h>
-#include <assimp/cimport.h>
-#include <assimp/texture.h>
-#include <assimp/material.h>
+// #include <assimp/scene.h>
+// #include <assimp/postprocess.h>
+// #include <assimp/cimport.h>
+// #include <assimp/texture.h>
+// #include <assimp/material.h>
 #include "shader.h"
 // #include "material.h"
 

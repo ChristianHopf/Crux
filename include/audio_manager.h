@@ -10,17 +10,11 @@
 #include <uuid/uuid.h>
 #include "tinycthread/tinycthread.h"
 #include "game_state_observer.h"
-// #include "scene.h"
 
 #define NUM_BUFFERS 4
 #define BUFFER_FRAMES 8192
 #define MAX_SOUND_EFFECTS 32
 #define MAX_SOURCES 64
-
-// Forward declarations
-struct PlayerComponent;
-struct Entity;
-struct Scene;
 
 struct AudioStream {
   SNDFILE *file;

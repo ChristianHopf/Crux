@@ -1,9 +1,9 @@
 #pragma once
 
+// #include "glad.h"
 #include <ft2build.h>
 #include FT_FREETYPE_H
 #include <cglm/cglm.h>
-#include "shader.h"
 
 struct Character {
   GLuint texture_id;

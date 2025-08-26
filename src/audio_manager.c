@@ -1,9 +1,10 @@
+#include "string.h"
+#include "scene.h"
+#include "camera.h"
 #include "audio_manager.h"
 #include "game_state.h"
-#include "player.h"
 #include "entity.h"
-#include "scene.h"
-#include <AL/al.h>
+// #include <AL/al.h>
 #include <locale.h>
 #include <time.h>
 
@@ -512,7 +513,6 @@ void audio_listener_update(struct Scene *scene, uuid_t entity_id){
   }
 
   // Set listener position
-  printf("Time to set listener position\n");
   alListenerfv(AL_POSITION, camera->position);
   player_error = alGetError();
   if (player_error != AL_NO_ERROR){

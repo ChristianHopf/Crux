@@ -1,7 +1,11 @@
-#include "render_context.h"
+#include <stdbool.h>
+#include <string.h>
 #include "scene.h"
+#include "render_context.h"
 #include "skybox.h"
 #include "model.h"
+#include "material.h"
+#include "entity.h"
 
 void draw_render_items(struct RenderItem *render_items, unsigned int num_render_items, struct RenderContext *context){
 

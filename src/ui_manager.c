@@ -1,6 +1,11 @@
 #define CLAY_IMPLEMENTATION
 #include "clay.h"
+#include "game_state_observer.h"
+#include "game_state.h"
 #include "ui_manager.h"
+#include "menu/menu.h"
+#include "menu/menu_presets.h"
+#include "text.h"
 #include "clay_opengl_renderer.h"
 
 static struct UIManager ui_manager;

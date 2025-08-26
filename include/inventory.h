@@ -2,10 +2,6 @@
 
 #include <stdbool.h>
 #include <uuid/uuid.h>
-// #include "scene.h"
-// #include "entity.h"
-#include "item.h"
-#include "item_registry.h"
 
 struct InventoryComponent {
   uuid_t entity_id;

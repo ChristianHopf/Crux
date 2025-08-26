@@ -1,3 +1,5 @@
+#include <stdio.h>
+#include <stb_image/stb_image.h>
 #include "skybox.h"
 
 // A cubemap skybox doesn't need a Model, or meshes,

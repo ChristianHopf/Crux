@@ -3,14 +3,15 @@
 #include <cglm/vec3.h>
 #include <cglm/cglm.h>
 #include <cglm/mat3.h>
+#include "entity.h"
 #include "scene.h"
 #include "render_context.h"
-#include "entity.h"
 #include "model.h"
 #include "player.h"
 #include "skybox.h"
 #include "camera.h"
 #include "text.h"
+#include "inventory.h"
 #include "physics/world.h"
 #include "physics/aabb.h"
 #include "physics/debug_renderer.h"
@@ -187,6 +188,7 @@ struct Scene *scene_init(char *scene_path){
     return NULL;
   }
   int entity_count = cJSON_GetNumberValue(entity_count_json);
+  printf("entity count is %d\n", entity_count);
   scene->entities = (struct Entity **)calloc(entity_count, sizeof(struct Entity *));
   if (!scene->entities){
     fprintf(stderr, "Error: failed to allocate scene->entities in scene_init\n");
@@ -687,7 +689,9 @@ void scene_process_node_json(
     current_node->entity = entity;
     memcpy(current_node->entity_id, entity->id, 16);
     scene->entities[scene->num_entities++] = entity;
-    if (scene->entities[scene->num_entities]->model){
+    printf("scene num entities is %d\n", scene->num_entities);
+    printf("scene max entities is %d\n", scene->max_entities);
+    if (scene->entities[scene->num_entities - 1]->model){
       printf("Scene entity has model\n");
     }
 

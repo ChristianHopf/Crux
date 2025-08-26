@@ -3,7 +3,6 @@
 #include <GLFW/glfw3.h>
 #include <cglm/cglm.h>
 #include <uuid/uuid.h>
-#include "scene.h"
 #include "types.h"
 
 // Default camera values

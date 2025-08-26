@@ -1,7 +1,11 @@
 #include <cglm/vec3.h>
 #include <uuid/uuid.h>
+#include "utils.h"
+#include "scene.h"
 #include "player.h"
 #include "entity.h"
+#include "camera.h"
+#include "audio_manager.h"
 #include "physics/world.h"
 
 void player_process_keyboard_input(struct Scene *scene, uuid_t entity_id, CameraDirection direction, float delta_time){

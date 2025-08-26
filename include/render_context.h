@@ -1,12 +1,10 @@
 #pragma once
 
-#include <stdbool.h>
 #include <cglm/cglm.h>
-#include <assimp/material.h>
 // #include "scene.h"
 // #include "skybox.h"
 // #include "model.h"
-#include "entity.h"
+#include "shader.h"
 
 // For sorting meshes for multiple rendering passes
 struct RenderItem {

@@ -9,8 +9,8 @@
 // #include "entity.h"
 // #include "player.h"
 // #include "camera.h"
-#include "inventory.h"
-// #include "shader.h"
+#include "item_registry.h"
+#include "shader.h"
 
 struct Light {
   vec3 direction;

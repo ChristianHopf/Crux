@@ -4,14 +4,11 @@
 #include <AL/al.h>
 #include <AL/alc.h>
 #include <uuid/uuid.h>
-#include "audio_manager.h"
+// #include "audio_manager.h"
 // #include "camera.h"
 // #include "model.h"
-// #include "shader.h"
+#include "shader.h"
 #include "types.h"
-#include "utils.h"
-// #include "scene.h"
-
 
 struct PlayerComponent {
   uuid_t entity_id;

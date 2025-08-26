@@ -3,14 +3,13 @@
 #include <cglm/mat4.h>
 #include <cglm/vec2.h>
 #include <stb_image/stb_image.h>
-#include <stdbool.h>
+// #include <stdbool.h>
 #include <assimp/cimport.h>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 #include <assimp/texture.h>
 #include <assimp/material.h>
 #include "model.h"
-#include "physics/aabb.h"
 #include "utils.h"
 #include "material.h"
 

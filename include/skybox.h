@@ -1,7 +1,6 @@
 #pragma once
 
 #include <glad/glad.h>
-#include <stb_image/stb_image.h>
 #include "shader.h"
 
 struct Skybox {

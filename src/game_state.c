@@ -1,5 +1,9 @@
+#include <stdio.h>
+#include <stdlib.h>
 #include "game_state.h"
+#include "game_state_observer.h"
 #include "window_manager.h"
+#include "menu.h"
 
 static struct GameState game_state;
 
