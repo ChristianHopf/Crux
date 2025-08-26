@@ -1,7 +1,8 @@
+#include "entity.h"
+#include "audio_manager.h"
+#include "scene.h"
 #include "resolution.h"
 #include "collider.h"
-#include "audio_manager.h"
-#include "entity.h"
 
 ResolutionFunction resolution_functions[NUM_COLLIDER_TYPES][NUM_COLLIDER_TYPES] = {
   [COLLIDER_AABB][COLLIDER_AABB] = resolve_collision_AABB_AABB,

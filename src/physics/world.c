@@ -1,12 +1,16 @@
+#include <cglm/vec3.h>
+#include <stdbool.h>
+#include "entity.h"
+#include "item.h"
+#include "scene.h"
 #include "physics/world.h"
 #include "narrow_phase.h"
 #include "distance.h"
 #include "resolution.h"
 #include "event.h"
 #include "utils.h"
-#include <cglm/vec3.h>
-#include <stdbool.h>
 #include "time.h"
+#include "physics/utils.h"
 
 #define MAX_PHYSICS_BODIES 128
 

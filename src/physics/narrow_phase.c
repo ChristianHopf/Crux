@@ -1,4 +1,5 @@
 #include <stdbool.h>
+#include "scene.h"
 #include "physics/narrow_phase.h"
 
 #define EPSILON 0.0001

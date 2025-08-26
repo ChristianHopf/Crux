@@ -1,12 +1,9 @@
 #pragma once
 
-// #include <glad/glad.h>
+#include "glad.h"
 #include <cglm/cglm.h>
 #include <stdbool.h>
 #include "collider.h"
-#include "physics/utils.h"
-// #include "entity.h"
-#include "item.h"
 
 // Forward declaration to avoid redefinition of EntityType from scene including entity
 // struct SceneNode {

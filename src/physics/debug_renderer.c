@@ -1,7 +1,8 @@
-#include "physics/debug_renderer.h"
-#include "shader.h"
 #include <math.h>
 #include <signal.h>
+#include "shader.h"
+#include "scene.h"
+#include "physics/debug_renderer.h"
 
 // Shaders for wireframes (bounding volumes) and translucent objects (planes)
 static Shader *wireframeShader;

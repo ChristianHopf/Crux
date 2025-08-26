@@ -1,3 +1,4 @@
+#include "scene.h"
 #include "distance.h"
 #include "physics/utils.h"
 

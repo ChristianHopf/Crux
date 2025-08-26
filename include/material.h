@@ -2,6 +2,7 @@
 
 #include <glad/glad.h>
 #include <cglm/cglm.h>
+#include <assimp/material.h>
 
 typedef struct {
   char path[512];

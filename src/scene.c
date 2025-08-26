@@ -188,7 +188,6 @@ struct Scene *scene_init(char *scene_path){
     return NULL;
   }
   int entity_count = cJSON_GetNumberValue(entity_count_json);
-  printf("entity count is %d\n", entity_count);
   scene->entities = (struct Entity **)calloc(entity_count, sizeof(struct Entity *));
   if (!scene->entities){
     fprintf(stderr, "Error: failed to allocate scene->entities in scene_init\n");
@@ -689,11 +688,6 @@ void scene_process_node_json(
     current_node->entity = entity;
     memcpy(current_node->entity_id, entity->id, 16);
     scene->entities[scene->num_entities++] = entity;
-    printf("scene num entities is %d\n", scene->num_entities);
-    printf("scene max entities is %d\n", scene->max_entities);
-    if (scene->entities[scene->num_entities - 1]->model){
-      printf("Scene entity has model\n");
-    }
 
     // AudioComponent (may want to include this in scene json somehow, maybe just a bool)
     audio_component_create(scene, entity->id, 0);
@@ -938,7 +932,6 @@ void scene_player_create(
   // Reallocate PlayerComponent array if full
   if (scene->num_player_components >= scene->max_player_components){
     scene->max_player_components *= 2;
-    printf("player realloc time\n");
     scene->player_components = realloc(scene->player_components, scene->max_player_components * sizeof(struct PlayerComponent));
     if (!scene->player_components){
       fprintf(stderr, "Error: failed to reallocate scene PlayerComponents in scene_player_create\n");
@@ -1000,7 +993,6 @@ void scene_get_node_by_entity_id(struct SceneNode *current_node, uuid_t entity_i
   if (current_node->entity){
     if (uuid_compare(current_node->entity->id, entity_id) == 0){
       *dest = current_node;
-      printf("dest node address: %p\n", current_node);
       *final_child_index = *child_index;
     }
   }
@@ -1018,7 +1010,7 @@ void scene_remove_entity(struct Scene *scene, uuid_t entity_id){
   struct SceneNode *node_to_remove = NULL;
   int child_index, final_child_index;
   scene_get_node_by_entity_id(scene->root_node, entity_id, &child_index, &final_child_index, &node_to_remove);
-  printf("Address of node_to_remove: %p\n", node_to_remove);
+  // printf("Address of node_to_remove: %p\n", node_to_remove);
   if (node_to_remove){
     // If the node we want to remove has a parent node,
     // swap and pop its last child to the place of the node we removed
@@ -1035,25 +1027,25 @@ void scene_remove_entity(struct Scene *scene, uuid_t entity_id){
     if (uuid_compare(scene->entities[i]->id, entity_id) == 0){
       // PhysicsBody
       physics_remove_body(scene->physics_world, scene->entities[i]->physics_body);
-      printf("Successfully removed physics body\n");
+      // printf("Successfully removed physics body\n");
 
       // AudioComponent
       if (scene->entities[i]->audio_component){
         audio_component_destroy(scene->entities[i]->audio_component);
       }
-      printf("Successfully removed audio component\n");
+      // printf("Successfully removed audio component\n");
 
       // ItemComponent
       if (scene->entities[i]->item){
         free(scene->entities[i]->item);
       }
-      printf("Successfully removed item component\n");
+      // printf("Successfully removed item component\n");
 
       // Entity
       free(scene->entities[i]);
       scene->entities[i] = scene->entities[scene->num_entities - 1];
       scene->num_entities--;
-      printf("Successfully removed entity\n");
+      // printf("Successfully removed entity\n");
     }
   }
 }

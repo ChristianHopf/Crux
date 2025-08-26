@@ -129,7 +129,7 @@ void game_event_queue_process(){
           scene_remove_entity(game_event_queue.scene, game_event.data.item_pickup.item_entity_id);
           // Could also use some kind of "persistent" bool in the future if I want
           // items that don't disappear when a player picks them up.
-          printf("Successfully added %d item(s) to the player's inventory\n", game_event.data.item_pickup.item_count);
+          // printf("Successfully added %d item(s) to the player's inventory\n", game_event.data.item_pickup.item_count);
 
           inventory_print(&game_event_queue.scene->item_registry, inventory_component);
         }
