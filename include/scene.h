@@ -114,3 +114,5 @@ struct PlayerComponent *scene_get_player_by_entity_id(struct Scene *scene, uuid_
 struct InventoryComponent *scene_get_inventory_by_entity_id(struct Scene *scene, uuid_t entity_id);
 struct CameraComponent *scene_get_camera_by_entity_id(struct Scene *scene, uuid_t entity_id);
 struct AudioComponent *scene_get_audio_component_by_entity_id(struct Scene *scene, uuid_t entity_id);
+
+bool scene_remove_audio_component_by_entity_id(struct Scene *scene, uuid_t entity_id);

@@ -449,8 +449,8 @@ void audio_component_create(struct Scene *scene, uuid_t entity_id, int sound_eff
 }
 
 void audio_component_destroy(struct AudioComponent *audio_component){
-  if (audio_remove_source(audio_component->source_id)){
-    free(audio_component);
+  if (!audio_remove_source(audio_component->source_id)){
+    fprintf(stderr, "Error: failed to remove audio source in audio_component_destroy\n");
   }
 }
 

@@ -523,19 +523,28 @@ void scene_free(struct Scene *scene){
   for (int i = 0; i < scene->num_shaders; i++){
     free(scene->shaders[i]);
   }
-  // for(unsigned int i = 0; i < scene->num_entities; i++){
-  //   free(scene->entities[i]);
-  // }
+
+  // Free scene graph
+  scene_remove_scene_node(scene->root_node);
+
+  // Free components
+  free(scene->render_components);
+  for (unsigned int i = 0; i < scene->num_audio_components; i++){
+    audio_component_destroy(&scene->audio_components[i]);
+  }
+  free(scene->audio_components);
+  free(scene->camera_components);
+  free(scene->player_components);
+  for (unsigned int i = 0; i < scene->num_inventory_components; i++){
+    free(scene->inventory_components[i].items);
+  }
+  free(scene->inventory_components);
 
   // Free entities
-  // for (unsigned int i = 0; i < scene->num_dynamic_entities; i++){
-  //   free(scene->dynamic_entities[i].audio_component);
-  // }
-  // free(scene->dynamic_entities);
-  // for (unsigned int i = 0; i < scene->num_static_entities; i++){
-  //   free(scene->static_entities[i].audio_component);
-  // }
-  // free(scene->static_entities);
+  for (unsigned int i = 0; i < scene->num_entities; i++){
+    free(scene->entities[i]);
+  }
+  free(scene->entities);
 
   // Free skybox
   free(scene->skybox->shader);
@@ -548,7 +557,6 @@ void scene_free(struct Scene *scene){
   free(scene->physics_world->static_bodies);
   free(scene->physics_world->dynamic_bodies);
   free(scene->physics_world->player_bodies);
-  printf("Successfully freed physics bodies\n");
 
   free(scene);
 }
@@ -1027,12 +1035,20 @@ void scene_remove_entity(struct Scene *scene, uuid_t entity_id){
     if (uuid_compare(scene->entities[i]->id, entity_id) == 0){
       // PhysicsBody
       physics_remove_body(scene->physics_world, scene->entities[i]->physics_body);
-      // printf("Successfully removed physics body\n");
 
       // AudioComponent
-      if (scene->entities[i]->audio_component){
-        audio_component_destroy(scene->entities[i]->audio_component);
-      }
+      // struct AudioComponent *audio_component = scene_get_audio_component_by_entity_id(scene, entity_id);
+      // char player_entity_id_str[37];
+      // uuid_unparse(audio_component->entity_id, player_entity_id_str);
+      // printf("Audio component to remove entity id: %s\n", player_entity_id_str);
+      // if (audio_component){
+      //   audio_component_destroy(audio_component);
+      // }
+      scene_remove_audio_component_by_entity_id(scene, entity_id);
+
+      // if (scene->entities[i]->audio_component){
+      //   audio_component_destroy(scene->entities[i]->audio_component);
+      // }
       // printf("Successfully removed audio component\n");
 
       // ItemComponent
@@ -1108,18 +1124,22 @@ struct CameraComponent *scene_get_camera_by_entity_id(struct Scene *scene, uuid_
 }
 
 struct AudioComponent *scene_get_audio_component_by_entity_id(struct Scene *scene, uuid_t entity_id){
-  // printf("scene_get_audio_component_by_entity_id\n");
-  // printf("Num audio components: %d\n", scene->num_audio_components);
-  // char entity_id_str[37];
-  // uuid_unparse(entity_id, entity_id_str);
-  // printf("entity_id to find: %s\n", entity_id_str);
   for (unsigned int i = 0; i < scene->num_audio_components; i++){
-    // char player_entity_id_str[37];
-    // uuid_unparse(scene->audio_components[i].entity_id, player_entity_id_str);
-    // printf("Audio component %d entity id: %s\n", i, player_entity_id_str);
     if (uuid_compare(scene->audio_components[i].entity_id, entity_id) == 0){
       return &scene->audio_components[i];
     }
   }
   return NULL;
+}
+
+bool scene_remove_audio_component_by_entity_id(struct Scene *scene, uuid_t entity_id){
+  for (unsigned int i = 0; i < scene->num_audio_components; i++){
+    if (uuid_compare(scene->audio_components[i].entity_id, entity_id) == 0){
+      audio_component_destroy(&scene->audio_components[i]);
+      scene->audio_components[i] = scene->audio_components[scene->num_audio_components - 1];
+      scene->num_audio_components--;
+      return true;
+    }
+  }
+  return false;
 }

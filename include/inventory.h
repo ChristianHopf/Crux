@@ -2,6 +2,7 @@
 
 #include <stdbool.h>
 #include <uuid/uuid.h>
+#include "item.h"
 
 struct InventoryComponent {
   uuid_t entity_id;
