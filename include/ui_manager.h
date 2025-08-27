@@ -1,6 +1,6 @@
 #pragma once
 
-// #include "clay.h"
+#include "clay.h"
 
 // Forward declarations
 typedef struct Clay_RenderCommandArray Clay_RenderCommandArray;

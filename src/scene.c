@@ -400,7 +400,12 @@ void scene_node_update(struct Scene *scene, struct SceneNode *current_node){
       glm_mat4_copy(current_node->local_transform, current_node->world_transform);
     }
 
-    // Update audio component
+    // Update RenderComponent
+    struct RenderComponent *render_component = scene_get_render_component_by_entity_id(scene, current_node->entity_id);
+    // Copy node world transform to render component
+    glm_mat4_copy(current_node->world_transform, render_component->world_transform);
+
+    // Update AudioComponent
     struct AudioComponent *audio_component = scene_get_audio_component_by_entity_id(scene, current_node->entity->id);
     alSource3f(audio_component->source_id, AL_POSITION,
                current_node->entity->position[0],
@@ -476,7 +481,8 @@ void scene_render(struct Scene *scene){
   }
 
   // TODO will eventually just look at some kind of array of "RenderComponents"
-  scene_get_render_items(scene->root_node, camera->position, &opaque_items, &num_opaque_items, &mask_items, &num_mask_items, &transparent_items, &num_transparent_items, &additive_items, &num_additive_items);
+  scene_get_render_items2(scene, camera->position, &opaque_items, &num_opaque_items, &mask_items, &num_mask_items, &transparent_items, &num_transparent_items, &additive_items, &num_additive_items);
+  // scene_get_render_items(scene->root_node, camera->position, &opaque_items, &num_opaque_items, &mask_items, &num_mask_items, &transparent_items, &num_transparent_items, &additive_items, &num_additive_items);
 
   // Sort transparent_items back to front
   qsort(transparent_items, num_transparent_items, sizeof(struct RenderItem), compare_render_item_depth);
@@ -641,7 +647,7 @@ void scene_process_node_json(
     uuid_generate(entity->id);
     entity->model = models[model_index];
     entity->shader = shaders[shader_index];
-    // render_component_create(scene, entity->id, models[model_index], shaders[shader_index]);
+    render_component_create(scene, entity->id, models[model_index], shaders[shader_index]);
     scene_process_vec3_json(cJSON_GetObjectItemCaseSensitive(node_json, "position"), entity->position);
     scene_process_vec3_json(cJSON_GetObjectItemCaseSensitive(node_json, "rotation"), entity->rotation);
     scene_process_vec3_json(cJSON_GetObjectItemCaseSensitive(node_json, "scale"), entity->scale);
@@ -979,6 +985,12 @@ void scene_player_create(
     memcpy(scene->local_player_entity_id, entity->id, 16);
   }
 
+  // RenderComponent (could possibly only check model and shader, use render_entity
+  // for determining whether to render later so it can be toggled)
+  if (render_entity && model && shader){
+    render_component_create(scene, player->entity_id, model, shader);
+  }
+
   // CameraComponent
   vec3 cameraPos = {0.0f, 0.0f, 0.0f};
   vec3 cameraUp = {0.0f, 1.0f, 0.0f};
@@ -1037,19 +1049,10 @@ void scene_remove_entity(struct Scene *scene, uuid_t entity_id){
       physics_remove_body(scene->physics_world, scene->entities[i]->physics_body);
 
       // AudioComponent
-      // struct AudioComponent *audio_component = scene_get_audio_component_by_entity_id(scene, entity_id);
-      // char player_entity_id_str[37];
-      // uuid_unparse(audio_component->entity_id, player_entity_id_str);
-      // printf("Audio component to remove entity id: %s\n", player_entity_id_str);
-      // if (audio_component){
-      //   audio_component_destroy(audio_component);
-      // }
       scene_remove_audio_component_by_entity_id(scene, entity_id);
 
-      // if (scene->entities[i]->audio_component){
-      //   audio_component_destroy(scene->entities[i]->audio_component);
-      // }
-      // printf("Successfully removed audio component\n");
+      // RenderComponent
+      scene_remove_render_component_by_entity_id(scene, entity_id);
 
       // ItemComponent
       if (scene->entities[i]->item){
@@ -1130,6 +1133,17 @@ struct AudioComponent *scene_get_audio_component_by_entity_id(struct Scene *scen
     }
   }
   return NULL;
+}
+
+bool scene_remove_render_component_by_entity_id(struct Scene *scene, uuid_t entity_id){
+  for (unsigned int i = 0; i < scene->num_render_components; i++){
+    if (uuid_compare(scene->render_components[i].entity_id, entity_id) == 0){
+      scene->render_components[i] = scene->render_components[scene->num_render_components - 1];
+      scene->num_render_components--;
+      return true;
+    }
+  }
+  return false;
 }
 
 bool scene_remove_audio_component_by_entity_id(struct Scene *scene, uuid_t entity_id){

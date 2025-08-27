@@ -60,49 +60,49 @@ struct PhysicsBody *body;
   }
 
   // Get position, rotation, and scale from world transform
-  vec3 world_position, world_rotation, world_scale;
-  glm_mat4_mulv3(scene_node->world_transform, (vec3){0.0f, 0.0f, 0.0f}, 1.0f, world_position);
-  glm_decompose_scalev(scene_node->world_transform, world_scale);
-  mat3 rotation_mat3;
-  glm_mat4_pick3(scene_node->world_transform, rotation_mat3);
-  if (world_scale[0] != 0.0f){
-    glm_mat3_scale(rotation_mat3, 1.0f / world_scale[0]);
-  }
-
-  vec3 euler_radians, euler_degrees;
-  
-  // Assuming rotation_mat is normalized (scale removed)
-  // XYZ order: Rx * Ry * Rz
-  // rotation_mat = [r11 r12 r13]
-  //               [r21 r22 r23]
-  //               [r31 r32 r33]
-  float r11 = rotation_mat3[0][0];
-  float r12 = rotation_mat3[0][1];
-  float r13 = rotation_mat3[0][2];
-  float r21 = rotation_mat3[1][0];
-  float r31 = rotation_mat3[2][0];
-  float r32 = rotation_mat3[2][1];
-  float r33 = rotation_mat3[2][2];
-
-  // Pitch (Y) = asin(-r31)
-  euler_radians[1] = asinf(-r31); // -pi/2 to pi/2
-
-  // Handle gimbal lock cases (r31 ≈ ±1)
-  if (fabsf(r31) > 0.9999f) {
-    // Gimbal lock: pitch is ±90 degrees
-    euler_radians[0] = 0.0f; // Roll (X) is undefined, set to 0
-    euler_radians[2] = atan2f(r12, r11); // Yaw (Z)
-  } else {
-    // Roll (X) = atan2(r32, r33)
-    euler_radians[0] = -atan2f(r32, r33);
-    // Yaw (Z) = atan2(r21, r11)
-    euler_radians[2] = -atan2f(r21, r11);
-  }
-
-  // Convert to degrees
-  euler_degrees[0] = glm_deg(euler_radians[0]); // Roll (X)
-  euler_degrees[1] = glm_deg(euler_radians[1]); // Pitch (Y)
-  euler_degrees[2] = glm_deg(euler_radians[2]); // Yaw (Z)
+  // vec3 world_position, world_rotation, world_scale;
+  // glm_mat4_mulv3(scene_node->world_transform, (vec3){0.0f, 0.0f, 0.0f}, 1.0f, world_position);
+  // glm_decompose_scalev(scene_node->world_transform, world_scale);
+  // mat3 rotation_mat3;
+  // glm_mat4_pick3(scene_node->world_transform, rotation_mat3);
+  // if (world_scale[0] != 0.0f){
+  //   glm_mat3_scale(rotation_mat3, 1.0f / world_scale[0]);
+  // }
+  //
+  // vec3 euler_radians, euler_degrees;
+  //
+  // // Assuming rotation_mat is normalized (scale removed)
+  // // XYZ order: Rx * Ry * Rz
+  // // rotation_mat = [r11 r12 r13]
+  // //               [r21 r22 r23]
+  // //               [r31 r32 r33]
+  // float r11 = rotation_mat3[0][0];
+  // float r12 = rotation_mat3[0][1];
+  // float r13 = rotation_mat3[0][2];
+  // float r21 = rotation_mat3[1][0];
+  // float r31 = rotation_mat3[2][0];
+  // float r32 = rotation_mat3[2][1];
+  // float r33 = rotation_mat3[2][2];
+  //
+  // // Pitch (Y) = asin(-r31)
+  // euler_radians[1] = asinf(-r31); // -pi/2 to pi/2
+  //
+  // // Handle gimbal lock cases (r31 ≈ ±1)
+  // if (fabsf(r31) > 0.9999f) {
+  //   // Gimbal lock: pitch is ±90 degrees
+  //   euler_radians[0] = 0.0f; // Roll (X) is undefined, set to 0
+  //   euler_radians[2] = atan2f(r12, r11); // Yaw (Z)
+  // } else {
+  //   // Roll (X) = atan2(r32, r33)
+  //   euler_radians[0] = -atan2f(r32, r33);
+  //   // Yaw (Z) = atan2(r21, r11)
+  //   euler_radians[2] = -atan2f(r21, r11);
+  // }
+  //
+  // // Convert to degrees
+  // euler_degrees[0] = glm_deg(euler_radians[0]); // Roll (X)
+  // euler_degrees[1] = glm_deg(euler_radians[1]); // Pitch (Y)
+  // euler_degrees[2] = glm_deg(euler_radians[2]); // Yaw (Z)
 
 
   // glm_vec3_copy(world_position, body->position);

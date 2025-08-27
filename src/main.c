@@ -244,7 +244,6 @@ Engine *engine_create(){
   if (!engine->active_scene){
     fprintf(stderr, "Error: failed to create scene\n");
     free(engine);
-    glfwTerminate();
     return NULL;
   }
 
@@ -261,6 +260,7 @@ Engine *engine_create(){
 void engine_free(Engine *engine){
   glfwDestroyWindow(engine->window);
   scene_free(engine->active_scene);
+  free(engine->game_event_queue.events);
   free(engine);
 }
 
