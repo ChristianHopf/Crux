@@ -158,7 +158,7 @@ void scene_get_render_item_count(struct SceneNode *scene_node, unsigned int *num
   }
 }
 
-void scene_get_render_items2(
+void scene_get_render_items(
   struct Scene *scene,
   vec3 camera_pos,
   struct RenderItem **opaque_items, unsigned int *num_opaque_items,
@@ -166,6 +166,7 @@ void scene_get_render_items2(
   struct RenderItem **transparent_items, unsigned int *num_transparent_items,
   struct RenderItem **additive_items, unsigned int *num_additive_items)
 {
+  printf("Scene has %d RenderComponents \n", scene->num_render_components);
   for (unsigned int i = 0; i < scene->num_render_components; i++){
     struct RenderComponent *render_component = &scene->render_components[i];
   // Get this node's RenderItems
@@ -213,68 +214,6 @@ void scene_get_render_items2(
         }
       }
     } 
-  }
-}
-
-
-void scene_get_render_items(
-  struct SceneNode *scene_node,
-  vec3 camera_pos,
-  struct RenderItem **opaque_items, unsigned int *num_opaque_items,
-  struct RenderItem **mask_items, unsigned int *num_mask_items,
-  struct RenderItem **transparent_items, unsigned int *num_transparent_items,
-  struct RenderItem **additive_items, unsigned int *num_additive_items)
-{
-  if (scene_node->entity){
-    // Get this node's RenderItems
-    struct Entity *entity = scene_node->entity;
-    struct Model *model = entity->model;
-
-    for (unsigned int j = 0; j < model->num_meshes; j++){
-      struct Mesh *mesh = &model->meshes[j];
-
-      struct RenderItem render_item;
-      render_item.mesh = mesh;
-      render_item.model = model;
-      render_item.shader = entity->shader;
-
-      // World transform
-      glm_mat4_copy(scene_node->world_transform, render_item.transform);
-
-      // Get mesh depth: magnitude of difference between camera pos and mesh center
-      vec3 world_mesh_center, difference;
-      glm_mat4_mulv3(render_item.transform, mesh->center, 1.0f, world_mesh_center);
-      glm_vec3_sub(camera_pos, world_mesh_center, difference);
-      render_item.depth = glm_vec3_norm(difference);
-
-      // Switch on this mesh's material's blend_mode to determine which array to add it to
-      switch(model->materials[model->meshes[j].material_index].blend_mode){
-        // Opaque
-        case 0: {
-          (*opaque_items)[(*num_opaque_items)++] = render_item;
-          break;
-        }
-        // Mask
-        case 1: {
-          (*mask_items)[(*num_mask_items)++] = render_item;
-          break;
-        }
-        // Transparent
-        case 2: {
-          (*transparent_items)[(*num_transparent_items)++] = render_item;
-          break;
-        }
-        // Additive
-        case 3: {
-          (*additive_items)[(*num_additive_items)++] = render_item;
-          break;
-        }
-      }
-    } 
-  }
-  
-  for (unsigned int i = 0; i < scene_node->num_children; i++){
-    scene_get_render_items(scene_node->children[i], camera_pos, opaque_items, num_opaque_items, mask_items, num_mask_items, transparent_items, num_transparent_items, additive_items, num_additive_items);
   }
 }
 

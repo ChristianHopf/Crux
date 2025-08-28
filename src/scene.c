@@ -195,6 +195,22 @@ struct Scene *scene_init(char *scene_path){
   }
   scene->num_entities = 0;
 
+  // Process nodes for scene graph
+  cJSON *nodes_json = cJSON_GetObjectItemCaseSensitive(scene_json, "nodes");
+  if (!nodes_json){
+    fprintf(stderr, "Error: failed to get nodes object in scene_init, invalid or does not exist\n");
+    return NULL;
+  }
+  scene->root_node = (struct SceneNode *)calloc(1, sizeof(struct SceneNode));
+  if (!scene->root_node){
+    fprintf(stderr, "Error: failed to allocate root SceneNode in scene_init\n");
+    return NULL;
+  }
+
+  // Build scene graph and fill entities array
+  scene_process_node_json(scene, nodes_json, scene->root_node, NULL, models, shaders, scene->physics_world);
+  scene->max_entities = 64;
+
   // Allocate Components
   scene->max_render_components = 32;
   scene->render_components = (struct RenderComponent *)calloc(scene->max_render_components, sizeof(struct RenderComponent));
@@ -230,21 +246,35 @@ struct Scene *scene_init(char *scene_path){
     return NULL;
   }
   scene->num_player_components = 0;
-  scene_player_create(scene, models[1], shaders[0],
+
+  // InventoryComponents
+  scene->max_inventory_components = scene->max_player_components;
+  scene->inventory_components = (struct InventoryComponent *)calloc(scene->max_inventory_components, sizeof(struct InventoryComponent));
+  if (!scene->inventory_components){
+    fprintf(stderr, "Error: failed to allocate InventoryComponents in scene_init\n");
+    return NULL;
+  }
+  scene->num_inventory_components = 0;
+
+  // Initialize components for scene entities
+  // For now, force every entity to have render and audio components.
+  // Could maybe add bools to the scene json for whether an entity should have each component,
+  // or just let the functions decide based on input
+  // (ex. no model or shader => render_component_create returns immediately)
+  for (unsigned int i = 0; i < scene->num_entities; i++){
+    struct Entity *entity = scene->entities[i];
+    render_component_create(scene, entity->id, entity->model, entity->shader);
+    audio_component_create(scene, entity->id, 0);
+  }
+
+  // Create player
+  scene_player_create(scene, models[2], shaders[0],
                                 (vec3){0.0f, 0.0f, 2.0f},
                                 (vec3){0.0f, 180.0f, 0.0f},
                                 (vec3){1.0f, 1.0f, 1.0f},
                                 (vec3){0.0f, 0.0f, 0.0f},
-                                (vec3){0.0f, 0.0f, 0.0f},
-                                1.75f, false, 5, true);
-
-  if (scene->player_components[0].render_entity){
-    scene->player_entities = (struct Entity *)calloc(1, sizeof(struct Entity));
-    scene->num_player_entities = 1;
-    // scene->player_entities = scene->player_components[0]->entity;
-  }
-
-
+                                (vec3){0.0f, 0.0f, 1.0f},
+                                1.75f, true, 5, true);
 
   struct Collider player_collider = {
     .type = 2,
@@ -262,13 +292,7 @@ struct Scene *scene_init(char *scene_path){
     entity->physics_body = physics_add_player(scene->physics_world, entity, player_collider);
   }
 
-  // InventoryComponents
-  scene->max_inventory_components = scene->max_player_components;
-  scene->inventory_components = (struct InventoryComponent *)calloc(scene->max_inventory_components, sizeof(struct InventoryComponent));
-  if (!scene->inventory_components){
-    fprintf(stderr, "Error: failed to allocate InventoryComponents in scene_init\n");
-    return NULL;
-  }
+  // Player inventory
   for (unsigned int i = 0; i < scene->num_player_components; i++){
     struct InventoryComponent *inventory_component = &scene->inventory_components[i];
     memcpy(inventory_component->entity_id, scene->player_components[i].entity_id, 16);
@@ -278,22 +302,21 @@ struct Scene *scene_init(char *scene_path){
     scene->num_inventory_components++;
   }
 
-
   // Process nodes for scene graph
-  cJSON *nodes_json = cJSON_GetObjectItemCaseSensitive(scene_json, "nodes");
-  if (!nodes_json){
-    fprintf(stderr, "Error: failed to get nodes object in scene_init, invalid or does not exist\n");
-    return NULL;
-  }
-  scene->root_node = (struct SceneNode *)calloc(1, sizeof(struct SceneNode));
-  if (!scene->root_node){
-    fprintf(stderr, "Error: failed to allocate root SceneNode in scene_init\n");
-    return NULL;
-  }
-
-  // Build scene graph and fill entities array
-  scene_process_node_json(scene, nodes_json, scene->root_node, NULL, models, shaders, scene->physics_world);
-  scene->max_entities = 64;
+  // cJSON *nodes_json = cJSON_GetObjectItemCaseSensitive(scene_json, "nodes");
+  // if (!nodes_json){
+  //   fprintf(stderr, "Error: failed to get nodes object in scene_init, invalid or does not exist\n");
+  //   return NULL;
+  // }
+  // scene->root_node = (struct SceneNode *)calloc(1, sizeof(struct SceneNode));
+  // if (!scene->root_node){
+  //   fprintf(stderr, "Error: failed to allocate root SceneNode in scene_init\n");
+  //   return NULL;
+  // }
+  //
+  // // Build scene graph and fill entities array
+  // scene_process_node_json(scene, nodes_json, scene->root_node, NULL, models, shaders, scene->physics_world);
+  // scene->max_entities = 64;
   
   // Lights
   lights_json = cJSON_GetObjectItemCaseSensitive(scene_json, "lights");
@@ -359,7 +382,6 @@ void scene_update(struct Scene *scene, float delta_time){
 
   // Update player
   player_update(scene, scene->local_player_entity_id, delta_time);
-
   scene_node_update(scene, scene->root_node);
 
   // struct PlayerComponent *player = scene->player_components[0];
@@ -373,54 +395,6 @@ void scene_update(struct Scene *scene, float delta_time){
   scene->lights[0].direction[2] = (float)cos(lightSpeed * total_time);
 }
 
-void scene_node_update(struct Scene *scene, struct SceneNode *current_node){
-  if (current_node->entity){
-    // Update position, rotation
-    glm_vec3_copy(current_node->entity->physics_body->position, current_node->position);
-    glm_vec3_copy(current_node->entity->physics_body->position, current_node->entity->position);
-    glm_vec3_copy(current_node->entity->physics_body->rotation, current_node->rotation);
-    glm_vec3_copy(current_node->entity->physics_body->rotation, current_node->entity->rotation);
-    // Build local and world transforms
-    glm_mat4_identity(current_node->local_transform);
-    glm_translate(current_node->local_transform, current_node->position);
-    vec3 rotation_radians = {
-      glm_rad(current_node->rotation[0]),
-      glm_rad(current_node->rotation[1]),
-      glm_rad(current_node->rotation[2])
-    };
-    mat4 rotation;
-    glm_euler_xyz(rotation_radians, rotation);
-    glm_mul(current_node->local_transform, rotation, current_node->local_transform);
-    glm_scale(current_node->local_transform, current_node->scale);
-    // Combine parent transform
-    if (current_node->parent_node){
-      glm_mat4_mul(current_node->parent_node->world_transform, current_node->local_transform, current_node->world_transform);
-    }
-    else {
-      glm_mat4_copy(current_node->local_transform, current_node->world_transform);
-    }
-
-    // Update RenderComponent
-    struct RenderComponent *render_component = scene_get_render_component_by_entity_id(scene, current_node->entity_id);
-    // Copy node world transform to render component
-    glm_mat4_copy(current_node->world_transform, render_component->world_transform);
-
-    // Update AudioComponent
-    struct AudioComponent *audio_component = scene_get_audio_component_by_entity_id(scene, current_node->entity->id);
-    alSource3f(audio_component->source_id, AL_POSITION,
-               current_node->entity->position[0],
-               current_node->entity->position[1],
-               current_node->entity->position[2]);
-    ALenum position_error = alGetError();
-    if (position_error != AL_NO_ERROR){
-      fprintf(stderr, "Error matching Entity audio_source position with entity position in scene_update: %d\n", position_error);
-    }
-  }
-
-  for (unsigned int i = 0; i < current_node->num_children; i++){
-    scene_node_update(scene, current_node->children[i]);
-  }
-}
 
 void scene_render(struct Scene *scene){
   // Render (clear color and depth buffer bits)
@@ -461,7 +435,10 @@ void scene_render(struct Scene *scene){
 
   // Allocate RenderItem arrays
   unsigned int num_render_items = 0;
-  scene_get_render_item_count(scene->root_node, &num_render_items);
+  // scene_get_render_item_count(scene->root_node, &num_render_items);
+  for (unsigned int i = 0; i < scene->num_render_components; i++){
+    num_render_items += scene->render_components[i].model->num_meshes;
+  }
   opaque_items = (struct RenderItem *)calloc(num_render_items, sizeof(struct RenderItem));
   if (!opaque_items){
     fprintf(stderr, "Error: failed to allocate opaque RenderItems in scene_render\n");
@@ -481,7 +458,7 @@ void scene_render(struct Scene *scene){
   }
 
   // TODO will eventually just look at some kind of array of "RenderComponents"
-  scene_get_render_items2(scene, camera->position, &opaque_items, &num_opaque_items, &mask_items, &num_mask_items, &transparent_items, &num_transparent_items, &additive_items, &num_additive_items);
+  scene_get_render_items(scene, camera->position, &opaque_items, &num_opaque_items, &mask_items, &num_mask_items, &transparent_items, &num_transparent_items, &additive_items, &num_additive_items);
   // scene_get_render_items(scene->root_node, camera->position, &opaque_items, &num_opaque_items, &mask_items, &num_mask_items, &transparent_items, &num_transparent_items, &additive_items, &num_additive_items);
 
   // Sort transparent_items back to front
@@ -597,26 +574,6 @@ void scene_process_vec3_json(cJSON *vec3_json, vec3 dest){
   dest[2] = cJSON_GetNumberValue(cJSON_GetArrayItem(vec3_json, 2));
 }
 
-struct SceneNode *scene_node_create(unsigned int id){
-  struct SceneNode *node = (struct SceneNode *)calloc(1, sizeof(struct SceneNode));
-  if (!node){
-    fprintf(stderr, "Error: failed to allocate SceneNode in scene_node_create\n");
-    return NULL;
-  }
-
-  node->ID = id;
-  glm_mat4_identity(node->world_transform);
-  glm_vec3_zero(node->position);
-  glm_vec3_zero(node->rotation);
-  glm_vec3_zero(node->scale);
-  node->entity = NULL;
-  node->parent_node = NULL;
-  node->children = NULL;
-  node->num_children = 0;
-
-  return node;
-}
-
 void scene_process_node_json(
   struct Scene *scene,
   const cJSON *node_json,
@@ -647,7 +604,7 @@ void scene_process_node_json(
     uuid_generate(entity->id);
     entity->model = models[model_index];
     entity->shader = shaders[shader_index];
-    render_component_create(scene, entity->id, models[model_index], shaders[shader_index]);
+    // render_component_create(scene, entity->id, models[model_index], shaders[shader_index]);
     scene_process_vec3_json(cJSON_GetObjectItemCaseSensitive(node_json, "position"), entity->position);
     scene_process_vec3_json(cJSON_GetObjectItemCaseSensitive(node_json, "rotation"), entity->rotation);
     scene_process_vec3_json(cJSON_GetObjectItemCaseSensitive(node_json, "scale"), entity->scale);
@@ -704,7 +661,7 @@ void scene_process_node_json(
     scene->entities[scene->num_entities++] = entity;
 
     // AudioComponent (may want to include this in scene json somehow, maybe just a bool)
-    audio_component_create(scene, entity->id, 0);
+    // audio_component_create(scene, entity->id, 0);
   }
 
   // Process transform
@@ -972,6 +929,9 @@ void scene_player_create(
   glm_vec3_copy(scale, entity->scale);
   glm_vec3_copy(velocity, entity->velocity);
 
+  // Add to scene graph
+  scene_node_create(scene, entity, scene->root_node);
+
   // Assign values to PlayerComponent
   memcpy(player->entity_id, entity->id, 16);
   glm_vec3_copy(camera_offset, player->camera_offset);
@@ -989,6 +949,7 @@ void scene_player_create(
   // for determining whether to render later so it can be toggled)
   if (render_entity && model && shader){
     render_component_create(scene, player->entity_id, model, shader);
+    printf("Created player RenderComponent\n");
   }
 
   // CameraComponent
@@ -1008,6 +969,110 @@ void scene_player_create(
   audio_listener_update(scene, entity->id);
 }
 
+void scene_node_update(struct Scene *scene, struct SceneNode *current_node){
+  if (current_node->entity){
+    // Update position, rotation
+    glm_vec3_copy(current_node->entity->physics_body->position, current_node->position);
+    glm_vec3_copy(current_node->entity->physics_body->position, current_node->entity->position);
+    glm_vec3_copy(current_node->entity->physics_body->rotation, current_node->rotation);
+    glm_vec3_copy(current_node->entity->physics_body->rotation, current_node->entity->rotation);
+    // Build local and world transforms
+    glm_mat4_identity(current_node->local_transform);
+    glm_translate(current_node->local_transform, current_node->position);
+    vec3 rotation_radians = {
+      glm_rad(current_node->rotation[0]),
+      glm_rad(current_node->rotation[1]),
+      glm_rad(current_node->rotation[2])
+    };
+    mat4 rotation;
+    glm_euler_xyz(rotation_radians, rotation);
+    glm_mul(current_node->local_transform, rotation, current_node->local_transform);
+    glm_scale(current_node->local_transform, current_node->scale);
+    // Combine parent transform
+    if (current_node->parent_node){
+      glm_mat4_mul(current_node->parent_node->world_transform, current_node->local_transform, current_node->world_transform);
+    }
+    else {
+      glm_mat4_copy(current_node->local_transform, current_node->world_transform);
+    }
+
+    // Update RenderComponent
+    struct RenderComponent *render_component = scene_get_render_component_by_entity_id(scene, current_node->entity_id);
+    // Copy node world transform to render component
+    glm_mat4_copy(current_node->world_transform, render_component->world_transform);
+
+    // Update AudioComponent
+    struct AudioComponent *audio_component = scene_get_audio_component_by_entity_id(scene, current_node->entity->id);
+    alSource3f(audio_component->source_id, AL_POSITION,
+               current_node->entity->position[0],
+               current_node->entity->position[1],
+               current_node->entity->position[2]);
+    ALenum position_error = alGetError();
+    if (position_error != AL_NO_ERROR){
+      fprintf(stderr, "Error matching Entity audio_source position with entity position in scene_update: %d\n", position_error);
+    }
+
+    printf("Successfully updated a SceneNode with an entity\n");
+  }
+
+  printf("Time to update this node's %d children\n", current_node->num_children);
+  for (unsigned int i = 0; i < current_node->num_children; i++){
+    scene_node_update(scene, current_node->children[i]);
+  }
+}
+
+void scene_node_create(struct Scene *scene, struct Entity *entity, struct SceneNode *parent_node)
+{
+  // A node must be created as a child of a parent node
+  if (!parent_node){
+    fprintf(stderr, "Error: no parent node provided to scene_node_create\n");
+    return;
+  }
+
+  // Reallocate parent node's children
+  // (refactor to include max_children, double size?)
+  parent_node->num_children += 1;
+  parent_node->children = realloc(parent_node->children, parent_node->num_children);
+  if (!parent_node->children){
+    fprintf(stderr, "Error: failed to reallocate parent node children in scene_node_create\n");
+    return;
+  }
+
+  // Initialize SceneNode
+  parent_node->children[parent_node->num_children - 1] = (struct SceneNode *)calloc(1, sizeof(struct SceneNode));
+  if (!parent_node->children[parent_node->num_children - 1]){
+    fprintf(stderr, "Error: failed to allocate SceneNode in scene_node_create\n");
+    return;
+  }
+  struct SceneNode *scene_node = parent_node->children[parent_node->num_children - 1];
+  memcpy(scene_node->entity_id, entity->id, 16);
+  glm_vec3_copy(entity->position, scene_node->position);
+  glm_vec3_copy(entity->rotation, scene_node->rotation);
+  glm_vec3_copy(entity->scale, scene_node->scale);
+
+  // Build local and world transforms
+  glm_mat4_identity(scene_node->local_transform);
+  glm_translate(scene_node->local_transform, scene_node->position);
+  vec3 rotation_radians = {
+    glm_rad(scene_node->rotation[0]),
+    glm_rad(scene_node->rotation[1]),
+    glm_rad(scene_node->rotation[2])
+  };
+  mat4 rotation;
+  glm_euler_xyz(rotation_radians, rotation);
+  glm_mul(scene_node->local_transform, rotation, scene_node->local_transform);
+  glm_scale(scene_node->local_transform, scene_node->scale);
+  glm_mat4_mul(parent_node->world_transform, scene_node->local_transform, scene_node->world_transform);
+
+  scene_node->entity = entity;
+  if (scene_node->entity){
+    printf("Created player SceneNode with entity\n");
+  }
+  scene_node->parent_node = parent_node;
+  scene_node->children = NULL;
+  scene_node->num_children = 0;
+}
+
 // Recursive function to search the scene graph for the node with the entity with the given entity_id
 void scene_get_node_by_entity_id(struct SceneNode *current_node, uuid_t entity_id, int *child_index, int *final_child_index, struct SceneNode **dest){
   if (current_node->entity){
@@ -1023,7 +1088,17 @@ void scene_get_node_by_entity_id(struct SceneNode *current_node, uuid_t entity_i
   }
 }
 
+void scene_remove_scene_node(struct SceneNode *scene_node){
+  // Remove this node's children
+  if (scene_node->children){
+    for (unsigned int i = 0; i < scene_node->num_children; i++){
+      scene_remove_scene_node(scene_node->children[i]);
+    }
+  }
 
+  // Remove this node
+  free(scene_node);
+}
 
 void scene_remove_entity(struct Scene *scene, uuid_t entity_id){
   // Find and remove the correct SceneNode
@@ -1067,18 +1142,6 @@ void scene_remove_entity(struct Scene *scene, uuid_t entity_id){
       // printf("Successfully removed entity\n");
     }
   }
-}
-
-void scene_remove_scene_node(struct SceneNode *scene_node){
-  // Remove this node's children
-  if (scene_node->children){
-    for (unsigned int i = 0; i < scene_node->num_children; i++){
-      scene_remove_scene_node(scene_node->children[i]);
-    }
-  }
-
-  // Remove this node
-  free(scene_node);
 }
 
 struct Entity *scene_get_entity_by_entity_id(struct Scene *scene, uuid_t entity_id){

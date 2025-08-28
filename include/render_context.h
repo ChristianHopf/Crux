@@ -36,15 +36,8 @@ void skybox_render(struct Skybox *skybox, struct RenderContext *context);
 
 // RenderItems functions
 void scene_get_render_item_count(struct SceneNode *scene_node, unsigned int *num_render_items);
-void scene_get_render_items2(
-  struct Scene *scene,
-  vec3 camera_pos,
-  struct RenderItem **opaque_items, unsigned int *num_opaque_items,
-  struct RenderItem **mask_items, unsigned int *num_mask_items,
-  struct RenderItem **transparent_items, unsigned int *num_transparent_items,
-  struct RenderItem **additive_items, unsigned int *num_additive_items);
 void scene_get_render_items(
-  struct SceneNode *scene_node,
+  struct Scene *scene,
   vec3 camera_pos,
   struct RenderItem **opaque_items, unsigned int *num_opaque_items,
   struct RenderItem **mask_items, unsigned int *num_mask_items,

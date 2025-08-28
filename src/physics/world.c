@@ -144,7 +144,6 @@ struct PhysicsBody *physics_add_player(struct PhysicsWorld *physics_world, struc
 void physics_remove_body(struct PhysicsWorld *physics_world, struct PhysicsBody *physics_body){
   for (unsigned int i = 0; i < physics_world->num_player_bodies; i++){
     if (uuid_compare(physics_world->player_bodies[i].entity->id, physics_body->entity->id) == 0){
-      // free(physics_world->player_bodies[i]);
       physics_world->player_bodies[i] = physics_world->player_bodies[physics_world->num_player_bodies - 1];
       physics_world->num_player_bodies--;
       return;
@@ -152,7 +151,6 @@ void physics_remove_body(struct PhysicsWorld *physics_world, struct PhysicsBody 
   }
   for (unsigned int i = 0; i < physics_world->num_static_bodies; i++){
     if (uuid_compare(physics_world->static_bodies[i].entity->id, physics_body->entity->id) == 0){
-      // free(physics_world->static_bodies[i]);
       physics_world->static_bodies[i] = physics_world->static_bodies[physics_world->num_static_bodies - 1];
       physics_world->num_static_bodies--;
       return;
@@ -160,7 +158,6 @@ void physics_remove_body(struct PhysicsWorld *physics_world, struct PhysicsBody 
   }
   for (unsigned int i = 0; i < physics_world->num_dynamic_bodies; i++){
     if (uuid_compare(physics_world->dynamic_bodies[i].entity->id, physics_body->entity->id) == 0){
-      // free(physics_world->dynamic_bodies[i]);
       physics_world->dynamic_bodies[i] = physics_world->dynamic_bodies[physics_world->num_dynamic_bodies - 1];
       physics_world->num_dynamic_bodies--;
       return;
@@ -246,7 +243,6 @@ void physics_step(struct PhysicsWorld *physics_world, float delta_time){
           case EVENT_PLAYER_ITEM_PICKUP:
             // TODO player ID, physicsbody/world has knowledge of it somehow
             memcpy(event.data.item_pickup.player_entity_id, body_B->entity->id, 16);
-            // event.data.item_pickup.player_entity_id = body_B->entity->id;
             event.data.item_pickup.item_id = body_A->entity->item->id;
             event.data.item_pickup.item_count = body_A->entity->item->count;
             memcpy(event.data.item_pickup.item_entity_id, body_A->entity->id, 16);

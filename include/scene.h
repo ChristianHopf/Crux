@@ -80,11 +80,6 @@ struct Scene *scene_init(char *scene_path);
 struct Scene *scene_create(bool physics_view_mode);
 
 void scene_update(struct Scene *scene, float deltaTime);
-void scene_node_update(struct Scene *scene, struct SceneNode *current_node);
-void scene_get_node_by_entity_id(struct SceneNode *current_node, uuid_t entity_id, int *child_index, int *final_child_index, struct SceneNode **dest);
-struct Entity *scene_get_entity_by_entity_id(struct Scene *scene, uuid_t entity_id);
-void scene_remove_entity(struct Scene *scene, uuid_t id);
-void scene_remove_scene_node(struct SceneNode *scene_node);
 void scene_render(struct Scene *scene);
 void scene_free(struct Scene *scene);
 
@@ -107,6 +102,14 @@ void scene_player_create(
   bool render_entity,
   int inventory_capacity,
   bool is_local);
+
+// SceneNode
+void scene_node_update(struct Scene *scene, struct SceneNode *current_node);
+void scene_node_create(struct Scene *scene, struct Entity *entity, struct SceneNode *parent_node);
+void scene_get_node_by_entity_id(struct SceneNode *current_node, uuid_t entity_id, int *child_index, int *final_child_index, struct SceneNode **dest);
+void scene_remove_scene_node(struct SceneNode *scene_node);
+void scene_remove_entity(struct Scene *scene, uuid_t id);
+struct Entity *scene_get_entity_by_entity_id(struct Scene *scene, uuid_t entity_id);
 
 // Components
 struct RenderComponent *scene_get_render_component_by_entity_id(struct Scene *scene, uuid_t entity_id);
