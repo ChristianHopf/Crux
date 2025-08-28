@@ -3,14 +3,13 @@
 #include <cglm/mat4.h>
 #include <cglm/vec2.h>
 #include <stb_image/stb_image.h>
-#include <stdbool.h>
+// #include <stdbool.h>
 #include <assimp/cimport.h>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 #include <assimp/texture.h>
 #include <assimp/material.h>
 #include "model.h"
-#include "physics/aabb.h"
 #include "utils.h"
 #include "material.h"
 
@@ -43,7 +42,7 @@ bool model_load(struct Model *model, const char *path){
     printf("Error: found 0 meshes in scene\n");
     return false;
   }
-  model->meshes = (Mesh *)calloc(scene->mNumMeshes, sizeof(Mesh));
+  model->meshes = (struct Mesh *)calloc(scene->mNumMeshes, sizeof(struct Mesh));
   if (!model->meshes){
     printf("Error: failed to allocate meshes\n");
   return false;
@@ -90,7 +89,7 @@ void model_process_node(struct Model *model, struct aiNode *node, const struct a
     struct aiMesh *ai_mesh = scene->mMeshes[node->mMeshes[i]];
     
     // Process this mesh and update this node's AABB by the mesh's AABB
-    model_process_mesh(ai_mesh, scene, current_transform, &model->meshes[*index]);
+    model_process_mesh(ai_mesh, current_transform, &model->meshes[*index]);
     (*index)++;
   }
 
@@ -100,10 +99,10 @@ void model_process_node(struct Model *model, struct aiNode *node, const struct a
   }
 }
 
-void model_process_mesh(struct aiMesh *ai_mesh, const struct aiScene *scene, struct aiMatrix4x4 node_transform, Mesh *dest_mesh){
+void model_process_mesh(struct aiMesh *ai_mesh, struct aiMatrix4x4 node_transform, struct Mesh *dest_mesh){
 
   // Allocate memory for vertices
-  Vertex *vertices = (Vertex *)malloc(ai_mesh->mNumVertices * sizeof(Vertex));
+  struct Vertex *vertices = (struct Vertex *)malloc(ai_mesh->mNumVertices * sizeof(struct Vertex));
   if (!vertices){
     printf("Error: failed to allocate vertices in model_process_mesh\n");
   }
@@ -193,7 +192,7 @@ void model_process_mesh(struct aiMesh *ai_mesh, const struct aiScene *scene, str
 
   // Bind element buffers and buffer indices data
   glBindBuffer(GL_ARRAY_BUFFER, dest_mesh->VBO);
-  glBufferData(GL_ARRAY_BUFFER, ai_mesh->mNumVertices * sizeof(Vertex), vertices, GL_STATIC_DRAW);
+  glBufferData(GL_ARRAY_BUFFER, ai_mesh->mNumVertices * sizeof(struct Vertex), vertices, GL_STATIC_DRAW);
 
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, dest_mesh->EBO);
   glBufferData(GL_ELEMENT_ARRAY_BUFFER, num_indices * sizeof(unsigned int), indices, GL_STATIC_DRAW);
@@ -201,19 +200,19 @@ void model_process_mesh(struct aiMesh *ai_mesh, const struct aiScene *scene, str
   // Configure attribute pointers
   // Position
   glEnableVertexAttribArray(0);
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, position));
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(struct Vertex), (void*)offsetof(struct Vertex, position));
   // Normal
   glEnableVertexAttribArray(1);
-  glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, normal));
+  glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(struct Vertex), (void*)offsetof(struct Vertex, normal));
   // Tex_coord
   glEnableVertexAttribArray(2);
-  glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, tex_coord));
+  glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(struct Vertex), (void*)offsetof(struct Vertex, tex_coord));
   // Tangent
   glEnableVertexAttribArray(3);
-  glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, tangent));
+  glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(struct Vertex), (void*)offsetof(struct Vertex, tangent));
   // Bitangent
   glEnableVertexAttribArray(4);
-  glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, bitangent));
+  glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(struct Vertex), (void*)offsetof(struct Vertex, bitangent));
 
   glBindVertexArray(0);
 

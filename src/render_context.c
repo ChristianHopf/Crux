@@ -1,4 +1,11 @@
+#include <stdbool.h>
+#include <string.h>
+#include "scene.h"
 #include "render_context.h"
+#include "skybox.h"
+#include "model.h"
+#include "material.h"
+#include "entity.h"
 
 void draw_render_items(struct RenderItem *render_items, unsigned int num_render_items, struct RenderContext *context){
 
@@ -150,21 +157,23 @@ void scene_get_render_item_count(struct SceneNode *scene_node, unsigned int *num
     scene_get_render_item_count(scene_node->children[i], num_render_items);
   }
 }
+
 void scene_get_render_items(
-  struct SceneNode *scene_node,
+  struct Scene *scene,
   vec3 camera_pos,
   struct RenderItem **opaque_items, unsigned int *num_opaque_items,
   struct RenderItem **mask_items, unsigned int *num_mask_items,
   struct RenderItem **transparent_items, unsigned int *num_transparent_items,
   struct RenderItem **additive_items, unsigned int *num_additive_items)
 {
-  if (scene_node->entity){
-    // Get this node's RenderItems
-    struct Entity *entity = scene_node->entity;
+  for (unsigned int i = 0; i < scene->num_render_components; i++){
+    struct RenderComponent *render_component = &scene->render_components[i];
+  // Get this node's RenderItems
+    struct Entity *entity = scene_get_entity_by_entity_id(scene, render_component->entity_id);
     struct Model *model = entity->model;
 
     for (unsigned int j = 0; j < model->num_meshes; j++){
-      Mesh *mesh = &model->meshes[j];
+      struct Mesh *mesh = &model->meshes[j];
 
       struct RenderItem render_item;
       render_item.mesh = mesh;
@@ -172,10 +181,9 @@ void scene_get_render_items(
       render_item.shader = entity->shader;
 
       // World transform
-      glm_mat4_copy(scene_node->world_transform, render_item.transform);
+      glm_mat4_copy(render_component->world_transform, render_item.transform);
 
       // Get mesh depth: magnitude of difference between camera pos and mesh center
-      // print_glm_vec3(camera_pos, "sort_render_items camera position");
       vec3 world_mesh_center, difference;
       glm_mat4_mulv3(render_item.transform, mesh->center, 1.0f, world_mesh_center);
       glm_vec3_sub(camera_pos, world_mesh_center, difference);
@@ -206,10 +214,6 @@ void scene_get_render_items(
       }
     } 
   }
-  
-  for (unsigned int i = 0; i < scene_node->num_children; i++){
-    scene_get_render_items(scene_node->children[i], camera_pos, opaque_items, num_opaque_items, mask_items, num_mask_items, transparent_items, num_transparent_items, additive_items, num_additive_items);
-  }
 }
 
 // Helper for sorting transparent RenderItems by depth
@@ -221,4 +225,24 @@ int compare_render_item_depth(const void *a, const void *b){
   if (depth_A > depth_B) return -1;
   if (depth_A < depth_B) return 1;
   return 0;
+}
+
+void render_component_create(struct Scene *scene, uuid_t entity_id, struct Model *model, Shader *shader){
+  // Don't create a RenderComponent for entities of type ENTITY_GROUPING
+  // scene_init doesn't call this for grouping entities, check model and shader here anyway
+  if (!model || !shader) return;
+
+  if (scene->num_render_components >= scene->max_render_components){
+    scene->max_render_components *= 2;
+    scene->render_components = realloc(scene->render_components, scene->max_render_components * sizeof(struct RenderComponent));
+    if (!scene->render_components){
+      fprintf(stderr, "Error: failed to reallocate scene RenderComponents in render_component_create\n");
+      return;
+    }
+  }
+
+  struct RenderComponent *render_component = &scene->render_components[scene->num_render_components++];
+  memcpy(render_component->entity_id, entity_id, 16);
+  render_component->model = model;
+  render_component->shader = shader;
 }

@@ -7,6 +7,7 @@
 #include <cglm/cglm.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <uuid/uuid.h>
 #include "tinycthread/tinycthread.h"
 #include "game_state_observer.h"
 
@@ -14,10 +15,6 @@
 #define BUFFER_FRAMES 8192
 #define MAX_SOUND_EFFECTS 32
 #define MAX_SOURCES 64
-
-// Forward declarations
-struct Player;
-struct Entity;
 
 struct AudioStream {
   SNDFILE *file;
@@ -38,6 +35,7 @@ struct SoundEffect {
 };
 
 struct AudioComponent {
+  uuid_t entity_id;
   ALuint source_id;
   int sound_effect_index;
   bool is_playing;
@@ -88,11 +86,12 @@ void audio_sound_effect_create(char *path, char *name);
 void audio_sound_effect_play(struct SoundEffect *sound_effect);
 
 // AudioComponent
-struct AudioComponent *audio_component_create(struct Entity *entity, int sound_effect_index);
+void audio_component_create(struct Scene *scene, uuid_t entity_id, int sound_effect_index);
+void audio_component_destroy(struct AudioComponent *audio_component);
 void audio_component_play(struct AudioComponent *audio_component);
 
 // Listener
-void audio_listener_update(struct Player *player);
+void audio_listener_update(struct Scene *scene, uuid_t entity_id);
 
 // Observing game state
 struct GameStateObserver *audio_game_state_observer_create();

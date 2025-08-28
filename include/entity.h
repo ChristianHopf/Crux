@@ -3,12 +3,9 @@
 // #include <glad/glad.h>
 #include <cglm/cglm.h>
 #include <uuid/uuid.h>
-#include <AL/al.h>
-#include <AL/alc.h>
-#include "physics/world.h"
-#include "model.h"
+// #include "physics/world.h"
+// #include "model.h"
 #include "shader.h"
-#include "audio_manager.h"
 #include "types.h"
 
 struct Entity {
@@ -26,4 +23,4 @@ struct Entity {
   struct ItemComponent *item;
 };
 
-void entity_play_sound_effect(struct Entity *entity);
+// void entity_play_sound_effect(struct Entity *entity);

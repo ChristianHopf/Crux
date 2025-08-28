@@ -1,3 +1,4 @@
+#include "string.h"
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 #include <assimp/texture.h>
@@ -5,6 +6,7 @@
 #include <assimp/types.h>
 #include <stb_image/stb_image.h>
 #include "material.h"
+#include "utils.h"
 
 #define MAX_TEXTURES 128
 static TextureEntry loaded_textures[MAX_TEXTURES];

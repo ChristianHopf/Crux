@@ -1,12 +1,18 @@
-#include <GLFW/glfw3.h>
+#include <string.h>
+#include "scene.h"
 #include "camera.h"
 
-struct Camera *camera_create(vec3 position, vec3 up, float yaw, float pitch, float fov, float sensitivity, float speed){
-  struct Camera *camera = (struct Camera *)malloc(sizeof(struct Camera));
-  if (!camera){
-    printf("Error: failed to allocate camera\n");
-    return NULL;
+void camera_create(struct Scene *scene, uuid_t entity_id, vec3 position, vec3 up, float yaw, float pitch, float fov, float sensitivity, float speed){
+
+  // Reallocate CameraComponent array if full
+  if (scene->num_camera_components >= scene->max_camera_components){
+    scene->max_camera_components *= 2;
+    scene->camera_components = realloc(scene->camera_components, scene->max_camera_components * sizeof(struct CameraComponent));
   }
+
+  // Initialize CameraComponent
+  struct CameraComponent *camera = &scene->camera_components[scene->num_camera_components++];
+  memcpy(camera->entity_id, entity_id, 16);
   glm_vec3_copy(position, camera->position);
   glm_vec3_copy(up, camera->up);
   camera->yaw = yaw;
@@ -15,14 +21,13 @@ struct Camera *camera_create(vec3 position, vec3 up, float yaw, float pitch, flo
   camera->sensitivity = sensitivity;
   camera->speed = speed;
   camera_update_vectors(camera);
-  return camera;
 }
 
-void camera_get_view_matrix(struct Camera *camera, mat4 view){
+void camera_get_view_matrix(struct CameraComponent *camera, mat4 view){
 	glm_lookat(camera->position, (vec3){camera->position[0] + camera->front[0], camera->position[1] + camera->front[1], camera->position[2] + camera->front[2]}, camera->up, view);
 }
 
-void camera_process_keyboard_input(struct Camera *camera, CameraDirection direction, float deltaTime){
+void camera_process_keyboard_input(struct CameraComponent *camera, CameraDirection direction, float deltaTime){
   float velocity = (float)(camera->speed * deltaTime);
 	if (direction == CAMERA_FORWARD){
     vec3 forward = {camera->front[0], 0.0f, camera->front[2]};
@@ -62,7 +67,7 @@ void camera_process_keyboard_input(struct Camera *camera, CameraDirection direct
 	//}
 }
 
-void camera_process_mouse_input(struct Camera *camera, float xoffset, float yoffset){
+void camera_process_mouse_input(struct CameraComponent *camera, float xoffset, float yoffset){
   // Multiply offset by sensitivity
 	xoffset *= camera->sensitivity;
 	yoffset *= camera->sensitivity;
@@ -79,13 +84,13 @@ void camera_process_mouse_input(struct Camera *camera, float xoffset, float yoff
   camera_update_vectors(camera);
 }
 
-void camera_process_scroll_input(struct Camera *camera, double yoffset){
+void camera_process_scroll_input(struct CameraComponent *camera, double yoffset){
 	camera->fov -= (float)yoffset;
 	if (camera->fov <= 1.0f) camera->fov = 1.0f;
 	if (camera->fov >= 90.0f) camera->fov = 90.0f;
 }
 
-void camera_update_vectors(struct Camera *camera){
+void camera_update_vectors(struct CameraComponent *camera){
   // Calculate new cameraFront vector
   vec3 direction;
 	direction[0] = cos(glm_rad(camera->yaw)) * cos(glm_rad(camera->pitch));

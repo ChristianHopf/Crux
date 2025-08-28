@@ -16,6 +16,7 @@
 #include "game_state.h"
 #include "window_manager.h"
 #include "event.h"
+#include <uuid/uuid.h>
 
 typedef struct {
   // Window
@@ -57,26 +58,29 @@ static int last_space_state = GLFW_RELEASE;
 void processInput(GLFWwindow *window){
   Engine *engine = (Engine *)glfwGetWindowUserPointer(window);
 
-
   if (!game_state_is_paused()){
     // Camera movement
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS){
-      player_process_keyboard_input(&engine->active_scene->player, CAMERA_FORWARD, engine->delta_time);
+      player_process_keyboard_input(engine->active_scene, engine->active_scene->local_player_entity_id, CAMERA_FORWARD, engine->delta_time);
+      // player_process_keyboard_input(&engine->active_scene->player, CAMERA_FORWARD, engine->delta_time);
     }
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS){
-      player_process_keyboard_input(&engine->active_scene->player, CAMERA_BACKWARD, engine->delta_time);
+      player_process_keyboard_input(engine->active_scene, engine->active_scene->local_player_entity_id, CAMERA_BACKWARD, engine->delta_time);
+      // player_process_keyboard_input(&engine->active_scene->player, CAMERA_BACKWARD, engine->delta_time);
     }
     if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS){
-      player_process_keyboard_input(&engine->active_scene->player, CAMERA_LEFT, engine->delta_time);
+      player_process_keyboard_input(engine->active_scene, engine->active_scene->local_player_entity_id, CAMERA_LEFT, engine->delta_time);
+      // player_process_keyboard_input(&engine->active_scene->player, CAMERA_LEFT, engine->delta_time);
     }
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS){
-      player_process_keyboard_input(&engine->active_scene->player, CAMERA_RIGHT, engine->delta_time);
+      player_process_keyboard_input(engine->active_scene, engine->active_scene->local_player_entity_id, CAMERA_RIGHT, engine->delta_time);
+      // player_process_keyboard_input(&engine->active_scene->player, CAMERA_RIGHT, engine->delta_time);
     }
 
     // Only process these inputs a single time per press
     int space_state = glfwGetKey(window, GLFW_KEY_SPACE);
     if (space_state == GLFW_PRESS && last_space_state == GLFW_RELEASE){
-      player_jump(&engine->active_scene->player);
+      player_jump(engine->active_scene, engine->active_scene->local_player_entity_id);
     }
     last_space_state = space_state;
   }
@@ -112,7 +116,7 @@ void mouse_callback(GLFWwindow *window, double xpos, double ypos){
 
   // Update camera
   if (!game_state_is_paused()){
-    player_process_mouse_input(&engine->active_scene->player, xoffset, yoffset);
+    player_process_mouse_input(engine->active_scene, engine->active_scene->local_player_entity_id, xoffset, yoffset);
   }
 }
 
@@ -128,7 +132,7 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 
 void scroll_callback(GLFWwindow *window, double xoffset, double yoffset){
   Engine *engine = (Engine *)glfwGetWindowUserPointer(window);
-  struct Camera *camera = engine->active_scene->player.camera;
+  struct CameraComponent *camera = scene_get_camera_by_entity_id(engine->active_scene, engine->active_scene->local_player_entity_id);
   if (!game_state_is_paused()){
     camera_process_scroll_input(camera, yoffset);
   }
@@ -240,7 +244,6 @@ Engine *engine_create(){
   if (!engine->active_scene){
     fprintf(stderr, "Error: failed to create scene\n");
     free(engine);
-    glfwTerminate();
     return NULL;
   }
 
@@ -257,6 +260,7 @@ Engine *engine_create(){
 void engine_free(Engine *engine){
   glfwDestroyWindow(engine->window);
   scene_free(engine->active_scene);
+  free(engine->game_event_queue.events);
   free(engine);
 }
 

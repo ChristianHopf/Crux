@@ -1,9 +1,6 @@
 #pragma once
 
-#include <stdio.h>
-#include <stdlib.h>
-#include "game_state_observer.h"
-#include "menu/menu.h"
+#include <stdbool.h>
 
 // Linked List (might put in its own file and use void*s or something later)
 struct ListNode {

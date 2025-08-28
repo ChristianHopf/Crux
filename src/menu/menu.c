@@ -1,5 +1,6 @@
 #include "menu/menu.h"
 #include "game_state.h"
+#include "text.h"
 
 static struct MenuManager *menu_manager;
 

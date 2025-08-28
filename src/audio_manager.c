@@ -1,8 +1,10 @@
+#include "string.h"
+#include "scene.h"
+#include "camera.h"
 #include "audio_manager.h"
 #include "game_state.h"
-#include "player.h"
 #include "entity.h"
-#include <AL/al.h>
+// #include <AL/al.h>
 #include <locale.h>
 #include <time.h>
 
@@ -313,7 +315,7 @@ int audio_stream_update(void *arg){
 
     // Sleep for 5 ms
     const struct timespec req = {0, 5000000};
-    const struct timespec rem;
+     struct timespec rem;
     nanosleep(&req, &rem);
   }
   alcMakeContextCurrent(NULL);
@@ -389,36 +391,43 @@ void audio_sound_effect_play(struct SoundEffect *sound_effect){
   alGenSources(1, &source);
   alSourcei(source, AL_BUFFER, sound_effect->buffer);
   alSourcePlay(source);
-  // alDeleteSources(1, &source);
 }
 
-struct AudioComponent *audio_component_create(struct Entity *entity, int sound_effect_index){
-  // Allocate AudioComponent
-  struct AudioComponent *audio_component = (struct AudioComponent *)calloc(1, sizeof(struct AudioComponent));
-  if (!audio_component){
-    fprintf(stderr, "Error: failed to allocate AudioComponent in audio_component_create\n");
-    return NULL;
+void audio_component_create(struct Scene *scene, uuid_t entity_id, int sound_effect_index){
+  // Reallocate AudioComponent array if full
+  if (scene->num_audio_components >= scene->max_audio_components){
+    printf("audio component realloc time\n");
+    // printf("scene->num_audio_components: %d\n", scene->num_audio_components);
+    scene->max_audio_components *= 2;
+    scene->audio_components = realloc(scene->audio_components, scene->max_audio_components * sizeof(struct AudioComponent));
   }
 
-  // Generate source and add to source pool
+  // Initialize AudioComponent
+  struct AudioComponent *audio_component = &scene->audio_components[scene->num_audio_components++];
+  memcpy(audio_component->entity_id, entity_id, 16);
   alGenSources(1, &audio_component->source_id);
   ALenum audio_component_error = alGetError();
   if (audio_component_error != AL_NO_ERROR){
     fprintf(stderr, "Error generating AudioComponent source in audio_component_create: %d\n", audio_component_error);
-    return NULL;
+    return;
   }
   if (!audio_add_source(audio_component->source_id)){
     fprintf(stderr, "Error: failed to add source to source pool in audio_component_create\n");
     alDeleteSources(1, &audio_component->source_id);
-    return NULL;
+    return;
   }
 
   // Set source position and options for spatial audio
+  struct Entity *entity = scene_get_entity_by_entity_id(scene, entity_id);
+  if (!entity){
+    fprintf(stderr, "Error: failed to fetch entity in audio_component_create\n");
+    return;
+  }
   alSource3f(audio_component->source_id, AL_POSITION, entity->position[0], entity->position[1], entity->position[2]);
   audio_component_error = alGetError();
   if (audio_component_error != AL_NO_ERROR){
     fprintf(stderr, "Error setting AudioComponent source position in audio_component_create: %d\n", audio_component_error);
-    return NULL;
+    return;
   }
   alSourcef(audio_component->source_id, AL_REFERENCE_DISTANCE, 5.0f);
   alSourcef(audio_component->source_id, AL_MAX_DISTANCE, 50.0f);
@@ -427,7 +436,7 @@ struct AudioComponent *audio_component_create(struct Entity *entity, int sound_e
   audio_component_error = alGetError();
   if (audio_component_error != AL_NO_ERROR){
     fprintf(stderr, "Error setting AudioComponent source spatial audio options in audio_component_create: %d\n", audio_component_error);
-    return NULL;
+    return;
   }
 
   // Assign buffer from sound effects
@@ -435,10 +444,14 @@ struct AudioComponent *audio_component_create(struct Entity *entity, int sound_e
   audio_component_error = alGetError();
   if (audio_component_error != AL_NO_ERROR){
     fprintf(stderr, "Error setting AudioComponent buffer in audio_component_create: %d\n", audio_component_error);
-    return NULL;
+    return;
   }
+}
 
-  return audio_component;
+void audio_component_destroy(struct AudioComponent *audio_component){
+  if (!audio_remove_source(audio_component->source_id)){
+    fprintf(stderr, "Error: failed to remove audio source in audio_component_destroy\n");
+  }
 }
 
 void audio_component_play(struct AudioComponent *audio_component){
@@ -489,21 +502,21 @@ void audio_component_play(struct AudioComponent *audio_component){
   }
 }
 
-void audio_listener_update(struct Player *player){
-  struct Camera *camera = player->camera;
+void audio_listener_update(struct Scene *scene, uuid_t entity_id){
+  struct CameraComponent *camera = scene_get_camera_by_entity_id(scene, entity_id);
 
   // Set context
   alcMakeContextCurrent(global_audio_manager->context);
   ALenum player_error = alGetError();
   if (player_error != AL_NO_ERROR){
-    fprintf(stderr, "Error: failed to set audio context in player_init\n");
+    fprintf(stderr, "Error: failed to set audio context in audio_listener_update\n");
   }
 
   // Set listener position
   alListenerfv(AL_POSITION, camera->position);
   player_error = alGetError();
   if (player_error != AL_NO_ERROR){
-    fprintf(stderr, "Error: failed to set audio context in player_init\n");
+    fprintf(stderr, "Error: failed to set listener position in audio_listener_update\n");
   }
 
   // Get listener up vector

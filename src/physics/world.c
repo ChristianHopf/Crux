@@ -1,12 +1,16 @@
+#include <cglm/vec3.h>
+#include <stdbool.h>
+#include "entity.h"
+#include "item.h"
+#include "scene.h"
 #include "physics/world.h"
 #include "narrow_phase.h"
 #include "distance.h"
 #include "resolution.h"
 #include "event.h"
 #include "utils.h"
-#include <cglm/vec3.h>
-#include <stdbool.h>
 #include "time.h"
+#include "physics/utils.h"
 
 #define MAX_PHYSICS_BODIES 128
 
@@ -56,49 +60,49 @@ struct PhysicsBody *body;
   }
 
   // Get position, rotation, and scale from world transform
-  vec3 world_position, world_rotation, world_scale;
-  glm_mat4_mulv3(scene_node->world_transform, (vec3){0.0f, 0.0f, 0.0f}, 1.0f, world_position);
-  glm_decompose_scalev(scene_node->world_transform, world_scale);
-  mat3 rotation_mat3;
-  glm_mat4_pick3(scene_node->world_transform, rotation_mat3);
-  if (world_scale[0] != 0.0f){
-    glm_mat3_scale(rotation_mat3, 1.0f / world_scale[0]);
-  }
-
-  vec3 euler_radians, euler_degrees;
-  
-  // Assuming rotation_mat is normalized (scale removed)
-  // XYZ order: Rx * Ry * Rz
-  // rotation_mat = [r11 r12 r13]
-  //               [r21 r22 r23]
-  //               [r31 r32 r33]
-  float r11 = rotation_mat3[0][0];
-  float r12 = rotation_mat3[0][1];
-  float r13 = rotation_mat3[0][2];
-  float r21 = rotation_mat3[1][0];
-  float r31 = rotation_mat3[2][0];
-  float r32 = rotation_mat3[2][1];
-  float r33 = rotation_mat3[2][2];
-
-  // Pitch (Y) = asin(-r31)
-  euler_radians[1] = asinf(-r31); // -pi/2 to pi/2
-
-  // Handle gimbal lock cases (r31 ≈ ±1)
-  if (fabsf(r31) > 0.9999f) {
-    // Gimbal lock: pitch is ±90 degrees
-    euler_radians[0] = 0.0f; // Roll (X) is undefined, set to 0
-    euler_radians[2] = atan2f(r12, r11); // Yaw (Z)
-  } else {
-    // Roll (X) = atan2(r32, r33)
-    euler_radians[0] = -atan2f(r32, r33);
-    // Yaw (Z) = atan2(r21, r11)
-    euler_radians[2] = -atan2f(r21, r11);
-  }
-
-  // Convert to degrees
-  euler_degrees[0] = glm_deg(euler_radians[0]); // Roll (X)
-  euler_degrees[1] = glm_deg(euler_radians[1]); // Pitch (Y)
-  euler_degrees[2] = glm_deg(euler_radians[2]); // Yaw (Z)
+  // vec3 world_position, world_rotation, world_scale;
+  // glm_mat4_mulv3(scene_node->world_transform, (vec3){0.0f, 0.0f, 0.0f}, 1.0f, world_position);
+  // glm_decompose_scalev(scene_node->world_transform, world_scale);
+  // mat3 rotation_mat3;
+  // glm_mat4_pick3(scene_node->world_transform, rotation_mat3);
+  // if (world_scale[0] != 0.0f){
+  //   glm_mat3_scale(rotation_mat3, 1.0f / world_scale[0]);
+  // }
+  //
+  // vec3 euler_radians, euler_degrees;
+  //
+  // // Assuming rotation_mat is normalized (scale removed)
+  // // XYZ order: Rx * Ry * Rz
+  // // rotation_mat = [r11 r12 r13]
+  // //               [r21 r22 r23]
+  // //               [r31 r32 r33]
+  // float r11 = rotation_mat3[0][0];
+  // float r12 = rotation_mat3[0][1];
+  // float r13 = rotation_mat3[0][2];
+  // float r21 = rotation_mat3[1][0];
+  // float r31 = rotation_mat3[2][0];
+  // float r32 = rotation_mat3[2][1];
+  // float r33 = rotation_mat3[2][2];
+  //
+  // // Pitch (Y) = asin(-r31)
+  // euler_radians[1] = asinf(-r31); // -pi/2 to pi/2
+  //
+  // // Handle gimbal lock cases (r31 ≈ ±1)
+  // if (fabsf(r31) > 0.9999f) {
+  //   // Gimbal lock: pitch is ±90 degrees
+  //   euler_radians[0] = 0.0f; // Roll (X) is undefined, set to 0
+  //   euler_radians[2] = atan2f(r12, r11); // Yaw (Z)
+  // } else {
+  //   // Roll (X) = atan2(r32, r33)
+  //   euler_radians[0] = -atan2f(r32, r33);
+  //   // Yaw (Z) = atan2(r21, r11)
+  //   euler_radians[2] = -atan2f(r21, r11);
+  // }
+  //
+  // // Convert to degrees
+  // euler_degrees[0] = glm_deg(euler_radians[0]); // Roll (X)
+  // euler_degrees[1] = glm_deg(euler_radians[1]); // Pitch (Y)
+  // euler_degrees[2] = glm_deg(euler_radians[2]); // Yaw (Z)
 
 
   // glm_vec3_copy(world_position, body->position);
@@ -135,6 +139,30 @@ struct PhysicsBody *physics_add_player(struct PhysicsWorld *physics_world, struc
   body->scene_node = NULL;
 
   return body;
+}
+
+void physics_remove_body(struct PhysicsWorld *physics_world, struct PhysicsBody *physics_body){
+  for (unsigned int i = 0; i < physics_world->num_player_bodies; i++){
+    if (uuid_compare(physics_world->player_bodies[i].entity->id, physics_body->entity->id) == 0){
+      physics_world->player_bodies[i] = physics_world->player_bodies[physics_world->num_player_bodies - 1];
+      physics_world->num_player_bodies--;
+      return;
+    }
+  }
+  for (unsigned int i = 0; i < physics_world->num_static_bodies; i++){
+    if (uuid_compare(physics_world->static_bodies[i].entity->id, physics_body->entity->id) == 0){
+      physics_world->static_bodies[i] = physics_world->static_bodies[physics_world->num_static_bodies - 1];
+      physics_world->num_static_bodies--;
+      return;
+    }
+  }
+  for (unsigned int i = 0; i < physics_world->num_dynamic_bodies; i++){
+    if (uuid_compare(physics_world->dynamic_bodies[i].entity->id, physics_body->entity->id) == 0){
+      physics_world->dynamic_bodies[i] = physics_world->dynamic_bodies[physics_world->num_dynamic_bodies - 1];
+      physics_world->num_dynamic_bodies--;
+      return;
+    }
+  }
 }
 
 void physics_step(struct PhysicsWorld *physics_world, float delta_time){
@@ -209,13 +237,12 @@ void physics_step(struct PhysicsWorld *physics_world, float delta_time){
         event.type = get_event_type(type_A, type_B);
         switch(event.type){
           case EVENT_COLLISION:
-            event.data.collision.entity_A = 0;
-            event.data.collision.entity_B = 0;
+            memcpy(event.data.collision.entity_A_id, body_A->entity->id, 16);
+            memcpy(event.data.collision.entity_B_id, body_B->entity->id, 16);
             break;
           case EVENT_PLAYER_ITEM_PICKUP:
             // TODO player ID, physicsbody/world has knowledge of it somehow
             memcpy(event.data.item_pickup.player_entity_id, body_B->entity->id, 16);
-            // event.data.item_pickup.player_entity_id = body_B->entity->id;
             event.data.item_pickup.item_id = body_A->entity->item->id;
             event.data.item_pickup.item_count = body_A->entity->item->count;
             memcpy(event.data.item_pickup.item_entity_id, body_A->entity->id, 16);
@@ -322,8 +349,8 @@ void physics_step(struct PhysicsWorld *physics_world, float delta_time){
 
         switch(event.type){
           case EVENT_COLLISION:
-            event.data.collision.entity_A = 0;
-            event.data.collision.entity_B = 0;
+            memcpy(event.data.collision.entity_A_id, body_A->entity->id, 16);
+            memcpy(event.data.collision.entity_B_id, body_B->entity->id, 16);
             break;
         }
 
@@ -373,33 +400,44 @@ void physics_step(struct PhysicsWorld *physics_world, float delta_time){
         }
       }
       if (result.colliding && result.hit_time >= 0){
-        ResolutionFunction resolution_function = resolution_functions[body_A->collider.type][body_B->collider.type];
-        if (!resolution_function){
-          fprintf(stderr, "Error: no collision resolution function found for types %d and %d\n",
-                  body_A->collider.type, body_B->collider.type);
-        }
-        else{
-          resolution_function(body_A, body_B, result, delta_time);
+        // Determine resolution strategy
+        EntityType type_A = body_A->entity->type;
+        EntityType type_B = body_B->entity->type;
+        CollisionBehavior behavior = get_collision_behavior(type_A, type_B);
 
-          struct timespec timestamp;
-          EventType event_type = EVENT_COLLISION;
-          if (clock_gettime(CLOCK_REALTIME, &timestamp) == -1){
-            perror("clock_gettime");
-            timestamp.tv_nsec = 0;
-          }
-          if (body_A->entity->type == ENTITY_ITEM){
-            event_type = EVENT_PLAYER_ITEM_PICKUP;
-          }
-          struct GameEvent collision = {
-            .type = EVENT_COLLISION,
-            .timestamp = timestamp,
-            .data.collision = {
-              .entity_A = 0,
-              .entity_B = 1
+        // Get appropriate resolution function for the given CollisionBehavior
+        switch(behavior){
+          case COLLISION_BEHAVIOR_PHYSICS:
+            ResolutionFunction resolution_function = resolution_functions[body_A->collider.type][body_B->collider.type];
+            if (!resolution_function){
+              fprintf(stderr, "Error: no collision resolution function found for types %d, %d\n", body_A->collider.type, body_B->collider.type);
             }
-          };
-          game_event_queue_enqueue(collision);
+            else{
+              resolution_function(body_A, body_B, result, delta_time);
+            }
+            break;
+          case COLLISION_BEHAVIOR_TRIGGER:
+            break;
         }
+
+        // Generate Event
+        struct GameEvent event;
+        struct timespec timestamp;
+        if (clock_gettime(CLOCK_REALTIME, &timestamp) == -1){
+          perror("clock_gettime");
+          timestamp.tv_nsec = 0;
+        }
+        event.timestamp = timestamp;
+        event.type = get_event_type(type_A, type_B);
+
+        switch(event.type){
+          case EVENT_COLLISION:
+            memcpy(event.data.collision.entity_A_id, body_A->entity->id, 16);
+            memcpy(event.data.collision.entity_B_id, body_B->entity->id, 16);
+            break;
+        }
+
+        game_event_queue_enqueue(event);
       }
       // Reorder bodies by enum value
       if (body_swap){

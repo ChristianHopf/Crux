@@ -1,7 +1,7 @@
 #include <cglm/cam.h>
 #include <glad/glad.h>
-// #include <iso646.h>
 #include "text.h"
+#include "shader.h"
 
 static struct Character characters[128];
 static unsigned int VAO, VBO;

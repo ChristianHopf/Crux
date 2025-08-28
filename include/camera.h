@@ -2,16 +2,8 @@
 
 #include <GLFW/glfw3.h>
 #include <cglm/cglm.h>
-//#include "glad/glad.h"
-
-typedef enum {
-    CAMERA_FORWARD = 1,
-    CAMERA_BACKWARD,
-    CAMERA_LEFT,
-    CAMERA_RIGHT,
-    CAMERA_UP,
-    CAMERA_DOWN
-} CameraDirection;
+#include <uuid/uuid.h>
+#include "types.h"
 
 // Default camera values
 //const vec3 POSITION = {0.0f, 0.0f, 0.0f};
@@ -24,7 +16,8 @@ typedef enum {
 //const float SENSITIVITY =  0.1f;
 //const float SPEED       =  2.5f;
 
-struct Camera {
+struct CameraComponent {
+  uuid_t entity_id;
   vec3 position;
   vec3 front;
   vec3 up;
@@ -38,13 +31,13 @@ struct Camera {
 };
 
 // Create camera with default values
-struct Camera *camera_create(vec3 position, vec3 up, float yaw, float pitch, float fov, float sensitivity, float speed);
+void camera_create(struct Scene *scene, uuid_t entity_id, vec3 position, vec3 up, float yaw, float pitch, float fov, float sensitivity, float speed);
 
 // Get view matrix
-void camera_get_view_matrix(struct Camera *camera, mat4 view);
+void camera_get_view_matrix(struct CameraComponent *camera, mat4 view);
 
 // Handle device input
-void camera_process_keyboard_input(struct Camera *camera, CameraDirection direction, float deltaTime); 
-void camera_process_mouse_input(struct Camera *camera, float xoffset, float yoffset);
-void camera_process_scroll_input(struct Camera *camera, double yoffset);
-void camera_update_vectors(struct Camera *camera);
+void camera_process_keyboard_input(struct CameraComponent *camera, CameraDirection direction, float deltaTime); 
+void camera_process_mouse_input(struct CameraComponent *camera, float xoffset, float yoffset);
+void camera_process_scroll_input(struct CameraComponent *camera, double yoffset);
+void camera_update_vectors(struct CameraComponent *camera);

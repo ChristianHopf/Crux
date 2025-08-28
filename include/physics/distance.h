@@ -26,8 +26,3 @@ float min_dist_at_time_sphere_capsule(struct PhysicsBody *body_A, struct Physics
 float min_dist_at_time_sphere_plane(struct PhysicsBody *body_A, struct PhysicsBody *body_B, float time);
 float min_dist_at_time_capsule_capsule(struct PhysicsBody *body_A, struct PhysicsBody *body_B, float time);
 float min_dist_at_time_capsule_plane(struct PhysicsBody *body_A, struct PhysicsBody *body_B, float time);
-
-// DistanceFunction distance_functions[NUM_COLLIDER_TYPES][NUM_COLLIDER_TYPES] = {
-//   [COLLIDER_AABB][COLLIDER_PLANE] = min_dist_at_time_AABB_plane,
-//   [COLLIDER_PLANE][COLLIDER_AABB] = min_dist_at_time_AABB_plane
-// };

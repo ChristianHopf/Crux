@@ -3,10 +3,13 @@
 // #include <glad/glad.h>
 #include <cJSON/cJSON.h>
 #include <stdbool.h>
-#include "physics/world.h"
-#include "skybox.h"
-#include "entity.h"
-#include "player.h"
+#include <uuid/uuid.h>
+// #include "physics/world.h"
+// #include "skybox.h"
+// #include "entity.h"
+// #include "player.h"
+// #include "camera.h"
+#include "item_registry.h"
 #include "shader.h"
 
 struct Light {
@@ -18,6 +21,7 @@ struct Light {
 };
 
 struct SceneNode {
+  uuid_t entity_id;
   unsigned int ID;
   mat4 local_transform;
   mat4 world_transform;
@@ -38,11 +42,10 @@ struct Scene {
   struct SceneNode *root_node;
   struct Entity *player_entities;
   struct Entity **entities;
-  int num_entities;
+  unsigned int num_entities;
   int num_player_entities;
   int max_entities;
   struct Skybox *skybox;
-  struct Player player;
   struct Light *lights;
   // UBOs
   unsigned int ubo_matrices;
@@ -50,6 +53,26 @@ struct Scene {
   struct PhysicsWorld *physics_world;
   // Options
   bool physics_debug_mode;
+
+  // Components
+  struct RenderComponent *render_components;
+  unsigned int num_render_components;
+  unsigned int max_render_components;
+  struct AudioComponent *audio_components;
+  unsigned int num_audio_components;
+  unsigned int max_audio_components;
+  struct CameraComponent *camera_components;
+  unsigned int num_camera_components;
+  unsigned int max_camera_components;
+  struct PlayerComponent *player_components;
+  unsigned int num_player_components;
+  unsigned int max_player_components;
+  struct InventoryComponent *inventory_components;
+  unsigned int num_inventory_components;
+  unsigned int max_inventory_components;
+
+  struct ItemRegistry item_registry;
+  uuid_t local_player_entity_id;
 };
 
 
@@ -57,16 +80,43 @@ struct Scene *scene_init(char *scene_path);
 struct Scene *scene_create(bool physics_view_mode);
 
 void scene_update(struct Scene *scene, float deltaTime);
-void scene_node_update(struct SceneNode *current_node);
-void scene_remove_scene_node_by_entity_id(struct Scene *scene, uuid_t id);
-void scene_remove_scene_node(struct SceneNode *scene_node);
 void scene_render(struct Scene *scene);
 void scene_free(struct Scene *scene);
 
 // JSON processing helpers
 void scene_process_light_json(cJSON *light_json, struct Light *light);
 void scene_process_vec3_json(cJSON *vec3_json, vec3 dest);
-void scene_process_node_json(const cJSON *node_json, struct SceneNode *current_node, struct SceneNode *parent_node, struct Model **models, Shader **shaders, struct PhysicsWorld *physics_world);
+void scene_process_node_json(struct Scene *scene, const cJSON *node_json, struct SceneNode *current_node, struct SceneNode *parent_node, struct Model **models, Shader **shaders, struct PhysicsWorld *physics_world);
+void scene_process_items_json(struct Scene *scene, const cJSON *items_json);
 
-// Misc
-struct Player *scene_get_player_by_entity_id(struct Scene *scene, uuid_t id);
+void scene_player_create(
+  struct Scene *scene,
+  struct Model *model,
+  Shader *shader,
+  vec3 position,
+  vec3 rotation,
+  vec3 scale,
+  vec3 velocity,
+  vec3 camera_offset,
+  float camera_height,
+  bool render_entity,
+  int inventory_capacity,
+  bool is_local);
+
+// SceneNode
+void scene_node_update(struct Scene *scene, struct SceneNode *current_node);
+void scene_node_create(struct Scene *scene, struct Entity *entity, struct SceneNode *parent_node);
+void scene_get_node_by_entity_id(struct SceneNode *current_node, uuid_t entity_id, int *child_index, int *final_child_index, struct SceneNode **dest);
+void scene_remove_scene_node(struct SceneNode *scene_node);
+void scene_remove_entity(struct Scene *scene, uuid_t id);
+struct Entity *scene_get_entity_by_entity_id(struct Scene *scene, uuid_t entity_id);
+
+// Components
+struct RenderComponent *scene_get_render_component_by_entity_id(struct Scene *scene, uuid_t entity_id);
+struct PlayerComponent *scene_get_player_by_entity_id(struct Scene *scene, uuid_t entity_id);
+struct InventoryComponent *scene_get_inventory_by_entity_id(struct Scene *scene, uuid_t entity_id);
+struct CameraComponent *scene_get_camera_by_entity_id(struct Scene *scene, uuid_t entity_id);
+struct AudioComponent *scene_get_audio_component_by_entity_id(struct Scene *scene, uuid_t entity_id);
+
+bool scene_remove_render_component_by_entity_id(struct Scene *scene, uuid_t entity_id);
+bool scene_remove_audio_component_by_entity_id(struct Scene *scene, uuid_t entity_id);
