@@ -1,7 +1,8 @@
 #pragma once
 
 typedef enum {
-  ENTITY_WORLD = 0,
+  ENTITY_GROUPING = 0,
+  ENTITY_WORLD,
   ENTITY_ITEM,
   ENTITY_PLAYER,
   ENTITY_TYPE_COUNT

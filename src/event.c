@@ -11,10 +11,11 @@ static struct GameEventQueue game_event_queue;
 static bool game_event_queue_initialized;
 
 static EventType event_types[ENTITY_TYPE_COUNT][ENTITY_TYPE_COUNT] = {
-  //              WORLD             ITEM                      PLAYER
-  /* WORLD */   {EVENT_COLLISION,   EVENT_COLLISION,          EVENT_COLLISION},
-  /* ITEM */    {EVENT_COLLISION,   EVENT_COLLISION,          EVENT_PLAYER_ITEM_PICKUP},
-  /* PLAYER */  {EVENT_COLLISION,   EVENT_PLAYER_ITEM_PICKUP, EVENT_COLLISION}
+  //              GROUPING        WORLD             ITEM                      PLAYER
+  /* GROUPING */{EVENT_COLLISION, EVENT_COLLISION,  EVENT_COLLISION,          EVENT_COLLISION},
+  /* WORLD */   {EVENT_COLLISION, EVENT_COLLISION,  EVENT_COLLISION,          EVENT_COLLISION},
+  /* ITEM */    {EVENT_COLLISION, EVENT_COLLISION,  EVENT_COLLISION,          EVENT_PLAYER_ITEM_PICKUP},
+  /* PLAYER */  {EVENT_COLLISION, EVENT_COLLISION,  EVENT_PLAYER_ITEM_PICKUP, EVENT_COLLISION}
 };
 
 

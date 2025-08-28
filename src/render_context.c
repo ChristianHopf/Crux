@@ -166,7 +166,6 @@ void scene_get_render_items(
   struct RenderItem **transparent_items, unsigned int *num_transparent_items,
   struct RenderItem **additive_items, unsigned int *num_additive_items)
 {
-  printf("Scene has %d RenderComponents \n", scene->num_render_components);
   for (unsigned int i = 0; i < scene->num_render_components; i++){
     struct RenderComponent *render_component = &scene->render_components[i];
   // Get this node's RenderItems
@@ -229,6 +228,10 @@ int compare_render_item_depth(const void *a, const void *b){
 }
 
 void render_component_create(struct Scene *scene, uuid_t entity_id, struct Model *model, Shader *shader){
+  // Don't create a RenderComponent for entities of type ENTITY_GROUPING
+  // scene_init doesn't call this for grouping entities, check model and shader here anyway
+  if (!model || !shader) return;
+
   if (scene->num_render_components >= scene->max_render_components){
     scene->max_render_components *= 2;
     scene->render_components = realloc(scene->render_components, scene->max_render_components * sizeof(struct RenderComponent));
