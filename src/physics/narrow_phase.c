@@ -1,6 +1,7 @@
 #include <stdbool.h>
 #include "scene.h"
 #include "physics/narrow_phase.h"
+#include "utils.h"
 
 #define EPSILON 0.0001
 
@@ -222,23 +223,19 @@ struct CollisionResult narrow_phase_AABB_capsule(struct PhysicsBody *body_AABB, 
     glm_mat4_mulv3(body_capsule->scene_node->world_transform, capsule->segment_A, 1.0f, world_capsule.segment_A);
     glm_mat4_mulv3(body_capsule->scene_node->world_transform, capsule->segment_B, 1.0f, world_capsule.segment_B);
   }
-  // Player capsule
-  else{
-    // Scale
-    glm_vec3_scale(capsule->segment_A, body_capsule->scale[0], world_capsule.segment_A);
-    glm_vec3_scale(capsule->segment_B, body_capsule->scale[0], world_capsule.segment_B);
-    // Rotate
-    mat4 eulerA;
-    mat3 rotationA;
-    vec3 rotatedA, rotatedB;
-    glm_euler_xyz(body_capsule->rotation, eulerA);
-    glm_mat4_pick3(eulerA, rotationA);
-    glm_mat3_mulv(rotationA, world_capsule.segment_A, world_capsule.segment_A);
-    glm_mat3_mulv(rotationA, world_capsule.segment_B, world_capsule.segment_B);
-    glm_vec3_add(world_capsule.segment_A, body_capsule->position, world_capsule.segment_A);
-    glm_vec3_add(world_capsule.segment_B, body_capsule->position, world_capsule.segment_B);
-  }
 
+  // glm_vec3_scale(capsule->segment_A, body_capsule->scale[0], world_capsule.segment_A);
+  // glm_vec3_scale(capsule->segment_B, body_capsule->scale[0], world_capsule.segment_B);
+  // mat4 eulerA;
+  // mat3 rotationA;
+  // vec3 rotatedA, rotatedB;
+  // glm_euler_xyz(body_capsule->rotation, eulerA);
+  // glm_mat4_pick3(eulerA, rotationA);
+  // glm_mat3_mulv(rotationA, world_capsule.segment_A, world_capsule.segment_A);
+  // glm_mat3_mulv(rotationA, world_capsule.segment_B, world_capsule.segment_B);
+  //
+  // glm_vec3_add(world_capsule.segment_A, body_capsule->position, world_capsule.segment_A);
+  // glm_vec3_add(world_capsule.segment_B, body_capsule->position, world_capsule.segment_B);
   world_capsule.radius = capsule->radius * body_capsule->scale[0];
 
   // Get distance from closest point on capsule segment to AABB
@@ -274,7 +271,7 @@ struct CollisionResult narrow_phase_AABB_capsule(struct PhysicsBody *body_AABB, 
   // - term < 0 => capsule is moving towards the plane
   // - term == 0 => capsule is moving parallel to the plane
   if (discriminant == 0){
-    if (distance <= 0){
+    if (distance < 0){
       result.hit_time = 0;
       result.colliding = true;
     }
@@ -286,12 +283,10 @@ struct CollisionResult narrow_phase_AABB_capsule(struct PhysicsBody *body_AABB, 
   else{
     if (discriminant < 0){
       result.hit_time = distance / pq_dot_v;
-      // result.hit_time = (world_capsule.radius - distance) / pq_dot_v;
       result.colliding = (result.hit_time >= 0 && result.hit_time <= delta_time);
     }
     else{
       result.hit_time = distance / pq_dot_v;
-      // result.hit_time = (-world_capsule.radius - distance) / pq_dot_v;
       result.colliding = (result.hit_time >= 0 && result.hit_time <= delta_time);
     }
 

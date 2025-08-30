@@ -3,6 +3,7 @@
 #include "scene.h"
 #include "resolution.h"
 #include "collider.h"
+#include "utils.h"
 
 ResolutionFunction resolution_functions[NUM_COLLIDER_TYPES][NUM_COLLIDER_TYPES] = {
   [COLLIDER_AABB][COLLIDER_AABB] = resolve_collision_AABB_AABB,
@@ -245,22 +246,21 @@ void resolve_collision_AABB_capsule(struct PhysicsBody *body_A, struct PhysicsBo
     glm_vec3_muladds(velocity_before, result.hit_time, world_capsule.segment_B);
   }
   // Player capsule
-  else{
-    // Scale
-    glm_vec3_scale(capsule->segment_A, body_B->scale[0], world_capsule.segment_A);
-    glm_vec3_scale(capsule->segment_B, body_B->scale[0], world_capsule.segment_B);
-    // Rotate
-    mat4 eulerA;
-    mat3 rotationA;
-    vec3 rotatedA, rotatedB;
-    glm_euler_xyz(body_B->rotation, eulerA);
-    glm_mat4_pick3(eulerA, rotationA);
-    glm_mat3_mulv(rotationA, world_capsule.segment_A, world_capsule.segment_A);
-    glm_mat3_mulv(rotationA, world_capsule.segment_B, world_capsule.segment_B);
-    glm_vec3_add(world_capsule.segment_A, body_B->position, world_capsule.segment_A);
-    glm_vec3_add(world_capsule.segment_B, body_B->position, world_capsule.segment_B);
-  }
-
+  // else{
+  //   // Scale
+  //   glm_vec3_scale(capsule->segment_A, body_B->scale[0], world_capsule.segment_A);
+  //   glm_vec3_scale(capsule->segment_B, body_B->scale[0], world_capsule.segment_B);
+  //   // Rotate
+  //   mat4 eulerA;
+  //   mat3 rotationA;
+  //   vec3 rotatedA, rotatedB;
+  //   glm_euler_xyz(body_B->rotation, eulerA);
+  //   glm_mat4_pick3(eulerA, rotationA);
+  //   glm_mat3_mulv(rotationA, world_capsule.segment_A, world_capsule.segment_A);
+  //   glm_mat3_mulv(rotationA, world_capsule.segment_B, world_capsule.segment_B);
+  //   glm_vec3_add(world_capsule.segment_A, body_B->position, world_capsule.segment_A);
+  //   glm_vec3_add(world_capsule.segment_B, body_B->position, world_capsule.segment_B);
+  // }
   world_capsule.radius = capsule->radius * body_B->scale[0];
 
   // Penetration correction
@@ -289,10 +289,9 @@ void resolve_collision_AABB_capsule(struct PhysicsBody *body_A, struct PhysicsBo
   // (vector from closest point on capsule to closest point on AABB)
   glm_vec3_normalize(pq);
   float pq_dot_v = glm_dot(body_B->velocity, pq);
-  float penetration = distance < world_capsule.radius ? (world_capsule.radius - distance) + 0.0001f : 0.0f;
+  float penetration = distance < world_capsule.radius ? (world_capsule.radius - distance) + 0.001f : 0.0f;
 
   if (penetration <= 0.0f) return;
-  printf("AABB capsule penetration: %f\n", penetration);
 
   // TODO Do penetration correction and velocity updates based on whether
   // each body is static or dynamic. For now just assume the AABB is static
@@ -596,7 +595,6 @@ void resolve_collision_capsule_plane(struct PhysicsBody *body_A, struct PhysicsB
   float penetration = (s < world_capsule.radius) ? (world_capsule.radius - s) + 0.001 : 0.0f;
 
   if (penetration <= 0.0f) return;
-  printf("capsule plane penetration: %f\n", penetration);
 
   vec3 correction;
   glm_vec3_scale(world_plane.normal, penetration, correction);

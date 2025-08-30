@@ -44,6 +44,12 @@ void player_process_keyboard_input(struct Scene *scene, uuid_t entity_id, Camera
     glm_vec3_scale(right, velocity, right);
     glm_vec3_add(player_entity->physics_body->position, right, player_entity->physics_body->position);
 	}
+  
+  // Update transform
+  struct SceneNode *player_node;
+  int child_index, final_child_index;
+  scene_get_node_by_entity_id(scene->root_node, player->entity_id, &child_index, &final_child_index, &player_node);
+  scene_node_update(scene, player_node);
 	// if (direction == CAMERA_DOWN){
 	// 	vec3 down;
 	// 	glm_vec3_copy(camera->up, down);
