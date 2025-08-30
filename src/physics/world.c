@@ -120,7 +120,7 @@ struct PhysicsBody *body;
   return body;
 }
 
-struct PhysicsBody *physics_add_player(struct PhysicsWorld *physics_world, struct Entity *entity, struct Collider collider){
+struct PhysicsBody *physics_add_player(struct PhysicsWorld *physics_world, struct SceneNode *scene_node, struct Entity *entity, struct Collider collider){
   // Check type validity
   if (collider.type < 0 || collider.type > COLLIDER_COUNT){
     fprintf(stderr, "Error: collider type provided to physics_add_body is invalid\n");
@@ -136,7 +136,8 @@ struct PhysicsBody *physics_add_player(struct PhysicsWorld *physics_world, struc
   body->collider = collider;
   body->restitution = 0.0f;
   body->entity = entity;
-  body->scene_node = NULL;
+  body->scene_node = scene_node;
+  printf("physics_add_player\n");
 
   return body;
 }

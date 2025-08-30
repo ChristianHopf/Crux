@@ -1,0 +1,190 @@
+{
+	"shaders": [
+		{
+			"vertex": "shaders/shader.vs",
+			"fragment": "shaders/dirlight/shader.fs"
+		}
+	],
+	"models": [
+		"resources/basic/grass_plane/grass_plane.gltf",
+		"resources/objects/magic_potion/scene.gltf",
+    "resources/objects/wizard/WizardusMaximus.glb"
+	],
+  "sounds": {
+    "music": "resources/music/mookid.wav",
+    "effects": [
+      "resources/sfx/vineboom.wav"
+    ]
+  },
+  "entity_count": 14,
+	"nodes": {
+    "model_index": -1,
+    "shader_index": -1,
+    "position": [0.0, 0.0, 0.0],
+    "rotation": [0.0, 0.0, 0.0],
+    "scale": [1.0, 1.0, 1.0],
+    "collider": null,
+    "entity_type": 0,
+    "children": [
+      {
+        "model_index": -1,
+        "shader_index": -1,
+        "position": [0.0, 0.0, 0.0],
+        "rotation": [0.0, 0.0, 0.0],
+        "scale": [1.0, 1.0, 1.0],
+        "collider": null,
+        "entity_type": 0,
+        "children": [
+          {
+            "model_index": 0,
+            "shader_index": 0,
+            "position": [0.0, 0.0, 0.0],
+            "rotation": [0.0, 0.0, 0.0],
+            "scale": [0.5, 0.5, 0.5],
+            "collider": {
+              "type": 0,
+              "dynamic": false,
+              "units": 10,
+              "data": {
+                "center": [0.0, -1.0, 0.0],
+                "extents": [10.0, 2.0, 10.0]
+              }
+            },
+            "entity_type": 1,
+            "children": []
+          },
+          {
+            "model_index": 0,
+            "shader_index": 0,
+            "position": [0.0, 10.0, 0.0],
+            "rotation": [0.0, 0.0, 180.0],
+            "scale": [0.5, 0.5, 0.5],
+            "collider": {
+              "type": 0,
+              "dynamic": false,
+              "units": 10,
+              "data": {
+                "center": [0.0, -1.0, 0.0],
+                "extents": [10.0, 2.0, 10.0]
+              }
+            },
+            "entity_type": 1,
+            "children": []
+          },
+          {
+            "model_index": 0,
+            "shader_index": 0,
+            "position": [-5.0, 5.0, 0.0],
+            "rotation": [0.0, 0.0, -90.0],
+            "scale": [0.5, 0.5, 0.5],
+            "collider": {
+              "type": 3,
+              "dynamic": false,
+              "units": 10,
+              "data": {
+                "normal": [1.0, 0.0, 0.0],
+                "distance": -5
+              }
+            },
+            "entity_type": 1,
+            "children": []
+          },
+          {
+            "model_index": 0,
+            "shader_index": 0,
+            "position": [5.0, 5.0, 0.0],
+            "rotation": [0.0, 0.0, 90.0],
+            "scale": [0.5, 0.5, 0.5],
+            "collider": {
+              "type": 0,
+              "dynamic": false,
+              "units": 10,
+              "data": {
+                "center": [0.0, -1.0, 0.0],
+                "extents": [10.0, 2.0, 10.0]
+              }
+            },
+            "entity_type": 1,
+            "children": []
+          },
+          {
+            "model_index": 0,
+            "shader_index": 0,
+            "position": [0.0, 5.0, -5.0],
+            "rotation": [90.0, 0.0, 0.0],
+            "scale": [0.5, 0.5, 0.5],
+            "collider": {
+              "type": 0,
+              "dynamic": false,
+              "units": 10,
+              "data": {
+                "center": [0.0, -1.0, 0.0],
+                "extents": [10.0, 2.0, 10.0]
+              }
+            },
+            "entity_type": 1,
+            "children": []
+          },
+          {
+            "model_index": 0,
+            "shader_index": 0,
+            "position": [0.0, 5.0, 5.0],
+            "rotation": [-90.0, 0.0, 0.0],
+            "scale": [0.5, 0.5, 0.5],
+            "collider": {
+              "type": 0,
+              "dynamic": false,
+              "units": 10,
+              "data": {
+                "center": [0.0, -1.0, 0.0],
+                "extents": [10.0, 2.0, 10.0]
+              }
+            },
+            "entity_type": 1,
+            "children": []
+          },
+          {
+            "model_index": 1,
+            "shader_index": 0,
+            "position": [0.0, 1.0, 0.0],
+            "rotation": [0.0, 0.0, 0.0],
+            "scale": [2.0, 2.0, 2.0],
+            "velocity": [0.0, 0.0, 0.0],
+            "collider": {
+              "type": 0,
+              "dynamic": false,
+              "units": 1,
+              "data": {
+                "center": [0.0, 0.1, 0.0],
+                "extents": [0.1, 0.12, 0.1]
+              }
+            },
+            "entity_type": 1,
+            "item_id": 1,
+            "item_count": 1,
+            "children": []
+          }
+        ]
+      }
+    ]
+  },
+  "items": [
+    {
+      "id": 1,
+      "name": "Magic Potion",
+      "max_count": 3
+    }
+  ],
+	"lights": [
+		{
+			"type": "directional",
+			"data": {
+				"direction": [-0.2, 0.0, -0.3],
+				"ambient": [0.5, 0.5, 0.5],
+				"diffuse": [0.8, 0.8, 0.8],
+				"specular": [1.0, 1.0, 1.0]
+			}
+		}
+	],
+	"skybox": "resources/skybox/"
+}

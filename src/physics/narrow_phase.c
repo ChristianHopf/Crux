@@ -248,7 +248,7 @@ struct CollisionResult narrow_phase_AABB_capsule(struct PhysicsBody *body_AABB, 
   glm_vec3_sub(world_AABB_final.center, world_capsule.segment_A, A_to_center);
   float proj = glm_dot(segment, A_to_center);
   // Normalize projection of A->center onto segment, clamp between 0 and 1
-  float t = proj / glm_dot(segment, segment);
+  float t = proj / glm_vec3_dot(segment, segment);
   t = glm_clamp(t, 0.0f, 1.0f);
 
   // Closest point on the segment is segment_A + segment vector scaled by t

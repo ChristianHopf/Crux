@@ -1,6 +1,8 @@
 #include "scene.h"
+#include "physics/world.h"
 #include "distance.h"
 #include "physics/utils.h"
+#include "utils.h"
 
 DistanceFunction distance_functions[NUM_COLLIDER_TYPES][NUM_COLLIDER_TYPES] = {
   [COLLIDER_AABB][COLLIDER_AABB] = min_dist_at_time_AABB_AABB,
@@ -158,13 +160,17 @@ float min_dist_at_time_AABB_capsule(struct PhysicsBody *body_A, struct PhysicsBo
   glm_vec3_sub(world_AABB_final.center, world_capsule.segment_A, A_to_center);
   float proj = glm_dot(segment, A_to_center);
   // Normalize projection of A->center onto segment, clamp between 0 and 1
-  float t = proj / glm_vec3_norm(segment);
+  float t = proj / glm_vec3_dot(segment, segment);
   t = glm_clamp(t, 0.0f, 1.0f);
 
   // Closest point on the segment is segment_A + segment vector scaled by t
   vec3 closest_point;
   glm_vec3_copy(world_capsule.segment_A, closest_point);
   glm_vec3_muladds(segment, t, closest_point);
+  // print_glm_vec3(world_capsule.segment_A, "World capsule segment A");
+  // printf("World AABB is:\n");
+  // print_aabb(&world_AABB_final);
+  // print_glm_vec3(closest_point, "Closest point on segment to AABB");
 
   // Closest point on the AABB is the closest point on the segment clamped
   // to the extents of the AABB
@@ -172,12 +178,16 @@ float min_dist_at_time_AABB_capsule(struct PhysicsBody *body_A, struct PhysicsBo
   for (int i = 0; i < 3; i++){
     q[i] = glm_clamp(closest_point[i], world_AABB_final.center[i] - world_AABB_final.extents[i], world_AABB_final.center[i] + world_AABB_final.extents[i]);
   }
+  // print_glm_vec3(q, "Closest point on AABB to capsule");
 
   vec3 pq;
   glm_vec3_sub(q, closest_point, pq);
   float distance = glm_vec3_norm(pq);
-
+  // printf("Initial distance should be 1.55\n");
+  // printf("Distance between closest points: %f\n", distance);
+  //
   // printf("Min dist between AABB and capsule is %f\n", glm_max(distance - world_capsule.radius, 0));
+
   return glm_max(distance - world_capsule.radius, 0);
 }
 

@@ -292,6 +292,7 @@ void resolve_collision_AABB_capsule(struct PhysicsBody *body_A, struct PhysicsBo
   float penetration = distance < world_capsule.radius ? (world_capsule.radius - distance) + 0.0001f : 0.0f;
 
   if (penetration <= 0.0f) return;
+  printf("AABB capsule penetration: %f\n", penetration);
 
   // TODO Do penetration correction and velocity updates based on whether
   // each body is static or dynamic. For now just assume the AABB is static
@@ -595,6 +596,7 @@ void resolve_collision_capsule_plane(struct PhysicsBody *body_A, struct PhysicsB
   float penetration = (s < world_capsule.radius) ? (world_capsule.radius - s) + 0.001 : 0.0f;
 
   if (penetration <= 0.0f) return;
+  printf("capsule plane penetration: %f\n", penetration);
 
   vec3 correction;
   glm_vec3_scale(world_plane.normal, penetration, correction);

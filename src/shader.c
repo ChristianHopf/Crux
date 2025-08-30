@@ -1,3 +1,4 @@
+#include "glad.h"
 #include "shader.h"
 #include <linux/limits.h>
 #include <stdio.h>

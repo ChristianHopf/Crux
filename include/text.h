@@ -1,6 +1,6 @@
 #pragma once
 
-// #include "glad.h"
+#include "glad.h"
 #include <ft2build.h>
 #include FT_FREETYPE_H
 #include <cglm/cglm.h>

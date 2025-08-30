@@ -1,8 +1,8 @@
 #pragma once
 
-#include "physics/world.h"
-#include "physics/aabb.h"
-#include "physics/plane.h"  
+// #include "physics/world.h"
+// #include "physics/aabb.h"
+// #include "physics/plane.h"  
 
 // Defines a function pointer lookup table for calculating minimum distances between
 // different types of volumes. I didn't want a huge switch statement, and it turns out

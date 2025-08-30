@@ -1,3 +1,4 @@
+#include <string.h>
 #include "menu/menu_presets.h"
 
 Clay_TextElementConfig pause_menu_title_text_config = {.fontId = 1, .fontSize = 48, .textColor = {255, 255, 255, 255}};

@@ -291,7 +291,14 @@ struct Scene *scene_init(char *scene_path){
   for (unsigned int i = 0; i < scene->num_player_components; i++){
     struct PlayerComponent *player_component = &scene->player_components[i];
     struct Entity *entity = scene_get_entity_by_entity_id(scene, player_component->entity_id);
-    entity->physics_body = physics_add_player(scene->physics_world, entity, player_collider);
+    // TODO figure out a better way to get a node by entity id when I don't need
+    // any other information.
+    struct SceneNode *scene_node;
+    unsigned int child_index, final_child_index;
+    scene_get_node_by_entity_id(scene->root_node, entity->id, &child_index, &final_child_index, &scene_node);
+    if (scene_node){
+      entity->physics_body = physics_add_player(scene->physics_world, scene_node, entity, player_collider);
+    }
   }
 
   // Player inventory
