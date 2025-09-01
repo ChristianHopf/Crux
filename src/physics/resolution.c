@@ -143,9 +143,6 @@ void resolve_collision_AABB_AABB(struct PhysicsBody *body_A, struct PhysicsBody 
       glm_vec3_copy(velocity_before_B, body_B->velocity);
     }
   }
-  printf("AABB AABB RESOLUTION\n");
-  printf("Body A dynamic: %s\n", body_A->dynamic ? "true" : "false");
-  printf("Body B dynamic: %s\n", body_B->dynamic ? "true" : "false");
 }
 
 void resolve_collision_AABB_sphere(struct PhysicsBody *body_A, struct PhysicsBody *body_B, struct CollisionResult result, float delta_time){

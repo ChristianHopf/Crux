@@ -36,7 +36,6 @@ struct Scene *scene_init(char *scene_path){
   const cJSON *shaders_json;
   const cJSON *models_json;
   const cJSON *sounds_json;
-  const cJSON *meshes;
   const cJSON *lights_json;
   const cJSON *skybox_json;
 
@@ -294,7 +293,7 @@ struct Scene *scene_init(char *scene_path){
     // TODO figure out a better way to get a node by entity id when I don't need
     // any other information.
     struct SceneNode *scene_node;
-    unsigned int child_index, final_child_index;
+    int child_index, final_child_index;
     scene_get_node_by_entity_id(scene->root_node, entity->id, &child_index, &final_child_index, &scene_node);
     if (scene_node){
       entity->physics_body = physics_add_player(scene->physics_world, scene_node, entity, player_collider);
@@ -556,7 +555,7 @@ void scene_process_light_json(cJSON *light_json, struct Light *light){
   // Get data (direction, ambient, diffuse, specular)
   cJSON *light_data_json = cJSON_GetObjectItemCaseSensitive(light_json, "data");
   if (!light_data_json){
-    fprintf(stderr, "Error: failed to get data object in light at index %d, either invalid or does not exist\n", index);
+    fprintf(stderr, "Error: failed to get data object in light json, either invalid or does not exist\n");
     return;
   }
 
@@ -664,14 +663,17 @@ void scene_process_node_json(
     }
       // "entity_type" json property is -1 or otherwise invalid
     case ENTITY_GROUPING: {
-        entity->type = entity_type;
-        break;
-      }
+      entity->type = entity_type;
+      break;
     }
-    // Add reference to this entity to scene's entities array and node
-    current_node->entity = entity;
-    memcpy(current_node->entity_id, entity->id, 16);
-    scene->entities[scene->num_entities++] = entity;
+    case ENTITY_TYPE_COUNT: {
+      break;
+    }
+  }
+  // Add reference to this entity to scene's entities array and node
+  current_node->entity = entity;
+  memcpy(current_node->entity_id, entity->id, 16);
+  scene->entities[scene->num_entities++] = entity;
 
   // Process transform
   // Figure out making it work with these only living in the SceneNode, copy to both SceneNode and Entity for now
@@ -1076,9 +1078,6 @@ void scene_node_create(struct Scene *scene, struct Entity *entity, struct SceneN
   glm_mat4_mul(parent_node->world_transform, scene_node->local_transform, scene_node->world_transform);
 
   scene_node->entity = entity;
-  if (scene_node->entity){
-    printf("Created player SceneNode with entity\n");
-  }
   scene_node->parent_node = parent_node;
   scene_node->children = NULL;
   scene_node->num_children = 0;
