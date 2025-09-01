@@ -144,7 +144,6 @@ void game_event_queue_process(){
         break;
       }
     }
-    // game_event_print(&game_event);
   }
 }
 

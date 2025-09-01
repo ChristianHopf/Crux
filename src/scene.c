@@ -617,53 +617,53 @@ void scene_process_node_json(
     scene_process_vec3_json(cJSON_GetObjectItemCaseSensitive(node_json, "rotation"), entity->rotation);
     scene_process_vec3_json(cJSON_GetObjectItemCaseSensitive(node_json, "scale"), entity->scale);
 
-    // Entity type
-    cJSON *entity_type_json = cJSON_GetObjectItemCaseSensitive(node_json, "entity_type");
-    if (!cJSON_IsNumber(entity_type_json)){
-      fprintf(stderr, "Error: failed to get entity type in scene_process_node_json, either invalid or does not exist\n");
-      return;
+  // Entity type
+  cJSON *entity_type_json = cJSON_GetObjectItemCaseSensitive(node_json, "entity_type");
+  if (!cJSON_IsNumber(entity_type_json)){
+    fprintf(stderr, "Error: failed to get entity type in scene_process_node_json, either invalid or does not exist\n");
+    return;
+  }
+
+  // Process entity type and appropriate information if present
+  EntityType entity_type = cJSON_GetNumberValue(entity_type_json);
+  switch(entity_type){
+    case ENTITY_WORLD: {
+      entity->type = entity_type;
+      break;
     }
+    // Item
+    case ENTITY_ITEM: {
+      entity->type = entity_type;
+      cJSON *item_id_json = cJSON_GetObjectItemCaseSensitive(node_json, "item_id");
+      if (!cJSON_IsNumber(item_id_json)){
+        fprintf(stderr, "Error: failed to get item id in scene_process_node_json, either invalid or does not exist\n");
+        return;
+      }
+      cJSON *item_count_json = cJSON_GetObjectItemCaseSensitive(node_json, "item_count");
+      if (!cJSON_IsNumber(item_count_json)){
+        fprintf(stderr, "Error: failed to get item count in scene_process_node_json, either invalid or does not exist\n");
+        return;
+      }
 
-    // Process entity type and appropriate information if present
-    EntityType entity_type = cJSON_GetNumberValue(entity_type_json);
-    switch(entity_type){
-      case ENTITY_WORLD: {
-        entity->type = entity_type;
-        break;
+      entity->item = (struct ItemComponent *)calloc(1, sizeof(struct ItemComponent));
+      if (!entity->item){
+        fprintf(stderr, "Error: failed to allocate Item in scene_process_node_json\n");
+        return;
       }
-      // Item
-      case ENTITY_ITEM: {
-        entity->type = entity_type;
-        cJSON *item_id_json = cJSON_GetObjectItemCaseSensitive(node_json, "item_id");
-        if (!cJSON_IsNumber(item_id_json)){
-          fprintf(stderr, "Error: failed to get item id in scene_process_node_json, either invalid or does not exist\n");
-          return;
-        }
-        cJSON *item_count_json = cJSON_GetObjectItemCaseSensitive(node_json, "item_count");
-        if (!cJSON_IsNumber(item_count_json)){
-          fprintf(stderr, "Error: failed to get item count in scene_process_node_json, either invalid or does not exist\n");
-          return;
-        }
-
-        entity->item = (struct ItemComponent *)calloc(1, sizeof(struct ItemComponent));
-        if (!entity->item){
-          fprintf(stderr, "Error: failed to allocate Item in scene_process_node_json\n");
-          return;
-        }
-        entity->item->id = cJSON_GetNumberValue(item_id_json);
-        entity->item->count = cJSON_GetNumberValue(item_count_json);
-        break;
-      }
-      // TODO More refactoring here when I actually implement multiplayer support
-      case ENTITY_PLAYER: {
-        // Process player entity
-        // current_node->entity->type = entity_type;
-        // scene->player_components = (struct PlayerComponent *)calloc(1, sizeof(struct PlayerComponent));
-        // memcpy(current_node->entity->id, scene->player_components->entity_id, 16);
-        break;
-      }
-        // "entity_type" json property is -1 or otherwise invalid
-      case ENTITY_GROUPING: {
+      entity->item->id = cJSON_GetNumberValue(item_id_json);
+      entity->item->count = cJSON_GetNumberValue(item_count_json);
+      break;
+    }
+    // TODO More refactoring here when I actually implement multiplayer support
+    case ENTITY_PLAYER: {
+      // Process player entity
+      // current_node->entity->type = entity_type;
+      // scene->player_components = (struct PlayerComponent *)calloc(1, sizeof(struct PlayerComponent));
+      // memcpy(current_node->entity->id, scene->player_components->entity_id, 16);
+      break;
+    }
+      // "entity_type" json property is -1 or otherwise invalid
+    case ENTITY_GROUPING: {
         entity->type = entity_type;
         break;
       }
@@ -672,10 +672,6 @@ void scene_process_node_json(
     current_node->entity = entity;
     memcpy(current_node->entity_id, entity->id, 16);
     scene->entities[scene->num_entities++] = entity;
-
-    // AudioComponent (may want to include this in scene json somehow, maybe just a bool)
-    // audio_component_create(scene, entity->id, 0);
-  // }
 
   // Process transform
   // Figure out making it work with these only living in the SceneNode, copy to both SceneNode and Entity for now

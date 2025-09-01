@@ -130,6 +130,7 @@ void physics_debug_render(struct PhysicsWorld *physics_world, struct RenderConte
     struct PhysicsBody *body = &physics_world->dynamic_bodies[i];
 
     glBindVertexArray(body->VAO);
+    glBindBuffer(GL_ARRAY_BUFFER, body->VBO);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, body->EBO);
 
     mat4 model;
@@ -140,31 +141,44 @@ void physics_debug_render(struct PhysicsWorld *physics_world, struct RenderConte
         // Get updated AABB and model matrix
         struct AABB *box = &body->collider.data.aabb;
 
-        struct AABB rotated_AABB = {0};
-        mat4 eulerA;
-        mat3 rotationA;
+        glm_translate(model, body->position);
+        glm_rotate_y(model, glm_rad(body->rotation[1]), model);
+        glm_rotate_x(model, glm_rad(body->rotation[0]), model);
+        glm_rotate_z(model, glm_rad(body->rotation[2]), model);
+        glm_scale(model, body->scale);
 
-        vec3 rotation_rad;
-        glm_vec3_copy(body->rotation, rotation_rad);
-        glm_vec3_scale(rotation_rad, M_PI / 180.0f, rotation_rad); // Degrees to radians
-        glm_euler_xyz(rotation_rad, eulerA);
-        glm_mat4_pick3(eulerA, rotationA);
-        vec3 translationA, scaleA;
-        // glm_vec3_sub(box->center, body->position, translationA);
-        glm_vec3_copy(body->position, translationA); // Use body position
-        glm_vec3_copy(body->scale, scaleA); // Use body scale
-        AABB_update(box, rotationA, translationA, scaleA, &rotated_AABB);
-
-        // glm_translate(model, body->position);
-        // glm_rotate_x(model, glm_rad(body->rotation[1]), model);
-        // glm_rotate_y(model, glm_rad(body->rotation[0]), model);
-        // glm_rotate_z(model, glm_rad(body->rotation[2]), model);
-        // glm_scale(model, body->scale);
-
-        glBindVertexArray(body->VAO);
-        glBindBuffer(GL_ARRAY_BUFFER, body->VBO);
-        physics_debug_AABB_render(&rotated_AABB, context, body->scene_node->world_transform);
+        // physics_debug_AABB_render(box, context, model);
+        physics_debug_AABB_render(box, context, body->scene_node->world_transform);
         break;
+      // case COLLIDER_AABB:
+      //   // Get updated AABB and model matrix
+      //   struct AABB *box = &body->collider.data.aabb;
+      //
+      //   struct AABB rotated_AABB = {0};
+      //   mat4 eulerA;
+      //   mat3 rotationA;
+      //
+      //   vec3 rotation_rad;
+      //   glm_vec3_copy(body->rotation, rotation_rad);
+      //   glm_vec3_scale(rotation_rad, M_PI / 180.0f, rotation_rad); // Degrees to radians
+      //   glm_euler_xyz(rotation_rad, eulerA);
+      //   glm_mat4_pick3(eulerA, rotationA);
+      //   vec3 translationA, scaleA;
+      //   // glm_vec3_sub(box->center, body->position, translationA);
+      //   glm_vec3_copy(body->position, translationA); // Use body position
+      //   glm_vec3_copy(body->scale, scaleA); // Use body scale
+      //   AABB_update(box, rotationA, translationA, scaleA, &rotated_AABB);
+      //
+      //   // glm_translate(model, body->position);
+      //   // glm_rotate_x(model, glm_rad(body->rotation[1]), model);
+      //   // glm_rotate_y(model, glm_rad(body->rotation[0]), model);
+      //   // glm_rotate_z(model, glm_rad(body->rotation[2]), model);
+      //   // glm_scale(model, body->scale);
+      //
+      //   glBindVertexArray(body->VAO);
+      //   glBindBuffer(GL_ARRAY_BUFFER, body->VBO);
+      //   physics_debug_AABB_render(&rotated_AABB, context, body->scene_node->world_transform);
+      //   break;
       case COLLIDER_SPHERE:
         struct Sphere *sphere = &body->collider.data.sphere;
 

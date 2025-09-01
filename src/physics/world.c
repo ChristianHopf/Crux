@@ -44,8 +44,8 @@ struct PhysicsBody *body;
   switch(dynamic){
     case true:
       body = &physics_world->dynamic_bodies[physics_world->num_dynamic_bodies++];
-      body->collider = collider;
       glm_vec3_copy(entity->velocity, body->velocity);
+      printf("Dynamic potion item\n");
       break;
     case false:
       body = &physics_world->static_bodies[physics_world->num_static_bodies++];
@@ -114,6 +114,7 @@ struct PhysicsBody *body;
   glm_vec3_copy(entity->scale, body->scale);
   body->collider = collider;
   body->restitution = restitution;
+  body->dynamic = dynamic;
   body->entity = entity;
   body->scene_node = scene_node;
 
@@ -137,7 +138,6 @@ struct PhysicsBody *physics_add_player(struct PhysicsWorld *physics_world, struc
   body->restitution = 0.0f;
   body->entity = entity;
   body->scene_node = scene_node;
-  printf("physics_add_player\n");
 
   return body;
 }
@@ -171,6 +171,7 @@ void physics_step(struct PhysicsWorld *physics_world, float delta_time){
     delta_time = MAX_DELTA_TIME;
   }
 
+  // Player bodies vs static bodies
   for (unsigned int i = 0; i < physics_world->num_player_bodies; i++){
     struct PhysicsBody *body_A = &physics_world->player_bodies[i];
 
@@ -242,6 +243,101 @@ void physics_step(struct PhysicsWorld *physics_world, float delta_time){
             memcpy(event.data.collision.entity_B_id, body_B->entity->id, 16);
             break;
           case EVENT_PLAYER_ITEM_PICKUP:
+            printf("Creating an item pickup event 1\n");
+            // TODO player ID, physicsbody/world has knowledge of it somehow
+            memcpy(event.data.item_pickup.player_entity_id, body_B->entity->id, 16);
+            event.data.item_pickup.item_id = body_A->entity->item->id;
+            event.data.item_pickup.item_count = body_A->entity->item->count;
+            memcpy(event.data.item_pickup.item_entity_id, body_A->entity->id, 16);
+            break;
+        }
+
+        game_event_queue_enqueue(event);
+      }
+
+      // Reorder bodies by enum value
+      if (body_swap){
+        struct PhysicsBody *temp = body_A;
+        body_A = body_B;
+        body_B = temp;
+      }
+    }
+    // if (!body_A->at_rest){
+    //   float gravity = 9.8f;
+    //   body_A->velocity[1] -= gravity * delta_time;
+    //   glm_vec3_muladds(body_A->velocity, delta_time, body_A->position);
+    // }
+  }
+
+  // Player bodies vs dynamic bodies
+  for (unsigned int i = 0; i < physics_world->num_player_bodies; i++){
+    struct PhysicsBody *body_A = &physics_world->player_bodies[i];
+
+    for (unsigned int j = 0; j < physics_world->num_dynamic_bodies; j++){
+      struct PhysicsBody *body_B = &physics_world->dynamic_bodies[j];
+
+      // Order bodies by enum value for function tables
+      bool body_swap = false;
+      if (body_A->collider.type > body_B->collider.type){
+        struct PhysicsBody *temp = body_A;
+        body_A = body_B;
+        body_B = temp;
+        body_swap = true;
+      }
+
+      // BROAD PHASE: Create a hit_time float and perform interval halving
+      float hit_time;
+      struct CollisionResult result = {0};
+      if (interval_collision(body_A, body_B, 0, delta_time, &hit_time)){
+        // NARROW PHASE
+        NarrowPhaseFunction narrow_phase_function = narrow_phase_functions[body_A->collider.type][body_B->collider.type];
+        if (!narrow_phase_function){
+          fprintf(stderr, "Error: no narrow phase function found for collider types %d, %d\n", body_A->collider.type, body_B->collider.type);
+        }
+        else{
+          result = narrow_phase_function(body_A, body_B, delta_time);
+        }
+      }
+
+      // COLLISION RESOLUTION
+      if (result.colliding && result.hit_time >= 0){
+        // Determine resolution strategy
+        EntityType type_A = body_A->entity->type;
+        EntityType type_B = body_B->entity->type;
+        CollisionBehavior behavior = get_collision_behavior(type_A, type_B);
+
+        // Get appropriate resolution function for the given CollisionBehavior
+        switch(behavior){
+          case COLLISION_BEHAVIOR_PHYSICS:
+            ResolutionFunction resolution_function = resolution_functions[body_A->collider.type][body_B->collider.type];
+            if (!resolution_function){
+              fprintf(stderr, "Error: no collision resolution function found for types %d, %d\n", body_A->collider.type, body_B->collider.type);
+            }
+            else{
+              resolution_function(body_A, body_B, result, delta_time);
+            }
+            break;
+          case COLLISION_BEHAVIOR_TRIGGER:
+            break;
+        }
+
+        // Generate Event
+        struct GameEvent event;
+        struct timespec timestamp;
+        if (clock_gettime(CLOCK_REALTIME, &timestamp) == -1){
+          perror("clock_gettime");
+          timestamp.tv_nsec = 0;
+        }
+        event.timestamp = timestamp;
+
+        event.type = get_event_type(type_A, type_B);
+        switch(event.type){
+          case EVENT_COLLISION:
+            memcpy(event.data.collision.entity_A_id, body_A->entity->id, 16);
+            memcpy(event.data.collision.entity_B_id, body_B->entity->id, 16);
+            break;
+          case EVENT_PLAYER_ITEM_PICKUP:
+            printf("Creating an item pickup event 2\n");
             // TODO player ID, physicsbody/world has knowledge of it somehow
             memcpy(event.data.item_pickup.player_entity_id, body_B->entity->id, 16);
             event.data.item_pickup.item_id = body_A->entity->item->id;

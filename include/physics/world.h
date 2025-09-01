@@ -29,6 +29,7 @@ struct PhysicsBody {
   vec3 velocity;
   float restitution;
 
+  bool dynamic;
   bool at_rest;
 
   // Associated entity

@@ -21,40 +21,50 @@ ResolutionFunction resolution_functions[NUM_COLLIDER_TYPES][NUM_COLLIDER_TYPES] 
 void resolve_collision_AABB_AABB(struct PhysicsBody *body_A, struct PhysicsBody *body_B, struct CollisionResult result, float delta_time){
   struct AABB *aabb_A = &body_A->collider.data.aabb;
   struct AABB *aabb_B = &body_B->collider.data.aabb;
+  struct AABB world_AABB_A = {0};
+  struct AABB world_AABB_B = {0};
 
   // Move bodies according to velocity
   float gravity = 9.8f;
   vec3 velocity_before_A, velocity_before_B;
-  glm_vec3_copy(body_A->velocity, velocity_before_A);
-  glm_vec3_copy(body_B->velocity, velocity_before_B);
-  velocity_before_A[1] -= gravity * result.hit_time;
-  velocity_before_B[1] -= gravity * result.hit_time;
-  glm_vec3_muladds(velocity_before_A, result.hit_time, body_A->position);
-  glm_vec3_muladds(velocity_before_B, result.hit_time, body_B->position);
+  if (body_A->dynamic){
+    glm_vec3_copy(body_A->velocity, velocity_before_A);
+    velocity_before_A[1] -= gravity * result.hit_time;
+    glm_vec3_muladds(velocity_before_A, result.hit_time, body_A->position);
+  }
+  if (body_B->dynamic){
+    glm_vec3_copy(body_B->velocity, velocity_before_B);
+    velocity_before_B[1] -= gravity * result.hit_time;
+    glm_vec3_muladds(velocity_before_B, result.hit_time, body_B->position);
+  }
+  // glm_vec3_copy(body_B->velocity, velocity_before_B);
+  // velocity_before_B[1] -= gravity * result.hit_time;
+  // glm_vec3_muladds(velocity_before_B, result.hit_time, body_B->position);
 
-  // Get world space bodies
-  mat4 eulerA;
-  mat3 rotationA;
-  glm_euler_xyz(body_A->rotation, eulerA);
-  glm_mat4_pick3(eulerA, rotationA);
-  vec3 translationA;
-  glm_vec3_copy(body_A->position, translationA);
-  vec3 scaleA;
-  glm_vec3_copy(body_A->scale, scaleA);
-  struct AABB world_AABB_A = {0};
-  AABB_update(aabb_A, rotationA, translationA, scaleA, &world_AABB_A);
-
-  // Get world space bodies
-  mat4 eulerB;
-  mat3 rotationB;
-  glm_euler_xyz(body_B->rotation, eulerB);
-  glm_mat4_pick3(eulerB, rotationB);
-  vec3 translationB;
-  glm_vec3_copy(body_B->position, translationB);
-  vec3 scaleB;
-  glm_vec3_copy(body_B->scale, scaleB);
-  struct AABB world_AABB_B = {0};
-  AABB_update(aabb_B, rotationB, translationB, scaleB, &world_AABB_B);
+  if (body_A->scene_node){
+    vec3 world_position_A, world_rotation_A, world_scale_A;
+    glm_mat4_mulv3(body_A->scene_node->world_transform, (vec3){0.0f, 0.0f, 0.0f}, 1.0f, world_position_A);
+    glm_decompose_scalev(body_A->scene_node->world_transform, world_scale_A);
+    mat3 rotation_mat3_A;
+    glm_mat4_pick3(body_A->scene_node->world_transform, rotation_mat3_A);
+    if (world_scale_A[0] != 0.0f){
+      glm_mat3_scale(rotation_mat3_A, 1.0f / world_scale_A[0]);
+    }
+    glm_vec3_muladds(velocity_before_A, result.hit_time, world_position_A);
+    AABB_update(aabb_A, rotation_mat3_A, world_position_A, world_scale_A, &world_AABB_A);
+  }
+  if (body_B->scene_node){
+    vec3 world_position_B, world_rotation_B, world_scale_B;
+    glm_mat4_mulv3(body_B->scene_node->world_transform, (vec3){0.0f, 0.0f, 0.0f}, 1.0f, world_position_B);
+    glm_decompose_scalev(body_B->scene_node->world_transform, world_scale_B);
+    mat3 rotation_mat3_B;
+    glm_mat4_pick3(body_B->scene_node->world_transform, rotation_mat3_B);
+    if (world_scale_B[0] != 0.0f){
+      glm_mat3_scale(rotation_mat3_B, 1.0f / world_scale_B[0]);
+    }
+    glm_vec3_muladds(velocity_before_B, result.hit_time, world_position_B);
+    AABB_update(aabb_B, rotation_mat3_B, world_position_B, world_scale_B, &world_AABB_B);
+  }
 
   // Find the axis with minimum penetration:
   // - get vector from center A to center B
@@ -89,35 +99,53 @@ void resolve_collision_AABB_AABB(struct PhysicsBody *body_A, struct PhysicsBody 
   glm_vec3_copy(separation, contact_normal);
   glm_vec3_normalize(contact_normal);
 
-  // Only correct positions and reflect velocities if the bodies aren't moving away from each other
-  vec3 rel_v;
-  glm_vec3_sub(velocity_before_B, velocity_before_A, rel_v);
-  float separating_v = glm_dot(rel_v, contact_normal);
-  if (separating_v < 0.0f){
-    glm_vec3_muladds(separation, min_penetration * 0.5f, body_B->position);
-    glm_vec3_mulsubs(separation, min_penetration * 0.5f, body_A->position);
-
-    float restitution = 1.0f;
-    float v_dot_n_A = glm_dot(velocity_before_A, contact_normal);
-    float v_dot_n_B = glm_dot(velocity_before_B, contact_normal);
-
-    // For a perfectly elastic collision,
-    // swap the bodies' velocities along the contact normal
-    vec3 normal_v_A, normal_v_B;
-    glm_vec3_scale(contact_normal, v_dot_n_A, normal_v_A);
-    glm_vec3_scale(contact_normal, v_dot_n_B, normal_v_B);
-
-    glm_vec3_sub(velocity_before_A, normal_v_A, body_A->velocity);
-    glm_vec3_add(body_A->velocity, normal_v_B, body_A->velocity);
-
-    glm_vec3_sub(velocity_before_B, normal_v_B, body_B->velocity);
-    glm_vec3_add(body_B->velocity, normal_v_A, body_B->velocity);
+  // Update velocities based on which bodies are dynamic
+  // Should collision between static bodies be possible? Probably no reason to support it, at least for now
+  if (body_A->dynamic && !body_B->dynamic){
+    float v_dot_n = glm_dot(velocity_before_A, contact_normal);
+    vec3 reflection;
+    glm_vec3_scale(contact_normal, -2.0f * v_dot_n * body_A->restitution, reflection);
+    glm_vec3_add(velocity_before_A, reflection, body_A->velocity);
+  }
+  else if (body_B->dynamic){
+    float v_dot_n = glm_dot(velocity_before_B, contact_normal);
+    vec3 reflection;
+    glm_vec3_scale(contact_normal, -2.0f * v_dot_n * body_B->restitution, reflection);
+    glm_vec3_add(velocity_before_A, reflection, body_B->velocity);
   }
   else{
-    // Bodies are moving away from each other, don't change velocities
-    glm_vec3_copy(velocity_before_A, body_A->velocity);
-    glm_vec3_copy(velocity_before_B, body_B->velocity);
+    vec3 rel_v;
+    glm_vec3_sub(velocity_before_B, velocity_before_A, rel_v);
+    float separating_v = glm_dot(rel_v, contact_normal);
+    if (separating_v < 0.0f){
+      glm_vec3_muladds(separation, min_penetration * 0.5f, body_B->position);
+      glm_vec3_mulsubs(separation, min_penetration * 0.5f, body_A->position);
+
+      float restitution = 1.0f;
+      float v_dot_n_A = glm_dot(velocity_before_A, contact_normal);
+      float v_dot_n_B = glm_dot(velocity_before_B, contact_normal);
+
+      // For a perfectly elastic collision,
+      // swap the bodies' velocities along the contact normal
+      vec3 normal_v_A, normal_v_B;
+      glm_vec3_scale(contact_normal, v_dot_n_A, normal_v_A);
+      glm_vec3_scale(contact_normal, v_dot_n_B, normal_v_B);
+
+      glm_vec3_sub(velocity_before_A, normal_v_A, body_A->velocity);
+      glm_vec3_add(body_A->velocity, normal_v_B, body_A->velocity);
+
+      glm_vec3_sub(velocity_before_B, normal_v_B, body_B->velocity);
+      glm_vec3_add(body_B->velocity, normal_v_A, body_B->velocity);
+    }
+    else{
+      // Bodies are moving away from each other, don't change velocities
+      glm_vec3_copy(velocity_before_A, body_A->velocity);
+      glm_vec3_copy(velocity_before_B, body_B->velocity);
+    }
   }
+  printf("AABB AABB RESOLUTION\n");
+  printf("Body A dynamic: %s\n", body_A->dynamic ? "true" : "false");
+  printf("Body B dynamic: %s\n", body_B->dynamic ? "true" : "false");
 }
 
 void resolve_collision_AABB_sphere(struct PhysicsBody *body_A, struct PhysicsBody *body_B, struct CollisionResult result, float delta_time){
