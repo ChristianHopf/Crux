@@ -155,7 +155,7 @@ void game_event_print(struct GameEvent *game_event){
   switch(game_event->type){
     case EVENT_COLLISION: {
       printf("Event type: EVENT_COLLISION\n");
-      printf("Timestamp seconds: %ld, timestamp nanoseconds: %ld\n\n", game_event->timestamp.tv_sec, game_event->timestamp.tv_nsec);
+  printf("Timestamp seconds: %ld, timestamp nanoseconds: %ld\n\n", game_event->timestamp.tv_sec, game_event->timestamp.tv_nsec);
       break;
     }
     case EVENT_PLAYER_ITEM_PICKUP: {

@@ -170,7 +170,6 @@ void player_jump(struct Scene *scene, uuid_t entity_id){
 
   // Apply an impulse to player->physics_body->velocity
   body->velocity[1] = 3.0f;
-  print_glm_vec3(body->velocity, "Player jump body velocity");
 }
 
 void player_update(struct Scene *scene, uuid_t entity_id, float delta_time){

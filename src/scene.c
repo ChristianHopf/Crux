@@ -274,8 +274,8 @@ struct Scene *scene_init(char *scene_path){
                                 (vec3){0.0f, 180.0f, 0.0f},
                                 (vec3){1.0f, 1.0f, 1.0f},
                                 (vec3){0.0f, 0.0f, 0.0f},
-                                (vec3){0.0f, 0.0f, 1.0f},
-                                1.75f, true, 5, true);
+                                (vec3){0.0f, 0.0f, 0.0f},
+                                1.75f, false, 5, true);
 
   struct Collider player_collider = {
     .type = 2,

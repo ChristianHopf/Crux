@@ -83,12 +83,15 @@ void ui_manager_init(float screen_width, float screen_height){
   ui_manager.paused = false;
   ui_manager.num_fonts = 0;
 
+  ui_manager.layout_stack.size = 0;
+  ui_manager.layout_stack.capacity = MAX_LAYOUTS;
+
   // Load layouts (figure out a better way than hardcoding things here)
-  struct Layout layout_version_text = {
-    .type = LAYOUT_OVERLAY,
-    .layout_function = compute_clay_layout_overlay
-  };
-  ui_manager.layout_stack.layouts[ui_manager.layout_stack.num_layouts++] = layout_version_text;
+  // struct Layout layout_version_text = {
+  //   .type = LAYOUT_OVERLAY,
+  //   .layout_function = compute_clay_layout_overlay
+  // };
+  // ui_manager.layout_stack.layouts[ui_manager.layout_stack.size++] = layout_version_text;
 
   // Init renderer
   clay_opengl_renderer_init(screen_width, screen_height);
@@ -101,9 +104,15 @@ void ui_load_font(char *path, int size){
   }
 }
 
-void ui_update_frame(float screen_width, float screen_height){
+void ui_update_frame(float screen_width, float screen_height, float delta_time){
   Clay_SetLayoutDimensions((Clay_Dimensions) { screen_width, screen_height });
   clay_opengl_renderer_update_dimensions(screen_width, screen_height);
+  
+  // Call each active layout's update function
+  // for (unsigned int i = 0; i < ui_manager.layout_stack.size; i++){
+  //   LayoutUpdate update_function = ui_manager.layout_stack.layouts[i].layout_update;
+  //   update_function();
+  // }
 }
 
 void ui_update_mouse(double xpos, double ypos, bool mouse_down){
@@ -112,8 +121,9 @@ void ui_update_mouse(double xpos, double ypos, bool mouse_down){
 }
 
 void ui_render_frame(){
+  printf("Num layouts to render: %d\n", ui_manager.layout_stack.size);
   // Render each of this frame's layouts
-  for(int i = 0; i < ui_manager.layout_stack.num_layouts; i++){
+  for(unsigned int i = 0; i < ui_manager.layout_stack.size; i++){
     struct Layout current_layout = ui_manager.layout_stack.layouts[i];
     void *arg = NULL;
 
@@ -144,6 +154,30 @@ void ui_render_frame(){
     Clay_RenderCommandArray render_commands = layout_function(arg);
     clay_opengl_render(render_commands, ui_manager.fonts);
   }
+}
+
+void ui_layout_stack_push(struct Layout layout){
+  if (ui_layout_stack_is_full()) return;
+
+  ui_manager.layout_stack.layouts[ui_manager.layout_stack.size++] = layout;
+}
+
+void ui_layout_stack_pop(){
+  if (ui_layout_stack_is_empty()) return;
+
+  ui_manager.layout_stack.size--;
+}
+
+void ui_layout_stack(){
+  ui_manager.layout_stack.size = 0;
+}
+
+bool ui_layout_stack_is_full(){
+  return ui_manager.layout_stack.size >= ui_manager.layout_stack.capacity;
+}
+
+bool ui_layout_stack_is_empty(){
+  return ui_manager.layout_stack.size == 0;
 }
 
 struct GameStateObserver *ui_game_state_observer_create(){
@@ -181,7 +215,7 @@ void ui_pause(){
       // and you have to set your own pause menu
       .layout_function = compute_clay_layout_pause_menu
     };
-    ui_manager.layout_stack.layouts[ui_manager.layout_stack.num_layouts++] = layout_pause_menu;
+    ui_manager.layout_stack.layouts[ui_manager.layout_stack.size++] = layout_pause_menu;
   }
 }
 
@@ -189,6 +223,6 @@ void ui_unpause(){
   if (ui_manager.paused){
     // unpause UI
     ui_manager.paused = false;
-    ui_manager.layout_stack.num_layouts--;
+    ui_manager.layout_stack.size--;
   }
 }

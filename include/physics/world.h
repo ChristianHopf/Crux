@@ -1,6 +1,6 @@
 #pragma once
 
-#include "glad.h"
+// #include "glad.h"
 #include <cglm/cglm.h>
 #include <stdbool.h>
 #include "collider.h"
