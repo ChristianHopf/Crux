@@ -17,12 +17,13 @@ typedef enum {
 } LayoutType;
 
 typedef Clay_RenderCommandArray (*LayoutFunction)(void *arg);
+typedef void (*LayoutUpdateFunction)(float delta_time, void *user_data);
 
 struct Layout {
   LayoutType type;
   LayoutFunction layout_function;
-  // void *user_data;
-  // void (*update_function)(void *arg);
+  void *user_data;
+  LayoutUpdateFunction layout_update_function;
 };
 
 struct LayoutStack {
@@ -49,7 +50,7 @@ void ui_update_mouse(double xpos, double ypos, bool mouse_down);
 void ui_draw_clay_layout(Clay_RenderCommandArray render_commands);
 
 // Layout stack
-void ui_layout_stack_push(struct Layout layout);
+void ui_layout_stack_push(struct Layout *layout);
 void ui_layout_stack_pop();
 void ui_layout_stack_clear();
 bool ui_layout_stack_is_full();

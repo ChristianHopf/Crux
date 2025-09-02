@@ -223,11 +223,11 @@ Engine *engine_create(){
   ui_load_font("resources/fonts/HackNerdFontMono-Regular.ttf", 24);
   ui_load_font("resources/fonts/HackNerdFontMono-Bold.ttf", 48);
   ui_load_font("resources/fonts/HackNerdFontMono-Regular.ttf", 48);
-  // struct Layout layout_version_text = {
-  //   .type = LAYOUT_OVERLAY,
-  //   .layout_function = compute_clay_layout_overlay
-  // };
-  ui_layout_stack_push(layout_version_text);
+
+  ui_layout_stack_push(&layout_version_text);
+  char **fps_text = calloc(1, sizeof(char *));
+  layout_fps_counter.user_data = fps_text;
+  ui_layout_stack_push(&layout_fps_counter);
 
   // Initialize game state
   game_state_init();
@@ -311,11 +311,9 @@ int main(){
 
       // Update Clay layout dimensions
       ui_update_frame(engine->screen_width, engine->screen_height, engine->delta_time);
-      printf("ui_update_frame success!\n");
 
       // Render UI
       ui_render_frame();
-      printf("ui_render_frame success!\n");
     }
 
     glfwSwapBuffers(engine->window);

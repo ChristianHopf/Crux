@@ -109,10 +109,13 @@ void ui_update_frame(float screen_width, float screen_height, float delta_time){
   clay_opengl_renderer_update_dimensions(screen_width, screen_height);
   
   // Call each active layout's update function
-  // for (unsigned int i = 0; i < ui_manager.layout_stack.size; i++){
-  //   LayoutUpdate update_function = ui_manager.layout_stack.layouts[i].layout_update;
-  //   update_function();
-  // }
+  for (unsigned int i = 0; i < ui_manager.layout_stack.size; i++){
+    struct Layout *layout = &ui_manager.layout_stack.layouts[i];
+    LayoutUpdateFunction update_function = layout->layout_update_function;
+    if (update_function){
+      update_function(delta_time, layout->user_data);
+    }
+  }
 }
 
 void ui_update_mouse(double xpos, double ypos, bool mouse_down){
@@ -121,7 +124,6 @@ void ui_update_mouse(double xpos, double ypos, bool mouse_down){
 }
 
 void ui_render_frame(){
-  printf("Num layouts to render: %d\n", ui_manager.layout_stack.size);
   // Render each of this frame's layouts
   for(unsigned int i = 0; i < ui_manager.layout_stack.size; i++){
     struct Layout current_layout = ui_manager.layout_stack.layouts[i];
@@ -130,7 +132,7 @@ void ui_render_frame(){
     // Get arg for layout_function based on layout type
     switch(current_layout.type){
       case LAYOUT_OVERLAY: {
-        arg = (void *)"Crux Engine 0.3";
+        arg = current_layout.user_data;
         break;
       }
       case LAYOUT_MENU: {
@@ -156,10 +158,10 @@ void ui_render_frame(){
   }
 }
 
-void ui_layout_stack_push(struct Layout layout){
+void ui_layout_stack_push(struct Layout *layout){
   if (ui_layout_stack_is_full()) return;
 
-  ui_manager.layout_stack.layouts[ui_manager.layout_stack.size++] = layout;
+  ui_manager.layout_stack.layouts[ui_manager.layout_stack.size++] = *layout;
 }
 
 void ui_layout_stack_pop(){
