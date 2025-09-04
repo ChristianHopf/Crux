@@ -6,19 +6,19 @@ Clay_TextElementConfig version_text_text_config = { .fontId = 0, .fontSize = 24,
 
 struct Layout layout_version_text = {
   .type = LAYOUT_OVERLAY,
-  .layout_function = ui_version_text,
+  .layout_function = ui_base_version_text,
   .user_data = "Crux Engine 0.3",
-  .layout_update_function = NULL
+  .layout_update_function = ui_base_version_text_update
 };
 
 struct Layout layout_fps_counter = {
   .type = LAYOUT_OVERLAY,
-  .layout_function = ui_fps_counter,
+  .layout_function = ui_base_fps_counter,
   .user_data = NULL,
-  .layout_update_function = ui_fps_counter_update
+  .layout_update_function = ui_base_fps_counter_update
 };
 
-Clay_RenderCommandArray ui_version_text(void *arg){
+Clay_RenderCommandArray ui_base_version_text(void *arg){
   char *version_text = (char *)arg;
 
   Clay_BeginLayout();
@@ -49,7 +49,19 @@ Clay_RenderCommandArray ui_version_text(void *arg){
   return Clay_EndLayout();
 }
 
-Clay_RenderCommandArray ui_fps_counter(void *arg){
+void ui_base_version_text_update(float delta_time, void *user_data){
+  version_text_text_config.textColor.r = (int)(version_text_text_config.textColor.r + 1) % 256;
+  version_text_text_config.textColor.g = (int)(version_text_text_config.textColor.g + 2) % 256;
+  version_text_text_config.textColor.b = (int)(version_text_text_config.textColor.b + 3) % 256;
+  // version_text_text_config.textColor.r = 20;
+  // version_text_text_config.textColor.g = 180;
+  // version_text_text_config.textColor.b = 220;
+  // printf("Text color r: %f\n", version_text_text_config.textColor.r);
+  // printf("Text color g: %f\n", version_text_text_config.textColor.g);
+  // printf("Text color b: %f\n", version_text_text_config.textColor.b);
+}
+
+Clay_RenderCommandArray ui_base_fps_counter(void *arg){
   char *fps_text = *(char **)arg;
 
   Clay_BeginLayout();
@@ -81,7 +93,7 @@ Clay_RenderCommandArray ui_fps_counter(void *arg){
   return Clay_EndLayout();
 }
 
-void ui_fps_counter_update(float delta_time, void *user_data){
+void ui_base_fps_counter_update(float delta_time, void *user_data){
   float fps = (float)1 / delta_time;
   if (fps > 9999) fps = 9999;
 

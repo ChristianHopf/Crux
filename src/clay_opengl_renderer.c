@@ -170,8 +170,18 @@ void clay_opengl_draw_text(struct Font *font, Clay_StringSlice text, float x, fl
   glm_ortho(0, clay_opengl_renderer.screen_width, 0, clay_opengl_renderer.screen_height, -1.0f, 1.0f, orthographic);
   // glm_ortho(0, 1251, 0, 676, -1.0f, 1.0f, orthographic);
   shader_set_mat4(clay_opengl_renderer.glyph_shader, "projection", orthographic);
-  shader_set_vec3(clay_opengl_renderer.glyph_shader, "textColor", (vec4) {color.r, color.g, color.b, color.a});
 
+  vec3 glyphColor;
+  glyphColor[0] = color.r / 255.0;
+  glyphColor[1] = color.g / 255.0;
+  glyphColor[2] = color.b / 255.0;
+  shader_set_vec3(clay_opengl_renderer.glyph_shader, "textColor", glyphColor);
+  // shader_set_vec3(clay_opengl_renderer.glyph_shader, "textColor", (vec3) {1.0, 1.0, 1.0});
+
+  // printf("CLAY_OPENGL_DRAW_TEXT\n");
+  // printf("Text color r: %f\n", glyphColor[0]);
+  // printf("Text color g: %f\n", glyphColor[1]);
+  // printf("Text color b: %f\n", glyphColor[2]);
   glActiveTexture(GL_TEXTURE0);
   glBindVertexArray(clay_opengl_renderer.text_VAO);
 
@@ -213,12 +223,12 @@ void clay_opengl_draw_text(struct Font *font, Clay_StringSlice text, float x, fl
   glEnable(GL_DEPTH_TEST);
 }
 
-float *clay_color_to_vec4(Clay_Color clay_color){
-  vec4 color;
-  color[0] = clay_color.r;
-  color[1] = clay_color.g;
-  color[2] = clay_color.b;
-  color[3] = clay_color.a;
-
-  return color;
-}
+// float *clay_color_to_vec4(Clay_Color clay_color){
+//   vec4 color;
+//   color[0] = clay_color.r;
+//   color[1] = clay_color.g;
+//   color[2] = clay_color.b;
+//   color[3] = clay_color.a;
+//
+//   return color;
+// }
