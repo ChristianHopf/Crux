@@ -8,15 +8,26 @@
 static struct GameState game_state;
 
 void game_state_init(){
+  game_state.mode = GAME_STATE_MAIN_MENU;
   game_state.is_paused = false;
   game_state.should_quit = false;
   game_state.observers = NULL;
+}
+
+GameStateMode game_state_get_mode(){
+  return game_state.mode;
+}
+
+void game_state_set_mode(GameStateMode mode){
+  game_state.mode = mode;
 }
 
 // GameState modifiers
 void game_pause(){
   // Modify game state
   game_state.is_paused = true;
+  printf("game_state.is_paused is %s\n", game_state.is_paused ? "true" : "false");
+  game_state.mode = GAME_STATE_PAUSED;
   // printf("Pausing, game_state.is_paused is now %s\n", game_state.is_paused ? "true" : "false");
 
   // Push pause menu to menu stack
@@ -37,6 +48,7 @@ void game_pause(){
 void game_unpause(){
   // Modify game state
   game_state.is_paused = false;
+  game_state.mode = GAME_STATE_PLAYING;
   // printf("Unpausing, game_state.is_paused is now %s\n", game_state.is_paused ? "true" : "false");
 
   // Pop from the menu stack
@@ -59,7 +71,7 @@ void game_quit(){
 
 // GameState getters
 bool game_state_is_paused(){
-  return game_state.is_paused;
+  return game_state.mode == GAME_STATE_PAUSED;
 }
 
 bool game_state_should_quit(){
@@ -71,6 +83,7 @@ void game_state_update(){
   // Iterate through linked list of observers and call their GameStateNotification functions
   struct ListNode *observer_node = game_state.observers;
   while (observer_node != NULL){
+    printf("Calling game state observer node notification function\n");
     struct GameStateObserver *current_observer = observer_node->observer;
     GameStateNotification notification_function = current_observer->notification;
     notification_function(current_observer->instance, &game_state);

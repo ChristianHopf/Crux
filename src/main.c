@@ -242,21 +242,35 @@ Engine *engine_create(){
   attach_observer(ui_game_state_observer);
 
   // Load scene
-  engine->active_scene = scene_init("scenes/itemfix.json");
-  if (!engine->active_scene){
-    fprintf(stderr, "Error: failed to create scene\n");
-    free(engine);
-    return NULL;
-  }
-
-  // Initialize Event queue
-  game_event_queue_init(engine->active_scene);
+  // engine->active_scene = scene_load("scenes/itemfix.json");
+  // if (!engine->active_scene){
+  //   fprintf(stderr, "Error: failed to create scene\n");
+  //   free(engine);
+  //   return NULL;
+  // }
+  //
+  // // Initialize Event queue
+  // game_event_queue_init(engine->active_scene);
 
   // Timing
   engine->delta_time = 0.0f;
   engine->last_frame = 0.0f;
 
   return engine;
+}
+
+void start_game(Engine *engine){
+  // Load scene
+  engine->active_scene = scene_load("scenes/itemfix.json");
+  if (!engine->active_scene){
+    fprintf(stderr, "Error: failed to create scene\n");
+    free(engine);
+    return;
+  }
+  game_state_set_mode(GAME_STATE_PLAYING);
+
+  // Initialize Event queue
+  game_event_queue_init(engine->active_scene);
 }
 
 void engine_free(Engine *engine){
@@ -274,6 +288,8 @@ int main(){
     return -1;
   }
 
+  start_game(engine);
+
 	// Render loop
 	while (!glfwWindowShouldClose(engine->window)){
 		// Per-frame timing logic
@@ -286,30 +302,26 @@ int main(){
 		// Handle input
 		processInput(engine->window);
 
-    if (game_state_is_paused()){
+    // if (game_state_is_paused()){
 
-      // Update Clay layout dimensions and pointer state
-      ui_update_frame(engine->screen_width, engine->screen_height, engine->delta_time);
+    // Update Clay layout dimensions and pointer state
+    ui_update_frame(engine->screen_width, engine->screen_height, engine->delta_time);
 
+    GameStateMode mode = game_state_get_mode();
+    if (mode != GAME_STATE_PLAYING){
       double xpos, ypos;
       glfwGetCursorPos(engine->window, &xpos, &ypos);
       ui_update_mouse(xpos, ypos, engine->mouse_down);
-
-      // Render UI
-      ui_render_frame();
     }
-    else{
-      scene_update(engine->active_scene, engine->delta_time);
 
-      // Render scene
+    if (engine->active_scene){
+      if (mode == GAME_STATE_PLAYING){
+        scene_update(engine->active_scene, engine->delta_time);
+      }
       scene_render(engine->active_scene);
-
-      // Update Clay layout dimensions
-      ui_update_frame(engine->screen_width, engine->screen_height, engine->delta_time);
-
-      // Render UI
-      ui_render_frame();
     }
+    // Render UI
+    ui_render_frame();
 
     glfwSwapBuffers(engine->window);
 		glfwPollEvents();

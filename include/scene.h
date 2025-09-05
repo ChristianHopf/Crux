@@ -76,7 +76,7 @@ struct Scene {
 };
 
 
-struct Scene *scene_init(char *scene_path);
+struct Scene *scene_load(char *scene_path);
 struct Scene *scene_create(bool physics_view_mode);
 
 void scene_update(struct Scene *scene, float deltaTime);

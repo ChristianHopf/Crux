@@ -20,7 +20,7 @@
 #include "event.h"
 #include "utils.h"
 
-struct Scene *scene_init(char *scene_path){
+struct Scene *scene_load(char *scene_path){
   // Allocate Scene
   struct Scene *scene = (struct Scene *)calloc(1, sizeof(struct Scene));
   if (!scene){
