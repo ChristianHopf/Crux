@@ -1,8 +1,11 @@
 #include <stdio.h>
 #include <string.h>
 #include "ui/base_layouts.h"
+#include "menu/menu.h"
 
 Clay_TextElementConfig version_text_text_config = { .fontId = 0, .fontSize = 24, .textColor = {255, 255, 255, 255}};
+Clay_TextElementConfig ui_base_pause_menu_title_text_config = {.fontId = 1, .fontSize = 48, .textColor = {255, 255, 255, 255}};
+Clay_TextElementConfig ui_base_pause_menu_button_text_config = {.fontId = 2, .fontSize = 48, .lineHeight = 48, .textAlignment = CLAY_TEXT_ALIGN_CENTER, .textColor = {255, 255, 255, 255}};
 
 struct Layout layout_version_text = {
   .type = LAYOUT_OVERLAY,
@@ -50,9 +53,9 @@ Clay_RenderCommandArray ui_base_version_text(void *arg){
 }
 
 void ui_base_version_text_update(float delta_time, void *user_data){
-  version_text_text_config.textColor.r = (int)(version_text_text_config.textColor.r + 1) % 256;
-  version_text_text_config.textColor.g = (int)(version_text_text_config.textColor.g + 2) % 256;
-  version_text_text_config.textColor.b = (int)(version_text_text_config.textColor.b + 3) % 256;
+  // version_text_text_config.textColor.r = (int)(version_text_text_config.textColor.r + 1) % 256;
+  // version_text_text_config.textColor.g = (int)(version_text_text_config.textColor.g + 2) % 256;
+  // version_text_text_config.textColor.b = (int)(version_text_text_config.textColor.b + 3) % 256;
   // version_text_text_config.textColor.r = 20;
   // version_text_text_config.textColor.g = 180;
   // version_text_text_config.textColor.b = 220;
@@ -113,4 +116,81 @@ void ui_base_fps_counter_update(float delta_time, void *user_data){
   if (!*fps_text_ptr){
     *fps_text_ptr = "FPS: ERROR";
   }
+}
+
+Clay_RenderCommandArray ui_base_pause_menu(void *arg){
+  struct Menu *menu = (struct Menu *)arg;
+
+  Clay_BeginLayout();
+
+  CLAY({ .id = CLAY_ID("MenuContainer"),
+    .layout = {
+      .layoutDirection = CLAY_TOP_TO_BOTTOM,
+      .sizing = {
+        .width = CLAY_SIZING_GROW(),
+        .height = CLAY_SIZING_GROW()
+      },
+       .padding = {0, 0, 0, 32 },
+       .childAlignment = {
+        .x = CLAY_ALIGN_X_CENTER
+       },
+       .childGap = 32
+    },
+    .backgroundColor = {0.0f, 0.2745f, 0.5294f, 1.0f}
+    }) {
+      CLAY({ .id = CLAY_ID("MenuHeader"),
+        .layout = {
+          .layoutDirection = CLAY_TOP_TO_BOTTOM,
+          .sizing = {
+            .width = CLAY_SIZING_GROW(),
+            .height = CLAY_SIZING_FIXED(60)
+          },
+          .childAlignment = {
+            .x = CLAY_ALIGN_X_CENTER,
+            .y = CLAY_ALIGN_Y_CENTER
+          }
+        }
+      }) {
+        CLAY_TEXT(CLAY_STRING("MENU: PAUSE"), &ui_base_pause_menu_title_text_config);
+      }
+      CLAY({ .id = CLAY_ID("MenuNav"),
+        .layout = {
+          .layoutDirection = CLAY_TOP_TO_BOTTOM,
+          .sizing = {
+            .width = CLAY_SIZING_GROW(),
+            .height = CLAY_SIZING_GROW()
+          },
+          .childAlignment = {
+            .x = CLAY_ALIGN_X_CENTER,
+            .y = CLAY_ALIGN_Y_CENTER
+          },
+          .padding = { 8, 8, 8, 68 },
+          .childGap = 16
+        },
+      }) {
+      for (int i = 0; i < menu->num_buttons; i++){
+        struct Button *button = &menu->buttons[i];
+        CLAY({
+          .layout = {
+            .padding = {16, 16, 0, 12}
+          },
+          .backgroundColor = Clay_Hovered() ? (Clay_Color){0.0f, 0.549f, 1.0f, 0.8f} : (Clay_Color){0.0f, 0.3745f, 0.6294f, 0.0f}
+        }){
+          Clay_OnHover(ui_handle_button_click, (intptr_t)button->data.action);
+          Clay_String button_string = {
+            .isStaticallyAllocated = false,
+            .chars = button->text,
+            .length = strlen(button->text)
+          };
+          CLAY_TEXT(button_string, &ui_base_pause_menu_button_text_config);
+        }
+      }
+    }
+  }
+
+  return Clay_EndLayout();
+}
+
+void ui_base_pause_menu_update(float delta_time, void *user_data){
+  return;
 }

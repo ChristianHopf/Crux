@@ -116,8 +116,8 @@ void game_event_queue_process(){
           return;
         }
 
-        audio_component_play(audio_component_A);
-        // audio_component_play(audio_component_B);
+        // audio_component_play(audio_component_A);
+        audio_component_play(audio_component_B);
         break;
       }
       case EVENT_PLAYER_ITEM_PICKUP: {

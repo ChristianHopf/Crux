@@ -41,6 +41,8 @@ struct UIManager {
    bool paused;
 };
 
+void ui_handle_button_click(Clay_ElementId elementId, Clay_PointerData pointerData, intptr_t userData);
+
 // Documentation later
 void ui_manager_init(float screen_width, float screen_height);
 void ui_load_font(char *path, int size);

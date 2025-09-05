@@ -21,17 +21,12 @@
 #include <uuid/uuid.h>
 
 typedef struct {
-  // Window
   GLFWwindow *window;
   int screen_width;
   int screen_height;
-  // Mouse
   bool mouse_down;
-  // Scene
   struct Scene *active_scene;
-  // Events
   struct GameEventQueue game_event_queue;
-  // Timing
   float delta_time;
   float last_frame;
 } Engine;

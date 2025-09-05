@@ -7,6 +7,7 @@
 #include "menu/menu_presets.h"
 #include "text.h"
 #include "clay_opengl_renderer.h"
+#include "ui/base_layouts.h"
 
 static struct UIManager ui_manager;
 
@@ -68,6 +69,14 @@ static inline Clay_Dimensions MeasureText(Clay_StringSlice text, Clay_TextElemen
   return text_size;
 }
 
+void ui_handle_button_click(Clay_ElementId elementId, Clay_PointerData pointerData, intptr_t userData){
+  if (pointerData.state == CLAY_POINTER_DATA_RELEASED_THIS_FRAME){
+    // Call the button's action
+    void (*action)(void *arg) = (void (*)(void *))userData;
+    action(NULL);
+  }
+}
+
 void ui_manager_init(float screen_width, float screen_height){
   // Init Clay
   uint64_t totalMemorySize = Clay_MinMemorySize();
@@ -127,25 +136,25 @@ void ui_render_frame(){
   // Render each of this frame's layouts
   for(unsigned int i = 0; i < ui_manager.layout_stack.size; i++){
     struct Layout current_layout = ui_manager.layout_stack.layouts[i];
-    void *arg = NULL;
+    void *arg = current_layout.user_data;
 
     // Get arg for layout_function based on layout type
-    switch(current_layout.type){
-      case LAYOUT_OVERLAY: {
-        arg = current_layout.user_data;
-        break;
-      }
-      case LAYOUT_MENU: {
-        // Get current menu (just getting pause menu for now)
-        struct Menu *pause_menu = menu_manager_get_pause_menu();
-        if (!pause_menu){
-          fprintf(stderr, "Error: failed to get pause menu in ui_render_frame\n");
-          return;
-        }
-        arg = (void *)pause_menu;
-        break;
-      }
-    }
+    // switch(current_layout.type){
+    //   case LAYOUT_OVERLAY: {
+    //     arg = current_layout.user_data;
+    //     break;
+    //   }
+    //   case LAYOUT_MENU: {
+    //     // Get current menu (just getting pause menu for now)
+    //     struct Menu *pause_menu = menu_manager_get_pause_menu();
+    //     if (!pause_menu){
+    //       fprintf(stderr, "Error: failed to get pause menu in ui_render_frame\n");
+    //       return;
+    //     }
+    //     arg = (void *)pause_menu;
+    //     break;
+    //   }
+    // }
     LayoutFunction layout_function = ui_manager.layout_stack.layouts[i].layout_function;
 
     // Compute and render this layout
@@ -211,11 +220,18 @@ void ui_pause(){
   if (!ui_manager.paused){
     // pause UI
     ui_manager.paused = true;
+    struct Menu *pause_menu = menu_manager_get_pause_menu();
+    if (!pause_menu){
+      fprintf(stderr, "Error: failed to get pause menu in ui_render_frame\n");
+      return;
+    }
     struct Layout layout_pause_menu = {
       .type = LAYOUT_MENU,
       // Could maybe decouple this from my preset by giving ui_manager a struct Layout pause_menu,
       // and you have to set your own pause menu
-      .layout_function = compute_clay_layout_pause_menu
+      .layout_function = ui_base_pause_menu,
+      .user_data = pause_menu,
+      .layout_update_function = ui_base_pause_menu_update
     };
     ui_manager.layout_stack.layouts[ui_manager.layout_stack.size++] = layout_pause_menu;
   }

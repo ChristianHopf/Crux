@@ -34,10 +34,10 @@ void menu_render(){
 }
 
 struct Menu *pause_menu_create(){
-  struct Menu *pause_menu = (struct Menu *)malloc(sizeof(struct Menu));
+  struct Menu *pause_menu = (struct Menu *)calloc(1, sizeof(struct Menu));
   pause_menu->title = "PAUSED";
   pause_menu->num_buttons = 2;
-  pause_menu->buttons = (struct Button *)malloc(pause_menu->num_buttons * sizeof(struct Button));
+  pause_menu->buttons = (struct Button *)calloc(pause_menu->num_buttons, sizeof(struct Button));
   pause_menu->buttons[0].text = "RESUME";
   pause_menu->buttons[0].type = BUTTON_ACTION;
   pause_menu->buttons[0].data.action = action_resume;
