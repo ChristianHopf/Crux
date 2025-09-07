@@ -207,7 +207,6 @@ struct GameStateObserver *ui_game_state_observer_create(){
 void ui_game_state_changed(void *instance, struct GameState *game_state){
   // Check instance
 
-  printf("UI_GAME_STATE_CHANGED CALLED\n");
   // Handle game state (pause)
   if (game_state->is_paused){
     ui_pause();
@@ -226,7 +225,6 @@ void ui_pause(){
       fprintf(stderr, "Error: failed to get pause menu in ui_render_frame\n");
       return;
     }
-    printf("Time to pause ui\n");
     struct Layout layout_pause_menu = {
       .type = LAYOUT_MENU,
       // Could maybe decouple this from my preset by giving ui_manager a struct Layout pause_menu,

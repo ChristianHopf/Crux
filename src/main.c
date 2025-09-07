@@ -19,6 +19,7 @@
 #include "window_manager.h"
 #include "event.h"
 #include <uuid/uuid.h>
+#include "engine.h"
 
 typedef struct {
   GLFWwindow *window;
@@ -31,6 +32,8 @@ typedef struct {
   float delta_time;
   float last_frame;
 } Engine;
+
+static Engine *engine = NULL;
 
 void framebuffer_size_callback(GLFWwindow *window, int width, int height);
 void window_size_callback(GLFWwindow *window, int width, int height);
@@ -155,12 +158,12 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
   }
 }
 
-Engine *engine_create(){
+void engine_init(){
   // Allocate Engine struct
-  Engine *engine = (Engine *)calloc(1, sizeof(Engine));
+  engine = (Engine *)calloc(1, sizeof(Engine));
   if (!engine){
     fprintf(stderr, "Error: failed to allocate Engine\n");
-    return NULL;
+    return;
   }
 
 	// Init GLFW
@@ -176,7 +179,7 @@ Engine *engine_create(){
 		fprintf(stderr, "Failed to create GLFW window\n");
     free(engine);
 		glfwTerminate();
-		return NULL;
+		return;
 	}
   engine->window = window;
   engine->screen_width = SCREEN_WIDTH;
@@ -200,7 +203,7 @@ Engine *engine_create(){
 	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)){
 		fprintf(stderr, "Failed to initialize GLAD\n");
     free(engine);
-		return NULL;
+		return;
 	}
 
   // Flip textures across y-axis
@@ -223,7 +226,7 @@ Engine *engine_create(){
   if (!engine->scene_manager){
     fprintf(stderr, "Error: failed to create SceneManager in engine_create\n");
     free(engine);
-    return NULL;
+    return;
   }
 
   // UI manager
@@ -250,13 +253,13 @@ Engine *engine_create(){
   struct GameStateObserver *audio_game_state_observer = audio_game_state_observer_create();
   if (!audio_game_state_observer){
     fprintf(stderr, "Error: failed to get audio_game_state_observer in engine_create\n");
-    return NULL;
+    return;
   }
   attach_observer(audio_game_state_observer);
   struct GameStateObserver *ui_game_state_observer = ui_game_state_observer_create();
   if (!ui_game_state_observer){
     fprintf(stderr, "Error: failed to get ui_game_state_observer in engine_create\n");
-    return NULL;
+    return;
   }
   attach_observer(ui_game_state_observer);
 
@@ -274,11 +277,9 @@ Engine *engine_create(){
   // Timing
   engine->delta_time = 0.0f;
   engine->last_frame = 0.0f;
-
-  return engine;
 }
 
-void start_game(Engine *engine){
+void start_game(){
   if (!engine || !engine->scene_manager){
     fprintf(stderr, "Error: failed to start game in start_game, engine or scene_manager is null\n");
     return;
@@ -295,7 +296,9 @@ void start_game(Engine *engine){
   game_event_queue_init(engine->scene_manager->active_scene);
 }
 
-void engine_free(Engine *engine){
+void engine_free(){
+  if (!engine) return;
+
   glfwDestroyWindow(engine->window);
   scene_manager_destroy(engine->scene_manager);
   // scene_free(engine->active_scene);
@@ -304,14 +307,14 @@ void engine_free(Engine *engine){
 }
 
 int main(){
-  Engine *engine = engine_create();
+  engine_init();
   if (!engine){
     fprintf(stderr, "Error: failed to create Engine\n");
     glfwTerminate();
     return -1;
   }
 
-  start_game(engine);
+  start_game();
 
 	// Render loop
 	while (!glfwWindowShouldClose(engine->window)){
@@ -359,7 +362,7 @@ int main(){
   // Teardown
   audio_manager_free();
   // ui_manager_free();
-  engine_free(engine);
+  engine_free();
   glfwTerminate();
 
 	return 0;

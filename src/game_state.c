@@ -31,7 +31,6 @@ void game_start(){
 void game_pause(){
   // Modify game state
   game_state.is_paused = true;
-  printf("game_state.is_paused is %s\n", game_state.is_paused ? "true" : "false");
   game_state.mode = GAME_STATE_PAUSED;
   // printf("Pausing, game_state.is_paused is now %s\n", game_state.is_paused ? "true" : "false");
 
@@ -88,7 +87,6 @@ void game_state_update(){
   // Iterate through linked list of observers and call their GameStateNotification functions
   struct ListNode *observer_node = game_state.observers;
   while (observer_node != NULL){
-    printf("Calling game state observer node notification function\n");
     struct GameStateObserver *current_observer = observer_node->observer;
     GameStateNotification notification_function = current_observer->notification;
     notification_function(current_observer->instance, &game_state);

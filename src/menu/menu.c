@@ -1,6 +1,7 @@
 #include "menu/menu.h"
 #include "game_state.h"
 #include "text.h"
+#include "engine.h"
 
 static struct MenuManager *menu_manager;
 
@@ -113,7 +114,7 @@ bool menu_stack_is_empty(){
 }
 
 void action_start(void *arg){
-  game_start();
+  start_game();
 }
 
 void action_resume(void *arg){
