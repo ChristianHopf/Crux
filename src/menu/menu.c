@@ -114,18 +114,22 @@ bool menu_stack_is_empty(){
 }
 
 void action_start(void *arg){
-  start_game();
+  engine_start_game();
 }
 
 void action_resume(void *arg){
   // Unpause
   // printf("Resume action\n");
-  game_unpause();
+  game_state_unpause();
+}
+
+void action_exit(void *arg){
+  engine_exit_game();
 }
 
 void action_quit(void *arg){
   // printf("Quit action\n");
-  game_quit();
+  game_state_quit();
 }
 
 void button_print_text(void *arg){

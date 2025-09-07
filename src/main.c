@@ -118,7 +118,7 @@ void mouse_callback(GLFWwindow *window, double xpos, double ypos){
 	lastY = (float)ypos;
 
   // Update camera
-  if (!game_state_is_paused()){
+  if (game_state_is_playing()){
     player_process_mouse_input(scene, scene->local_player_entity_id, xoffset, yoffset);
   }
 }
@@ -148,11 +148,11 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
   // Pause
   if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS){
     if (!game_state_is_paused()){
-      game_pause();
+      game_state_pause();
 	    glfwSetInputMode(engine->window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
       firstMouse = true;
     } else {
-      game_unpause();
+      game_state_unpause();
 	    glfwSetInputMode(engine->window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     }
   }
@@ -196,8 +196,10 @@ void engine_init(){
   // Window manager for exposing window functions
   window_manager_init(window);
 
+  window_release_cursor();
+
 	// Capture mouse
-	glfwSetInputMode(engine->window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+	// glfwSetInputMode(engine->window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
 	// Init GLAD
 	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)){
@@ -241,10 +243,10 @@ void engine_init(){
   ui_layout_stack_push(&layout_fps_counter);
 
   // Main menu layout
-  // struct Menu *main_menu = menu_manager_get_main_menu();
-  // layout_main_menu.user_data = main_menu;
-  // printf("main menu has %d buttons\n", main_menu->num_buttons);
-  // ui_layout_stack_push(&layout_main_menu);
+  struct Menu *main_menu = menu_manager_get_main_menu();
+  layout_main_menu.user_data = main_menu;
+  printf("main menu has %d buttons\n", main_menu->num_buttons);
+  ui_layout_stack_push(&layout_main_menu);
 
   // Initialize game state
   game_state_init();
@@ -279,7 +281,7 @@ void engine_init(){
   engine->last_frame = 0.0f;
 }
 
-void start_game(){
+void engine_start_game(){
   if (!engine || !engine->scene_manager){
     fprintf(stderr, "Error: failed to start game in start_game, engine or scene_manager is null\n");
     return;
@@ -294,6 +296,32 @@ void start_game(){
 
   game_state_set_mode(GAME_STATE_PLAYING);
   game_event_queue_init(engine->scene_manager->active_scene);
+
+  // Pop main menu layout
+  ui_layout_stack_pop();
+
+  // Capture cursor
+  window_capture_cursor();
+}
+
+void engine_exit_game(){
+  if (!engine || !engine->scene_manager){
+    fprintf(stderr, "Error: failed to start game in start_game, engine or scene_manager is null\n");
+    return;
+  }
+
+  // Unload scene
+  scene_manager_unload_scene(engine->scene_manager);
+  game_state_set_mode(GAME_STATE_MAIN_MENU);
+
+  // Main menu
+  struct Menu *main_menu = menu_manager_get_main_menu();
+  layout_main_menu.user_data = main_menu;
+  printf("main menu has %d buttons\n", main_menu->num_buttons);
+  ui_layout_stack_push(&layout_main_menu);
+
+  // Release cursor
+  window_release_cursor();
 }
 
 void engine_free(){
@@ -314,7 +342,7 @@ int main(){
     return -1;
   }
 
-  start_game();
+  // start_game();
 
 	// Render loop
 	while (!glfwWindowShouldClose(engine->window)){

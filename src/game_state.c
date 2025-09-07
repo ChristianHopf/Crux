@@ -28,7 +28,7 @@ void game_start(){
 }
 
 // GameState modifiers
-void game_pause(){
+void game_state_pause(){
   // Modify game state
   game_state.is_paused = true;
   game_state.mode = GAME_STATE_PAUSED;
@@ -49,7 +49,7 @@ void game_pause(){
   window_release_cursor();
 }
 
-void game_unpause(){
+void game_state_unpause(){
   // Modify game state
   game_state.is_paused = false;
   game_state.mode = GAME_STATE_PLAYING;
@@ -65,7 +65,7 @@ void game_unpause(){
   window_capture_cursor();
 }
 
-void game_quit(){
+void game_state_quit(){
   game_state.should_quit = true;
   // printf("game_state.should_quit is %s\n", game_state.should_quit ? "true" :"false");
 
@@ -76,6 +76,10 @@ void game_quit(){
 // GameState getters
 bool game_state_is_paused(){
   return game_state.mode == GAME_STATE_PAUSED;
+}
+
+bool game_state_is_playing(){
+  return game_state.mode == GAME_STATE_PLAYING;
 }
 
 bool game_state_should_quit(){
