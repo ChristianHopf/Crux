@@ -38,6 +38,7 @@ struct MenuManager {
   int current_depth;
 
   struct Menu *pause_menu;
+  struct Menu *main_menu;
 };
 
 
@@ -47,6 +48,8 @@ void menu_manager_destroy();
 void menu_render();
 struct Menu *pause_menu_create();
 struct Menu *menu_manager_get_pause_menu();
+struct Menu *main_menu_create();
+struct Menu *menu_manager_get_main_menu();
 
 // Stack
 // void menu_stack_init();
@@ -60,5 +63,6 @@ void button_activate(struct Button *button);
 void button_print_text(void *arg);
 
 // Actions
+void action_start(void *arg);
 void action_resume(void *arg);
 void action_quit(void *arg);

@@ -25,6 +25,7 @@ struct GameState {
 void game_state_init();
 GameStateMode game_state_get_mode();
 void game_state_set_mode(GameStateMode mode);
+void game_start();
 void game_pause();
 void game_unpause();
 void game_quit();

@@ -20,7 +20,44 @@
 #include "event.h"
 #include "utils.h"
 
-struct Scene *scene_load(char *scene_path){
+struct SceneManager *scene_manager_create(){
+  struct SceneManager *scene_manager = calloc(1, sizeof(struct SceneManager));
+  if (!scene_manager){
+    fprintf(stderr, "Error: failed to allocate SceneManager in scene_manager_create\n");
+    return NULL;
+  }
+
+  return scene_manager;
+}
+
+void scene_manager_destroy(struct SceneManager *scene_manager){
+  if (!scene_manager) return;
+
+  scene_manager_unload_scene(scene_manager);
+  free(scene_manager);
+}
+
+void scene_manager_load_scene(struct SceneManager *scene_manager, const char *path){
+  if (!scene_manager){
+    fprintf(stderr, "Error: scene_manager is NULL in scene_manager_load_scene\n");
+    return;
+  }
+
+  scene_manager_unload_scene(scene_manager);
+  scene_manager->active_scene = scene_load(path);
+  if (!scene_manager->active_scene){
+    fprintf(stderr, "Error: failed to load scene %s\n in scene_manager_load_scene\n", path);
+  }
+}
+
+void scene_manager_unload_scene(struct SceneManager *scene_manager){
+  if (!scene_manager || !scene_manager->active_scene) return;
+
+  scene_free(scene_manager->active_scene);
+  scene_manager->active_scene = NULL;
+}
+
+struct Scene *scene_load(const char *scene_path){
   // Allocate Scene
   struct Scene *scene = (struct Scene *)calloc(1, sizeof(struct Scene));
   if (!scene){

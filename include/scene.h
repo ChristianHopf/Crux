@@ -34,6 +34,10 @@ struct SceneNode {
   unsigned int num_children;
 };
 
+struct SceneManager {
+  struct Scene *active_scene;
+};
+
 struct Scene {
   struct Model **models;
   Shader **shaders;
@@ -75,8 +79,12 @@ struct Scene {
   uuid_t local_player_entity_id;
 };
 
-
-struct Scene *scene_load(char *scene_path);
+// SceneManager
+struct SceneManager *scene_manager_create();
+void scene_manager_destroy(struct SceneManager *scene_manager);
+void scene_manager_load_scene(struct SceneManager *scene_manager, const char *path);
+void scene_manager_unload_scene(struct SceneManager *scene_manager);
+struct Scene *scene_load(const char *scene_path);
 struct Scene *scene_create(bool physics_view_mode);
 
 void scene_update(struct Scene *scene, float deltaTime);

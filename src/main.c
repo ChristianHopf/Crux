@@ -26,6 +26,7 @@ typedef struct {
   int screen_height;
   bool mouse_down;
   struct Scene *active_scene;
+  struct SceneManager *scene_manager;
   struct GameEventQueue game_event_queue;
   float delta_time;
   float last_frame;
@@ -54,30 +55,31 @@ vec3 lightPos = {1.2f, 0.5f, 2.0f};
 static int last_space_state = GLFW_RELEASE;
 void processInput(GLFWwindow *window){
   Engine *engine = (Engine *)glfwGetWindowUserPointer(window);
+  struct Scene *scene = engine->scene_manager->active_scene;
 
   if (!game_state_is_paused()){
     // Camera movement
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS){
-      player_process_keyboard_input(engine->active_scene, engine->active_scene->local_player_entity_id, CAMERA_FORWARD, engine->delta_time);
+      player_process_keyboard_input(scene, scene->local_player_entity_id, CAMERA_FORWARD, engine->delta_time);
       // player_process_keyboard_input(&engine->active_scene->player, CAMERA_FORWARD, engine->delta_time);
     }
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS){
-      player_process_keyboard_input(engine->active_scene, engine->active_scene->local_player_entity_id, CAMERA_BACKWARD, engine->delta_time);
+      player_process_keyboard_input(scene, scene->local_player_entity_id, CAMERA_BACKWARD, engine->delta_time);
       // player_process_keyboard_input(&engine->active_scene->player, CAMERA_BACKWARD, engine->delta_time);
     }
     if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS){
-      player_process_keyboard_input(engine->active_scene, engine->active_scene->local_player_entity_id, CAMERA_LEFT, engine->delta_time);
+      player_process_keyboard_input(scene, scene->local_player_entity_id, CAMERA_LEFT, engine->delta_time);
       // player_process_keyboard_input(&engine->active_scene->player, CAMERA_LEFT, engine->delta_time);
     }
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS){
-      player_process_keyboard_input(engine->active_scene, engine->active_scene->local_player_entity_id, CAMERA_RIGHT, engine->delta_time);
+      player_process_keyboard_input(scene, scene->local_player_entity_id, CAMERA_RIGHT, engine->delta_time);
       // player_process_keyboard_input(&engine->active_scene->player, CAMERA_RIGHT, engine->delta_time);
     }
 
     // Only process these inputs a single time per press
     int space_state = glfwGetKey(window, GLFW_KEY_SPACE);
     if (space_state == GLFW_PRESS && last_space_state == GLFW_RELEASE){
-      player_jump(engine->active_scene, engine->active_scene->local_player_entity_id);
+      player_jump(scene, scene->local_player_entity_id);
     }
     last_space_state = space_state;
   }
@@ -99,6 +101,7 @@ void window_size_callback(GLFWwindow *window, int width, int height){
 
 void mouse_callback(GLFWwindow *window, double xpos, double ypos){
   Engine *engine = (Engine *)glfwGetWindowUserPointer(window);
+  struct Scene *scene = engine->scene_manager->active_scene;
 
 	if (firstMouse){
 		lastX = (float)xpos;
@@ -113,7 +116,7 @@ void mouse_callback(GLFWwindow *window, double xpos, double ypos){
 
   // Update camera
   if (!game_state_is_paused()){
-    player_process_mouse_input(engine->active_scene, engine->active_scene->local_player_entity_id, xoffset, yoffset);
+    player_process_mouse_input(scene, scene->local_player_entity_id, xoffset, yoffset);
   }
 }
 
@@ -129,7 +132,9 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 
 void scroll_callback(GLFWwindow *window, double xoffset, double yoffset){
   Engine *engine = (Engine *)glfwGetWindowUserPointer(window);
-  struct CameraComponent *camera = scene_get_camera_by_entity_id(engine->active_scene, engine->active_scene->local_player_entity_id);
+  struct Scene *scene = engine->scene_manager->active_scene;
+
+  struct CameraComponent *camera = scene_get_camera_by_entity_id(scene, scene->local_player_entity_id);
   if (!game_state_is_paused()){
     camera_process_scroll_input(camera, yoffset);
   }
@@ -213,6 +218,14 @@ Engine *engine_create(){
   // Initialize MenuManager
   menu_manager_init();
 
+  // Initialize SceneManager
+  engine->scene_manager = scene_manager_create();
+  if (!engine->scene_manager){
+    fprintf(stderr, "Error: failed to create SceneManager in engine_create\n");
+    free(engine);
+    return NULL;
+  }
+
   // UI manager
   ui_manager_init(SCREEN_WIDTH, SCREEN_HEIGHT);
   ui_load_font("resources/fonts/HackNerdFontMono-Regular.ttf", 24);
@@ -223,6 +236,12 @@ Engine *engine_create(){
   char **fps_text = calloc(1, sizeof(char *));
   layout_fps_counter.user_data = fps_text;
   ui_layout_stack_push(&layout_fps_counter);
+
+  // Main menu layout
+  // struct Menu *main_menu = menu_manager_get_main_menu();
+  // layout_main_menu.user_data = main_menu;
+  // printf("main menu has %d buttons\n", main_menu->num_buttons);
+  // ui_layout_stack_push(&layout_main_menu);
 
   // Initialize game state
   game_state_init();
@@ -260,22 +279,26 @@ Engine *engine_create(){
 }
 
 void start_game(Engine *engine){
-  // Load scene
-  engine->active_scene = scene_load("scenes/itemfix.json");
-  if (!engine->active_scene){
-    fprintf(stderr, "Error: failed to create scene\n");
-    free(engine);
+  if (!engine || !engine->scene_manager){
+    fprintf(stderr, "Error: failed to start game in start_game, engine or scene_manager is null\n");
     return;
   }
-  game_state_set_mode(GAME_STATE_PLAYING);
 
-  // Initialize Event queue
-  game_event_queue_init(engine->active_scene);
+  // Load scene
+  scene_manager_load_scene(engine->scene_manager, "scenes/itemfix.json");
+  if (!engine->scene_manager->active_scene){
+    fprintf(stderr, "Error: failed to load scene in start_game\n");
+    return;
+  }
+
+  game_state_set_mode(GAME_STATE_PLAYING);
+  game_event_queue_init(engine->scene_manager->active_scene);
 }
 
 void engine_free(Engine *engine){
   glfwDestroyWindow(engine->window);
-  scene_free(engine->active_scene);
+  scene_manager_destroy(engine->scene_manager);
+  // scene_free(engine->active_scene);
   free(engine->game_event_queue.events);
   free(engine);
 }
@@ -314,11 +337,12 @@ int main(){
       ui_update_mouse(xpos, ypos, engine->mouse_down);
     }
 
-    if (engine->active_scene){
+    struct Scene *active_scene = engine->scene_manager->active_scene;
+    if (active_scene){
       if (mode == GAME_STATE_PLAYING){
-        scene_update(engine->active_scene, engine->delta_time);
+        scene_update(active_scene, engine->delta_time);
       }
-      scene_render(engine->active_scene);
+      scene_render(active_scene);
     }
     // Render UI
     ui_render_frame();

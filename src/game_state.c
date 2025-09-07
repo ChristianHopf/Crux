@@ -22,6 +22,11 @@ void game_state_set_mode(GameStateMode mode){
   game_state.mode = mode;
 }
 
+void game_start(){
+  game_state.is_paused = false;
+  game_state.mode = GAME_STATE_PLAYING;
+}
+
 // GameState modifiers
 void game_pause(){
   // Modify game state

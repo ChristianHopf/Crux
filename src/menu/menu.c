@@ -10,6 +10,7 @@ void menu_manager_init(){
   // Set menu stack to empty (depth -1), create menus
   menu_manager->current_depth = -1;
   menu_manager->pause_menu = pause_menu_create();
+  menu_manager->main_menu = main_menu_create();
 }
 
 void menu_manager_destroy(){
@@ -57,9 +58,29 @@ struct Menu *menu_manager_get_pause_menu(){
   return menu_manager->pause_menu;
 }
 
-// struct Menu *menu_manager_get_current_menu(){
-//
-// }
+struct Menu *main_menu_create(){
+  struct Menu *main_menu = (struct Menu *)calloc(1, sizeof(struct Menu));
+  main_menu->title = "MAIN";
+  main_menu->num_buttons = 2;
+  main_menu->buttons = (struct Button *)calloc(main_menu->num_buttons, sizeof(struct Button));
+  main_menu->buttons[0].text = "START";
+  main_menu->buttons[0].type = BUTTON_ACTION;
+  main_menu->buttons[0].data.action = action_start;
+  main_menu->buttons[0].x = 920.0f;
+  main_menu->buttons[0].y = 540.0f;
+  main_menu->buttons[1].text = "EXIT";
+  main_menu->buttons[1].type = BUTTON_ACTION;
+  main_menu->buttons[1].data.action = action_quit;
+  main_menu->buttons[1].x = 920.0f;
+  main_menu->buttons[1].y = 480.0f;
+  main_menu->parent = NULL;
+
+  return main_menu;
+}
+
+struct Menu *menu_manager_get_main_menu(){
+  return menu_manager->main_menu;
+}
 
 bool menu_stack_push(struct Menu *menu){
   // Check if stack is already full
@@ -89,6 +110,10 @@ bool menu_stack_is_full(){
 
 bool menu_stack_is_empty(){
   return menu_manager->current_depth == -1;
+}
+
+void action_start(void *arg){
+  game_start();
 }
 
 void action_resume(void *arg){
