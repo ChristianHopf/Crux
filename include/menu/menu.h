@@ -65,4 +65,5 @@ void button_print_text(void *arg);
 // Actions
 void action_start(void *arg);
 void action_resume(void *arg);
+void action_exit(void *arg);
 void action_quit(void *arg);

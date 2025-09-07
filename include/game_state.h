@@ -28,6 +28,7 @@ void game_state_set_mode(GameStateMode mode);
 void game_start();
 void game_state_pause();
 void game_state_unpause();
+void game_state_exit();
 void game_state_quit();
 bool game_state_is_paused();
 bool game_state_is_playing();

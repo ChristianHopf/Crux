@@ -65,6 +65,13 @@ void game_state_unpause(){
   window_capture_cursor();
 }
 
+void game_state_exit(){
+  game_state.is_paused = false;
+  game_state.mode = GAME_STATE_MAIN_MENU;
+
+  game_state_update();
+}
+
 void game_state_quit(){
   game_state.should_quit = true;
   // printf("game_state.should_quit is %s\n", game_state.should_quit ? "true" :"false");

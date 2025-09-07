@@ -245,7 +245,6 @@ void engine_init(){
   // Main menu layout
   struct Menu *main_menu = menu_manager_get_main_menu();
   layout_main_menu.user_data = main_menu;
-  printf("main menu has %d buttons\n", main_menu->num_buttons);
   ui_layout_stack_push(&layout_main_menu);
 
   // Initialize game state
@@ -288,11 +287,13 @@ void engine_start_game(){
   }
 
   // Load scene
+  printf("Time to load scene\n");
   scene_manager_load_scene(engine->scene_manager, "scenes/itemfix.json");
   if (!engine->scene_manager->active_scene){
     fprintf(stderr, "Error: failed to load scene in start_game\n");
     return;
   }
+  printf("Successfully loaded scene\n");
 
   game_state_set_mode(GAME_STATE_PLAYING);
   game_event_queue_init(engine->scene_manager->active_scene);
@@ -312,12 +313,13 @@ void engine_exit_game(){
 
   // Unload scene
   scene_manager_unload_scene(engine->scene_manager);
-  game_state_set_mode(GAME_STATE_MAIN_MENU);
+  game_event_queue_destroy();
+  game_state_exit();
 
-  // Main menu
+  // Pop pause menu, push main menu
   struct Menu *main_menu = menu_manager_get_main_menu();
   layout_main_menu.user_data = main_menu;
-  printf("main menu has %d buttons\n", main_menu->num_buttons);
+  ui_layout_stack_pop();
   ui_layout_stack_push(&layout_main_menu);
 
   // Release cursor

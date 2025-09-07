@@ -47,7 +47,7 @@ struct Menu *pause_menu_create(){
   pause_menu->buttons[0].y = 540.0f;
   pause_menu->buttons[1].text = "EXIT";
   pause_menu->buttons[1].type = BUTTON_ACTION;
-  pause_menu->buttons[1].data.action = action_quit;
+  pause_menu->buttons[1].data.action = action_exit;
   pause_menu->buttons[1].x = 920.0f;
   pause_menu->buttons[1].y = 480.0f;
   pause_menu->parent = NULL;
@@ -69,7 +69,7 @@ struct Menu *main_menu_create(){
   main_menu->buttons[0].data.action = action_start;
   main_menu->buttons[0].x = 920.0f;
   main_menu->buttons[0].y = 540.0f;
-  main_menu->buttons[1].text = "EXIT";
+  main_menu->buttons[1].text = "QUIT";
   main_menu->buttons[1].type = BUTTON_ACTION;
   main_menu->buttons[1].data.action = action_quit;
   main_menu->buttons[1].x = 920.0f;

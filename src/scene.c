@@ -542,6 +542,7 @@ void scene_render(struct Scene *scene){
 
 // TODO refactor to free scene graph
 void scene_free(struct Scene *scene){
+  printf("Freeing scene\n");
   // Free models
   for (int i = 0; i < scene->num_models; i++){
     free(scene->models[i]);
@@ -586,6 +587,7 @@ void scene_free(struct Scene *scene){
   free(scene->physics_world->player_bodies);
 
   free(scene);
+  printf("Successfully freed scene\n");
 }
 
 void scene_process_light_json(cJSON *light_json, struct Light *light){
@@ -929,9 +931,9 @@ void scene_process_items_json(struct Scene *scene, const cJSON *items_json){
 
     index++;
 
-    printf("Item definition id: %d\n", item_definition->id);
-    printf("Item definition name: %s\n", item_definition->name);
-    printf("Item definition max count: %d\n", item_definition->max_count);
+    // printf("Item definition id: %d\n", item_definition->id);
+    // printf("Item definition name: %s\n", item_definition->name);
+    // printf("Item definition max count: %d\n", item_definition->max_count);
   }
 }
 
