@@ -20,21 +20,23 @@
 #include "event.h"
 #include "utils.h"
 
-struct SceneManager *scene_manager_create(){
-  struct SceneManager *scene_manager = calloc(1, sizeof(struct SceneManager));
-  if (!scene_manager){
-    fprintf(stderr, "Error: failed to allocate SceneManager in scene_manager_create\n");
-    return NULL;
-  }
-
-  return scene_manager;
+// Don't need more than this right now, since the SceneManager has nothing
+// but a pointer to a Scene.
+bool scene_manager_init(struct SceneManager *scene_manager){
+  scene_manager->active_scene = NULL;
+  return true;
+  // struct SceneManager *scene_manager = calloc(1, sizeof(struct SceneManager));
+  // if (!scene_manager){
+  //   fprintf(stderr, "Error: failed to allocate SceneManager in scene_manager_create\n");
+  //   return NULL;
+  // }
+  //
+  // return scene_manager;
 }
 
 void scene_manager_destroy(struct SceneManager *scene_manager){
   if (!scene_manager) return;
-
   scene_manager_unload_scene(scene_manager);
-  free(scene_manager);
 }
 
 void scene_manager_load_scene(struct SceneManager *scene_manager, const char *path){

@@ -80,7 +80,7 @@ struct Scene {
 };
 
 // SceneManager
-struct SceneManager *scene_manager_create();
+bool scene_manager_init(struct SceneManager *scene_manager);
 void scene_manager_destroy(struct SceneManager *scene_manager);
 void scene_manager_load_scene(struct SceneManager *scene_manager, const char *path);
 void scene_manager_unload_scene(struct SceneManager *scene_manager);

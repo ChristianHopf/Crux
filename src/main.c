@@ -27,7 +27,7 @@ typedef struct {
   int screen_height;
   bool mouse_down;
   struct Scene *active_scene;
-  struct SceneManager *scene_manager;
+  struct SceneManager scene_manager;
   struct GameEventQueue game_event_queue;
   float delta_time;
   float last_frame;
@@ -58,7 +58,7 @@ vec3 lightPos = {1.2f, 0.5f, 2.0f};
 static int last_space_state = GLFW_RELEASE;
 void processInput(GLFWwindow *window){
   Engine *engine = (Engine *)glfwGetWindowUserPointer(window);
-  struct Scene *scene = engine->scene_manager->active_scene;
+  struct Scene *scene = engine->scene_manager.active_scene;
 
   if (!game_state_is_paused()){
     // Camera movement
@@ -104,7 +104,7 @@ void window_size_callback(GLFWwindow *window, int width, int height){
 
 void mouse_callback(GLFWwindow *window, double xpos, double ypos){
   Engine *engine = (Engine *)glfwGetWindowUserPointer(window);
-  struct Scene *scene = engine->scene_manager->active_scene;
+  struct Scene *scene = engine->scene_manager.active_scene;
 
 	if (firstMouse){
 		lastX = (float)xpos;
@@ -135,7 +135,7 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 
 void scroll_callback(GLFWwindow *window, double xoffset, double yoffset){
   Engine *engine = (Engine *)glfwGetWindowUserPointer(window);
-  struct Scene *scene = engine->scene_manager->active_scene;
+  struct Scene *scene = engine->scene_manager.active_scene;
 
   struct CameraComponent *camera = scene_get_camera_by_entity_id(scene, scene->local_player_entity_id);
   if (!game_state_is_paused()){
@@ -224,8 +224,7 @@ void engine_init(){
   menu_manager_init();
 
   // Initialize SceneManager
-  engine->scene_manager = scene_manager_create();
-  if (!engine->scene_manager){
+  if (!scene_manager_init(&engine->scene_manager)){
     fprintf(stderr, "Error: failed to create SceneManager in engine_create\n");
     free(engine);
     return;
@@ -281,22 +280,22 @@ void engine_init(){
 }
 
 void engine_start_game(){
-  if (!engine || !engine->scene_manager){
+  if (!engine){
     fprintf(stderr, "Error: failed to start game in start_game, engine or scene_manager is null\n");
     return;
   }
 
   // Load scene
   printf("Time to load scene\n");
-  scene_manager_load_scene(engine->scene_manager, "scenes/itemfix.json");
-  if (!engine->scene_manager->active_scene){
+  scene_manager_load_scene(&engine->scene_manager, "scenes/itemfix.json");
+  if (!engine->scene_manager.active_scene){
     fprintf(stderr, "Error: failed to load scene in start_game\n");
     return;
   }
   printf("Successfully loaded scene\n");
 
   game_state_set_mode(GAME_STATE_PLAYING);
-  game_event_queue_init(engine->scene_manager->active_scene);
+  game_event_queue_init(engine->scene_manager.active_scene);
 
   // Pop main menu layout
   ui_layout_stack_pop();
@@ -306,13 +305,13 @@ void engine_start_game(){
 }
 
 void engine_exit_game(){
-  if (!engine || !engine->scene_manager){
+  if (!engine || !engine->scene_manager.active_scene){
     fprintf(stderr, "Error: failed to start game in start_game, engine or scene_manager is null\n");
     return;
   }
 
   // Unload scene
-  scene_manager_unload_scene(engine->scene_manager);
+  scene_manager_unload_scene(&engine->scene_manager);
   game_event_queue_destroy();
   game_state_exit();
 
@@ -330,7 +329,7 @@ void engine_free(){
   if (!engine) return;
 
   glfwDestroyWindow(engine->window);
-  scene_manager_destroy(engine->scene_manager);
+  scene_manager_destroy(&engine->scene_manager);
   // scene_free(engine->active_scene);
   free(engine->game_event_queue.events);
   free(engine);
@@ -370,7 +369,7 @@ int main(){
       ui_update_mouse(xpos, ypos, engine->mouse_down);
     }
 
-    struct Scene *active_scene = engine->scene_manager->active_scene;
+    struct Scene *active_scene = engine->scene_manager.active_scene;
     if (active_scene){
       if (mode == GAME_STATE_PLAYING){
         scene_update(active_scene, engine->delta_time);
