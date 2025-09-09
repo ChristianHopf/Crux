@@ -28,6 +28,7 @@ typedef struct {
   bool mouse_down;
   struct Scene *active_scene;
   struct SceneManager scene_manager;
+  struct AudioManager audio_manager;
   struct GameEventQueue game_event_queue;
   float delta_time;
   float last_frame;
@@ -218,14 +219,18 @@ void engine_init(){
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
   // Initialize AudioManager
-  audio_manager_init();
+  if (!audio_manager_init(&engine->audio_manager)){
+    fprintf(stderr, "Error: failed to initialize AudioManager in engine_init\n");
+    free(engine);
+    return;
+  }
 
   // Initialize MenuManager
   menu_manager_init();
 
   // Initialize SceneManager
   if (!scene_manager_init(&engine->scene_manager)){
-    fprintf(stderr, "Error: failed to create SceneManager in engine_create\n");
+    fprintf(stderr, "Error: failed to initialize SceneManager in engine_init\n");
     free(engine);
     return;
   }
@@ -250,7 +255,7 @@ void engine_init(){
   game_state_init();
 
   // Add game state observers
-  struct GameStateObserver *audio_game_state_observer = audio_game_state_observer_create();
+  struct GameStateObserver *audio_game_state_observer = audio_game_state_observer_create(&engine->audio_manager);
   if (!audio_game_state_observer){
     fprintf(stderr, "Error: failed to get audio_game_state_observer in engine_create\n");
     return;
@@ -279,9 +284,13 @@ void engine_init(){
   engine->last_frame = 0.0f;
 }
 
+struct AudioManager *engine_get_audio_manager(){
+  return &engine->audio_manager;
+}
+
 void engine_start_game(){
   if (!engine){
-    fprintf(stderr, "Error: failed to start game in start_game, engine or scene_manager is null\n");
+    fprintf(stderr, "Error: engine is null in engine_start_game\n");
     return;
   }
 
@@ -330,6 +339,7 @@ void engine_free(){
 
   glfwDestroyWindow(engine->window);
   scene_manager_destroy(&engine->scene_manager);
+  audio_manager_destroy(&engine->audio_manager);
   // scene_free(engine->active_scene);
   free(engine->game_event_queue.events);
   free(engine);
@@ -389,7 +399,6 @@ int main(){
   }
 
   // Teardown
-  audio_manager_free();
   // ui_manager_free();
   engine_free();
   glfwTerminate();
