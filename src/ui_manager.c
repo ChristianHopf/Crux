@@ -195,14 +195,14 @@ bool ui_layout_stack_is_empty(struct UIManager *ui_manager){
   return ui_manager->layout_stack.size == 0;
 }
 
-struct GameStateObserver *ui_game_state_observer_create(){
+struct GameStateObserver *ui_game_state_observer_create(struct UIManager *ui_manager){
   struct GameStateObserver *ui_game_state_observer = (struct GameStateObserver *)malloc(sizeof(struct GameStateObserver));
   if (!ui_game_state_observer){
     fprintf(stderr, "Error: failed to allocate ui_game_state_observer in ui_game_state_observer_create\n");
     return NULL;
   }
 
-  ui_game_state_observer->instance = NULL;
+  ui_game_state_observer->instance = ui_manager;
   ui_game_state_observer->notification = ui_game_state_changed;
 
   return ui_game_state_observer;

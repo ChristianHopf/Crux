@@ -266,7 +266,7 @@ void engine_init(){
     return;
   }
   attach_observer(audio_game_state_observer);
-  struct GameStateObserver *ui_game_state_observer = ui_game_state_observer_create();
+  struct GameStateObserver *ui_game_state_observer = ui_game_state_observer_create(&engine->ui_manager);
   if (!ui_game_state_observer){
     fprintf(stderr, "Error: failed to get ui_game_state_observer in engine_create\n");
     return;

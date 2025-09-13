@@ -58,7 +58,7 @@ bool ui_layout_stack_is_full(struct UIManager *ui_manager);
 bool ui_layout_stack_is_empty(struct UIManager *ui_manager);
 
 // GameState observation
-struct GameStateObserver *ui_game_state_observer_create();
+struct GameStateObserver *ui_game_state_observer_create(struct UIManager *ui_manager);
 void ui_game_state_changed(void *instance, struct GameState *game_state);
 void ui_pause(struct UIManager *ui_manager);
 void ui_unpause(struct UIManager *ui_manager);
