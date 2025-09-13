@@ -3,7 +3,7 @@
 
 static struct ClayOpenGLRenderer clay_opengl_renderer;
 
-void clay_opengl_renderer_init(float screen_width, float screen_height){
+bool clay_opengl_renderer_init(float screen_width, float screen_height){
   // The renderer maintains variables for screen width and height updated each frame
   clay_opengl_renderer.screen_width = screen_width;
   clay_opengl_renderer.screen_height = screen_height;
@@ -11,14 +11,16 @@ void clay_opengl_renderer_init(float screen_width, float screen_height){
   // Create shaders
   if (!clay_opengl_renderer_create_shaders()){
     fprintf(stderr, "Error: failed to create shaders in clay_opengl_renderer_init\n");
-    return;
+    return false;
   }
 
   // Load fonts
   if (!clay_opengl_renderer_text_setup()){
     fprintf(stderr, "Error: failed to load fonts in clay_opengl_renderer_init\n");
-    return;
+    return false;
   }
+
+  return true;
 }
 
 void clay_opengl_renderer_destroy(){

@@ -77,23 +77,23 @@ void ui_handle_button_click(Clay_ElementId elementId, Clay_PointerData pointerDa
   }
 }
 
-void ui_manager_init(float screen_width, float screen_height){
+bool ui_manager_init(struct UIManager *ui_manager, float screen_width, float screen_height){
   // Init Clay
   uint64_t totalMemorySize = Clay_MinMemorySize();
-  ui_manager.clay_arena = Clay_CreateArenaWithCapacityAndMemory(totalMemorySize, malloc(totalMemorySize));
-  Clay_Initialize(ui_manager.clay_arena, (Clay_Dimensions) { screen_width, screen_height }, (Clay_ErrorHandler) { HandleClayErrors });
+  ui_manager->clay_arena = Clay_CreateArenaWithCapacityAndMemory(totalMemorySize, malloc(totalMemorySize));
+  Clay_Initialize(ui_manager->clay_arena, (Clay_Dimensions) { screen_width, screen_height }, (Clay_ErrorHandler) { HandleClayErrors });
 
   // Load fonts and set MeasureText function
-  ui_manager.fonts[0] = load_font_face("resources/fonts/HackNerdFontMono-Regular.ttf", 24);
-  ui_manager.fonts[1] = load_font_face("resources/fonts/HackNerdFontMono-Bold.ttf", 48);
-  ui_manager.fonts[2] = load_font_face("resources/fonts/HackNerdFontMono-Regular.ttf", 48);
-  Clay_SetMeasureTextFunction(MeasureText, ui_manager.fonts);
+  ui_manager->fonts[0] = load_font_face("resources/fonts/HackNerdFontMono-Regular.ttf", 24);
+  ui_manager->fonts[1] = load_font_face("resources/fonts/HackNerdFontMono-Bold.ttf", 48);
+  ui_manager->fonts[2] = load_font_face("resources/fonts/HackNerdFontMono-Regular.ttf", 48);
+  Clay_SetMeasureTextFunction(MeasureText, ui_manager->fonts);
 
-  ui_manager.paused = false;
-  ui_manager.num_fonts = 0;
+  ui_manager->paused = false;
+  ui_manager->num_fonts = 0;
 
-  ui_manager.layout_stack.size = 0;
-  ui_manager.layout_stack.capacity = MAX_LAYOUTS;
+  ui_manager->layout_stack.size = 0;
+  ui_manager->layout_stack.capacity = MAX_LAYOUTS;
 
   // Load layouts (figure out a better way than hardcoding things here)
   // struct Layout layout_version_text = {
@@ -103,23 +103,27 @@ void ui_manager_init(float screen_width, float screen_height){
   // ui_manager.layout_stack.layouts[ui_manager.layout_stack.size++] = layout_version_text;
 
   // Init renderer
-  clay_opengl_renderer_init(screen_width, screen_height);
+  if (!clay_opengl_renderer_init(screen_width, screen_height)){
+    return false;
+  }
+
+  return true;
 }
 
-void ui_load_font(char *path, int size){
-  ui_manager.fonts[ui_manager.num_fonts] = load_font_face(path, size);
-  if (ui_manager.fonts[ui_manager.num_fonts]){
-    ui_manager.num_fonts++;
+void ui_load_font(struct UIManager *ui_manager, char *path, int size){
+  ui_manager->fonts[ui_manager->num_fonts] = load_font_face(path, size);
+  if (ui_manager->fonts[ui_manager->num_fonts]){
+    ui_manager->num_fonts++;
   }
 }
 
-void ui_update_frame(float screen_width, float screen_height, float delta_time){
+void ui_update_frame(struct UIManager *ui_manager, float screen_width, float screen_height, float delta_time){
   Clay_SetLayoutDimensions((Clay_Dimensions) { screen_width, screen_height });
   clay_opengl_renderer_update_dimensions(screen_width, screen_height);
   
   // Call each active layout's update function
-  for (unsigned int i = 0; i < ui_manager.layout_stack.size; i++){
-    struct Layout *layout = &ui_manager.layout_stack.layouts[i];
+  for (unsigned int i = 0; i < ui_manager->layout_stack.size; i++){
+    struct Layout *layout = &ui_manager->layout_stack.layouts[i];
     LayoutUpdateFunction update_function = layout->layout_update_function;
     if (update_function){
       update_function(delta_time, layout->user_data);
@@ -132,10 +136,10 @@ void ui_update_mouse(double xpos, double ypos, bool mouse_down){
   // Clay_UpdateScrollContainers(true, (Clay_Vector2) { mouseWheelX, mouseWheelY }, deltaTime);
 }
 
-void ui_render_frame(){
+void ui_render_frame(struct UIManager *ui_manager){
   // Render each of this frame's layouts
-  for(unsigned int i = 0; i < ui_manager.layout_stack.size; i++){
-    struct Layout current_layout = ui_manager.layout_stack.layouts[i];
+  for(unsigned int i = 0; i < ui_manager->layout_stack.size; i++){
+    struct Layout current_layout = ui_manager->layout_stack.layouts[i];
     void *arg = current_layout.user_data;
 
     // Get arg for layout_function based on layout type
@@ -155,7 +159,7 @@ void ui_render_frame(){
     //     break;
     //   }
     // }
-    LayoutFunction layout_function = ui_manager.layout_stack.layouts[i].layout_function;
+    LayoutFunction layout_function = ui_manager->layout_stack.layouts[i].layout_function;
 
     // Compute and render this layout
     if (!layout_function){
@@ -163,32 +167,32 @@ void ui_render_frame(){
       continue;
     }
     Clay_RenderCommandArray render_commands = layout_function(arg);
-    clay_opengl_render(render_commands, ui_manager.fonts);
+    clay_opengl_render(render_commands, ui_manager->fonts);
   }
 }
 
-void ui_layout_stack_push(struct Layout *layout){
-  if (ui_layout_stack_is_full()) return;
+void ui_layout_stack_push(struct UIManager *ui_manager, struct Layout *layout){
+  if (ui_layout_stack_is_full(ui_manager)) return;
 
-  ui_manager.layout_stack.layouts[ui_manager.layout_stack.size++] = *layout;
+  ui_manager->layout_stack.layouts[ui_manager->layout_stack.size++] = *layout;
 }
 
-void ui_layout_stack_pop(){
-  if (ui_layout_stack_is_empty()) return;
+void ui_layout_stack_pop(struct UIManager *ui_manager){
+  if (ui_layout_stack_is_empty(ui_manager)) return;
 
-  ui_manager.layout_stack.size--;
+  ui_manager->layout_stack.size--;
 }
 
-void ui_layout_stack(){
-  ui_manager.layout_stack.size = 0;
+// void ui_layout_stack(){
+//   ui_manager.layout_stack.size = 0;
+// }
+
+bool ui_layout_stack_is_full(struct UIManager *ui_manager){
+  return ui_manager->layout_stack.size >= ui_manager->layout_stack.capacity;
 }
 
-bool ui_layout_stack_is_full(){
-  return ui_manager.layout_stack.size >= ui_manager.layout_stack.capacity;
-}
-
-bool ui_layout_stack_is_empty(){
-  return ui_manager.layout_stack.size == 0;
+bool ui_layout_stack_is_empty(struct UIManager *ui_manager){
+  return ui_manager->layout_stack.size == 0;
 }
 
 struct GameStateObserver *ui_game_state_observer_create(){
@@ -206,20 +210,21 @@ struct GameStateObserver *ui_game_state_observer_create(){
 
 void ui_game_state_changed(void *instance, struct GameState *game_state){
   // Check instance
+  struct UIManager *ui_manager = (struct UIManager *)instance;
 
   // Handle game state (pause)
   if (game_state->is_paused){
-    ui_pause();
+    ui_pause(ui_manager);
   }
   else{
-    ui_unpause();
+    ui_unpause(ui_manager);
   }
 }
 
-void ui_pause(){
-  if (!ui_manager.paused){
+void ui_pause(struct UIManager *ui_manager){
+  if (!ui_manager->paused){
     // pause UI
-    ui_manager.paused = true;
+    ui_manager->paused = true;
     struct Menu *pause_menu = menu_manager_get_pause_menu();
     if (!pause_menu){
       fprintf(stderr, "Error: failed to get pause menu in ui_render_frame\n");
@@ -233,14 +238,14 @@ void ui_pause(){
       .user_data = pause_menu,
       .layout_update_function = ui_base_pause_menu_update
     };
-    ui_manager.layout_stack.layouts[ui_manager.layout_stack.size++] = layout_pause_menu;
+    ui_manager->layout_stack.layouts[ui_manager->layout_stack.size++] = layout_pause_menu;
   }
 }
 
-void ui_unpause(){
-  if (ui_manager.paused){
+void ui_unpause(struct UIManager *ui_manager){
+  if (ui_manager->paused){
     // unpause UI
-    ui_manager.paused = false;
-    ui_manager.layout_stack.size--;
+    ui_manager->paused = false;
+    ui_manager->layout_stack.size--;
   }
 }

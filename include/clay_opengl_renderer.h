@@ -29,7 +29,7 @@ struct ClayOpenGLRenderer {
 
 
 // Setup, teardown
-void clay_opengl_renderer_init(float screen_width, float screen_height);
+bool clay_opengl_renderer_init(float screen_width, float screen_height);
 void clay_opengl_renderer_destroy();
 bool clay_opengl_renderer_create_shaders();
 bool clay_opengl_renderer_text_setup();

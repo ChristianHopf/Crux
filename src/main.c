@@ -29,6 +29,7 @@ typedef struct {
   struct Scene *active_scene;
   struct SceneManager scene_manager;
   struct AudioManager audio_manager;
+  struct UIManager ui_manager;
   struct GameEventQueue game_event_queue;
   float delta_time;
   float last_frame;
@@ -236,20 +237,24 @@ void engine_init(){
   }
 
   // UI manager
-  ui_manager_init(SCREEN_WIDTH, SCREEN_HEIGHT);
-  ui_load_font("resources/fonts/HackNerdFontMono-Regular.ttf", 24);
-  ui_load_font("resources/fonts/HackNerdFontMono-Bold.ttf", 48);
-  ui_load_font("resources/fonts/HackNerdFontMono-Regular.ttf", 48);
+  if (!ui_manager_init(&engine->ui_manager, SCREEN_WIDTH, SCREEN_HEIGHT)){
+    fprintf(stderr, "Error: failed to initialize UIManager in engine_init\n");
+    free(engine);
+    return;
+  }
+  ui_load_font(&engine->ui_manager, "resources/fonts/HackNerdFontMono-Regular.ttf", 24);
+  ui_load_font(&engine->ui_manager, "resources/fonts/HackNerdFontMono-Bold.ttf", 48);
+  ui_load_font(&engine->ui_manager, "resources/fonts/HackNerdFontMono-Regular.ttf", 48);
 
-  ui_layout_stack_push(&layout_version_text);
+  ui_layout_stack_push(&engine->ui_manager, &layout_version_text);
   char **fps_text = calloc(1, sizeof(char *));
   layout_fps_counter.user_data = fps_text;
-  ui_layout_stack_push(&layout_fps_counter);
+  ui_layout_stack_push(&engine->ui_manager, &layout_fps_counter);
 
   // Main menu layout
   struct Menu *main_menu = menu_manager_get_main_menu();
   layout_main_menu.user_data = main_menu;
-  ui_layout_stack_push(&layout_main_menu);
+  ui_layout_stack_push(&engine->ui_manager, &layout_main_menu);
 
   // Initialize game state
   game_state_init();
@@ -288,6 +293,10 @@ struct AudioManager *engine_get_audio_manager(){
   return &engine->audio_manager;
 }
 
+struct UIManager *engine_get_ui_manager(){
+  return &engine->ui_manager;
+}
+
 void engine_start_game(){
   if (!engine){
     fprintf(stderr, "Error: engine is null in engine_start_game\n");
@@ -307,7 +316,7 @@ void engine_start_game(){
   game_event_queue_init(engine->scene_manager.active_scene);
 
   // Pop main menu layout
-  ui_layout_stack_pop();
+  ui_layout_stack_pop(&engine->ui_manager);
 
   // Capture cursor
   window_capture_cursor();
@@ -327,8 +336,8 @@ void engine_exit_game(){
   // Pop pause menu, push main menu
   struct Menu *main_menu = menu_manager_get_main_menu();
   layout_main_menu.user_data = main_menu;
-  ui_layout_stack_pop();
-  ui_layout_stack_push(&layout_main_menu);
+  ui_layout_stack_pop(&engine->ui_manager);
+  ui_layout_stack_push(&engine->ui_manager, &layout_main_menu);
 
   // Release cursor
   window_release_cursor();
@@ -340,6 +349,7 @@ void engine_free(){
   glfwDestroyWindow(engine->window);
   scene_manager_destroy(&engine->scene_manager);
   audio_manager_destroy(&engine->audio_manager);
+  // ui_manager_destroy(&engine->ui_manager);
   // scene_free(engine->active_scene);
   free(engine->game_event_queue.events);
   free(engine);
@@ -370,7 +380,7 @@ int main(){
     // if (game_state_is_paused()){
 
     // Update Clay layout dimensions and pointer state
-    ui_update_frame(engine->screen_width, engine->screen_height, engine->delta_time);
+    ui_update_frame(&engine->ui_manager, engine->screen_width, engine->screen_height, engine->delta_time);
 
     GameStateMode mode = game_state_get_mode();
     if (mode != GAME_STATE_PLAYING){
@@ -387,7 +397,7 @@ int main(){
       scene_render(active_scene);
     }
     // Render UI
-    ui_render_frame();
+    ui_render_frame(&engine->ui_manager);
 
     glfwSwapBuffers(engine->window);
 		glfwPollEvents();
