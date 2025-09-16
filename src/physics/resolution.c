@@ -107,7 +107,7 @@ void resolve_collision_AABB_AABB(struct PhysicsBody *body_A, struct PhysicsBody 
     glm_vec3_scale(contact_normal, -2.0f * v_dot_n * body_A->restitution, reflection);
     glm_vec3_add(velocity_before_A, reflection, body_A->velocity);
   }
-  else if (body_B->dynamic){
+  else if (!body_A->dynamic && body_B->dynamic){
     float v_dot_n = glm_dot(velocity_before_B, contact_normal);
     vec3 reflection;
     glm_vec3_scale(contact_normal, -2.0f * v_dot_n * body_B->restitution, reflection);

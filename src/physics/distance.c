@@ -94,25 +94,57 @@ float min_dist_at_time_AABB_AABB(struct PhysicsBody *body_A, struct PhysicsBody 
 float min_dist_at_time_AABB_sphere(struct PhysicsBody *body_A, struct PhysicsBody *body_B, float time){
   struct AABB *box = &body_A->collider.data.aabb;
   struct Sphere *sphere = &body_B->collider.data.sphere;
+  struct AABB *world_AABB = {0};
+  struct Sphere *world_sphere = {0};
 
   // Get world space bodies
-  mat4 eulerA;
-  mat3 rotationA;
-  glm_euler_xyz(body_A->rotation, eulerA);
-  glm_mat4_pick3(eulerA, rotationA);
+  if (body_A->scene_node){
+    vec3 world_position_A, world_rotation_A, world_scale_A;
+    glm_mat4_mulv3(body_A->scene_node->world_transform, (vec3){0.0f, 0.0f, 0.0f}, 1.0f, world_position_A);
+    glm_vec3_muladds(body_A->velocity, time, world_position_A);
+    glm_decompose_scalev(body_A->scene_node->world_transform, world_scale_A);
+    mat3 rotation_mat3_A;
+    glm_mat4_pick3(body_A->scene_node->world_transform, rotation_mat3_A);
+    if (world_scale_A[0] != 0.0f){
+      glm_mat3_scale(rotation_mat3_A, 1.0f / world_scale_A[0]);
+    }
+    AABB_update(aabb_A, rotation_mat3_A, world_position_A, world_scale_A, &world_AABB_A);
+  }
+  if (body_B->scene_node){
+    vec3 world_position_B, world_rotation_B, world_scale_B;
+    glm_mat4_mulv3(body_B->scene_node->world_transform, (vec3){0.0f, 0.0f, 0.0f}, 1.0f, world_position_B);
+    glm_vec3_muladds(body_B->velocity, time, world_position_B);
+    glm_decompose_scalev(body_B->scene_node->world_transform, world_scale_B);
+    // mat3 rotation_mat3_B;
+    // glm_mat4_pick3(body_B->scene_node->world_transform, rotation_mat3_B);
+    // if (world_scale_B[0] != 0.0f){
+    //   glm_mat3_scale(rotation_mat3_B, 1.0f / world_scale_B[0]);
+    // }
+    glm_vec3_add(sphere->center, world_position_B, world_position_B);
+    glm_vec3_add(body_B->position, world_position_B, world_sphere.center);
+    // glm_vec3_add(sphere->center, body_B->position, world_sphere.center);
+    glm_vec3_muladds(body_B->velocity, time, world_sphere.center);
+    world_sphere.radius = sphere->radius * world_scale_B;
+    // world_sphere.radius = sphere->radius * body_B->scale[0];
+  }
 
-  vec3 translationA, scaleA;
-  glm_vec3_copy(body_A->position, translationA);
-  glm_vec3_muladds(body_A->velocity, time, translationA);
-  glm_vec3_copy(body_A->scale, scaleA);
-    
-  struct AABB world_AABB = {0};
-  AABB_update(box, rotationA, translationA, scaleA, &world_AABB);
+  // mat4 eulerA;
+  // mat3 rotationA;
+  // glm_euler_xyz(body_A->rotation, eulerA);
+  // glm_mat4_pick3(eulerA, rotationA);
+  //
+  // vec3 translationA, scaleA;
+  // glm_vec3_copy(body_A->position, translationA);
+  // glm_vec3_muladds(body_A->velocity, time, translationA);
+  // glm_vec3_copy(body_A->scale, scaleA);
+  //
+  // struct AABB world_AABB = {0};
+  // AABB_update(box, rotationA, translationA, scaleA, &world_AABB);
 
-  struct Sphere world_sphere = {0};
-  glm_vec3_add(sphere->center, body_B->position, world_sphere.center);
-  glm_vec3_muladds(body_B->velocity, time, world_sphere.center);
-  world_sphere.radius = sphere->radius * body_B->scale[0];
+  // struct Sphere world_sphere = {0};
+  // glm_vec3_add(sphere->center, body_B->position, world_sphere.center);
+  // glm_vec3_muladds(body_B->velocity, time, world_sphere.center);
+  // world_sphere.radius = sphere->radius * body_B->scale[0];
 
   // Get squared distance between center and AABB
   float distance_squared = 0.0f;
