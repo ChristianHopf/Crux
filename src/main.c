@@ -149,6 +149,8 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
   Engine *engine = (Engine *)glfwGetWindowUserPointer(window);
   // Pause
   if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS){
+    if (game_state_is_main_menu()) return;
+
     if (!game_state_is_paused()){
       game_state_pause();
 	    glfwSetInputMode(engine->window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
@@ -289,6 +291,10 @@ void engine_init(){
   engine->last_frame = 0.0f;
 }
 
+struct SceneManager *engine_get_scene_manager(){
+  return &engine->scene_manager;
+}
+
 struct AudioManager *engine_get_audio_manager(){
   return &engine->audio_manager;
 }
@@ -303,14 +309,19 @@ void engine_start_game(){
     return;
   }
 
-  // Load scene
-  printf("Time to load scene\n");
-  scene_manager_load_scene(&engine->scene_manager, "scenes/itemfix.json");
   if (!engine->scene_manager.active_scene){
-    fprintf(stderr, "Error: failed to load scene in start_game\n");
+    fprintf(stderr, "Error: no active scene in engine_start_game\n");
     return;
   }
-  printf("Successfully loaded scene\n");
+
+  // Load scene
+  // printf("Time to load scene\n");
+  // scene_manager_load_scene(&engine->scene_manager, "scenes/itemfix.json");
+  // if (!engine->scene_manager.active_scene){
+  //   fprintf(stderr, "Error: failed to load scene in start_game\n");
+  //   return;
+  // }
+  // printf("Successfully loaded scene\n");
 
   game_state_set_mode(GAME_STATE_PLAYING);
   game_event_queue_init(engine->scene_manager.active_scene);
@@ -373,7 +384,7 @@ int main(){
     
 		engine->delta_time = currentFrame - engine->last_frame;
 		engine->last_frame = currentFrame;
-		// printf("FPS: %f\n", 1.0 / engine->delta_time);
+		printf("FPS: %f\n", 1.0 / engine->delta_time);
     
 		// Handle input
 		processInput(engine->window);

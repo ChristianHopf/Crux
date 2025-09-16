@@ -82,7 +82,11 @@ void game_state_quit(){
 
 // GameState getters
 bool game_state_is_paused(){
-  return game_state.mode == GAME_STATE_PAUSED;
+  return game_state.mode == GAME_STATE_PAUSED || game_state.mode == GAME_STATE_MAIN_MENU;
+}
+
+bool game_state_is_main_menu(){
+  return game_state.mode == GAME_STATE_MAIN_MENU;
 }
 
 bool game_state_is_playing(){

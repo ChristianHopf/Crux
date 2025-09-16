@@ -31,6 +31,7 @@ void game_state_unpause();
 void game_state_exit();
 void game_state_quit();
 bool game_state_is_paused();
+bool game_state_is_main_menu();
 bool game_state_is_playing();
 bool game_state_should_quit();
 void game_state_update();

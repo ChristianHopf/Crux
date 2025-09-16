@@ -1,4 +1,5 @@
 #include "menu/menu.h"
+#include "menu/menu_presets.h"
 #include "game_state.h"
 #include "text.h"
 #include "engine.h"
@@ -35,49 +36,49 @@ void menu_render(){
   }
 }
 
-struct Menu *pause_menu_create(){
-  struct Menu *pause_menu = (struct Menu *)calloc(1, sizeof(struct Menu));
-  pause_menu->title = "PAUSED";
-  pause_menu->num_buttons = 2;
-  pause_menu->buttons = (struct Button *)calloc(pause_menu->num_buttons, sizeof(struct Button));
-  pause_menu->buttons[0].text = "RESUME";
-  pause_menu->buttons[0].type = BUTTON_ACTION;
-  pause_menu->buttons[0].data.action = action_resume;
-  pause_menu->buttons[0].x = 920.0f;
-  pause_menu->buttons[0].y = 540.0f;
-  pause_menu->buttons[1].text = "EXIT";
-  pause_menu->buttons[1].type = BUTTON_ACTION;
-  pause_menu->buttons[1].data.action = action_exit;
-  pause_menu->buttons[1].x = 920.0f;
-  pause_menu->buttons[1].y = 480.0f;
-  pause_menu->parent = NULL;
-
-  return pause_menu;
-}
+// struct Menu *pause_menu_create(){
+//   struct Menu *pause_menu = (struct Menu *)calloc(1, sizeof(struct Menu));
+//   pause_menu->title = "PAUSED";
+//   pause_menu->num_buttons = 2;
+//   pause_menu->buttons = (struct Button *)calloc(pause_menu->num_buttons, sizeof(struct Button));
+//   pause_menu->buttons[0].text = "RESUME";
+//   pause_menu->buttons[0].type = BUTTON_ACTION;
+//   pause_menu->buttons[0].data.action = action_resume;
+//   pause_menu->buttons[0].x = 920.0f;
+//   pause_menu->buttons[0].y = 540.0f;
+//   pause_menu->buttons[1].text = "EXIT";
+//   pause_menu->buttons[1].type = BUTTON_ACTION;
+//   pause_menu->buttons[1].data.action = action_exit;
+//   pause_menu->buttons[1].x = 920.0f;
+//   pause_menu->buttons[1].y = 480.0f;
+//   pause_menu->parent = NULL;
+//
+//   return pause_menu;
+// }
 
 struct Menu *menu_manager_get_pause_menu(){
   return menu_manager->pause_menu;
 }
 
-struct Menu *main_menu_create(){
-  struct Menu *main_menu = (struct Menu *)calloc(1, sizeof(struct Menu));
-  main_menu->title = "MAIN";
-  main_menu->num_buttons = 2;
-  main_menu->buttons = (struct Button *)calloc(main_menu->num_buttons, sizeof(struct Button));
-  main_menu->buttons[0].text = "START";
-  main_menu->buttons[0].type = BUTTON_ACTION;
-  main_menu->buttons[0].data.action = action_start;
-  main_menu->buttons[0].x = 920.0f;
-  main_menu->buttons[0].y = 540.0f;
-  main_menu->buttons[1].text = "QUIT";
-  main_menu->buttons[1].type = BUTTON_ACTION;
-  main_menu->buttons[1].data.action = action_quit;
-  main_menu->buttons[1].x = 920.0f;
-  main_menu->buttons[1].y = 480.0f;
-  main_menu->parent = NULL;
-
-  return main_menu;
-}
+// struct Menu *main_menu_create(){
+//   struct Menu *main_menu = (struct Menu *)calloc(1, sizeof(struct Menu));
+//   main_menu->title = "MAIN";
+//   main_menu->num_buttons = 2;
+//   main_menu->buttons = (struct Button *)calloc(main_menu->num_buttons, sizeof(struct Button));
+//   main_menu->buttons[0].text = "START";
+//   main_menu->buttons[0].type = BUTTON_ACTION;
+//   main_menu->buttons[0].data.action = action_start;
+//   main_menu->buttons[0].x = 920.0f;
+//   main_menu->buttons[0].y = 540.0f;
+//   main_menu->buttons[1].text = "QUIT";
+//   main_menu->buttons[1].type = BUTTON_ACTION;
+//   main_menu->buttons[1].data.action = action_quit;
+//   main_menu->buttons[1].x = 920.0f;
+//   main_menu->buttons[1].y = 480.0f;
+//   main_menu->parent = NULL;
+//
+//   return main_menu;
+// }
 
 struct Menu *menu_manager_get_main_menu(){
   return menu_manager->main_menu;
@@ -113,24 +114,24 @@ bool menu_stack_is_empty(){
   return menu_manager->current_depth == -1;
 }
 
-void action_start(void *arg){
-  engine_start_game();
-}
-
-void action_resume(void *arg){
-  // Unpause
-  // printf("Resume action\n");
-  game_state_unpause();
-}
-
-void action_exit(void *arg){
-  engine_exit_game();
-}
-
-void action_quit(void *arg){
-  // printf("Quit action\n");
-  game_state_quit();
-}
+// void action_start(void *arg){
+//   engine_start_game();
+// }
+//
+// void action_resume(void *arg){
+//   // Unpause
+//   // printf("Resume action\n");
+//   game_state_unpause();
+// }
+//
+// void action_exit(void *arg){
+//   engine_exit_game();
+// }
+//
+// void action_quit(void *arg){
+//   // printf("Quit action\n");
+//   game_state_quit();
+// }
 
 void button_print_text(void *arg){
   struct Button *button = (struct Button *)arg;
