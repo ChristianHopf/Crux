@@ -36,7 +36,7 @@ struct UIManager {
    Clay_Arena clay_arena;
    struct LayoutStack layout_stack;
    struct Font *fonts[16];
-   int num_fonts;
+   unsigned int num_fonts;
 
    bool paused;
 };
@@ -45,6 +45,7 @@ void ui_handle_button_click(Clay_ElementId elementId, Clay_PointerData pointerDa
 
 // Documentation later
 bool ui_manager_init(struct UIManager *ui_manager, float screen_width, float screen_height);
+void ui_manager_destroy(struct UIManager *ui_manager);
 void ui_load_font(struct UIManager *ui_manager, char *path, int size);
 void ui_render_frame(struct UIManager *ui_manager);
 void ui_update_frame(struct UIManager *ui_manager, float screen_width, float screen_height, float delta_time);

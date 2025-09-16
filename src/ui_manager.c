@@ -110,6 +110,12 @@ bool ui_manager_init(struct UIManager *ui_manager, float screen_width, float scr
   return true;
 }
 
+void ui_manager_destroy(struct UIManager *ui_manager){
+  for (unsigned int i = 0; i < ui_manager->num_fonts; i++){
+    free(ui_manager->fonts[i]);
+  }
+}
+
 void ui_load_font(struct UIManager *ui_manager, char *path, int size){
   ui_manager->fonts[ui_manager->num_fonts] = load_font_face(path, size);
   if (ui_manager->fonts[ui_manager->num_fonts]){

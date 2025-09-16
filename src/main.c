@@ -347,10 +347,11 @@ void engine_free(){
   if (!engine) return;
 
   glfwDestroyWindow(engine->window);
+
   scene_manager_destroy(&engine->scene_manager);
   audio_manager_destroy(&engine->audio_manager);
-  // ui_manager_destroy(&engine->ui_manager);
-  // scene_free(engine->active_scene);
+  ui_manager_destroy(&engine->ui_manager);
+
   free(engine->game_event_queue.events);
   free(engine);
 }
