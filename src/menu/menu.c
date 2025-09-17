@@ -140,19 +140,16 @@ bool menu_stack_is_empty(){
 // }
 
 void menu_button_activate(struct Button *button){
-  printf("menu_button_activate called!\n");
   if (!button){
     fprintf(stderr, "Error: invalid button in menu_button_activate\n");
     return;
   }
-  printf("Button is valid\n");
   
   struct UIManager *ui_manager = engine_get_ui_manager();
   if (!ui_manager){
     fprintf(stderr, "Error: failed to get ui manager in menu_button_activate\n");
     return;
   }
-  printf("Got ui manager\n");
 
   switch(button->type){
     case BUTTON_ACTION: {
@@ -163,9 +160,9 @@ void menu_button_activate(struct Button *button){
     }
     case BUTTON_MENU_FORWARD: {
       if (button->data.menu){
-        printf("Time to push to layout stack\n");
+        // Swap active menu with a new menu
+        ui_layout_stack_pop(ui_manager);
         ui_layout_stack_push(ui_manager, button->data.menu->layout);
-        printf("Successfully pushed to layout stack\n");
       }
       break;
     }
@@ -178,7 +175,6 @@ void menu_button_activate(struct Button *button){
       break;
     }
   }
-  printf("Switch over\n");
 }
 
 void button_print_text(void *arg){

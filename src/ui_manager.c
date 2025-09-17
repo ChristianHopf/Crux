@@ -183,10 +183,8 @@ void ui_render_frame(struct UIManager *ui_manager){
 }
 
 void ui_layout_stack_push(struct UIManager *ui_manager, struct Layout *layout){
-  printf("ui_layout_stack_push called!\n");
   if (ui_layout_stack_is_full(ui_manager)) return;
 
-  printf("Layout stack isn't full\n");
   ui_manager->layout_stack.layouts[ui_manager->layout_stack.size++] = *layout;
 }
 

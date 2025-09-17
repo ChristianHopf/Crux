@@ -44,7 +44,6 @@ struct PhysicsBody *body;
   switch(dynamic){
     case true:
       body = &physics_world->dynamic_bodies[physics_world->num_dynamic_bodies++];
-      printf("Adding dynamic body\n");
       glm_vec3_copy(entity->velocity, body->velocity);
       break;
     case false:
