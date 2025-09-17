@@ -168,6 +168,7 @@ void menu_button_activate(struct Button *button){
     }
     case BUTTON_MENU_BACK: {
       ui_layout_stack_pop(ui_manager);
+      ui_layout_stack_push(ui_manager, button->data.menu->layout);
       break;
     }
     default: {

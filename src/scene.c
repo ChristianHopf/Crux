@@ -155,6 +155,7 @@ struct Scene *scene_load(const char *scene_path){
     return NULL;
   }
   int num_models = cJSON_GetArraySize(models_json);
+  printf("Loading %d models\n", num_models);
   struct Model *models[num_models];
   scene->models = (struct Model **)calloc(num_models, sizeof(struct Model *));
   if (!scene->models){
@@ -553,10 +554,13 @@ void scene_free(struct Scene *scene){
   printf("Freeing scene\n");
   // Free models
   for (int i = 0; i < scene->num_models; i++){
+    printf("Freeing model\n");
     free(scene->models[i]);
   }
   // Free shaders
+  printf("Freeing %d shaders\n", scene->num_shaders);
   for (int i = 0; i < scene->num_shaders; i++){
+    glDeleteProgram(scene->shaders[i]->ID);
     free(scene->shaders[i]);
   }
 

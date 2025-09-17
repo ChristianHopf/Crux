@@ -8,6 +8,7 @@
 
 // Helper to compile shaders
 static unsigned int compile_shader(unsigned int type, const char *shaderCode){
+  printf("Compiling shader program\n");
 	// Create and compile shader
 	unsigned int shader = glCreateShader(type);
 	glShaderSource(shader, 1, &shaderCode, NULL);

@@ -181,17 +181,13 @@ struct Menu *main_menu_create(){
   }
 
   main_menu->title = "MAIN";
-  main_menu->num_buttons = 3;
+  main_menu->num_buttons = 2;
   main_menu->buttons = (struct Button *)calloc(main_menu->num_buttons, sizeof(struct Button));
   if (!main_menu->buttons){
     fprintf(stderr, "Error: failed to allocate Buttons in main_menu_create\n");
     free(main_menu);
     return NULL;
   }
-
-  main_menu->buttons[0].text = "START";
-  main_menu->buttons[0].type = BUTTON_ACTION;
-  main_menu->buttons[0].data.action = action_start;
 
   struct Menu *scene_select_menu = scene_select_menu_create();
   if (!scene_select_menu){
@@ -200,13 +196,18 @@ struct Menu *main_menu_create(){
     free(main_menu);
     return NULL;
   }
-  main_menu->buttons[1].text = "SCENE SELECT";
-  main_menu->buttons[1].type = BUTTON_MENU_FORWARD;
-  main_menu->buttons[1].data.menu = scene_select_menu;
+  // Need to work out a better solution for menu navigation
+  // - only one enum value for navigation (BUTTON_MENU_NAV?)
+  // - track menu depth value in ui manager and keep forward and back values
+  scene_select_menu->buttons[3].data.menu = main_menu;
 
-  main_menu->buttons[2].text = "QUIT";
-  main_menu->buttons[2].type = BUTTON_ACTION;
-  main_menu->buttons[2].data.action = action_quit;
+  main_menu->buttons[0].text = "SCENE SELECT";
+  main_menu->buttons[0].type = BUTTON_MENU_FORWARD;
+  main_menu->buttons[0].data.menu = scene_select_menu;
+
+  main_menu->buttons[1].text = "QUIT";
+  main_menu->buttons[1].type = BUTTON_ACTION;
+  main_menu->buttons[1].data.action = action_quit;
 
   main_menu->layout = &layout_main_menu;
 
@@ -245,6 +246,7 @@ struct Menu *scene_select_menu_create(){
 
   scene_select_menu->buttons[3].text = "BACK";
   scene_select_menu->buttons[3].type = BUTTON_MENU_BACK;
+  scene_select_menu->buttons[3].data.menu = NULL;
   // scene_select_menu->buttons[4].data.action = action_quit;
 
   // Having a menu own a layout which references the menu doesn't seem
@@ -275,7 +277,7 @@ void action_load_scene_bouncehouse(void *arg){
 void action_load_scene_items(void *arg){
   struct SceneManager *scene_manager = engine_get_scene_manager();
   if (!scene_manager){
-    fprintf(stderr, "Error: failed to get SceneManager in action_load_scene_bouncehouse\n");
+    fprintf(stderr, "Error: failed to get SceneManager in action_load_scene_items\n");
     return;
   }
 
@@ -290,7 +292,7 @@ void action_load_scene_items(void *arg){
 void action_load_scene_scenegraph(void *arg){
   struct SceneManager *scene_manager = engine_get_scene_manager();
   if (!scene_manager){
-    fprintf(stderr, "Error: failed to get SceneManager in action_load_scene_bouncehouse\n");
+    fprintf(stderr, "Error: failed to get SceneManager in action_load_scene_scenegraph\n");
     return;
   }
 
