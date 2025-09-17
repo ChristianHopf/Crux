@@ -94,8 +94,8 @@ float min_dist_at_time_AABB_AABB(struct PhysicsBody *body_A, struct PhysicsBody 
 float min_dist_at_time_AABB_sphere(struct PhysicsBody *body_A, struct PhysicsBody *body_B, float time){
   struct AABB *box = &body_A->collider.data.aabb;
   struct Sphere *sphere = &body_B->collider.data.sphere;
-  struct AABB *world_AABB = {0};
-  struct Sphere *world_sphere = {0};
+  struct AABB world_AABB = {0};
+  struct Sphere world_sphere = {0};
 
   // Get world space bodies
   if (body_A->scene_node){
@@ -108,7 +108,7 @@ float min_dist_at_time_AABB_sphere(struct PhysicsBody *body_A, struct PhysicsBod
     if (world_scale_A[0] != 0.0f){
       glm_mat3_scale(rotation_mat3_A, 1.0f / world_scale_A[0]);
     }
-    AABB_update(aabb_A, rotation_mat3_A, world_position_A, world_scale_A, &world_AABB_A);
+    AABB_update(box, rotation_mat3_A, world_position_A, world_scale_A, &world_AABB);
   }
   if (body_B->scene_node){
     vec3 world_position_B, world_rotation_B, world_scale_B;
@@ -124,7 +124,7 @@ float min_dist_at_time_AABB_sphere(struct PhysicsBody *body_A, struct PhysicsBod
     glm_vec3_add(body_B->position, world_position_B, world_sphere.center);
     // glm_vec3_add(sphere->center, body_B->position, world_sphere.center);
     glm_vec3_muladds(body_B->velocity, time, world_sphere.center);
-    world_sphere.radius = sphere->radius * world_scale_B;
+    world_sphere.radius = sphere->radius * world_scale_B[0];
     // world_sphere.radius = sphere->radius * body_B->scale[0];
   }
 

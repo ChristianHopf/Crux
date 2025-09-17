@@ -72,8 +72,10 @@ static inline Clay_Dimensions MeasureText(Clay_StringSlice text, Clay_TextElemen
 void ui_handle_button_click(Clay_ElementId elementId, Clay_PointerData pointerData, intptr_t userData){
   if (pointerData.state == CLAY_POINTER_DATA_RELEASED_THIS_FRAME){
     // Call the button's action
-    void (*action)(void *arg) = (void (*)(void *))userData;
-    action(NULL);
+    struct Button *button = (struct Button *)userData;
+    menu_button_activate(button);
+    // void (*action)(void *arg) = (void (*)(void *))userData;
+    // action(NULL);
   }
 }
 
@@ -84,9 +86,12 @@ bool ui_manager_init(struct UIManager *ui_manager, float screen_width, float scr
   Clay_Initialize(ui_manager->clay_arena, (Clay_Dimensions) { screen_width, screen_height }, (Clay_ErrorHandler) { HandleClayErrors });
 
   // Load fonts and set MeasureText function
-  ui_manager->fonts[0] = load_font_face("resources/fonts/HackNerdFontMono-Regular.ttf", 24);
-  ui_manager->fonts[1] = load_font_face("resources/fonts/HackNerdFontMono-Bold.ttf", 48);
-  ui_manager->fonts[2] = load_font_face("resources/fonts/HackNerdFontMono-Regular.ttf", 48);
+  // ui_manager->fonts[0] = load_font_face("resources/fonts/HackNerdFontMono-Regular.ttf", 24);
+  // ui_manager->fonts[1] = load_font_face("resources/fonts/HackNerdFontMono-Bold.ttf", 48);
+  // ui_manager->fonts[2] = load_font_face("resources/fonts/HackNerdFontMono-Regular.ttf", 48);
+  ui_load_font(ui_manager, "resources/fonts/HackNerdFontMono-Regular.ttf", 24);
+  ui_load_font(ui_manager, "resources/fonts/HackNerdFontMono-Bold.ttf", 48);
+  ui_load_font(ui_manager, "resources/fonts/HackNerdFontMono-Regular.ttf", 48);
   Clay_SetMeasureTextFunction(MeasureText, ui_manager->fonts);
 
   ui_manager->paused = false;
@@ -178,8 +183,10 @@ void ui_render_frame(struct UIManager *ui_manager){
 }
 
 void ui_layout_stack_push(struct UIManager *ui_manager, struct Layout *layout){
+  printf("ui_layout_stack_push called!\n");
   if (ui_layout_stack_is_full(ui_manager)) return;
 
+  printf("Layout stack isn't full\n");
   ui_manager->layout_stack.layouts[ui_manager->layout_stack.size++] = *layout;
 }
 

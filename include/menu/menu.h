@@ -10,7 +10,6 @@ typedef enum {
   BUTTON_ACTION, // call some function
   BUTTON_MENU_FORWARD, // navigate forward/back through menu stack
   BUTTON_MENU_BACK,
-  BUTTON_QUIT // modify game state, set a should_exit bool
 } ButtonType;
 
 struct Button {
@@ -30,6 +29,7 @@ struct Menu {
   char *title;
   struct Button *buttons;
   int num_buttons;
+  struct Layout *layout;
   struct Menu *parent;
 };
 
@@ -59,7 +59,7 @@ bool menu_stack_is_full();
 bool menu_stack_is_empty();
 
 // Button
-void button_activate(struct Button *button);
+void menu_button_activate(struct Button *button);
 void button_print_text(void *arg);
 
 // Actions

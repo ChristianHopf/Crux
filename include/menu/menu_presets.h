@@ -15,6 +15,7 @@ Clay_RenderCommandArray compute_clay_layout_pause_menu(void *arg);
 
 struct Menu *pause_menu_create();
 struct Menu *main_menu_create();
+struct Menu *scene_select_menu_create();
 
 void action_load_scene_bouncehouse(void *arg);
 void action_load_scene_items(void *arg);

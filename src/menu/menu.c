@@ -1,5 +1,6 @@
 #include "menu/menu.h"
 #include "menu/menu_presets.h"
+#include "ui_manager.h"
 #include "game_state.h"
 #include "text.h"
 #include "engine.h"
@@ -13,6 +14,7 @@ void menu_manager_init(){
   menu_manager->current_depth = -1;
   menu_manager->pause_menu = pause_menu_create();
   menu_manager->main_menu = main_menu_create();
+  // menu_manager->scene_select_menu = scene_select_menu_create();
 }
 
 void menu_manager_destroy(){
@@ -84,6 +86,10 @@ struct Menu *menu_manager_get_main_menu(){
   return menu_manager->main_menu;
 }
 
+// struct Menu *menu_manager_get_scene_select_menu(){
+//   return menu_manager->scene_select_menu;
+// }
+
 bool menu_stack_push(struct Menu *menu){
   // Check if stack is already full
   if (menu_stack_is_full()){
@@ -132,6 +138,48 @@ bool menu_stack_is_empty(){
 //   // printf("Quit action\n");
 //   game_state_quit();
 // }
+
+void menu_button_activate(struct Button *button){
+  printf("menu_button_activate called!\n");
+  if (!button){
+    fprintf(stderr, "Error: invalid button in menu_button_activate\n");
+    return;
+  }
+  printf("Button is valid\n");
+  
+  struct UIManager *ui_manager = engine_get_ui_manager();
+  if (!ui_manager){
+    fprintf(stderr, "Error: failed to get ui manager in menu_button_activate\n");
+    return;
+  }
+  printf("Got ui manager\n");
+
+  switch(button->type){
+    case BUTTON_ACTION: {
+      if (button->data.action){
+        button->data.action(NULL);
+      }
+      break;
+    }
+    case BUTTON_MENU_FORWARD: {
+      if (button->data.menu){
+        printf("Time to push to layout stack\n");
+        ui_layout_stack_push(ui_manager, button->data.menu->layout);
+        printf("Successfully pushed to layout stack\n");
+      }
+      break;
+    }
+    case BUTTON_MENU_BACK: {
+      ui_layout_stack_pop(ui_manager);
+      break;
+    }
+    default: {
+      fprintf(stderr, "Error: unknown button type in menu_button_activate\n");
+      break;
+    }
+  }
+  printf("Switch over\n");
+}
 
 void button_print_text(void *arg){
   struct Button *button = (struct Button *)arg;

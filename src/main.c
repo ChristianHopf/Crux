@@ -244,11 +244,14 @@ void engine_init(){
     free(engine);
     return;
   }
-  ui_load_font(&engine->ui_manager, "resources/fonts/HackNerdFontMono-Regular.ttf", 24);
-  ui_load_font(&engine->ui_manager, "resources/fonts/HackNerdFontMono-Bold.ttf", 48);
-  ui_load_font(&engine->ui_manager, "resources/fonts/HackNerdFontMono-Regular.ttf", 48);
+  printf("Time to load fonts\n");
+  // ui_load_font(&engine->ui_manager, "resources/fonts/HackNerdFontMono-Regular.ttf", 24);
+  // ui_load_font(&engine->ui_manager, "resources/fonts/HackNerdFontMono-Bold.ttf", 48);
+  // ui_load_font(&engine->ui_manager, "resources/fonts/HackNerdFontMono-Regular.ttf", 48);
 
+  printf("Time to push version text layout\n");
   ui_layout_stack_push(&engine->ui_manager, &layout_version_text);
+  printf("Version text layout success\n");
   char **fps_text = calloc(1, sizeof(char *));
   layout_fps_counter.user_data = fps_text;
   ui_layout_stack_push(&engine->ui_manager, &layout_fps_counter);

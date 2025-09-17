@@ -1,6 +1,7 @@
 #include <string.h>
 #include "menu.h"
 #include "menu/menu_presets.h"
+#include "ui/base_layouts.h"
 #include "engine.h"
 #include "scene.h"
 #include "game_state.h"
@@ -141,9 +142,19 @@ Clay_RenderCommandArray compute_clay_layout_pause_menu(void *arg){
 
 struct Menu *pause_menu_create(){
   struct Menu *pause_menu = (struct Menu *)calloc(1, sizeof(struct Menu));
+  if (!pause_menu){
+    fprintf(stderr, "Error: failed to allocate menu in pause_menu_create\n");
+    return NULL;
+  }
+
   pause_menu->title = "PAUSED";
   pause_menu->num_buttons = 2;
   pause_menu->buttons = (struct Button *)calloc(pause_menu->num_buttons, sizeof(struct Button));
+  if (!pause_menu->buttons){
+    fprintf(stderr, "Error: failed to allocate buttons in pause_menu_create\n");
+    return NULL;
+  }
+
   pause_menu->buttons[0].text = "RESUME";
   pause_menu->buttons[0].type = BUTTON_ACTION;
   pause_menu->buttons[0].data.action = action_resume;
@@ -154,6 +165,9 @@ struct Menu *pause_menu_create(){
   pause_menu->buttons[1].data.action = action_exit;
   pause_menu->buttons[1].x = 920.0f;
   pause_menu->buttons[1].y = 480.0f;
+
+  pause_menu->layout = &layout_pause_menu;
+
   pause_menu->parent = NULL;
 
   return pause_menu;
@@ -161,32 +175,86 @@ struct Menu *pause_menu_create(){
 
 struct Menu *main_menu_create(){
   struct Menu *main_menu = (struct Menu *)calloc(1, sizeof(struct Menu));
+  if (!main_menu){
+    fprintf(stderr, "Error: failed to allocate menu in main_menu_create\n");
+    return NULL;
+  }
+
   main_menu->title = "MAIN";
-  main_menu->num_buttons = 5;
+  main_menu->num_buttons = 3;
   main_menu->buttons = (struct Button *)calloc(main_menu->num_buttons, sizeof(struct Button));
+  if (!main_menu->buttons){
+    fprintf(stderr, "Error: failed to allocate Buttons in main_menu_create\n");
+    free(main_menu);
+    return NULL;
+  }
+
   main_menu->buttons[0].text = "START";
   main_menu->buttons[0].type = BUTTON_ACTION;
   main_menu->buttons[0].data.action = action_start;
 
-  main_menu->buttons[1].text = "BOUNCEHOUSE";
-  main_menu->buttons[1].type = BUTTON_ACTION;
-  main_menu->buttons[1].data.action = action_load_scene_bouncehouse;
+  struct Menu *scene_select_menu = scene_select_menu_create();
+  if (!scene_select_menu){
+    fprintf(stderr, "Error: failed to create scene select menu in main_menu_create\n");
+    free(main_menu->buttons);
+    free(main_menu);
+    return NULL;
+  }
+  main_menu->buttons[1].text = "SCENE SELECT";
+  main_menu->buttons[1].type = BUTTON_MENU_FORWARD;
+  main_menu->buttons[1].data.menu = scene_select_menu;
 
-  main_menu->buttons[2].text = "ITEMS";
+  main_menu->buttons[2].text = "QUIT";
   main_menu->buttons[2].type = BUTTON_ACTION;
-  main_menu->buttons[2].data.action = action_load_scene_items;
+  main_menu->buttons[2].data.action = action_quit;
 
-  main_menu->buttons[3].text = "SCENE GRAPH";
-  main_menu->buttons[3].type = BUTTON_ACTION;
-  main_menu->buttons[3].data.action = action_load_scene_scenegraph;
-
-  main_menu->buttons[4].text = "QUIT";
-  main_menu->buttons[4].type = BUTTON_ACTION;
-  main_menu->buttons[4].data.action = action_quit;
+  main_menu->layout = &layout_main_menu;
 
   main_menu->parent = NULL;
 
   return main_menu;
+}
+
+struct Menu *scene_select_menu_create(){
+  struct Menu *scene_select_menu = (struct Menu *)calloc(1, sizeof(struct Menu));
+  if (!scene_select_menu){
+    fprintf(stderr, "Error: failed to allocate menu in scene_select_menu_create\n");
+    return NULL;
+  }
+
+  scene_select_menu->title = "SCENE SELECT";
+  scene_select_menu->num_buttons = 4;
+  scene_select_menu->buttons = (struct Button *)calloc(scene_select_menu->num_buttons, sizeof(struct Button));
+  if (!scene_select_menu->buttons){
+    fprintf(stderr, "Error: failed to allocate buttons in scene_select_menu_create\n");
+    free(scene_select_menu);
+    return NULL;
+  }
+
+  scene_select_menu->buttons[0].text = "BOUNCEHOUSE";
+  scene_select_menu->buttons[0].type = BUTTON_ACTION;
+  scene_select_menu->buttons[0].data.action = action_load_scene_bouncehouse;
+
+  scene_select_menu->buttons[1].text = "ITEMS";
+  scene_select_menu->buttons[1].type = BUTTON_ACTION;
+  scene_select_menu->buttons[1].data.action = action_load_scene_items;
+
+  scene_select_menu->buttons[2].text = "SCENE GRAPH";
+  scene_select_menu->buttons[2].type = BUTTON_ACTION;
+  scene_select_menu->buttons[2].data.action = action_load_scene_scenegraph;
+
+  scene_select_menu->buttons[3].text = "BACK";
+  scene_select_menu->buttons[3].type = BUTTON_MENU_BACK;
+  // scene_select_menu->buttons[4].data.action = action_quit;
+
+  // Having a menu own a layout which references the menu doesn't seem
+  // like the best solution to settle on.
+  layout_scene_select_menu.user_data = scene_select_menu;
+  scene_select_menu->layout = &layout_scene_select_menu;
+
+  scene_select_menu->parent = NULL;
+
+  return scene_select_menu;
 }
 
 void action_load_scene_bouncehouse(void *arg){

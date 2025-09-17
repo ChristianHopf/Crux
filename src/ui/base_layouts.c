@@ -14,6 +14,20 @@ struct Layout layout_main_menu = {
   .layout_update_function = ui_base_main_menu_update
 };
 
+struct Layout layout_pause_menu = {
+  .type = LAYOUT_MENU,
+  .layout_function = ui_base_pause_menu,
+  .user_data = NULL,
+  .layout_update_function = ui_base_pause_menu_update
+};
+
+struct Layout layout_scene_select_menu = {
+  .type = LAYOUT_MENU,
+  .layout_function = ui_base_scene_select_menu,
+  .user_data = NULL,
+  .layout_update_function = ui_base_scene_select_menu_update
+};
+
 struct Layout layout_version_text = {
   .type = LAYOUT_OVERLAY,
   .layout_function = ui_base_version_text,
@@ -183,7 +197,7 @@ Clay_RenderCommandArray ui_base_pause_menu(void *arg){
           },
           .backgroundColor = Clay_Hovered() ? (Clay_Color){0.0f, 0.549f, 1.0f, 0.8f} : (Clay_Color){0.0f, 0.3745f, 0.6294f, 0.0f}
         }){
-          Clay_OnHover(ui_handle_button_click, (intptr_t)button->data.action);
+          Clay_OnHover(ui_handle_button_click, (intptr_t)button);
           Clay_String button_string = {
             .isStaticallyAllocated = false,
             .chars = button->text,
@@ -260,7 +274,7 @@ Clay_RenderCommandArray ui_base_main_menu(void *arg){
           },
           .backgroundColor = Clay_Hovered() ? (Clay_Color){0.0f, 0.549f, 1.0f, 0.8f} : (Clay_Color){0.0f, 0.3745f, 0.6294f, 0.0f}
         }){
-          Clay_OnHover(ui_handle_button_click, (intptr_t)button->data.action);
+          Clay_OnHover(ui_handle_button_click, (intptr_t)button);
           Clay_String button_string = {
             .isStaticallyAllocated = false,
             .chars = button->text,
@@ -276,5 +290,82 @@ Clay_RenderCommandArray ui_base_main_menu(void *arg){
 }
 
 void ui_base_main_menu_update(float delta_time, void *user_data){
+
+}
+
+Clay_RenderCommandArray ui_base_scene_select_menu(void *arg){
+  struct Menu *menu = (struct Menu*)arg;
+
+  Clay_BeginLayout();
+
+  CLAY({ .id = CLAY_ID("MenuContainer"),
+    .layout = {
+      .layoutDirection = CLAY_TOP_TO_BOTTOM,
+      .sizing = {
+        .width = CLAY_SIZING_GROW(),
+        .height = CLAY_SIZING_GROW()
+      },
+       .padding = {0, 0, 0, 32 },
+       .childAlignment = {
+        .x = CLAY_ALIGN_X_CENTER
+       },
+       .childGap = 32
+    },
+    .backgroundColor = {0.0f, 0.2745f, 0.5294f, 1.0f}
+    }) {
+      CLAY({ .id = CLAY_ID("MenuHeader"),
+        .layout = {
+          .layoutDirection = CLAY_TOP_TO_BOTTOM,
+          .sizing = {
+            .width = CLAY_SIZING_GROW(),
+            .height = CLAY_SIZING_FIXED(60)
+          },
+          .childAlignment = {
+            .x = CLAY_ALIGN_X_CENTER,
+            .y = CLAY_ALIGN_Y_CENTER
+          }
+        }
+      }) {
+        CLAY_TEXT(CLAY_STRING("MENU: SCENE SELECT"), &ui_base_pause_menu_title_text_config);
+      }
+      CLAY({ .id = CLAY_ID("MenuNav"),
+        .layout = {
+          .layoutDirection = CLAY_TOP_TO_BOTTOM,
+          .sizing = {
+            .width = CLAY_SIZING_GROW(),
+            .height = CLAY_SIZING_GROW()
+          },
+          .childAlignment = {
+            .x = CLAY_ALIGN_X_CENTER,
+            .y = CLAY_ALIGN_Y_CENTER
+          },
+          .padding = { 8, 8, 8, 68 },
+          .childGap = 16
+        },
+      }) {
+      for (int i = 0; i < menu->num_buttons; i++){
+        struct Button *button = &menu->buttons[i];
+        CLAY({
+          .layout = {
+            .padding = {16, 16, 0, 12}
+          },
+          .backgroundColor = Clay_Hovered() ? (Clay_Color){0.0f, 0.549f, 1.0f, 0.8f} : (Clay_Color){0.0f, 0.3745f, 0.6294f, 0.0f}
+        }){
+          Clay_OnHover(ui_handle_button_click, (intptr_t)button);
+          Clay_String button_string = {
+            .isStaticallyAllocated = false,
+            .chars = button->text,
+            .length = strlen(button->text)
+          };
+          CLAY_TEXT(button_string, &ui_base_pause_menu_button_text_config);
+        }
+      }
+    }
+  }
+
+  return Clay_EndLayout();
+}
+
+void ui_base_scene_select_menu_update(float delta_time, void *user_data){
 
 }

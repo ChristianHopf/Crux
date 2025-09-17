@@ -5,6 +5,8 @@
 extern struct Layout layout_version_text;
 extern struct Layout layout_fps_counter;
 extern struct Layout layout_main_menu;
+extern struct Layout layout_pause_menu;
+extern struct Layout layout_scene_select_menu;
 
 
 // Text layouts
@@ -18,3 +20,5 @@ Clay_RenderCommandArray ui_base_pause_menu(void *arg);
 void ui_base_pause_menu_update(float delta_time, void *user_data);
 Clay_RenderCommandArray ui_base_main_menu(void *arg);
 void ui_base_main_menu_update(float delta_time, void *user_data);
+Clay_RenderCommandArray ui_base_scene_select_menu(void *arg);
+void ui_base_scene_select_menu_update(float delta_time, void *user_data);
