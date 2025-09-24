@@ -8,15 +8,30 @@
 static struct GameState game_state;
 
 void game_state_init(){
+  game_state.mode = GAME_STATE_MAIN_MENU;
   game_state.is_paused = false;
   game_state.should_quit = false;
   game_state.observers = NULL;
 }
 
+GameStateMode game_state_get_mode(){
+  return game_state.mode;
+}
+
+void game_state_set_mode(GameStateMode mode){
+  game_state.mode = mode;
+}
+
+void game_start(){
+  game_state.is_paused = false;
+  game_state.mode = GAME_STATE_PLAYING;
+}
+
 // GameState modifiers
-void game_pause(){
+void game_state_pause(){
   // Modify game state
   game_state.is_paused = true;
+  game_state.mode = GAME_STATE_PAUSED;
   // printf("Pausing, game_state.is_paused is now %s\n", game_state.is_paused ? "true" : "false");
 
   // Push pause menu to menu stack
@@ -34,9 +49,10 @@ void game_pause(){
   window_release_cursor();
 }
 
-void game_unpause(){
+void game_state_unpause(){
   // Modify game state
   game_state.is_paused = false;
+  game_state.mode = GAME_STATE_PLAYING;
   // printf("Unpausing, game_state.is_paused is now %s\n", game_state.is_paused ? "true" : "false");
 
   // Pop from the menu stack
@@ -49,7 +65,14 @@ void game_unpause(){
   window_capture_cursor();
 }
 
-void game_quit(){
+void game_state_exit(){
+  game_state.is_paused = false;
+  game_state.mode = GAME_STATE_MAIN_MENU;
+
+  game_state_update();
+}
+
+void game_state_quit(){
   game_state.should_quit = true;
   // printf("game_state.should_quit is %s\n", game_state.should_quit ? "true" :"false");
 
@@ -59,7 +82,15 @@ void game_quit(){
 
 // GameState getters
 bool game_state_is_paused(){
-  return game_state.is_paused;
+  return game_state.mode == GAME_STATE_PAUSED || game_state.mode == GAME_STATE_MAIN_MENU;
+}
+
+bool game_state_is_main_menu(){
+  return game_state.mode == GAME_STATE_MAIN_MENU;
+}
+
+bool game_state_is_playing(){
+  return game_state.mode == GAME_STATE_PLAYING;
 }
 
 bool game_state_should_quit(){

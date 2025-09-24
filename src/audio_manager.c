@@ -1,104 +1,103 @@
 #include "string.h"
 #include "scene.h"
-#include "camera.h"
 #include "audio_manager.h"
+#include "camera.h"
 #include "game_state.h"
 #include "entity.h"
 // #include <AL/al.h>
 #include <locale.h>
 #include <time.h>
 
-static struct AudioManager *global_audio_manager = NULL;
-
-void audio_manager_init(){
-  global_audio_manager = (struct AudioManager *)calloc(1, sizeof(struct AudioManager));
-  if (!global_audio_manager){
-    fprintf(stderr, "Error: failed to allocate AudioManager in audio_manager_init\n");
-    return;
-  }
+bool audio_manager_init(struct AudioManager *audio_manager){
+  // global_audio_manager = (struct AudioManager *)calloc(1, sizeof(struct AudioManager));
+  // if (!global_audio_manager){
+  //   fprintf(stderr, "Error: failed to allocate AudioManager in audio_manager_init\n");
+  //   return;
+  // }
 
   // Device
-  global_audio_manager->device = alcOpenDevice(NULL);
-  if (!global_audio_manager->device){
+  audio_manager->device = alcOpenDevice(NULL);
+  if (!audio_manager->device){
     ALCenum error = alcGetError(NULL);
     fprintf(stderr, "Error: failed to open OpenAL device: %d\\n", error);
-    return;
+    return false;
   }
 
   // Context
-  global_audio_manager->context = alcCreateContext(global_audio_manager->device, NULL);
-  if (!global_audio_manager->context){
+  audio_manager->context = alcCreateContext(audio_manager->device, NULL);
+  if (!audio_manager->context){
     fprintf(stderr, "Error: failed to create OpenAL context\n");
-    alcCloseDevice(global_audio_manager->device);
-    return;
+    alcCloseDevice(audio_manager->device);
+    return false;
   }
-  alcMakeContextCurrent(global_audio_manager->context);
+  alcMakeContextCurrent(audio_manager->context);
 
   // Sources
-  global_audio_manager->num_active_sources = 0;
+  audio_manager->num_active_sources = 0;
 
   // Global configuration
   alDistanceModel(AL_INVERSE_DISTANCE_CLAMPED);
 
   // Sound effects
-  global_audio_manager->num_sound_effects = 0;
+  audio_manager->num_sound_effects = 0;
 
   // Options
-  global_audio_manager->paused = false;
+  audio_manager->paused = false;
+
+  return true;
 }
 
-void audio_manager_free(){
-  if (global_audio_manager){
-    if (global_audio_manager->audio_stream){
-      audio_stream_destroy(global_audio_manager->audio_stream);
+void audio_manager_destroy(struct AudioManager *audio_manager){
+  if (audio_manager){
+    if (audio_manager->audio_stream){
+      audio_stream_destroy(audio_manager->audio_stream);
     }
-    alcDestroyContext(global_audio_manager->context);
-    alcCloseDevice(global_audio_manager->device);
-    free(global_audio_manager);
+    alcDestroyContext(audio_manager->context);
+    alcCloseDevice(audio_manager->device);
   }
 }
 
-struct AudioManager *audio_manager_get_global(){
-  return global_audio_manager;
-}
+// struct AudioManager *audio_manager_get_global(){
+//   return audio_manager;
+// }
 
-bool audio_add_source(ALuint source){
+bool audio_add_source(struct AudioManager *audio_manager, ALuint source){
   // Check if active_sources is full
-  if (global_audio_manager->num_active_sources >= MAX_SOURCES){
+  if (audio_manager->num_active_sources >= MAX_SOURCES){
     return false;
   }
 
   // Add source and increment num_active_sources
-  global_audio_manager->sources[global_audio_manager->num_active_sources] = source;
-  global_audio_manager->num_active_sources++;
+  audio_manager->sources[audio_manager->num_active_sources] = source;
+  audio_manager->num_active_sources++;
   return true;
 }
 
-bool audio_remove_source(ALuint source){
+bool audio_remove_source(struct AudioManager *audio_manager, ALuint source){
   // Check if source is in sources
-  for (int i = 0; i < global_audio_manager->num_active_sources; i++){
-    if (global_audio_manager->sources[i] == source){
+  for (int i = 0; i < audio_manager->num_active_sources; i++){
+    if (audio_manager->sources[i] == source){
       // Remove source and decrement num_active_sources
-      global_audio_manager->sources[i] = global_audio_manager->sources[global_audio_manager->num_active_sources - 1];
-      global_audio_manager->num_active_sources--;
+      audio_manager->sources[i] = audio_manager->sources[audio_manager->num_active_sources - 1];
+      audio_manager->num_active_sources--;
       return true;
     }
   }
   return false;
 }
 
-void audio_pause(){
+void audio_pause(struct AudioManager *audio_manager){
   // If already paused, exit
-  if (global_audio_manager->paused){
+  if (audio_manager->paused){
     return;
   }
 
   // Pause music stream
   ALint state;
-  if (global_audio_manager->audio_stream){
-    alGetSourcei(global_audio_manager->audio_stream->source, AL_SOURCE_STATE, &state);
+  if (audio_manager->audio_stream){
+    alGetSourcei(audio_manager->audio_stream->source, AL_SOURCE_STATE, &state);
     if (state == AL_PLAYING){
-      alSourcePause(global_audio_manager->audio_stream->source);
+      alSourcePause(audio_manager->audio_stream->source);
     }
   }
   ALenum error = alGetError();
@@ -107,10 +106,10 @@ void audio_pause(){
   }
 
   // Pause all playing sources
-  for(int i = 0; i < global_audio_manager->num_active_sources; i++){
-    alGetSourcei(global_audio_manager->sources[i], AL_SOURCE_STATE, &state);
+  for(int i = 0; i < audio_manager->num_active_sources; i++){
+    alGetSourcei(audio_manager->sources[i], AL_SOURCE_STATE, &state);
     if (state == AL_PLAYING){
-      alSourcePause(global_audio_manager->sources[i]);
+      alSourcePause(audio_manager->sources[i]);
     }
     error = alGetError();
     if (error != AL_NO_ERROR){
@@ -118,21 +117,21 @@ void audio_pause(){
     }
   }
 
-  global_audio_manager->paused = true;
+  audio_manager->paused = true;
 }
 
-void audio_unpause(){
+void audio_unpause(struct AudioManager *audio_manager){
   // If already unpaused, exit
-  if (!global_audio_manager->paused){
+  if (!audio_manager->paused){
     return;
   }
 
   // Unpause music stream
   ALint state;
-  if (global_audio_manager->audio_stream){
-    alGetSourcei(global_audio_manager->audio_stream->source, AL_SOURCE_STATE, &state);
+  if (audio_manager->audio_stream){
+    alGetSourcei(audio_manager->audio_stream->source, AL_SOURCE_STATE, &state);
     if (state == AL_PAUSED){
-      alSourcePlay(global_audio_manager->audio_stream->source);
+      alSourcePlay(audio_manager->audio_stream->source);
     }
   }
   ALenum error = alGetError();
@@ -141,10 +140,10 @@ void audio_unpause(){
   }
 
   // Pause all playing sources
-  for(int i = 0; i < global_audio_manager->num_active_sources; i++){
-    alGetSourcei(global_audio_manager->sources[i], AL_SOURCE_STATE, &state);
+  for(int i = 0; i < audio_manager->num_active_sources; i++){
+    alGetSourcei(audio_manager->sources[i], AL_SOURCE_STATE, &state);
     if (state == AL_PAUSED){
-      alSourcePlay(global_audio_manager->sources[i]);
+      alSourcePlay(audio_manager->sources[i]);
     }
     error = alGetError();
     if (error != AL_NO_ERROR){
@@ -152,12 +151,12 @@ void audio_unpause(){
     }
   }
 
-  global_audio_manager->paused = false;
+  audio_manager->paused = false;
 }
 
-void audio_stream_create(char *path){
+void audio_stream_create(struct AudioManager *audio_manager, char *path){
 
-  alcMakeContextCurrent(global_audio_manager->context);
+  alcMakeContextCurrent(audio_manager->context);
 
   // Allocate AudioStream
   struct AudioStream *stream = calloc(1, sizeof(struct AudioStream));
@@ -211,7 +210,7 @@ void audio_stream_create(char *path){
     fprintf(stderr, "Error: failed to generate source in audio_stream_create\n");
     return;
   }
-  if (!audio_add_source(stream->source)){
+  if (!audio_add_source(audio_manager, stream->source)){
     fprintf(stderr, "Error: failed to add source to source pool in audio_stream_create\n");
     alDeleteSources(1, &stream->source);
     return;
@@ -228,7 +227,7 @@ void audio_stream_create(char *path){
   }
 
   // Start audio thread
-  if (thrd_create(&stream->audio_thread, audio_stream_update, stream) != thrd_success){
+  if (thrd_create(&stream->audio_thread, audio_stream_update, audio_manager) != thrd_success){
     fprintf(stderr, "Error: failed to start audio thread in audio_stream_create\n");
     alDeleteSources(1, &stream->source);
     alDeleteBuffers(NUM_BUFFERS, stream->buffers);
@@ -239,7 +238,7 @@ void audio_stream_create(char *path){
 
   alSourcePlay(stream->source);
 
-  global_audio_manager->audio_stream = stream;
+  audio_manager->audio_stream = stream;
 }
 
 void audio_stream_destroy(struct AudioStream *stream){
@@ -258,11 +257,11 @@ void audio_stream_destroy(struct AudioStream *stream){
 }
 
 int audio_stream_update(void *arg){
-  struct AudioStream *stream = (struct AudioStream *)arg;
+  struct AudioManager *audio_manager = (struct AudioManager *)arg;
+  struct AudioStream *stream = audio_manager->audio_stream;
 
-  alcMakeContextCurrent(global_audio_manager->context);
+  alcMakeContextCurrent(audio_manager->context);
   while (!stream->stop_audio){
-
 
     // Check for processed buffers
     ALint processed = 0;
@@ -349,7 +348,7 @@ bool fill_buffer(struct AudioStream *stream, ALuint buffer){
   return false;
 }
 
-void audio_sound_effect_create(char *path, char *name){
+void audio_sound_effect_create(struct AudioManager *audio_manager, char *path, char *name){
   // Open sound effect file
   SF_INFO sfx_info;
   SNDFILE *sfx_file = sf_open(path, SFM_READ, &sfx_info);
@@ -381,7 +380,7 @@ void audio_sound_effect_create(char *path, char *name){
     name,
     sfx_buffer
   };
-  global_audio_manager->sound_effects[global_audio_manager->num_sound_effects++] = sound_effect;
+  audio_manager->sound_effects[audio_manager->num_sound_effects++] = sound_effect;
 
   free(sfx_data);
 }
@@ -393,7 +392,7 @@ void audio_sound_effect_play(struct SoundEffect *sound_effect){
   alSourcePlay(source);
 }
 
-void audio_component_create(struct Scene *scene, uuid_t entity_id, int sound_effect_index){
+void audio_component_create(struct Scene *scene, uuid_t entity_id, struct AudioManager *audio_manager, int sound_effect_index){
   // Reallocate AudioComponent array if full
   if (scene->num_audio_components >= scene->max_audio_components){
     printf("audio component realloc time\n");
@@ -411,7 +410,7 @@ void audio_component_create(struct Scene *scene, uuid_t entity_id, int sound_eff
     fprintf(stderr, "Error generating AudioComponent source in audio_component_create: %d\n", audio_component_error);
     return;
   }
-  if (!audio_add_source(audio_component->source_id)){
+  if (!audio_add_source(audio_manager, audio_component->source_id)){
     fprintf(stderr, "Error: failed to add source to source pool in audio_component_create\n");
     alDeleteSources(1, &audio_component->source_id);
     return;
@@ -440,7 +439,7 @@ void audio_component_create(struct Scene *scene, uuid_t entity_id, int sound_eff
   }
 
   // Assign buffer from sound effects
-  alSourcei(audio_component->source_id, AL_BUFFER, global_audio_manager->sound_effects[sound_effect_index].buffer);
+  alSourcei(audio_component->source_id, AL_BUFFER, audio_manager->sound_effects[sound_effect_index].buffer);
   audio_component_error = alGetError();
   if (audio_component_error != AL_NO_ERROR){
     fprintf(stderr, "Error setting AudioComponent buffer in audio_component_create: %d\n", audio_component_error);
@@ -448,16 +447,16 @@ void audio_component_create(struct Scene *scene, uuid_t entity_id, int sound_eff
   }
 }
 
-void audio_component_destroy(struct AudioComponent *audio_component){
-  if (!audio_remove_source(audio_component->source_id)){
+void audio_component_destroy(struct AudioManager *audio_manager, struct AudioComponent *audio_component){
+  if (!audio_remove_source(audio_manager, audio_component->source_id)){
     fprintf(stderr, "Error: failed to remove audio source in audio_component_destroy\n");
   }
 }
 
-void audio_component_play(struct AudioComponent *audio_component){
+void audio_component_play(struct AudioManager *audio_manager, struct AudioComponent *audio_component){
   // Set context if not set
   if (!alcGetCurrentContext()) {
-    alcMakeContextCurrent(global_audio_manager->context);
+    alcMakeContextCurrent(audio_manager->context);
     if (!alcGetCurrentContext()) {
       fprintf(stderr, "Error: failed to set OpenAL context\n");
       return;
@@ -506,7 +505,7 @@ void audio_listener_update(struct Scene *scene, uuid_t entity_id){
   struct CameraComponent *camera = scene_get_camera_by_entity_id(scene, entity_id);
 
   // Set context
-  alcMakeContextCurrent(global_audio_manager->context);
+  // alcMakeContextCurrent(audio_manager->context);
   ALenum player_error = alGetError();
   if (player_error != AL_NO_ERROR){
     fprintf(stderr, "Error: failed to set audio context in audio_listener_update\n");
@@ -542,14 +541,14 @@ void audio_listener_update(struct Scene *scene, uuid_t entity_id){
 }
 
 
-struct GameStateObserver *audio_game_state_observer_create(){
+struct GameStateObserver *audio_game_state_observer_create(struct AudioManager *audio_manager){
   struct GameStateObserver *audio_game_state_observer = (struct GameStateObserver *)malloc(sizeof(struct GameStateObserver));
   if (!audio_game_state_observer){
     fprintf(stderr, "Error: failed to allocate audio_game_state_observer in engine_create\n");
     return NULL;
   }
 
-  audio_game_state_observer->instance = global_audio_manager;
+  audio_game_state_observer->instance = audio_manager;
   audio_game_state_observer->notification = audio_game_state_changed;
 
   return audio_game_state_observer;
@@ -557,12 +556,13 @@ struct GameStateObserver *audio_game_state_observer_create(){
 
 void audio_game_state_changed(void *instance, GameState *game_state){
   // Check instance (some kind of observer type enum, just make it work for now)
+  struct AudioManager *audio_manager = (struct AudioManager *)instance;
 
   // Handle game state (pause)
   if (game_state->is_paused){
-    audio_pause();
+    audio_pause(audio_manager);
   }
   else{
-    audio_unpause();
+    audio_unpause(audio_manager);
   }
 }

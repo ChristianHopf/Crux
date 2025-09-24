@@ -19,22 +19,23 @@
 #include "window_manager.h"
 #include "event.h"
 #include <uuid/uuid.h>
+#include "engine.h"
 
 typedef struct {
-  // Window
   GLFWwindow *window;
   int screen_width;
   int screen_height;
-  // Mouse
   bool mouse_down;
-  // Scene
-  struct Scene *active_scene;
-  // Events
+  // struct Scene *active_scene;
+  struct SceneManager scene_manager;
+  struct AudioManager audio_manager;
+  struct UIManager ui_manager;
   struct GameEventQueue game_event_queue;
-  // Timing
   float delta_time;
   float last_frame;
 } Engine;
+
+static Engine *engine = NULL;
 
 void framebuffer_size_callback(GLFWwindow *window, int width, int height);
 void window_size_callback(GLFWwindow *window, int width, int height);
@@ -59,30 +60,31 @@ vec3 lightPos = {1.2f, 0.5f, 2.0f};
 static int last_space_state = GLFW_RELEASE;
 void processInput(GLFWwindow *window){
   Engine *engine = (Engine *)glfwGetWindowUserPointer(window);
+  struct Scene *scene = engine->scene_manager.active_scene;
 
   if (!game_state_is_paused()){
     // Camera movement
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS){
-      player_process_keyboard_input(engine->active_scene, engine->active_scene->local_player_entity_id, CAMERA_FORWARD, engine->delta_time);
+      player_process_keyboard_input(scene, scene->local_player_entity_id, CAMERA_FORWARD, engine->delta_time);
       // player_process_keyboard_input(&engine->active_scene->player, CAMERA_FORWARD, engine->delta_time);
     }
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS){
-      player_process_keyboard_input(engine->active_scene, engine->active_scene->local_player_entity_id, CAMERA_BACKWARD, engine->delta_time);
+      player_process_keyboard_input(scene, scene->local_player_entity_id, CAMERA_BACKWARD, engine->delta_time);
       // player_process_keyboard_input(&engine->active_scene->player, CAMERA_BACKWARD, engine->delta_time);
     }
     if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS){
-      player_process_keyboard_input(engine->active_scene, engine->active_scene->local_player_entity_id, CAMERA_LEFT, engine->delta_time);
+      player_process_keyboard_input(scene, scene->local_player_entity_id, CAMERA_LEFT, engine->delta_time);
       // player_process_keyboard_input(&engine->active_scene->player, CAMERA_LEFT, engine->delta_time);
     }
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS){
-      player_process_keyboard_input(engine->active_scene, engine->active_scene->local_player_entity_id, CAMERA_RIGHT, engine->delta_time);
+      player_process_keyboard_input(scene, scene->local_player_entity_id, CAMERA_RIGHT, engine->delta_time);
       // player_process_keyboard_input(&engine->active_scene->player, CAMERA_RIGHT, engine->delta_time);
     }
 
     // Only process these inputs a single time per press
     int space_state = glfwGetKey(window, GLFW_KEY_SPACE);
     if (space_state == GLFW_PRESS && last_space_state == GLFW_RELEASE){
-      player_jump(engine->active_scene, engine->active_scene->local_player_entity_id);
+      player_jump(scene, scene->local_player_entity_id);
     }
     last_space_state = space_state;
   }
@@ -104,6 +106,7 @@ void window_size_callback(GLFWwindow *window, int width, int height){
 
 void mouse_callback(GLFWwindow *window, double xpos, double ypos){
   Engine *engine = (Engine *)glfwGetWindowUserPointer(window);
+  struct Scene *scene = engine->scene_manager.active_scene;
 
 	if (firstMouse){
 		lastX = (float)xpos;
@@ -117,8 +120,8 @@ void mouse_callback(GLFWwindow *window, double xpos, double ypos){
 	lastY = (float)ypos;
 
   // Update camera
-  if (!game_state_is_paused()){
-    player_process_mouse_input(engine->active_scene, engine->active_scene->local_player_entity_id, xoffset, yoffset);
+  if (game_state_is_playing()){
+    player_process_mouse_input(scene, scene->local_player_entity_id, xoffset, yoffset);
   }
 }
 
@@ -134,7 +137,9 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 
 void scroll_callback(GLFWwindow *window, double xoffset, double yoffset){
   Engine *engine = (Engine *)glfwGetWindowUserPointer(window);
-  struct CameraComponent *camera = scene_get_camera_by_entity_id(engine->active_scene, engine->active_scene->local_player_entity_id);
+  struct Scene *scene = engine->scene_manager.active_scene;
+
+  struct CameraComponent *camera = scene_get_camera_by_entity_id(scene, scene->local_player_entity_id);
   if (!game_state_is_paused()){
     camera_process_scroll_input(camera, yoffset);
   }
@@ -144,23 +149,25 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
   Engine *engine = (Engine *)glfwGetWindowUserPointer(window);
   // Pause
   if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS){
+    if (game_state_is_main_menu()) return;
+
     if (!game_state_is_paused()){
-      game_pause();
+      game_state_pause();
 	    glfwSetInputMode(engine->window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
       firstMouse = true;
     } else {
-      game_unpause();
+      game_state_unpause();
 	    glfwSetInputMode(engine->window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     }
   }
 }
 
-Engine *engine_create(){
+void engine_init(){
   // Allocate Engine struct
-  Engine *engine = (Engine *)calloc(1, sizeof(Engine));
+  engine = (Engine *)calloc(1, sizeof(Engine));
   if (!engine){
     fprintf(stderr, "Error: failed to allocate Engine\n");
-    return NULL;
+    return;
   }
 
 	// Init GLFW
@@ -176,7 +183,7 @@ Engine *engine_create(){
 		fprintf(stderr, "Failed to create GLFW window\n");
     free(engine);
 		glfwTerminate();
-		return NULL;
+		return;
 	}
   engine->window = window;
   engine->screen_width = SCREEN_WIDTH;
@@ -193,14 +200,13 @@ Engine *engine_create(){
   // Window manager for exposing window functions
   window_manager_init(window);
 
-	// Capture mouse
-	glfwSetInputMode(engine->window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+  window_release_cursor();
 
 	// Init GLAD
 	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)){
 		fprintf(stderr, "Failed to initialize GLAD\n");
     free(engine);
-		return NULL;
+		return;
 	}
 
   // Flip textures across y-axis
@@ -213,71 +219,140 @@ Engine *engine_create(){
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
   // Initialize AudioManager
-  audio_manager_init();
+  if (!audio_manager_init(&engine->audio_manager)){
+    fprintf(stderr, "Error: failed to initialize AudioManager in engine_init\n");
+    free(engine);
+    return;
+  }
 
   // Initialize MenuManager
   menu_manager_init();
 
+  // Initialize SceneManager
+  if (!scene_manager_init(&engine->scene_manager)){
+    fprintf(stderr, "Error: failed to initialize SceneManager in engine_init\n");
+    free(engine);
+    return;
+  }
+
   // UI manager
-  ui_manager_init(SCREEN_WIDTH, SCREEN_HEIGHT);
-  ui_load_font("resources/fonts/HackNerdFontMono-Regular.ttf", 24);
-  ui_load_font("resources/fonts/HackNerdFontMono-Bold.ttf", 48);
-  ui_load_font("resources/fonts/HackNerdFontMono-Regular.ttf", 48);
-  // struct Layout layout_version_text = {
-  //   .type = LAYOUT_OVERLAY,
-  //   .layout_function = compute_clay_layout_overlay
-  // };
-  ui_layout_stack_push(layout_version_text);
+  if (!ui_manager_init(&engine->ui_manager, SCREEN_WIDTH, SCREEN_HEIGHT)){
+    fprintf(stderr, "Error: failed to initialize UIManager in engine_init\n");
+    free(engine);
+    return;
+  }
+
+  ui_layout_stack_push(&engine->ui_manager, &layout_version_text);
+  char **fps_text = calloc(1, sizeof(char *));
+  layout_fps_counter.user_data = fps_text;
+  ui_layout_stack_push(&engine->ui_manager, &layout_fps_counter);
+
+  // Main menu layout
+  struct Menu *main_menu = menu_manager_get_main_menu();
+  layout_main_menu.user_data = main_menu;
+  ui_layout_stack_push(&engine->ui_manager, &layout_main_menu);
 
   // Initialize game state
   game_state_init();
 
   // Add game state observers
-  struct GameStateObserver *audio_game_state_observer = audio_game_state_observer_create();
+  struct GameStateObserver *audio_game_state_observer = audio_game_state_observer_create(&engine->audio_manager);
   if (!audio_game_state_observer){
     fprintf(stderr, "Error: failed to get audio_game_state_observer in engine_create\n");
-    return NULL;
+    return;
   }
   attach_observer(audio_game_state_observer);
-  struct GameStateObserver *ui_game_state_observer = ui_game_state_observer_create();
+  struct GameStateObserver *ui_game_state_observer = ui_game_state_observer_create(&engine->ui_manager);
   if (!ui_game_state_observer){
     fprintf(stderr, "Error: failed to get ui_game_state_observer in engine_create\n");
-    return NULL;
+    return;
   }
   attach_observer(ui_game_state_observer);
-
-  // Load scene
-  engine->active_scene = scene_init("scenes/itemfix.json");
-  if (!engine->active_scene){
-    fprintf(stderr, "Error: failed to create scene\n");
-    free(engine);
-    return NULL;
-  }
-
-  // Initialize Event queue
-  game_event_queue_init(engine->active_scene);
 
   // Timing
   engine->delta_time = 0.0f;
   engine->last_frame = 0.0f;
-
-  return engine;
 }
 
-void engine_free(Engine *engine){
+struct SceneManager *engine_get_scene_manager(){
+  return &engine->scene_manager;
+}
+
+struct AudioManager *engine_get_audio_manager(){
+  return &engine->audio_manager;
+}
+
+struct UIManager *engine_get_ui_manager(){
+  return &engine->ui_manager;
+}
+
+void engine_start_game(){
+  if (!engine){
+    fprintf(stderr, "Error: engine is null in engine_start_game\n");
+    return;
+  }
+
+  if (!engine->scene_manager.active_scene){
+    fprintf(stderr, "Error: no active scene in engine_start_game\n");
+    return;
+  }
+
+  // Init GameState, GameEventQueue
+  game_state_set_mode(GAME_STATE_PLAYING);
+  game_event_queue_init(engine->scene_manager.active_scene);
+
+  // Pop main menu layout
+  ui_layout_stack_pop(&engine->ui_manager);
+
+  // Capture cursor
+  window_capture_cursor();
+
+  stbi_set_flip_vertically_on_load(true);
+}
+
+void engine_exit_game(){
+  if (!engine || !engine->scene_manager.active_scene){
+    fprintf(stderr, "Error: failed to start game in start_game, engine or scene_manager is null\n");
+    return;
+  }
+
+  // Unload scene
+  scene_manager_unload_scene(&engine->scene_manager);
+  game_event_queue_destroy();
+  game_state_exit();
+
+  // Pop pause menu, push main menu
+  struct Menu *main_menu = menu_manager_get_main_menu();
+  layout_main_menu.user_data = main_menu;
+  // ui_layout_stack_pop(&engine->ui_manager);
+  ui_layout_stack_push(&engine->ui_manager, &layout_main_menu);
+
+  // Release cursor
+  window_release_cursor();
+}
+
+void engine_free(){
+  if (!engine) return;
+
   glfwDestroyWindow(engine->window);
-  scene_free(engine->active_scene);
+
+  scene_manager_destroy(&engine->scene_manager);
+  audio_manager_destroy(&engine->audio_manager);
+  ui_manager_destroy(&engine->ui_manager);
+
   free(engine->game_event_queue.events);
   free(engine);
 }
 
 int main(){
-  Engine *engine = engine_create();
+  engine_init();
   if (!engine){
     fprintf(stderr, "Error: failed to create Engine\n");
     glfwTerminate();
     return -1;
   }
+
+  // start_game();
 
 	// Render loop
 	while (!glfwWindowShouldClose(engine->window)){
@@ -291,32 +366,27 @@ int main(){
 		// Handle input
 		processInput(engine->window);
 
-    if (game_state_is_paused()){
+    // if (game_state_is_paused()){
 
-      // Update Clay layout dimensions and pointer state
-      ui_update_frame(engine->screen_width, engine->screen_height, engine->delta_time);
+    // Update Clay layout dimensions and pointer state
+    ui_update_frame(&engine->ui_manager, engine->screen_width, engine->screen_height, engine->delta_time);
 
+    GameStateMode mode = game_state_get_mode();
+    if (mode != GAME_STATE_PLAYING){
       double xpos, ypos;
       glfwGetCursorPos(engine->window, &xpos, &ypos);
       ui_update_mouse(xpos, ypos, engine->mouse_down);
-
-      // Render UI
-      ui_render_frame();
     }
-    else{
-      scene_update(engine->active_scene, engine->delta_time);
 
-      // Render scene
-      scene_render(engine->active_scene);
-
-      // Update Clay layout dimensions
-      ui_update_frame(engine->screen_width, engine->screen_height, engine->delta_time);
-      printf("ui_update_frame success!\n");
-
-      // Render UI
-      ui_render_frame();
-      printf("ui_render_frame success!\n");
+    struct Scene *active_scene = engine->scene_manager.active_scene;
+    if (active_scene){
+      if (mode == GAME_STATE_PLAYING){
+        scene_update(active_scene, engine->delta_time);
+      }
+      scene_render(active_scene);
     }
+    // Render UI
+    ui_render_frame(&engine->ui_manager);
 
     glfwSwapBuffers(engine->window);
 		glfwPollEvents();
@@ -328,9 +398,8 @@ int main(){
   }
 
   // Teardown
-  audio_manager_free();
   // ui_manager_free();
-  engine_free(engine);
+  engine_free();
   glfwTerminate();
 
 	return 0;

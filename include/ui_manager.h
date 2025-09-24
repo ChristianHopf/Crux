@@ -17,12 +17,13 @@ typedef enum {
 } LayoutType;
 
 typedef Clay_RenderCommandArray (*LayoutFunction)(void *arg);
+typedef void (*LayoutUpdateFunction)(float delta_time, void *user_data);
 
 struct Layout {
   LayoutType type;
   LayoutFunction layout_function;
-  // void *user_data;
-  // void (*update_function)(void *arg);
+  void *user_data;
+  LayoutUpdateFunction layout_update_function;
 };
 
 struct LayoutStack {
@@ -35,28 +36,30 @@ struct UIManager {
    Clay_Arena clay_arena;
    struct LayoutStack layout_stack;
    struct Font *fonts[16];
-   int num_fonts;
+   unsigned int num_fonts;
 
    bool paused;
 };
 
+void ui_handle_button_click(Clay_ElementId elementId, Clay_PointerData pointerData, intptr_t userData);
+
 // Documentation later
-void ui_manager_init(float screen_width, float screen_height);
-void ui_load_font(char *path, int size);
-void ui_render_frame();
-void ui_update_frame(float screen_width, float screen_height, float delta_time);
+bool ui_manager_init(struct UIManager *ui_manager, float screen_width, float screen_height);
+void ui_manager_destroy(struct UIManager *ui_manager);
+void ui_load_font(struct UIManager *ui_manager, char *path, int size);
+void ui_render_frame(struct UIManager *ui_manager);
+void ui_update_frame(struct UIManager *ui_manager, float screen_width, float screen_height, float delta_time);
 void ui_update_mouse(double xpos, double ypos, bool mouse_down);
-void ui_draw_clay_layout(Clay_RenderCommandArray render_commands);
 
 // Layout stack
-void ui_layout_stack_push(struct Layout layout);
-void ui_layout_stack_pop();
-void ui_layout_stack_clear();
-bool ui_layout_stack_is_full();
-bool ui_layout_stack_is_empty();
+void ui_layout_stack_push(struct UIManager *ui_manager, struct Layout *layout);
+void ui_layout_stack_pop(struct UIManager *ui_manager);
+void ui_layout_stack_clear(struct UIManager *ui_manager);
+bool ui_layout_stack_is_full(struct UIManager *ui_manager);
+bool ui_layout_stack_is_empty(struct UIManager *ui_manager);
 
 // GameState observation
-struct GameStateObserver *ui_game_state_observer_create();
+struct GameStateObserver *ui_game_state_observer_create(struct UIManager *ui_manager);
 void ui_game_state_changed(void *instance, struct GameState *game_state);
-void ui_pause();
-void ui_unpause();
+void ui_pause(struct UIManager *ui_manager);
+void ui_unpause(struct UIManager *ui_manager);

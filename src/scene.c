@@ -5,6 +5,7 @@
 #include <cglm/mat3.h>
 #include "entity.h"
 #include "scene.h"
+#include "audio_manager.h"
 #include "render_context.h"
 #include "model.h"
 #include "player.h"
@@ -16,11 +17,55 @@
 #include "physics/aabb.h"
 #include "physics/debug_renderer.h"
 #include "physics/utils.h"
-#include "audio_manager.h"
 #include "event.h"
+#include "engine.h"
 #include "utils.h"
 
-struct Scene *scene_init(char *scene_path){
+// Don't need more than this right now, since the SceneManager has nothing
+// but a pointer to a Scene.
+bool scene_manager_init(struct SceneManager *scene_manager){
+  scene_manager->active_scene = NULL;
+  return true;
+  // struct SceneManager *scene_manager = calloc(1, sizeof(struct SceneManager));
+  // if (!scene_manager){
+  //   fprintf(stderr, "Error: failed to allocate SceneManager in scene_manager_create\n");
+  //   return NULL;
+  // }
+  //
+  // return scene_manager;
+}
+
+void scene_manager_destroy(struct SceneManager *scene_manager){
+  if (!scene_manager) return;
+  scene_manager_unload_scene(scene_manager);
+}
+
+void scene_manager_load_scene(struct SceneManager *scene_manager, const char *path){
+  if (!scene_manager){
+    fprintf(stderr, "Error: scene_manager is NULL in scene_manager_load_scene\n");
+    return;
+  }
+
+  scene_manager_unload_scene(scene_manager);
+  scene_manager->active_scene = scene_load(path);
+  if (!scene_manager->active_scene){
+    fprintf(stderr, "Error: failed to load scene %s\n in scene_manager_load_scene\n", path);
+  }
+  printf("Successfully loaded scene\n");
+}
+
+void scene_manager_unload_scene(struct SceneManager *scene_manager){
+  if (!scene_manager || !scene_manager->active_scene) return;
+
+  scene_free(scene_manager->active_scene);
+  // Might move GameEventQueue to live in Engine or Scene, in which case
+  // game event queue will have to be destroyed elsewhere and this can be removed
+  game_event_queue_destroy();
+  scene_manager->active_scene = NULL;
+  printf("Successfully unloaded scene\n");
+}
+
+struct Scene *scene_load(const char *scene_path){
   // Allocate Scene
   struct Scene *scene = (struct Scene *)calloc(1, sizeof(struct Scene));
   if (!scene){
@@ -45,7 +90,7 @@ struct Scene *scene_init(char *scene_path){
     if (!error_ptr){
       fprintf(stderr, "Error before: %s\n", error_ptr);
     }
-    printf("Failed to parse json\n");
+    fprintf(stderr, "Error: failed to parse json in scene_load\n");
     cJSON_Delete(scene_json);
     return NULL;
   }
@@ -150,6 +195,11 @@ struct Scene *scene_init(char *scene_path){
   }
 
   // Load music
+  struct AudioManager *audio_manager = engine_get_audio_manager();
+  if (!audio_manager){
+    fprintf(stderr, "Error: failed to get audio_manager in scene_load\n");
+    return NULL;
+  }
   sounds_json = cJSON_GetObjectItemCaseSensitive(scene_json, "sounds");
   if (!sounds_json){
     fprintf(stderr, "Error: failed to get sounds object in scene_init, sounds is either invalid or does not exist\n");
@@ -175,7 +225,7 @@ struct Scene *scene_init(char *scene_path){
   cJSON_ArrayForEach(effect_json, sound_effects_json){
     cJSON *path;
     cJSON *name;
-    audio_sound_effect_create("resources/sfx/vineboom.wav", "vine_boom");
+    audio_sound_effect_create(audio_manager, "resources/sfx/vineboom.wav", "vine_boom");
   }
 
   scene->physics_world = physics_world_create();
@@ -265,7 +315,7 @@ struct Scene *scene_init(char *scene_path){
     if (entity->type == ENTITY_GROUPING) continue;
 
     render_component_create(scene, entity->id, entity->model, entity->shader);
-    audio_component_create(scene, entity->id, 0);
+    audio_component_create(scene, entity->id, audio_manager, 0);
   }
 
   // Create player
@@ -511,6 +561,7 @@ void scene_free(struct Scene *scene){
   }
   // Free shaders
   for (int i = 0; i < scene->num_shaders; i++){
+    glDeleteProgram(scene->shaders[i]->ID);
     free(scene->shaders[i]);
   }
 
@@ -519,8 +570,14 @@ void scene_free(struct Scene *scene){
 
   // Free components
   free(scene->render_components);
+
+  struct AudioManager *audio_manager = engine_get_audio_manager();
+  if (!audio_manager){
+    fprintf(stderr, "Error: failed to get AudioManager in scene_free\n");
+    return;
+  }
   for (unsigned int i = 0; i < scene->num_audio_components; i++){
-    audio_component_destroy(&scene->audio_components[i]);
+    audio_component_destroy(audio_manager, &scene->audio_components[i]);
   }
   free(scene->audio_components);
   free(scene->camera_components);
@@ -892,9 +949,9 @@ void scene_process_items_json(struct Scene *scene, const cJSON *items_json){
 
     index++;
 
-    printf("Item definition id: %d\n", item_definition->id);
-    printf("Item definition name: %s\n", item_definition->name);
-    printf("Item definition max count: %d\n", item_definition->max_count);
+    // printf("Item definition id: %d\n", item_definition->id);
+    // printf("Item definition name: %s\n", item_definition->name);
+    // printf("Item definition max count: %d\n", item_definition->max_count);
   }
 }
 
@@ -973,7 +1030,12 @@ void scene_player_create(
   camera_create(scene, entity->id, cameraPos, cameraUp, yaw, pitch, fov, sensitivity, speed);
 
   // AudioComponent
-  audio_component_create(scene, player->entity_id, 0);
+  struct AudioManager *audio_manager = engine_get_audio_manager();
+  if (!audio_manager){
+    fprintf(stderr, "Error: failed to get AudioManager in scene_player_create\n");
+    return;
+  }
+  audio_component_create(scene, player->entity_id, audio_manager, 0);
 
   // Set listener position to camera position
   audio_listener_update(scene, entity->id);
@@ -1222,7 +1284,12 @@ bool scene_remove_render_component_by_entity_id(struct Scene *scene, uuid_t enti
 bool scene_remove_audio_component_by_entity_id(struct Scene *scene, uuid_t entity_id){
   for (unsigned int i = 0; i < scene->num_audio_components; i++){
     if (uuid_compare(scene->audio_components[i].entity_id, entity_id) == 0){
-      audio_component_destroy(&scene->audio_components[i]);
+      struct AudioManager *audio_manager = engine_get_audio_manager();
+      if (!audio_manager){
+        fprintf(stderr, "Error: failed to get AudioManager in scene_remove_audio_component_by_entity_id\n");
+        return false;
+      }
+      audio_component_destroy(audio_manager, &scene->audio_components[i]);
       scene->audio_components[i] = scene->audio_components[scene->num_audio_components - 1];
       scene->num_audio_components--;
       return true;

@@ -154,12 +154,12 @@
             "scale": [2.0, 2.0, 2.0],
             "velocity": [4.0, 6.0, 4.0],
             "collider": {
-              "type": 0,
+              "type": 1,
               "dynamic": true,
               "restitution": 1.0,
               "data": {
-                "center": [0.0014968, 0.3, -0.0838950],
-                "extents": [0.1195973, 0.1933212, 0.3620904]
+                "center": [0.0014968, 0.1823103, 0.0],
+                "radius": 0.45
               }
             },
             "entity_type": 1,
@@ -211,12 +211,12 @@
             "scale": [2.0, 2.0, 2.0],
             "velocity": [-4.0, 6.0, -4.0],
             "collider": {
-              "type": 0,
+              "type": 1,
               "dynamic": true,
               "restitution": 1.0,
               "data": {
-                "center": [0.0014968, 0.3, -0.0838950],
-                "extents": [0.1195973, 0.1933212, 0.3620904]
+                "center": [0.0014968, 0.1823103, 0.0],
+                "radius": 0.45
               }
             },
             "entity_type": 1,
@@ -230,12 +230,12 @@
             "scale": [2.0, 2.0, 2.0],
             "velocity": [4.0, -4.0, 4.0],
             "collider": {
-              "type": 0,
+              "type": 1,
               "dynamic": true,
               "restitution": 1.0,
               "data": {
-                "center": [0.0014968, 0.3, -0.0838950],
-                "extents": [0.1195973, 0.1933212, 0.3620904]
+                "center": [0.0014968, 0.1823103, 0.0],
+                "radius": 0.45
               }
             },
             "entity_type": 1,
@@ -287,12 +287,12 @@
             "scale": [2.0, 2.0, 2.0],
             "velocity": [-4.0, -4.0, -4.0],
             "collider": {
-              "type": 0,
+              "type": 1,
               "dynamic": true,
               "restitution": 1.0,
               "data": {
-                "center": [0.0014968, 0.3, -0.0838950],
-                "extents": [0.1195973, 0.1933212, 0.3620904]
+                "center": [0.0014968, 0.1823103, 0.0],
+                "radius": 0.45
               }
             },
             "entity_type": 1,

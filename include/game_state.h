@@ -8,7 +8,14 @@ struct ListNode {
   struct ListNode *next;
 };
 
+typedef enum {
+  GAME_STATE_MAIN_MENU,
+  GAME_STATE_PLAYING,
+  GAME_STATE_PAUSED
+} GameStateMode;
+
 struct GameState {
+  GameStateMode mode;
   bool is_paused;
   bool should_quit;
   struct ListNode *observers;
@@ -16,10 +23,16 @@ struct GameState {
 
 // Game state
 void game_state_init();
-void game_pause();
-void game_unpause();
-void game_quit();
+GameStateMode game_state_get_mode();
+void game_state_set_mode(GameStateMode mode);
+void game_start();
+void game_state_pause();
+void game_state_unpause();
+void game_state_exit();
+void game_state_quit();
 bool game_state_is_paused();
+bool game_state_is_main_menu();
+bool game_state_is_playing();
 bool game_state_should_quit();
 void game_state_update();
 

@@ -6,6 +6,7 @@
 #include "player.h"
 #include "inventory.h"
 #include "audio_manager.h"
+#include "engine.h"
 
 static struct GameEventQueue game_event_queue;
 static bool game_event_queue_initialized;
@@ -116,8 +117,10 @@ void game_event_queue_process(){
           return;
         }
 
-        audio_component_play(audio_component_A);
-        // audio_component_play(audio_component_B);
+        struct AudioManager *audio_manager = engine_get_audio_manager();
+
+        // audio_component_play(audio_component_A);
+        audio_component_play(audio_manager, audio_component_B);
         break;
       }
       case EVENT_PLAYER_ITEM_PICKUP: {
