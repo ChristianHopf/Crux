@@ -51,13 +51,18 @@ void scene_manager_load_scene(struct SceneManager *scene_manager, const char *pa
   if (!scene_manager->active_scene){
     fprintf(stderr, "Error: failed to load scene %s\n in scene_manager_load_scene\n", path);
   }
+  printf("Successfully loaded scene\n");
 }
 
 void scene_manager_unload_scene(struct SceneManager *scene_manager){
   if (!scene_manager || !scene_manager->active_scene) return;
 
   scene_free(scene_manager->active_scene);
+  // Might move GameEventQueue to live in Engine or Scene, in which case
+  // game event queue will have to be destroyed elsewhere and this can be removed
+  game_event_queue_destroy();
   scene_manager->active_scene = NULL;
+  printf("Successfully unloaded scene\n");
 }
 
 struct Scene *scene_load(const char *scene_path){
@@ -85,7 +90,7 @@ struct Scene *scene_load(const char *scene_path){
     if (!error_ptr){
       fprintf(stderr, "Error before: %s\n", error_ptr);
     }
-    printf("Failed to parse json\n");
+    fprintf(stderr, "Error: failed to parse json in scene_load\n");
     cJSON_Delete(scene_json);
     return NULL;
   }
@@ -155,7 +160,6 @@ struct Scene *scene_load(const char *scene_path){
     return NULL;
   }
   int num_models = cJSON_GetArraySize(models_json);
-  printf("Loading %d models\n", num_models);
   struct Model *models[num_models];
   scene->models = (struct Model **)calloc(num_models, sizeof(struct Model *));
   if (!scene->models){
@@ -551,14 +555,11 @@ void scene_render(struct Scene *scene){
 
 // TODO refactor to free scene graph
 void scene_free(struct Scene *scene){
-  printf("Freeing scene\n");
   // Free models
   for (int i = 0; i < scene->num_models; i++){
-    printf("Freeing model\n");
     free(scene->models[i]);
   }
   // Free shaders
-  printf("Freeing %d shaders\n", scene->num_shaders);
   for (int i = 0; i < scene->num_shaders; i++){
     glDeleteProgram(scene->shaders[i]->ID);
     free(scene->shaders[i]);
@@ -605,7 +606,6 @@ void scene_free(struct Scene *scene){
   free(scene->physics_world->player_bodies);
 
   free(scene);
-  printf("Successfully freed scene\n");
 }
 
 void scene_process_light_json(cJSON *light_json, struct Light *light){

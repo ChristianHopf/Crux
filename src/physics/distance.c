@@ -113,19 +113,15 @@ float min_dist_at_time_AABB_sphere(struct PhysicsBody *body_A, struct PhysicsBod
   if (body_B->scene_node){
     vec3 world_position_B, world_rotation_B, world_scale_B;
     glm_mat4_mulv3(body_B->scene_node->world_transform, (vec3){0.0f, 0.0f, 0.0f}, 1.0f, world_position_B);
-    glm_vec3_muladds(body_B->velocity, time, world_position_B);
     glm_decompose_scalev(body_B->scene_node->world_transform, world_scale_B);
     // mat3 rotation_mat3_B;
     // glm_mat4_pick3(body_B->scene_node->world_transform, rotation_mat3_B);
     // if (world_scale_B[0] != 0.0f){
     //   glm_mat3_scale(rotation_mat3_B, 1.0f / world_scale_B[0]);
     // }
-    glm_vec3_add(sphere->center, world_position_B, world_position_B);
-    glm_vec3_add(body_B->position, world_position_B, world_sphere.center);
-    // glm_vec3_add(sphere->center, body_B->position, world_sphere.center);
-    glm_vec3_muladds(body_B->velocity, time, world_sphere.center);
+    glm_vec3_muladds(body_B->velocity, time, world_position_B);
+    glm_vec3_add(sphere->center, world_position_B, world_sphere.center);
     world_sphere.radius = sphere->radius * world_scale_B[0];
-    // world_sphere.radius = sphere->radius * body_B->scale[0];
   }
 
   // mat4 eulerA;

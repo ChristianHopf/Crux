@@ -31,7 +31,7 @@ struct Layout layout_scene_select_menu = {
 struct Layout layout_version_text = {
   .type = LAYOUT_OVERLAY,
   .layout_function = ui_base_version_text,
-  .user_data = "Crux Engine 0.3",
+  .user_data = "Crux Engine 0.4",
   .layout_update_function = ui_base_version_text_update
 };
 

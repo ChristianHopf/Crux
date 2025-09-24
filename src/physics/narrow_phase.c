@@ -143,34 +143,45 @@ struct CollisionResult narrow_phase_AABB_AABB(struct PhysicsBody *body_AABB_A, s
 struct CollisionResult narrow_phase_AABB_sphere(struct PhysicsBody *body_AABB, struct PhysicsBody *body_sphere, float delta_time){
   struct AABB *box = &body_AABB->collider.data.aabb;
   struct Sphere *sphere = &body_sphere->collider.data.sphere;
+  struct AABB world_AABB = {0};
+  struct Sphere world_sphere = {0};
   struct CollisionResult result = {0};
 
   // Get world space bodies
-  mat4 eulerA;
-  mat3 rotationA;
-  glm_euler_xyz(body_AABB->rotation, eulerA);
-  glm_mat4_pick3(eulerA, rotationA);
-  vec3 translationA;
-  glm_vec3_copy(body_AABB->position, translationA);
-  vec3 scaleA;
-  glm_vec3_copy(body_AABB->scale, scaleA);
-  struct AABB world_AABB = {0};
-  AABB_update(box, rotationA, translationA, scaleA, &world_AABB);
-
-  struct Sphere world_sphere = {0};
-  glm_vec3_add(sphere->center, body_sphere->position, world_sphere.center);
-  world_sphere.radius = sphere->radius * body_sphere->scale[0];
-
-  // Get the AABB e that bounds the world_AABB swept by the sphere
-  struct AABB e = world_AABB;
-  glm_vec3_adds(e.extents, world_sphere.radius, e.extents);
-
-  vec3 rel_v;
-  glm_vec3_sub(body_sphere->velocity, body_AABB->velocity, rel_v);
+  if (body_AABB->scene_node){
+    vec3 world_position_A, world_rotation_A, world_scale_A;
+    glm_mat4_mulv3(body_AABB->scene_node->world_transform, (vec3){0.0f, 0.0f, 0.0f}, 1.0f, world_position_A);
+    // glm_vec3_muladds(body_AABB->velocity, time, world_position_A);
+    glm_decompose_scalev(body_AABB->scene_node->world_transform, world_scale_A);
+    mat3 rotation_mat3_A;
+    glm_mat4_pick3(body_AABB->scene_node->world_transform, rotation_mat3_A);
+    if (world_scale_A[0] != 0.0f){
+      glm_mat3_scale(rotation_mat3_A, 1.0f / world_scale_A[0]);
+    }
+    AABB_update(box, rotation_mat3_A, world_position_A, world_scale_A, &world_AABB);
+  }
+  if (body_sphere->scene_node){
+    vec3 world_position_B, world_rotation_B, world_scale_B;
+    glm_mat4_mulv3(body_sphere->scene_node->world_transform, (vec3){0.0f, 0.0f, 0.0f}, 1.0f, world_position_B);
+    glm_decompose_scalev(body_sphere->scene_node->world_transform, world_scale_B);
+    // mat3 rotation_mat3_B;
+    // glm_mat4_pick3(body_B->scene_node->world_transform, rotation_mat3_B);
+    // if (world_scale_B[0] != 0.0f){
+    //   glm_mat3_scale(rotation_mat3_B, 1.0f / world_scale_B[0]);
+    // }
+    glm_vec3_add(sphere->center, world_position_B, world_sphere.center);
+    // glm_vec3_muladds(body_sphere->velocity, time, world_position_B);
+    world_sphere.radius = sphere->radius * world_scale_B[0];
+  }
 
   // LAZY VERSION: Assume sphere direction ray intersection with the bounding AABB e an intersection with the world AABB.
   // Come back to this later for more precise edge and corner testing and point of contact.
   // vec3 p;
+  struct AABB e = world_AABB;
+  glm_vec3_adds(e.extents, world_sphere.radius, e.extents);
+  vec3 rel_v;
+  glm_vec3_sub(body_sphere->velocity, body_AABB->velocity, rel_v);
+
   float t_min;
   bool intersect = ray_intersect_AABB(world_sphere.center, rel_v, &e, &t_min, delta_time);
   if (!intersect || t_min > delta_time){

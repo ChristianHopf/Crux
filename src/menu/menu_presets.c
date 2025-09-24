@@ -199,7 +199,7 @@ struct Menu *main_menu_create(){
   // Need to work out a better solution for menu navigation
   // - only one enum value for navigation (BUTTON_MENU_NAV?)
   // - track menu depth value in ui manager and keep forward and back values
-  scene_select_menu->buttons[3].data.menu = main_menu;
+  scene_select_menu->buttons[2].data.menu = main_menu;
 
   main_menu->buttons[0].text = "SCENE SELECT";
   main_menu->buttons[0].type = BUTTON_MENU_FORWARD;
@@ -224,7 +224,7 @@ struct Menu *scene_select_menu_create(){
   }
 
   scene_select_menu->title = "SCENE SELECT";
-  scene_select_menu->num_buttons = 4;
+  scene_select_menu->num_buttons = 3;
   scene_select_menu->buttons = (struct Button *)calloc(scene_select_menu->num_buttons, sizeof(struct Button));
   if (!scene_select_menu->buttons){
     fprintf(stderr, "Error: failed to allocate buttons in scene_select_menu_create\n");
@@ -240,13 +240,13 @@ struct Menu *scene_select_menu_create(){
   scene_select_menu->buttons[1].type = BUTTON_ACTION;
   scene_select_menu->buttons[1].data.action = action_load_scene_items;
 
-  scene_select_menu->buttons[2].text = "SCENE GRAPH";
-  scene_select_menu->buttons[2].type = BUTTON_ACTION;
-  scene_select_menu->buttons[2].data.action = action_load_scene_scenegraph;
+  // scene_select_menu->buttons[2].text = "SCENE GRAPH";
+  // scene_select_menu->buttons[2].type = BUTTON_ACTION;
+  // scene_select_menu->buttons[2].data.action = action_load_scene_scenegraph;
 
-  scene_select_menu->buttons[3].text = "BACK";
-  scene_select_menu->buttons[3].type = BUTTON_MENU_BACK;
-  scene_select_menu->buttons[3].data.menu = NULL;
+  scene_select_menu->buttons[2].text = "BACK";
+  scene_select_menu->buttons[2].type = BUTTON_MENU_BACK;
+  scene_select_menu->buttons[2].data.menu = NULL;
   // scene_select_menu->buttons[4].data.action = action_quit;
 
   // Having a menu own a layout which references the menu doesn't seem
@@ -266,7 +266,7 @@ void action_load_scene_bouncehouse(void *arg){
     return;
   }
 
-  scene_manager_load_scene(scene_manager, "scenes/bouncehouse.json");
+  scene_manager_load_scene(scene_manager, "scenes/bouncehouse3.json");
   if (!scene_manager->active_scene){
     fprintf(stderr, "Error: failed to load scene in action_load_scene_bouncehouse\n");
     return;

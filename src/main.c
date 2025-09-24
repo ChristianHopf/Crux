@@ -202,9 +202,6 @@ void engine_init(){
 
   window_release_cursor();
 
-	// Capture mouse
-	// glfwSetInputMode(engine->window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-
 	// Init GLAD
 	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)){
 		fprintf(stderr, "Failed to initialize GLAD\n");
@@ -244,9 +241,6 @@ void engine_init(){
     free(engine);
     return;
   }
-  // ui_load_font(&engine->ui_manager, "resources/fonts/HackNerdFontMono-Regular.ttf", 24);
-  // ui_load_font(&engine->ui_manager, "resources/fonts/HackNerdFontMono-Bold.ttf", 48);
-  // ui_load_font(&engine->ui_manager, "resources/fonts/HackNerdFontMono-Regular.ttf", 48);
 
   ui_layout_stack_push(&engine->ui_manager, &layout_version_text);
   char **fps_text = calloc(1, sizeof(char *));
@@ -274,17 +268,6 @@ void engine_init(){
     return;
   }
   attach_observer(ui_game_state_observer);
-
-  // Load scene
-  // engine->active_scene = scene_load("scenes/itemfix.json");
-  // if (!engine->active_scene){
-  //   fprintf(stderr, "Error: failed to create scene\n");
-  //   free(engine);
-  //   return NULL;
-  // }
-  //
-  // // Initialize Event queue
-  // game_event_queue_init(engine->active_scene);
 
   // Timing
   engine->delta_time = 0.0f;
@@ -314,15 +297,7 @@ void engine_start_game(){
     return;
   }
 
-  // Load scene
-  // printf("Time to load scene\n");
-  // scene_manager_load_scene(&engine->scene_manager, "scenes/itemfix.json");
-  // if (!engine->scene_manager.active_scene){
-  //   fprintf(stderr, "Error: failed to load scene in start_game\n");
-  //   return;
-  // }
-  // printf("Successfully loaded scene\n");
-
+  // Init GameState, GameEventQueue
   game_state_set_mode(GAME_STATE_PLAYING);
   game_event_queue_init(engine->scene_manager.active_scene);
 
@@ -331,6 +306,8 @@ void engine_start_game(){
 
   // Capture cursor
   window_capture_cursor();
+
+  stbi_set_flip_vertically_on_load(true);
 }
 
 void engine_exit_game(){
