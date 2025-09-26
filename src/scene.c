@@ -690,24 +690,24 @@ void scene_process_node_json(
     // Item
     case ENTITY_ITEM: {
       entity->type = entity_type;
-      cJSON *item_id_json = cJSON_GetObjectItemCaseSensitive(node_json, "item_id");
-      if (!cJSON_IsNumber(item_id_json)){
-        fprintf(stderr, "Error: failed to get item id in scene_process_node_json, either invalid or does not exist\n");
-        return;
-      }
-      cJSON *item_count_json = cJSON_GetObjectItemCaseSensitive(node_json, "item_count");
-      if (!cJSON_IsNumber(item_count_json)){
-        fprintf(stderr, "Error: failed to get item count in scene_process_node_json, either invalid or does not exist\n");
-        return;
-      }
-
-      entity->item = (struct ItemComponent *)calloc(1, sizeof(struct ItemComponent));
-      if (!entity->item){
-        fprintf(stderr, "Error: failed to allocate Item in scene_process_node_json\n");
-        return;
-      }
-      entity->item->id = cJSON_GetNumberValue(item_id_json);
-      entity->item->count = cJSON_GetNumberValue(item_count_json);
+      // cJSON *item_id_json = cJSON_GetObjectItemCaseSensitive(node_json, "item_id");
+      // if (!cJSON_IsNumber(item_id_json)){
+      //   fprintf(stderr, "Error: failed to get item id in scene_process_node_json, either invalid or does not exist\n");
+      //   return;
+      // }
+      // cJSON *item_count_json = cJSON_GetObjectItemCaseSensitive(node_json, "item_count");
+      // if (!cJSON_IsNumber(item_count_json)){
+      //   fprintf(stderr, "Error: failed to get item count in scene_process_node_json, either invalid or does not exist\n");
+      //   return;
+      // }
+      //
+      // entity->item = (struct ItemComponent *)calloc(1, sizeof(struct ItemComponent));
+      // if (!entity->item){
+      //   fprintf(stderr, "Error: failed to allocate Item in scene_process_node_json\n");
+      //   return;
+      // }
+      // entity->item->id = cJSON_GetNumberValue(item_id_json);
+      // entity->item->count = cJSON_GetNumberValue(item_count_json);
       break;
     }
     // TODO More refactoring here when I actually implement multiplayer support
@@ -866,6 +866,56 @@ void scene_process_node_json(
     
     // (Assumes every node with a collider also has an entity, maybe this shouldn't always be true?)
     current_node->entity->physics_body = physics_add_body(physics_world, current_node, current_node->entity, collider, restitution, dynamic);
+  }
+
+  // Process components
+  cJSON *component_list_json = cJSON_GetObjectItemCaseSensitive(node_json, "components");
+  if (!cJSON_IsArray(component_list_json)){
+    fprintf(stderr, "Error: failed to get components object in scene_process_node_json, invalid or does not exist\n");
+    return;
+  }
+
+  const cJSON *component_json = NULL;
+  cJSON_ArrayForEach(component_json, component_list_json){
+    cJSON *component_type_json = cJSON_GetObjectItemCaseSensitive(component_json, "type");
+    if (!component_type_json){
+      fprintf(stderr, "Error: failed to get component type from component json in scene_process_node_json, invalid or does not exist\n");
+      return;
+    }
+    ComponentType component_type = cJSON_GetNumberValue(entity_type_json);
+
+    switch(component_type){
+      case COMPONENT_RENDER: {
+        break;
+      }
+      case COMPONENT_AUDIO: {
+        break;
+      }
+      case COMPONENT_ITEM: {
+        cJSON *item_id_json = cJSON_GetObjectItemCaseSensitive(component_json, "id");
+        if (!cJSON_IsNumber(item_id_json)){
+          fprintf(stderr, "Error: failed to get item id in scene_process_node_json, either invalid or does not exist\n");
+          return;
+        }
+        cJSON *item_count_json = cJSON_GetObjectItemCaseSensitive(component_json, "count");
+        if (!cJSON_IsNumber(item_count_json)){
+          fprintf(stderr, "Error: failed to get item count in scene_process_node_json, either invalid or does not exist\n");
+          return;
+        }
+
+        entity->item = (struct ItemComponent *)calloc(1, sizeof(struct ItemComponent));
+        if (!entity->item){
+          fprintf(stderr, "Error: failed to allocate Item in scene_process_node_json\n");
+          return;
+        }
+        entity->item->id = cJSON_GetNumberValue(item_id_json);
+        entity->item->count = cJSON_GetNumberValue(item_count_json);
+        break;
+      }
+      default: {
+        break;
+      }
+    }
   }
   
   // Process children

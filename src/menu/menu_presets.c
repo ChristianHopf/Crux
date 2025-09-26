@@ -281,7 +281,7 @@ void action_load_scene_items(void *arg){
     return;
   }
 
-  scene_manager_load_scene(scene_manager, "scenes/items.json");
+  scene_manager_load_scene(scene_manager, "scenes/components.json");
   if (!scene_manager->active_scene){
     fprintf(stderr, "Error: failed to load scene in action_load_scene_items\n");
     return;
