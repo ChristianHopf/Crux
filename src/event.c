@@ -110,17 +110,19 @@ void game_event_queue_process(){
         struct AudioComponent *audio_component_B = scene_get_audio_component_by_entity_id(game_event_queue.scene, game_event.data.collision.entity_B_id);
         if (!audio_component_A){
           fprintf(stderr, "Error: failed to get audio_component_A in game_event_queue_process\n");
-          return;
+          // return;
         }
         if (!audio_component_B){
           fprintf(stderr, "Error: failed to get audio_component_B in game_event_queue_process\n");
-          return;
+          // return;
         }
 
         struct AudioManager *audio_manager = engine_get_audio_manager();
 
-        // audio_component_play(audio_component_A);
-        audio_component_play(audio_manager, audio_component_B);
+        if (audio_component_A) audio_component_play(audio_manager, audio_component_A);
+        if (audio_component_B) audio_component_play(audio_manager, audio_component_B);
+        // audio_component_play(audio_manager, audio_component_A);
+        // audio_component_play(audio_manager, audio_component_B);
         break;
       }
       case EVENT_PLAYER_ITEM_PICKUP: {

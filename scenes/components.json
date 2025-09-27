@@ -169,6 +169,7 @@
               }
             },
             "components": [
+              {"type": 1, "sound_index": 0},
               {"type": 2, "id": 1, "count": 1}
             ],
             "entity_type": 2,

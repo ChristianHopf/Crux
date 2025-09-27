@@ -257,8 +257,8 @@ struct Scene *scene_load(const char *scene_path){
   }
 
   // Build scene graph and fill entities array
-  scene_process_node_json(scene, nodes_json, scene->root_node, NULL, models, shaders, scene->physics_world);
-  scene->max_entities = 64;
+  // scene_process_node_json(scene, nodes_json, scene->root_node, NULL, models, shaders, scene->physics_world);
+  // scene->max_entities = 64;
 
   // Allocate Components
   scene->max_render_components = 32;
@@ -305,6 +305,9 @@ struct Scene *scene_load(const char *scene_path){
   }
   scene->num_inventory_components = 0;
 
+  scene_process_node_json(scene, nodes_json, scene->root_node, NULL, models, shaders, scene->physics_world);
+  scene->max_entities = 64;
+
   // Initialize components for scene entities
   // For now, force every entity to have render and audio components.
   // Could maybe add bools to the scene json for whether an entity should have each component,
@@ -315,7 +318,7 @@ struct Scene *scene_load(const char *scene_path){
     if (entity->type == ENTITY_GROUPING) continue;
 
     render_component_create(scene, entity->id, entity->model, entity->shader);
-    audio_component_create(scene, entity->id, audio_manager, 0);
+    // audio_component_create(scene, entity->id, audio_manager, 0);
   }
 
   // Create player
@@ -882,13 +885,23 @@ void scene_process_node_json(
       fprintf(stderr, "Error: failed to get component type from component json in scene_process_node_json, invalid or does not exist\n");
       return;
     }
-    ComponentType component_type = cJSON_GetNumberValue(entity_type_json);
-
+    ComponentType component_type = cJSON_GetNumberValue(component_type_json);
     switch(component_type){
       case COMPONENT_RENDER: {
         break;
       }
       case COMPONENT_AUDIO: {
+        cJSON *sound_index_json = cJSON_GetObjectItemCaseSensitive(component_json, "sound_index");
+        if (!cJSON_IsNumber(sound_index_json)){
+          fprintf(stderr, "Error: failed to get sound index in scene_process_node_json, invalid or does not exist\n");
+          return;
+        }
+        struct AudioManager *audio_manager = engine_get_audio_manager();
+
+        int sound_index = cJSON_GetNumberValue(sound_index_json);
+        if (sound_index >= 0){
+          audio_component_create(scene, entity->id, audio_manager, sound_index);
+        }
         break;
       }
       case COMPONENT_ITEM: {
