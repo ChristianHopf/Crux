@@ -108,35 +108,19 @@ void game_event_queue_process(){
         // Get colliding entities' AudioComponents
         struct AudioComponent *audio_component_A = scene_get_audio_component_by_entity_id(game_event_queue.scene, game_event.data.collision.entity_A_id);
         struct AudioComponent *audio_component_B = scene_get_audio_component_by_entity_id(game_event_queue.scene, game_event.data.collision.entity_B_id);
-        if (!audio_component_A){
-          fprintf(stderr, "Error: failed to get audio_component_A in game_event_queue_process\n");
-          // return;
-        }
-        if (!audio_component_B){
-          fprintf(stderr, "Error: failed to get audio_component_B in game_event_queue_process\n");
-          // return;
-        }
 
         struct AudioManager *audio_manager = engine_get_audio_manager();
 
         if (audio_component_A) audio_component_play(audio_manager, audio_component_A);
         if (audio_component_B) audio_component_play(audio_manager, audio_component_B);
-        // audio_component_play(audio_manager, audio_component_A);
-        // audio_component_play(audio_manager, audio_component_B);
         break;
       }
       case EVENT_PLAYER_ITEM_PICKUP: {
         struct PlayerComponent *player = scene_get_player_by_entity_id(game_event_queue.scene, game_event.data.item_pickup.player_entity_id);
         struct InventoryComponent *inventory_component = scene_get_inventory_by_entity_id(game_event_queue.scene, game_event.data.item_pickup.player_entity_id);
 
-        // Attempt to add item to the player's inventory
         if (inventory_add_item(inventory_component, &game_event_queue.scene->item_registry, game_event.data.item_pickup.item_id, game_event.data.item_pickup.item_count)){
-          // Remove the item's entity from the scene graph.
           scene_remove_entity(game_event_queue.scene, game_event.data.item_pickup.item_entity_id);
-          // Could also use some kind of "persistent" bool in the future if I want
-          // items that don't disappear when a player picks them up.
-          // printf("Successfully added %d item(s) to the player's inventory\n", game_event.data.item_pickup.item_count);
-
           inventory_print(&game_event_queue.scene->item_registry, inventory_component);
         }
         else{
@@ -145,7 +129,7 @@ void game_event_queue_process(){
         break;
       }
       default: {
-        printf("Default\n");
+        fprintf(stderr, "Error: unknown event type in game_event_queue_process\n");
         break;
       }
     }
@@ -160,7 +144,7 @@ void game_event_print(struct GameEvent *game_event){
   switch(game_event->type){
     case EVENT_COLLISION: {
       printf("Event type: EVENT_COLLISION\n");
-  printf("Timestamp seconds: %ld, timestamp nanoseconds: %ld\n\n", game_event->timestamp.tv_sec, game_event->timestamp.tv_nsec);
+      printf("Timestamp seconds: %ld, timestamp nanoseconds: %ld\n\n", game_event->timestamp.tv_sec, game_event->timestamp.tv_nsec);
       break;
     }
     case EVENT_PLAYER_ITEM_PICKUP: {
@@ -169,7 +153,7 @@ void game_event_print(struct GameEvent *game_event){
       break;
     }
     default: {
-      printf("DEFAULT\n");
+      printf("Unknown event type in game_event_print\n");
       break;
     }
   }

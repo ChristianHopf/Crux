@@ -170,7 +170,8 @@ void scene_get_render_items(
     struct RenderComponent *render_component = &scene->render_components[i];
   // Get this node's RenderItems
     struct Entity *entity = scene_get_entity_by_entity_id(scene, render_component->entity_id);
-    struct Model *model = entity->model;
+    struct Model *model = render_component->model;
+    // struct Model *model = entity->model;
 
     for (unsigned int j = 0; j < model->num_meshes; j++){
       struct Mesh *mesh = &model->meshes[j];
@@ -178,7 +179,8 @@ void scene_get_render_items(
       struct RenderItem render_item;
       render_item.mesh = mesh;
       render_item.model = model;
-      render_item.shader = entity->shader;
+      render_item.shader = render_component->shader;
+      // render_item.shader = entity->shader;
 
       // World transform
       glm_mat4_copy(render_component->world_transform, render_item.transform);
