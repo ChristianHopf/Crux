@@ -7,19 +7,16 @@
 	],
 	"models": [
 		"resources/basic/grass_plane/grass_plane.gltf",
-		"resources/objects/oiiai/scene.gltf",
+		"resources/objects/magic_potion/scene.gltf",
     "resources/objects/wizard/WizardusMaximus.glb"
 	],
   "sounds": {
     "music": "resources/music/mookid.wav",
     "effects": [
-      {
-        "path": "resources/sfx/vineboom.wav",
-        "name": "vine_boom"
-      }
+      "resources/sfx/vineboom.wav"
     ]
   },
-  "entity_count": 17,
+  "entity_count": 14,
 	"nodes": {
     "position": [0.0, 0.0, 0.0],
     "rotation": [0.0, 0.0, 0.0],
@@ -37,6 +34,8 @@
         "entity_type": 0,
         "children": [
           {
+            "model_index": 0,
+            "shader_index": 0,
             "position": [0.0, 0.0, 0.0],
             "rotation": [0.0, 0.0, 0.0],
             "scale": [0.5, 0.5, 0.5],
@@ -56,6 +55,8 @@
             "children": []
           },
           {
+            "model_index": 0,
+            "shader_index": 0,
             "position": [0.0, 10.0, 0.0],
             "rotation": [0.0, 0.0, 180.0],
             "scale": [0.5, 0.5, 0.5],
@@ -75,6 +76,8 @@
             "children": []
           },
           {
+            "model_index": 0,
+            "shader_index": 0,
             "position": [-5.0, 5.0, 0.0],
             "rotation": [0.0, 0.0, -90.0],
             "scale": [0.5, 0.5, 0.5],
@@ -94,6 +97,8 @@
             "children": []
           },
           {
+            "model_index": 0,
+            "shader_index": 0,
             "position": [5.0, 5.0, 0.0],
             "rotation": [0.0, 0.0, 90.0],
             "scale": [0.5, 0.5, 0.5],
@@ -113,6 +118,8 @@
             "children": []
           },
           {
+            "model_index": 0,
+            "shader_index": 0,
             "position": [0.0, 5.0, -5.0],
             "rotation": [90.0, 0.0, 0.0],
             "scale": [0.5, 0.5, 0.5],
@@ -132,6 +139,8 @@
             "children": []
           },
           {
+            "model_index": 0,
+            "shader_index": 0,
             "position": [0.0, 5.0, 5.0],
             "rotation": [-90.0, 0.0, 0.0],
             "scale": [0.5, 0.5, 0.5],
@@ -151,171 +160,128 @@
             "children": []
           },
           {
-            "position": [-2.0, 2.5, -2.0],
+            "model_index": 2,
+            "shader_index": 0,
+            "position": [-2.0, 2.0, 0.0],
             "rotation": [0.0, 0.0, 0.0],
-            "scale": [2.0, 2.0, 2.0],
-            "velocity": [4.0, 6.0, 4.0],
+            "scale": [1.0, 1.0, 1.0],
+            "velocity": [0.0, 0.0, 0.0],
             "collider": {
-              "type": 1,
+              "type": 2,
               "dynamic": true,
+              "units": 2,
               "restitution": 1.0,
               "data": {
-                "center": [0.0014968, 0.1823103, 0.0],
-                "radius": 0.45
+                "segment_A": [0.0, 0.25, 0.0],
+                "segment_B": [0.0, 1.75, 0.0],
+                "radius": 0.25
               }
             },
             "components": [
-              {"type": 0, "model_index": 1, "shader_index": 0},
+              {"type": 0, "model_index": 2, "shader_index": 0},
               {"type": 1, "sound_index": 0}
             ],
             "entity_type": 1,
             "children": []
           },
           {
-            "position": [2.0, 2.5, -2.0],
+            "model_index": 1,
+            "shader_index": 0,
+            "position": [0.0, 2.0, 0.0],
             "rotation": [0.0, 0.0, 0.0],
             "scale": [2.0, 2.0, 2.0],
-            "velocity": [-4.0, 6.0, -4.0],
+            "velocity": [0.0, 0.0, 0.0],
             "collider": {
               "type": 0,
               "dynamic": true,
+              "units": 1,
               "restitution": 1.0,
               "data": {
-                "center": [0.0014968, 0.3, -0.0838950],
-                "extents": [0.1195973, 0.1933212, 0.3620904]
+                "center": [0.0, 0.1, 0.0],
+                "extents": [0.1, 0.12, 0.1]
               }
             },
             "components": [
               {"type": 0, "model_index": 1, "shader_index": 0},
-              {"type": 1, "sound_index": 0}
+              {"type": 1, "sound_index": 0},
+              {"type": 2, "id": 1, "count": 1}
             ],
-            "entity_type": 1,
+            "entity_type": 2,
             "children": []
           },
           {
-            "position": [-2.0, 2.5, 2.0],
+            "model_index": 1,
+            "shader_index": 0,
+            "position": [2.0, 4.0, -3.0],
             "rotation": [0.0, 0.0, 0.0],
             "scale": [2.0, 2.0, 2.0],
-            "velocity": [4.0, 6.0, -4.0],
+            "velocity": [0.0, 0.0, 0.0],
             "collider": {
               "type": 0,
               "dynamic": true,
+              "units": 1,
               "restitution": 1.0,
               "data": {
-                "center": [0.0014968, 0.3, -0.0838950],
-                "extents": [0.1195973, 0.1933212, 0.3620904]
+                "center": [0.0, 0.1, 0.0],
+                "extents": [0.1, 0.12, 0.1]
               }
             },
             "components": [
               {"type": 0, "model_index": 1, "shader_index": 0},
-              {"type": 1, "sound_index": 0}
+              {"type": 1, "sound_index": 0},
+              {"type": 2, "id": 1, "count": 1}
             ],
-            "entity_type": 1,
+            "entity_type": 2,
             "children": []
           },
           {
-            "position": [2.0, 2.5, 2.0],
+            "model_index": 1,
+            "shader_index": 0,
+            "position": [-1.0, 1.0, -2.0],
             "rotation": [0.0, 0.0, 0.0],
             "scale": [2.0, 2.0, 2.0],
-            "velocity": [-4.0, 6.0, -4.0],
-            "collider": {
-              "type": 1,
-              "dynamic": true,
-              "restitution": 1.0,
-              "data": {
-                "center": [0.0014968, 0.1823103, 0.0],
-                "radius": 0.45
-              }
-            },
-            "components": [
-              {"type": 0, "model_index": 1, "shader_index": 0},
-              {"type": 1, "sound_index": 0}
-            ],
-            "entity_type": 1,
-            "children": []
-          },
-          {
-            "position": [-2.0, 7.5, -2.0],
-            "rotation": [0.0, 0.0, 0.0],
-            "scale": [2.0, 2.0, 2.0],
-            "velocity": [4.0, -4.0, 4.0],
-            "collider": {
-              "type": 1,
-              "dynamic": true,
-              "restitution": 1.0,
-              "data": {
-                "center": [0.0014968, 0.1823103, 0.0],
-                "radius": 0.45
-              }
-            },
-            "components": [
-              {"type": 0, "model_index": 1, "shader_index": 0},
-              {"type": 1, "sound_index": 0}
-            ],
-            "entity_type": 1,
-            "children": []
-          },
-          {
-            "position": [2.0, 7.5, -2.0],
-            "rotation": [0.0, 0.0, 0.0],
-            "scale": [2.0, 2.0, 2.0],
-            "velocity": [-4.0, -4.0, -4.0],
+            "velocity": [0.0, 0.0, 0.0],
             "collider": {
               "type": 0,
               "dynamic": true,
+              "units": 1,
               "restitution": 1.0,
               "data": {
-                "center": [0.0014968, 0.3, -0.0838950],
-                "extents": [0.1195973, 0.1933212, 0.3620904]
+                "center": [0.0, 0.1, 0.0],
+                "extents": [0.1, 0.12, 0.1]
               }
             },
             "components": [
               {"type": 0, "model_index": 1, "shader_index": 0},
-              {"type": 1, "sound_index": 0}
+              {"type": 1, "sound_index": 0},
+              {"type": 2, "id": 1, "count": 1}
             ],
-            "entity_type": 1,
+            "entity_type": 2,
             "children": []
           },
           {
-            "position": [-2.0, 7.5, 2.0],
+            "model_index": 1,
+            "shader_index": 0,
+            "position": [0.0, 3.0, -4.0],
             "rotation": [0.0, 0.0, 0.0],
             "scale": [2.0, 2.0, 2.0],
-            "velocity": [4.0, -4.0, -4.0],
+            "velocity": [0.0, 0.0, 0.0],
             "collider": {
               "type": 0,
               "dynamic": true,
+              "units": 1,
               "restitution": 1.0,
               "data": {
-                "center": [0.0014968, 0.3, -0.0838950],
-                "extents": [0.1195973, 0.1933212, 0.3620904]
+                "center": [0.0, 0.1, 0.0],
+                "extents": [0.1, 0.12, 0.1]
               }
             },
             "components": [
               {"type": 0, "model_index": 1, "shader_index": 0},
-              {"type": 1, "sound_index": 0}
+              {"type": 1, "sound_index": 0},
+              {"type": 2, "id": 1, "count": 1}
             ],
-            "entity_type": 1,
-            "children": []
-          },
-          {
-            "position": [2.0, 7.5, 2.0],
-            "rotation": [0.0, 0.0, 0.0],
-            "scale": [2.0, 2.0, 2.0],
-            "velocity": [-4.0, -4.0, -4.0],
-            "collider": {
-              "type": 1,
-              "dynamic": true,
-              "restitution": 1.0,
-              "data": {
-                "center": [0.0014968, 0.1823103, 0.0],
-                "radius": 0.45
-              }
-            },
-            "components": [
-              {"type": 0, "model_index": 1, "shader_index": 0},
-              {"type": 1, "sound_index": 0}
-            ],
-            "entity_type": 1,
+            "entity_type": 2,
             "children": []
           }
         ]

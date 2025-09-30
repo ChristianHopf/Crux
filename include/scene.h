@@ -12,6 +12,12 @@
 #include "item_registry.h"
 #include "shader.h"
 
+typedef enum {
+  COMPONENT_RENDER = 0,
+  COMPONENT_AUDIO,
+  COMPONENT_ITEM
+} ComponentType;
+
 struct Light {
   vec3 direction;
 

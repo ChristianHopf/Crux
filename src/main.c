@@ -398,7 +398,6 @@ int main(){
   }
 
   // Teardown
-  // ui_manager_free();
   engine_free();
   glfwTerminate();
 

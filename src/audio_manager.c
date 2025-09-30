@@ -404,6 +404,7 @@ void audio_component_create(struct Scene *scene, uuid_t entity_id, struct AudioM
   // Initialize AudioComponent
   struct AudioComponent *audio_component = &scene->audio_components[scene->num_audio_components++];
   memcpy(audio_component->entity_id, entity_id, 16);
+  
   alGenSources(1, &audio_component->source_id);
   ALenum audio_component_error = alGetError();
   if (audio_component_error != AL_NO_ERROR){

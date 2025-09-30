@@ -26,13 +26,6 @@
 bool scene_manager_init(struct SceneManager *scene_manager){
   scene_manager->active_scene = NULL;
   return true;
-  // struct SceneManager *scene_manager = calloc(1, sizeof(struct SceneManager));
-  // if (!scene_manager){
-  //   fprintf(stderr, "Error: failed to allocate SceneManager in scene_manager_create\n");
-  //   return NULL;
-  // }
-  //
-  // return scene_manager;
 }
 
 void scene_manager_destroy(struct SceneManager *scene_manager){
@@ -51,7 +44,6 @@ void scene_manager_load_scene(struct SceneManager *scene_manager, const char *pa
   if (!scene_manager->active_scene){
     fprintf(stderr, "Error: failed to load scene %s\n in scene_manager_load_scene\n", path);
   }
-  printf("Successfully loaded scene\n");
 }
 
 void scene_manager_unload_scene(struct SceneManager *scene_manager){
@@ -62,7 +54,6 @@ void scene_manager_unload_scene(struct SceneManager *scene_manager){
   // game event queue will have to be destroyed elsewhere and this can be removed
   game_event_queue_destroy();
   scene_manager->active_scene = NULL;
-  printf("Successfully unloaded scene\n");
 }
 
 struct Scene *scene_load(const char *scene_path){
@@ -257,8 +248,8 @@ struct Scene *scene_load(const char *scene_path){
   }
 
   // Build scene graph and fill entities array
-  scene_process_node_json(scene, nodes_json, scene->root_node, NULL, models, shaders, scene->physics_world);
-  scene->max_entities = 64;
+  // scene_process_node_json(scene, nodes_json, scene->root_node, NULL, models, shaders, scene->physics_world);
+  // scene->max_entities = 64;
 
   // Allocate Components
   scene->max_render_components = 32;
@@ -305,18 +296,8 @@ struct Scene *scene_load(const char *scene_path){
   }
   scene->num_inventory_components = 0;
 
-  // Initialize components for scene entities
-  // For now, force every entity to have render and audio components.
-  // Could maybe add bools to the scene json for whether an entity should have each component,
-  // or just let the functions decide based on input
-  // (ex. no model or shader => render_component_create returns immediately)
-  for (unsigned int i = 0; i < scene->num_entities; i++){
-    struct Entity *entity = scene->entities[i];
-    if (entity->type == ENTITY_GROUPING) continue;
-
-    render_component_create(scene, entity->id, entity->model, entity->shader);
-    audio_component_create(scene, entity->id, audio_manager, 0);
-  }
+  scene_process_node_json(scene, nodes_json, scene->root_node, NULL, models, shaders, scene->physics_world);
+  scene->max_entities = 64;
 
   // Create player
   scene_player_create(scene, models[2], shaders[0],
@@ -360,22 +341,6 @@ struct Scene *scene_load(const char *scene_path){
     scene->num_inventory_components++;
   }
 
-  // Process nodes for scene graph
-  // cJSON *nodes_json = cJSON_GetObjectItemCaseSensitive(scene_json, "nodes");
-  // if (!nodes_json){
-  //   fprintf(stderr, "Error: failed to get nodes object in scene_init, invalid or does not exist\n");
-  //   return NULL;
-  // }
-  // scene->root_node = (struct SceneNode *)calloc(1, sizeof(struct SceneNode));
-  // if (!scene->root_node){
-  //   fprintf(stderr, "Error: failed to allocate root SceneNode in scene_init\n");
-  //   return NULL;
-  // }
-  //
-  // // Build scene graph and fill entities array
-  // scene_process_node_json(scene, nodes_json, scene->root_node, NULL, models, shaders, scene->physics_world);
-  // scene->max_entities = 64;
-  
   // Lights
   lights_json = cJSON_GetObjectItemCaseSensitive(scene_json, "lights");
   if (!lights_json){
@@ -646,32 +611,16 @@ void scene_process_node_json(
   struct Model **models,
   Shader **shaders,
   struct PhysicsWorld *physics_world){
-  // Model and shader for Entity
-  cJSON *model_index_json = cJSON_GetObjectItemCaseSensitive(node_json, "model_index");
-  cJSON *shader_index_json = cJSON_GetObjectItemCaseSensitive(node_json, "shader_index");
-  if(!cJSON_IsNumber(model_index_json)){
-    fprintf(stderr, "Error: failed to get model_index in scene_process_node_json, either invalid or does not exist\n");
+
+  struct Entity *entity = (struct Entity *)calloc(1, sizeof(struct Entity));
+  if (!entity){
+    fprintf(stderr, "Error: failed to allocate entity in scene_process_node_json\n");
     return;
   }
-  if(!cJSON_IsNumber(shader_index_json)){
-    fprintf(stderr, "Error: failed to get shader_index in scene_process_node_json, either invalid or does not exist\n");
-    return;
-  }
-  int model_index = (int)cJSON_GetNumberValue(model_index_json);
-  int shader_index = (int)cJSON_GetNumberValue(shader_index_json);
-  // if (model_index != -1 && shader_index != -1){
-    struct Entity *entity = (struct Entity *)calloc(1, sizeof(struct Entity));
-    if (!entity){
-      fprintf(stderr, "Error: failed to allocate entity in scene_process_node_json\n");
-      return;
-    }
-    uuid_generate(entity->id);
-    entity->model = model_index >= 0 ? models[model_index] : NULL;
-    entity->shader = shader_index >= 0 ? shaders[shader_index] : NULL;
-    // render_component_create(scene, entity->id, models[model_index], shaders[shader_index]);
-    scene_process_vec3_json(cJSON_GetObjectItemCaseSensitive(node_json, "position"), entity->position);
-    scene_process_vec3_json(cJSON_GetObjectItemCaseSensitive(node_json, "rotation"), entity->rotation);
-    scene_process_vec3_json(cJSON_GetObjectItemCaseSensitive(node_json, "scale"), entity->scale);
+  uuid_generate(entity->id);
+  scene_process_vec3_json(cJSON_GetObjectItemCaseSensitive(node_json, "position"), entity->position);
+  scene_process_vec3_json(cJSON_GetObjectItemCaseSensitive(node_json, "rotation"), entity->rotation);
+  scene_process_vec3_json(cJSON_GetObjectItemCaseSensitive(node_json, "scale"), entity->scale);
 
   // Entity type
   cJSON *entity_type_json = cJSON_GetObjectItemCaseSensitive(node_json, "entity_type");
@@ -682,51 +631,27 @@ void scene_process_node_json(
 
   // Process entity type and appropriate information if present
   EntityType entity_type = cJSON_GetNumberValue(entity_type_json);
-  switch(entity_type){
-    case ENTITY_WORLD: {
-      entity->type = entity_type;
-      break;
-    }
-    // Item
-    case ENTITY_ITEM: {
-      entity->type = entity_type;
-      cJSON *item_id_json = cJSON_GetObjectItemCaseSensitive(node_json, "item_id");
-      if (!cJSON_IsNumber(item_id_json)){
-        fprintf(stderr, "Error: failed to get item id in scene_process_node_json, either invalid or does not exist\n");
-        return;
-      }
-      cJSON *item_count_json = cJSON_GetObjectItemCaseSensitive(node_json, "item_count");
-      if (!cJSON_IsNumber(item_count_json)){
-        fprintf(stderr, "Error: failed to get item count in scene_process_node_json, either invalid or does not exist\n");
-        return;
-      }
-
-      entity->item = (struct ItemComponent *)calloc(1, sizeof(struct ItemComponent));
-      if (!entity->item){
-        fprintf(stderr, "Error: failed to allocate Item in scene_process_node_json\n");
-        return;
-      }
-      entity->item->id = cJSON_GetNumberValue(item_id_json);
-      entity->item->count = cJSON_GetNumberValue(item_count_json);
-      break;
-    }
-    // TODO More refactoring here when I actually implement multiplayer support
-    case ENTITY_PLAYER: {
-      // Process player entity
-      // current_node->entity->type = entity_type;
-      // scene->player_components = (struct PlayerComponent *)calloc(1, sizeof(struct PlayerComponent));
-      // memcpy(current_node->entity->id, scene->player_components->entity_id, 16);
-      break;
-    }
-      // "entity_type" json property is -1 or otherwise invalid
-    case ENTITY_GROUPING: {
-      entity->type = entity_type;
-      break;
-    }
-    case ENTITY_TYPE_COUNT: {
-      break;
-    }
-  }
+  entity->type = entity_type;
+  // Right now, there's nothing I need to switch on the type for.
+  // switch(entity_type){
+  //   case ENTITY_WORLD: {
+  //     break;
+  //   }
+  //   case ENTITY_ITEM: {
+  //     break;
+  //   }
+  //   // TODO More refactoring here when I actually implement multiplayer support.
+  //   // Will player information ever need to be serialized in JSON? Possibly.
+  //   case ENTITY_PLAYER: {
+  //     break;
+  //   }
+  //   case ENTITY_GROUPING: {
+  //     break;
+  //   }
+  //   case ENTITY_TYPE_COUNT: {
+  //     break;
+  //   }
+  // }
   // Add reference to this entity to scene's entities array and node
   current_node->entity = entity;
   memcpy(current_node->entity_id, entity->id, 16);
@@ -867,6 +792,88 @@ void scene_process_node_json(
     // (Assumes every node with a collider also has an entity, maybe this shouldn't always be true?)
     current_node->entity->physics_body = physics_add_body(physics_world, current_node, current_node->entity, collider, restitution, dynamic);
   }
+
+  // Process components
+  cJSON *component_list_json = cJSON_GetObjectItemCaseSensitive(node_json, "components");
+  if (!cJSON_IsArray(component_list_json)){
+    fprintf(stderr, "Error: failed to get components object in scene_process_node_json, invalid or does not exist\n");
+    return;
+  }
+
+  const cJSON *component_json = NULL;
+  cJSON_ArrayForEach(component_json, component_list_json){
+    cJSON *component_type_json = cJSON_GetObjectItemCaseSensitive(component_json, "type");
+    if (!component_type_json){
+      fprintf(stderr, "Error: failed to get component type from component json in scene_process_node_json, invalid or does not exist\n");
+      return;
+    }
+    ComponentType component_type = cJSON_GetNumberValue(component_type_json);
+    switch(component_type){
+      case COMPONENT_RENDER: {
+        cJSON *model_index_json = cJSON_GetObjectItemCaseSensitive(component_json, "model_index");
+        cJSON *shader_index_json = cJSON_GetObjectItemCaseSensitive(component_json, "shader_index");
+        if (!cJSON_IsNumber(model_index_json)){
+          fprintf(stderr, "Error: failed to get model index in scene_process_node_json, invalid or does not exist\n");
+          return;
+        }
+        if (!cJSON_IsNumber(shader_index_json)){
+          fprintf(stderr, "Error: failed to get shader index in scene_process_node_json, invalid or does not exist\n");
+          return;
+        }
+
+        int model_index = (int)cJSON_GetNumberValue(model_index_json);
+        int shader_index = (int)cJSON_GetNumberValue(shader_index_json);
+
+        if (model_index >= 0 && shader_index >= 0){
+          render_component_create(
+            scene,
+            entity->id,
+            models[model_index],
+            shaders[shader_index]
+          );
+        }
+        break;
+      }
+      case COMPONENT_AUDIO: {
+        cJSON *sound_index_json = cJSON_GetObjectItemCaseSensitive(component_json, "sound_index");
+        if (!cJSON_IsNumber(sound_index_json)){
+          fprintf(stderr, "Error: failed to get sound index in scene_process_node_json, invalid or does not exist\n");
+          return;
+        }
+        struct AudioManager *audio_manager = engine_get_audio_manager();
+
+        int sound_index = cJSON_GetNumberValue(sound_index_json);
+        if (sound_index >= 0){
+          audio_component_create(scene, entity->id, audio_manager, sound_index);
+        }
+        break;
+      }
+      case COMPONENT_ITEM: {
+        cJSON *item_id_json = cJSON_GetObjectItemCaseSensitive(component_json, "id");
+        if (!cJSON_IsNumber(item_id_json)){
+          fprintf(stderr, "Error: failed to get item id in scene_process_node_json, either invalid or does not exist\n");
+          return;
+        }
+        cJSON *item_count_json = cJSON_GetObjectItemCaseSensitive(component_json, "count");
+        if (!cJSON_IsNumber(item_count_json)){
+          fprintf(stderr, "Error: failed to get item count in scene_process_node_json, either invalid or does not exist\n");
+          return;
+        }
+
+        entity->item = (struct ItemComponent *)calloc(1, sizeof(struct ItemComponent));
+        if (!entity->item){
+          fprintf(stderr, "Error: failed to allocate Item in scene_process_node_json\n");
+          return;
+        }
+        entity->item->id = cJSON_GetNumberValue(item_id_json);
+        entity->item->count = cJSON_GetNumberValue(item_count_json);
+        break;
+      }
+      default: {
+        break;
+      }
+    }
+  }
   
   // Process children
   cJSON *children_json = cJSON_GetObjectItemCaseSensitive(node_json, "children");
@@ -990,8 +997,8 @@ void scene_player_create(
   // Assign values to Entity
   uuid_generate(entity->id);
   entity->type = ENTITY_PLAYER;
-  entity->model = model;
-  entity->shader = shader;
+  // entity->model = model;
+  // entity->shader = shader;
   glm_vec3_copy(position, entity->position);
   glm_vec3_copy(rotation, entity->rotation);
   glm_vec3_copy(scale, entity->scale);

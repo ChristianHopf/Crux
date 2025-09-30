@@ -19,7 +19,7 @@ struct Entity {
   struct Model *model;
   Shader *shader;
   // Audio
-  struct AudioComponent *audio_component;
+  // struct AudioComponent *audio_component;
   struct ItemComponent *item;
 };
 
