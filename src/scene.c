@@ -26,13 +26,6 @@
 bool scene_manager_init(struct SceneManager *scene_manager){
   scene_manager->active_scene = NULL;
   return true;
-  // struct SceneManager *scene_manager = calloc(1, sizeof(struct SceneManager));
-  // if (!scene_manager){
-  //   fprintf(stderr, "Error: failed to allocate SceneManager in scene_manager_create\n");
-  //   return NULL;
-  // }
-  //
-  // return scene_manager;
 }
 
 void scene_manager_destroy(struct SceneManager *scene_manager){
@@ -51,7 +44,6 @@ void scene_manager_load_scene(struct SceneManager *scene_manager, const char *pa
   if (!scene_manager->active_scene){
     fprintf(stderr, "Error: failed to load scene %s\n in scene_manager_load_scene\n", path);
   }
-  printf("Successfully loaded scene\n");
 }
 
 void scene_manager_unload_scene(struct SceneManager *scene_manager){
@@ -62,7 +54,6 @@ void scene_manager_unload_scene(struct SceneManager *scene_manager){
   // game event queue will have to be destroyed elsewhere and this can be removed
   game_event_queue_destroy();
   scene_manager->active_scene = NULL;
-  printf("Successfully unloaded scene\n");
 }
 
 struct Scene *scene_load(const char *scene_path){
@@ -308,19 +299,6 @@ struct Scene *scene_load(const char *scene_path){
   scene_process_node_json(scene, nodes_json, scene->root_node, NULL, models, shaders, scene->physics_world);
   scene->max_entities = 64;
 
-  // Initialize components for scene entities
-  // For now, force every entity to have render and audio components.
-  // Could maybe add bools to the scene json for whether an entity should have each component,
-  // or just let the functions decide based on input
-  // (ex. no model or shader => render_component_create returns immediately)
-  // for (unsigned int i = 0; i < scene->num_entities; i++){
-  //   struct Entity *entity = scene->entities[i];
-  //   if (entity->type == ENTITY_GROUPING) continue;
-  //
-  //   render_component_create(scene, entity->id, entity->model, entity->shader);
-  //   // audio_component_create(scene, entity->id, audio_manager, 0);
-  // }
-
   // Create player
   scene_player_create(scene, models[2], shaders[0],
                                 (vec3){0.0f, 0.0f, 2.0f},
@@ -363,22 +341,6 @@ struct Scene *scene_load(const char *scene_path){
     scene->num_inventory_components++;
   }
 
-  // Process nodes for scene graph
-  // cJSON *nodes_json = cJSON_GetObjectItemCaseSensitive(scene_json, "nodes");
-  // if (!nodes_json){
-  //   fprintf(stderr, "Error: failed to get nodes object in scene_init, invalid or does not exist\n");
-  //   return NULL;
-  // }
-  // scene->root_node = (struct SceneNode *)calloc(1, sizeof(struct SceneNode));
-  // if (!scene->root_node){
-  //   fprintf(stderr, "Error: failed to allocate root SceneNode in scene_init\n");
-  //   return NULL;
-  // }
-  //
-  // // Build scene graph and fill entities array
-  // scene_process_node_json(scene, nodes_json, scene->root_node, NULL, models, shaders, scene->physics_world);
-  // scene->max_entities = 64;
-  
   // Lights
   lights_json = cJSON_GetObjectItemCaseSensitive(scene_json, "lights");
   if (!lights_json){

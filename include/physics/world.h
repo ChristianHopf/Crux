@@ -5,21 +5,6 @@
 #include <stdbool.h>
 #include "collider.h"
 
-// Forward declaration to avoid redefinition of EntityType from scene including entity
-// struct SceneNode {
-//   // uuid_t entity_id;
-//   unsigned int ID;
-//   mat4 local_transform;
-//   mat4 world_transform;
-//   vec3 position;
-//   vec3 rotation;
-//   vec3 scale;
-//   struct Entity *entity;
-//   struct SceneNode *parent_node;
-//   struct SceneNode **children;
-//   unsigned int num_children;
-// };
-
 struct PhysicsBody {
   // Collision
   struct Collider collider;
