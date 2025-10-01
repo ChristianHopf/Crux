@@ -9,7 +9,7 @@
 #include "engine.h"
 
 static struct GameEventQueue game_event_queue;
-static bool game_event_queue_initialized;
+// static bool game_event_queue_initialized;
 
 static EventType event_types[ENTITY_TYPE_COUNT][ENTITY_TYPE_COUNT] = {
   //              GROUPING        WORLD             ITEM                      PLAYER
@@ -21,7 +21,8 @@ static EventType event_types[ENTITY_TYPE_COUNT][ENTITY_TYPE_COUNT] = {
 
 
 void game_event_queue_init(struct Scene *scene){
-  if (game_event_queue_initialized) return;
+  memset(&game_event_queue, 0, sizeof(struct GameEventQueue));
+  // if (game_event_queue_initialized) return;
 
   game_event_queue.capacity = 1024;
   game_event_queue.events = (struct GameEvent *)calloc(game_event_queue.capacity, sizeof(struct GameEvent));
@@ -35,11 +36,14 @@ void game_event_queue_init(struct Scene *scene){
 
   game_event_queue.scene = scene;
 
+  // Init registry
+  memset(&game_event_queue.registry, 0, sizeof(struct EventRegsitry));
+
   game_event_queue_initialized = true;
 }
 
 void game_event_queue_destroy(){
-  if (!game_event_queue_initialized) return;
+  // if (!game_event_queue_initialized) return;
   
   // Not needed unless I refactor events to be an array of pointers
   // to dynamically allocated GameEvents, but passing them by value should be fine.
@@ -54,9 +58,11 @@ void game_event_queue_destroy(){
   // }
 
   // Free queue
-  free(game_event_queue.events);
+  if (game_event_queue.events){
+    free(game_event_queue.events);
+  }
 
-  game_event_queue_initialized = false;
+  // game_event_queue_initialized = false;
 }
 
 void game_event_queue_enqueue(struct GameEvent game_event){
@@ -133,6 +139,13 @@ void game_event_queue_process(){
         break;
       }
     }
+
+    // Call the callback function for each of this event type's registered listeners
+    int count = game_event_queue.registry.listener_counts[game_event.type];
+    for (int i = 0; i < count; i++){
+      struct EventListener *event_listener = &game_event_queue.registry.listeners[game_event.type][i];
+      listener->callback(&game_event, listener->user_data);
+    }
   }
 }
 
@@ -155,6 +168,37 @@ void game_event_print(struct GameEvent *game_event){
     default: {
       printf("Unknown event type in game_event_print\n");
       break;
+    }
+  }
+}
+
+void event_listener_register(EventType type, EventCallback callback, void *user_data){
+  // Check valid type
+  if (type < 0 || type >= MAX_EVENT_TYPES) return;
+
+  // Check if space is available to register a new listener to this type
+  int count = game_event_queue.registry.listener_counts[type];
+  if (count >= MAX_LISTENERS_PER_TYPE) return;
+
+  // Initialize listener
+  struct EventListener *event_listener = &game_event_queue.registry.listeners[type][count];
+  event_listener->callback = callback;
+  event_listener->user_data = user_data;
+  game_event_queue.registry.listener_counts[type]++;
+}
+
+void event_listener_unregister(EventType type, EventCallback callback){
+  // Check valid type
+  if (type < 0 || type >= MAX_EVENT_TYPES) return;
+
+  // Find listener, swap and pop, decrement count
+  // (This will have to change in the future if order of listener registration matters, or if we introduce event listener priority)
+  int count = game_event_queue.registry.listener_counts[type];
+  for (int i = 0; i < count; i++){
+    if (game_event_queue.registry.listeners[type][i].callback == callback){
+      game_event_queue.registry.listeners[type][i] = game_event_queue.registry.listeners[type][count - 1];
+      game_event_queue.registry.listener_counts[type]--;
+      return;
     }
   }
 }

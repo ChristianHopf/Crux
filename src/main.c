@@ -18,6 +18,7 @@
 #include "game_state.h"
 #include "window_manager.h"
 #include "event.h"
+#include "event/callbacks.h"
 #include <uuid/uuid.h>
 #include "engine.h"
 
@@ -268,6 +269,9 @@ void engine_init(){
     return;
   }
   attach_observer(ui_game_state_observer);
+
+  // Register event listeners
+  event_register_listener(EVENT_PLAYER_ITEM_PICKUP, event_listener_on_item_pickup_sound, &engine->audio_manager);
 
   // Timing
   engine->delta_time = 0.0f;
