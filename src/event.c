@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <string.h>
 #include "event.h"
 #include "scene.h"
 #include "player.h"
@@ -37,9 +38,9 @@ void game_event_queue_init(struct Scene *scene){
   game_event_queue.scene = scene;
 
   // Init registry
-  memset(&game_event_queue.registry, 0, sizeof(struct EventRegsitry));
+  memset(&game_event_queue.event_registry, 0, sizeof(struct EventRegistry));
 
-  game_event_queue_initialized = true;
+  // game_event_queue_initialized = true;
 }
 
 void game_event_queue_destroy(){
@@ -59,8 +60,10 @@ void game_event_queue_destroy(){
 
   // Free queue
   if (game_event_queue.events){
+    printf("Time to free game_event_queue.events\n");
     free(game_event_queue.events);
   }
+  printf("Successfully freed game_event_queue.events\n");
 
   // game_event_queue_initialized = false;
 }
@@ -109,6 +112,14 @@ bool game_event_queue_is_empty(){
 void game_event_queue_process(){
   struct GameEvent game_event;
   while (game_event_queue_dequeue(&game_event)){
+    // Call the callback function for each of this event type's registered listeners
+    int count = game_event_queue.event_registry.listener_counts[game_event.type];
+    for (int i = 0; i < count; i++){
+      struct EventListener *event_listener = &game_event_queue.event_registry.listeners[game_event.type][i];
+      event_listener->callback(&game_event, event_listener->user_data);
+    }
+
+    // Built-in behavior
     switch (game_event.type){
       case EVENT_COLLISION: {
         // Get colliding entities' AudioComponents
@@ -141,11 +152,12 @@ void game_event_queue_process(){
     }
 
     // Call the callback function for each of this event type's registered listeners
-    int count = game_event_queue.registry.listener_counts[game_event.type];
-    for (int i = 0; i < count; i++){
-      struct EventListener *event_listener = &game_event_queue.registry.listeners[game_event.type][i];
-      listener->callback(&game_event, listener->user_data);
-    }
+    // int count = game_event_queue.event_registry.listener_counts[game_event.type];
+    // printf("Listener count for event of type %d is %d\n", game_event.type, count);
+    // for (int i = 0; i < count; i++){
+    //   struct EventListener *event_listener = &game_event_queue.event_registry.listeners[game_event.type][i];
+    //   event_listener->callback(&game_event, event_listener->user_data);
+    // }
   }
 }
 
@@ -177,14 +189,14 @@ void event_listener_register(EventType type, EventCallback callback, void *user_
   if (type < 0 || type >= MAX_EVENT_TYPES) return;
 
   // Check if space is available to register a new listener to this type
-  int count = game_event_queue.registry.listener_counts[type];
+  int count = game_event_queue.event_registry.listener_counts[type];
   if (count >= MAX_LISTENERS_PER_TYPE) return;
 
   // Initialize listener
-  struct EventListener *event_listener = &game_event_queue.registry.listeners[type][count];
+  struct EventListener *event_listener = &game_event_queue.event_registry.listeners[type][count];
   event_listener->callback = callback;
   event_listener->user_data = user_data;
-  game_event_queue.registry.listener_counts[type]++;
+  game_event_queue.event_registry.listener_counts[type]++;
 }
 
 void event_listener_unregister(EventType type, EventCallback callback){
@@ -193,11 +205,11 @@ void event_listener_unregister(EventType type, EventCallback callback){
 
   // Find listener, swap and pop, decrement count
   // (This will have to change in the future if order of listener registration matters, or if we introduce event listener priority)
-  int count = game_event_queue.registry.listener_counts[type];
+  int count = game_event_queue.event_registry.listener_counts[type];
   for (int i = 0; i < count; i++){
-    if (game_event_queue.registry.listeners[type][i].callback == callback){
-      game_event_queue.registry.listeners[type][i] = game_event_queue.registry.listeners[type][count - 1];
-      game_event_queue.registry.listener_counts[type]--;
+    if (game_event_queue.event_registry.listeners[type][i].callback == callback){
+      game_event_queue.event_registry.listeners[type][i] = game_event_queue.event_registry.listeners[type][count - 1];
+      game_event_queue.event_registry.listener_counts[type]--;
       return;
     }
   }

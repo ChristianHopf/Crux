@@ -13,7 +13,8 @@
   "sounds": {
     "music": "resources/music/mookid.wav",
     "effects": [
-      "resources/sfx/vineboom.wav"
+      "resources/sfx/vineboom.wav",
+      "resources/sfx/itempickup.mp3"
     ]
   },
   "entity_count": 14,

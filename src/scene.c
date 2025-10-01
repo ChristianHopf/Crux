@@ -50,9 +50,6 @@ void scene_manager_unload_scene(struct SceneManager *scene_manager){
   if (!scene_manager || !scene_manager->active_scene) return;
 
   scene_free(scene_manager->active_scene);
-  // Might move GameEventQueue to live in Engine or Scene, in which case
-  // game event queue will have to be destroyed elsewhere and this can be removed
-  game_event_queue_destroy();
   scene_manager->active_scene = NULL;
 }
 
@@ -217,6 +214,7 @@ struct Scene *scene_load(const char *scene_path){
     cJSON *path;
     cJSON *name;
     audio_sound_effect_create(audio_manager, "resources/sfx/vineboom.wav", "vine_boom");
+    audio_sound_effect_create(audio_manager, "resources/sfx/itempickup.mp3", "item_pickup");
   }
 
   scene->physics_world = physics_world_create();

@@ -41,7 +41,7 @@ struct EventListener {
 struct EventRegistry {
   struct EventListener listeners[MAX_EVENT_TYPES][MAX_LISTENERS_PER_TYPE];
   int listener_counts[MAX_EVENT_TYPES];
-}
+};
 
 struct GameEventQueue {
   struct GameEvent *events;

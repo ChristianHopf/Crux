@@ -270,8 +270,7 @@ void engine_init(){
   }
   attach_observer(ui_game_state_observer);
 
-  // Register event listeners
-  event_register_listener(EVENT_PLAYER_ITEM_PICKUP, event_listener_on_item_pickup_sound, &engine->audio_manager);
+
 
   // Timing
   engine->delta_time = 0.0f;
@@ -304,6 +303,9 @@ void engine_start_game(){
   // Init GameState, GameEventQueue
   game_state_set_mode(GAME_STATE_PLAYING);
   game_event_queue_init(engine->scene_manager.active_scene);
+
+  // Register event listeners
+  event_listener_register(EVENT_PLAYER_ITEM_PICKUP, event_listener_on_item_pickup_sound, &engine->audio_manager);
 
   // Pop main menu layout
   ui_layout_stack_pop(&engine->ui_manager);
