@@ -14,7 +14,7 @@
     "music": "resources/music/mookid.wav",
     "effects": [
       "resources/sfx/vineboom.wav",
-      "resources/sfx/itempickup.mp3"
+      "resources/sfx/elevatording.ogg"
     ]
   },
   "entity_count": 14,

@@ -208,13 +208,16 @@ struct Scene *scene_load(const char *scene_path){
     fprintf(stderr, "Error: failed to get effects array in sounds object in scene_init, effects is either invalid or does not exist\n");
     return NULL;
   }
-  // num_sound_effects = cJSON_GetArraySize(sound_effects_json);
+  // int num_sound_effects = cJSON_GetArraySize(sound_effects_json);
   const cJSON *effect_json = NULL;
   cJSON_ArrayForEach(effect_json, sound_effects_json){
-    cJSON *path;
-    cJSON *name;
-    audio_sound_effect_create(audio_manager, "resources/sfx/vineboom.wav", "vine_boom");
-    audio_sound_effect_create(audio_manager, "resources/sfx/itempickup.mp3", "item_pickup");
+    // cJSON *path;
+    // cJSON *name;
+    if (cJSON_IsString(effect_json)){
+      audio_sound_effect_create(audio_manager, cJSON_GetStringValue(effect_json), "");
+    }
+    // audio_sound_effect_create(audio_manager, "resources/sfx/vineboom.wav", "vine_boom");
+    // audio_sound_effect_create(audio_manager, "resources/sfx/elevatording.ogg", "item_pickup");
   }
 
   scene->physics_world = physics_world_create();
