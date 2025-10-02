@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdint.h>
+#include <stdbool.h>
 #include <uuid/uuid.h>
 #include "time.h"
 #include "types.h"
@@ -31,7 +32,7 @@ struct GameEvent {
   } data;
 };
 
-typedef void (*EventCallback)(struct GameEvent *game_event, void *user_data);
+typedef bool (*EventCallback)(struct GameEvent *game_event, void *user_data);
 
 struct EventListener {
   EventCallback callback;

@@ -88,7 +88,7 @@ void audio_sound_effect_play(struct SoundEffect *sound_effect);
 // AudioComponent
 void audio_component_create(struct Scene *scene, uuid_t entity_id, struct AudioManager *audio_manager, int sound_effect_index);
 void audio_component_destroy(struct AudioManager *audio_manager, struct AudioComponent *audio_component);
-void audio_component_play(struct AudioManager *audio_manager, struct AudioComponent *audio_component);
+void audio_component_play(struct AudioManager *audio_manager, struct AudioComponent *audio_component, int sound_effect_index);
 
 // Listener
 void audio_listener_update(struct Scene *scene, uuid_t entity_id);

@@ -454,7 +454,7 @@ void audio_component_destroy(struct AudioManager *audio_manager, struct AudioCom
   }
 }
 
-void audio_component_play(struct AudioManager *audio_manager, struct AudioComponent *audio_component){
+void audio_component_play(struct AudioManager *audio_manager, struct AudioComponent *audio_component, int sound_effect_index){
   // Set context if not set
   if (!alcGetCurrentContext()) {
     alcMakeContextCurrent(audio_manager->context);
@@ -492,6 +492,14 @@ void audio_component_play(struct AudioManager *audio_manager, struct AudioCompon
   //   fprintf(stderr, "Error assigning sound effect buffer to entity->audio_source %d\n", error);
   //   return;
   // }
+
+  // Assign desired sound effect buffer to source
+  alSourcei(audio_component->source_id, AL_BUFFER, audio_manager->sound_effects[sound_effect_index].buffer);
+  error = alGetError();
+  if (error != AL_NO_ERROR){
+    fprintf(stderr, "Error setting AudioComponent buffer in audio_component_create: %d\n", error);
+    return;
+  }
 
   // Play the sound
   alSourcePlay(audio_component->source_id);

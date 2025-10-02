@@ -112,11 +112,13 @@ bool game_event_queue_is_empty(){
 void game_event_queue_process(){
   struct GameEvent game_event;
   while (game_event_queue_dequeue(&game_event)){
-    // Call the callback function for each of this event type's registered listeners
+    // Call the callback function for each of this event type's registered listeners.
+    // If a callback returns true, processing that event should stop
+    // (break the loop and dequeue the next event)
     int count = game_event_queue.event_registry.listener_counts[game_event.type];
     for (int i = 0; i < count; i++){
       struct EventListener *event_listener = &game_event_queue.event_registry.listeners[game_event.type][i];
-      event_listener->callback(&game_event, event_listener->user_data);
+      if (event_listener->callback(&game_event, event_listener->user_data)) break;
     }
 
     // Built-in behavior
@@ -128,21 +130,21 @@ void game_event_queue_process(){
 
         struct AudioManager *audio_manager = engine_get_audio_manager();
 
-        if (audio_component_A) audio_component_play(audio_manager, audio_component_A);
-        if (audio_component_B) audio_component_play(audio_manager, audio_component_B);
+        if (audio_component_A) audio_component_play(audio_manager, audio_component_A, 0);
+        if (audio_component_B) audio_component_play(audio_manager, audio_component_B, 0);
         break;
       }
       case EVENT_PLAYER_ITEM_PICKUP: {
-        struct PlayerComponent *player = scene_get_player_by_entity_id(game_event_queue.scene, game_event.data.item_pickup.player_entity_id);
-        struct InventoryComponent *inventory_component = scene_get_inventory_by_entity_id(game_event_queue.scene, game_event.data.item_pickup.player_entity_id);
-
-        if (inventory_add_item(inventory_component, &game_event_queue.scene->item_registry, game_event.data.item_pickup.item_id, game_event.data.item_pickup.item_count)){
-          scene_remove_entity(game_event_queue.scene, game_event.data.item_pickup.item_entity_id);
-          inventory_print(&game_event_queue.scene->item_registry, inventory_component);
-        }
-        else{
-          // printf("Failed to add %d item(s) to the player's inventory\n", game_event.data.item_pickup.item_count);
-        }
+        // struct PlayerComponent *player = scene_get_player_by_entity_id(game_event_queue.scene, game_event.data.item_pickup.player_entity_id);
+        // struct InventoryComponent *inventory_component = scene_get_inventory_by_entity_id(game_event_queue.scene, game_event.data.item_pickup.player_entity_id);
+        //
+        // if (inventory_add_item(inventory_component, &game_event_queue.scene->item_registry, game_event.data.item_pickup.item_id, game_event.data.item_pickup.item_count)){
+        //   scene_remove_entity(game_event_queue.scene, game_event.data.item_pickup.item_entity_id);
+        //   inventory_print(&game_event_queue.scene->item_registry, inventory_component);
+        // }
+        // else{
+        //   // printf("Failed to add %d item(s) to the player's inventory\n", game_event.data.item_pickup.item_count);
+        // }
         break;
       }
       default: {
