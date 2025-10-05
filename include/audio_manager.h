@@ -15,6 +15,7 @@
 #define BUFFER_FRAMES 8192
 #define MAX_SOUND_EFFECTS 32
 #define MAX_SOURCES 64
+#define MAX_COMPONENT_SOURCES 32
 
 struct AudioStream {
   SNDFILE *file;
@@ -36,9 +37,9 @@ struct SoundEffect {
 
 struct AudioComponent {
   uuid_t entity_id;
-  ALuint source_id;
-  int sound_effect_index;
-  bool is_playing;
+  ALuint source_id[MAX_COMPONENT_SOURCES];
+  unsigned int num_active_sources;
+  // bool is_playing;
   vec3 position;
 };
 
