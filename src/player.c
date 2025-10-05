@@ -198,11 +198,11 @@ void player_update(struct Scene *scene, uuid_t entity_id, float delta_time){
   camera_component->position[1] += player_component->camera_height;
 
   // Update audio source position
-  alSource3f(audio_component->source_id, AL_POSITION, player_entity->position[0], player_entity->position[1], player_entity->position[2]);
-  ALenum position_error = alGetError();
-  if (position_error != AL_NO_ERROR){
-    fprintf(stderr, "Error matching Entity audio_source position with entity position in scene_update: %d\n", position_error);
-  }
+  // alSource3f(audio_component->source_id, AL_POSITION, player_entity->position[0], player_entity->position[1], player_entity->position[2]);
+  // ALenum position_error = alGetError();
+  // if (position_error != AL_NO_ERROR){
+  //   fprintf(stderr, "Error matching Entity audio_source position with entity position in scene_update: %d\n", position_error);
+  // }
 
   // Update listener position and orientation
   audio_listener_update(scene, entity_id);

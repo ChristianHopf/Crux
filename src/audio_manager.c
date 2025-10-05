@@ -4,6 +4,7 @@
 #include "camera.h"
 #include "game_state.h"
 #include "entity.h"
+#include "engine.h"
 // #include <AL/al.h>
 #include <locale.h>
 #include <time.h>
@@ -501,6 +502,14 @@ void audio_component_update(struct AudioManager *audio_manager, struct AudioComp
   }
 
   // Update position (remove from other entity update function)
+  // Eventually optimize with dirty flag?
+
+  // Get scene manager and entity to get position
+  struct SceneManager *scene_manager = engine_get_scene_manager();
+  struct Entity *entity = scene_get_entity_by_entity_id(scene_manager->active_scene, audio_component->entity_id);
+  for (int i = 0; i < audio_component->num_active_sources; i++){
+    alSource3f(audio_component->sources[i], AL_POSITION, entity->position[0], entity->position[1], entity->position[2]);
+  }
 }
 
 void audio_component_play(struct AudioManager *audio_manager, struct AudioComponent *audio_component, int sound_effect_index){

@@ -406,7 +406,16 @@ void scene_update(struct Scene *scene, float delta_time){
 
   // Update player
   player_update(scene, scene->local_player_entity_id, delta_time);
+
+  // Update scene graph
   scene_node_update(scene, scene->root_node);
+
+  // Update components
+  struct AudioManager *audio_manager = engine_get_audio_manager();
+  for (int i = 0; i < scene->num_audio_components; i++){
+    audio_component_update(audio_manager, &scene->audio_components[i]);
+  }
+
   // struct PlayerComponent *player = scene->player_components[0];
   // inventory_print(&scene->item_registry, scene_get_inventory_by_entity_id(scene, player->entity_id));
   // printf("Successfully printed inventory\n");
@@ -1087,17 +1096,18 @@ void scene_node_update(struct Scene *scene, struct SceneNode *current_node){
   }
 
   // Update AudioComponent
-  struct AudioComponent *audio_component = scene_get_audio_component_by_entity_id(scene, current_node->entity->id);
-  if (audio_component){
-    alSource3f(audio_component->source_id, AL_POSITION,
-               current_node->entity->position[0],
-               current_node->entity->position[1],
-               current_node->entity->position[2]);
-    ALenum position_error = alGetError();
-    if (position_error != AL_NO_ERROR){
-      fprintf(stderr, "Error matching Entity audio_source position with entity position in scene_update: %d\n", position_error);
-    }
-  }
+  // struct AudioComponent *audio_component = scene_get_audio_component_by_entity_id(scene, current_node->entity->id);
+  // if (audio_component){
+  //   audio_component_update(audio_manager, audio_component);
+  //   alSource3f(audio_component->source_id, AL_POSITION,
+  //              current_node->entity->position[0],
+  //              current_node->entity->position[1],
+  //              current_node->entity->position[2]);
+  //   ALenum position_error = alGetError();
+  //   if (position_error != AL_NO_ERROR){
+  //     fprintf(stderr, "Error matching Entity audio_source position with entity position in scene_update: %d\n", position_error);
+  //   }
+  // }
 
   for (unsigned int i = 0; i < current_node->num_children; i++){
     scene_node_update(scene, current_node->children[i]);
