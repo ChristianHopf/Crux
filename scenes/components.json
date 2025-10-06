@@ -160,11 +160,110 @@
             "entity_type": 1,
             "children": []
           },
-
+          {
+            "model_index": 2,
+            "shader_index": 0,
+            "position": [-2.0, 2.0, 0.0],
+            "rotation": [0.0, 0.0, 0.0],
+            "scale": [1.0, 1.0, 1.0],
+            "velocity": [0.0, 0.0, 0.0],
+            "collider": {
+              "type": 2,
+              "dynamic": true,
+              "units": 2,
+              "restitution": 1.0,
+              "data": {
+                "segment_A": [0.0, 0.25, 0.0],
+                "segment_B": [0.0, 1.75, 0.0],
+                "radius": 0.25
+              }
+            },
+            "components": [
+              {"type": 0, "model_index": 2, "shader_index": 0},
+              {"type": 1, "sound_index": 0}
+            ],
+            "entity_type": 1,
+            "children": []
+          },
+          {
+            "model_index": 1,
+            "shader_index": 0,
+            "position": [0.0, 2.0, 0.0],
+            "rotation": [0.0, 0.0, 0.0],
+            "scale": [2.0, 2.0, 2.0],
+            "velocity": [0.0, 0.0, 0.0],
+            "collider": {
+              "type": 0,
+              "dynamic": true,
+              "units": 1,
+              "restitution": 1.0,
+              "data": {
+                "center": [0.0, 0.1, 0.0],
+                "extents": [0.1, 0.12, 0.1]
+              }
+            },
+            "components": [
+              {"type": 0, "model_index": 1, "shader_index": 0},
+              {"type": 1, "sound_index": 0},
+              {"type": 2, "id": 1, "count": 1}
+            ],
+            "entity_type": 2,
+            "children": []
+          },
           {
             "model_index": 1,
             "shader_index": 0,
             "position": [2.0, 4.0, -3.0],
+            "rotation": [0.0, 0.0, 0.0],
+            "scale": [2.0, 2.0, 2.0],
+            "velocity": [0.0, 0.0, 0.0],
+            "collider": {
+              "type": 0,
+              "dynamic": true,
+              "units": 1,
+              "restitution": 1.0,
+              "data": {
+                "center": [0.0, 0.1, 0.0],
+                "extents": [0.1, 0.12, 0.1]
+              }
+            },
+            "components": [
+              {"type": 0, "model_index": 1, "shader_index": 0},
+              {"type": 1, "sound_index": 0},
+              {"type": 2, "id": 1, "count": 1}
+            ],
+            "entity_type": 2,
+            "children": []
+          },
+          {
+            "model_index": 1,
+            "shader_index": 0,
+            "position": [-1.0, 1.0, -2.0],
+            "rotation": [0.0, 0.0, 0.0],
+            "scale": [2.0, 2.0, 2.0],
+            "velocity": [0.0, 0.0, 0.0],
+            "collider": {
+              "type": 0,
+              "dynamic": true,
+              "units": 1,
+              "restitution": 1.0,
+              "data": {
+                "center": [0.0, 0.1, 0.0],
+                "extents": [0.1, 0.12, 0.1]
+              }
+            },
+            "components": [
+              {"type": 0, "model_index": 1, "shader_index": 0},
+              {"type": 1, "sound_index": 0},
+              {"type": 2, "id": 1, "count": 1}
+            ],
+            "entity_type": 2,
+            "children": []
+          },
+          {
+            "model_index": 1,
+            "shader_index": 0,
+            "position": [0.0, 3.0, -4.0],
             "rotation": [0.0, 0.0, 0.0],
             "scale": [2.0, 2.0, 2.0],
             "velocity": [0.0, 0.0, 0.0],
