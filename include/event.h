@@ -11,6 +11,7 @@
 
 typedef enum {
   EVENT_COLLISION = 0,
+  EVENT_PLAYER_COLLISION,
   EVENT_PLAYER_ITEM_PICKUP,
 } EventType;
 
@@ -18,16 +19,23 @@ struct GameEvent {
   EventType type;
   struct timespec timestamp;
   union {
+    // Collision
     struct {
       uuid_t entity_A_id;
       uuid_t entity_B_id;
     } collision;
+    // Player collision
+    struct {
+      uuid_t player_entity_id;
+    } player_collision;
+    // Player item pickup
     struct {
       uuid_t player_entity_id;
       int item_id;
       int item_count;
       uuid_t item_entity_id;
     } item_pickup;
+    // Custom event data
     void *custom;
   } data;
 };

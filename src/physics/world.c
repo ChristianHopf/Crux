@@ -243,9 +243,14 @@ void physics_step(struct PhysicsWorld *physics_world, float delta_time){
         // (We CAN still assume one of the bodies is a Player because we're looping over player_bodies here.)
         event.type = get_event_type(type_A, type_B);
         switch(event.type){
-          case EVENT_COLLISION:
-            memcpy(event.data.collision.entity_A_id, body_A->entity->id, 16);
-            memcpy(event.data.collision.entity_B_id, body_B->entity->id, 16);
+          case EVENT_PLAYER_COLLISION:
+            if (body_swap) {
+              memcpy(event.data.player_collision.player_entity_id, body_B->entity->id, 16);
+            }
+            else{
+              memcpy(event.data.player_collision.player_entity_id, body_A->entity->id, 16);
+            }
+            // memcpy(event.data.collision.entity_B_id, body_B->entity->id, 16);
             break;
           case EVENT_PLAYER_ITEM_PICKUP:
             // TODO player ID, physicsbody/world has knowledge of it somehow
@@ -336,9 +341,14 @@ void physics_step(struct PhysicsWorld *physics_world, float delta_time){
 
         event.type = get_event_type(type_A, type_B);
         switch(event.type){
-          case EVENT_COLLISION:
-            memcpy(event.data.collision.entity_A_id, body_A->entity->id, 16);
-            memcpy(event.data.collision.entity_B_id, body_B->entity->id, 16);
+          case EVENT_PLAYER_COLLISION:
+            if (body_swap) {
+              memcpy(event.data.player_collision.player_entity_id, body_B->entity->id, 16);
+            }
+            else{
+              memcpy(event.data.player_collision.player_entity_id, body_A->entity->id, 16);
+            }
+            // memcpy(event.data.collision.entity_B_id, body_B->entity->id, 16);
             break;
           case EVENT_PLAYER_ITEM_PICKUP:
             // TODO player ID, physicsbody/world has knowledge of it somehow

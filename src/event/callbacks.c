@@ -7,6 +7,7 @@
 #include "inventory.h"
 
 bool event_listener_on_item_pickup_add_to_inventory(struct GameEvent *game_event, void *user_data){
+  printf("event_listener_on_item_pickup_add_to_inventory\n");
   struct Scene *active_scene = (struct Scene *)user_data;
   struct PlayerComponent *player = scene_get_player_by_entity_id(active_scene, game_event->data.item_pickup.player_entity_id);
   struct InventoryComponent *inventory_component = scene_get_inventory_by_entity_id(active_scene, game_event->data.item_pickup.player_entity_id);
@@ -19,6 +20,7 @@ bool event_listener_on_item_pickup_add_to_inventory(struct GameEvent *game_event
 }
 
 bool event_listener_on_item_pickup_sound(struct GameEvent *game_event, void *user_data){
+  printf("event_listener_on_item_pickup_sound\n");
   struct AudioManager *audio_manager = (struct AudioManager *)user_data;
   struct SceneManager *scene_manager = engine_get_scene_manager();
   struct AudioComponent *player_audio_component = scene_get_audio_component_by_entity_id(scene_manager->active_scene, game_event->data.item_pickup.player_entity_id);
@@ -33,6 +35,7 @@ bool event_listener_on_item_pickup_sound(struct GameEvent *game_event, void *use
 }
 
 bool event_listener_on_item_pickup_remove_entity(struct GameEvent *game_event, void *user_data){
+  printf("event_listener_on_item_pickup_remove_entity\n");
   struct Scene *active_scene = (struct Scene *)user_data;
   scene_remove_entity(active_scene, game_event->data.item_pickup.item_entity_id);
   return true;

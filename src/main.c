@@ -308,6 +308,7 @@ void engine_start_game(){
   event_listener_register(EVENT_PLAYER_ITEM_PICKUP, event_listener_on_item_pickup_add_to_inventory, engine->scene_manager.active_scene);
   event_listener_register(EVENT_PLAYER_ITEM_PICKUP, event_listener_on_item_pickup_sound, &engine->audio_manager);
   event_listener_register(EVENT_PLAYER_ITEM_PICKUP, event_listener_on_item_pickup_remove_entity, engine->scene_manager.active_scene);
+  printf("hi\n");
 
   // Pop main menu layout
   ui_layout_stack_pop(&engine->ui_manager);

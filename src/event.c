@@ -15,9 +15,9 @@ static struct GameEventQueue game_event_queue;
 static EventType event_types[ENTITY_TYPE_COUNT][ENTITY_TYPE_COUNT] = {
   //              GROUPING        WORLD             ITEM                      PLAYER
   /* GROUPING */{EVENT_COLLISION, EVENT_COLLISION,  EVENT_COLLISION,          EVENT_COLLISION},
-  /* WORLD */   {EVENT_COLLISION, EVENT_COLLISION,  EVENT_COLLISION,          EVENT_COLLISION},
+  /* WORLD */   {EVENT_COLLISION, EVENT_COLLISION,  EVENT_COLLISION,          EVENT_PLAYER_COLLISION},
   /* ITEM */    {EVENT_COLLISION, EVENT_COLLISION,  EVENT_COLLISION,          EVENT_PLAYER_ITEM_PICKUP},
-  /* PLAYER */  {EVENT_COLLISION, EVENT_COLLISION,  EVENT_PLAYER_ITEM_PICKUP, EVENT_COLLISION}
+  /* PLAYER */  {EVENT_COLLISION, EVENT_PLAYER_COLLISION,  EVENT_PLAYER_ITEM_PICKUP, EVENT_COLLISION}
 };
 
 
@@ -39,12 +39,9 @@ void game_event_queue_init(struct Scene *scene){
 
   // Init registry
   memset(&game_event_queue.event_registry, 0, sizeof(struct EventRegistry));
-
-  // game_event_queue_initialized = true;
 }
 
 void game_event_queue_destroy(){
-  // if (!game_event_queue_initialized) return;
   
   // Not needed unless I refactor events to be an array of pointers
   // to dynamically allocated GameEvents, but passing them by value should be fine.
@@ -134,6 +131,15 @@ void game_event_queue_process(){
         if (audio_component_B) audio_component_play(audio_manager, audio_component_B, 0);
         break;
       }
+      case EVENT_PLAYER_COLLISION: {
+        // Get colliding entities' AudioComponents
+        struct AudioComponent *player_audio_component = scene_get_audio_component_by_entity_id(game_event_queue.scene, game_event.data.collision.entity_A_id);
+
+        struct AudioManager *audio_manager = engine_get_audio_manager();
+
+        if (player_audio_component) audio_component_play(audio_manager, player_audio_component, 0);
+        break;
+      }
       case EVENT_PLAYER_ITEM_PICKUP: {
         // struct PlayerComponent *player = scene_get_player_by_entity_id(game_event_queue.scene, game_event.data.item_pickup.player_entity_id);
         // struct InventoryComponent *inventory_component = scene_get_inventory_by_entity_id(game_event_queue.scene, game_event.data.item_pickup.player_entity_id);
@@ -152,14 +158,6 @@ void game_event_queue_process(){
         break;
       }
     }
-
-    // Call the callback function for each of this event type's registered listeners
-    // int count = game_event_queue.event_registry.listener_counts[game_event.type];
-    // printf("Listener count for event of type %d is %d\n", game_event.type, count);
-    // for (int i = 0; i < count; i++){
-    //   struct EventListener *event_listener = &game_event_queue.event_registry.listeners[game_event.type][i];
-    //   event_listener->callback(&game_event, event_listener->user_data);
-    // }
   }
 }
 
