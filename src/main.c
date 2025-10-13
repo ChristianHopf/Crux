@@ -20,6 +20,7 @@
 #include "event.h"
 #include "event/callbacks.h"
 #include <uuid/uuid.h>
+#include "objective.h"
 #include "engine.h"
 
 typedef struct {
@@ -31,6 +32,7 @@ typedef struct {
   struct SceneManager scene_manager;
   struct AudioManager audio_manager;
   struct UIManager ui_manager;
+  struct ObjectiveManager objective_manager;
   struct GameEventQueue game_event_queue;
   float delta_time;
   float last_frame;
@@ -243,6 +245,13 @@ void engine_init(){
     return;
   }
 
+  // ObjectiveManager
+  if (!objective_manager_init(&engine->objective_manager)){
+    fprintf(stderr, "Error: failed to initialize ObjectiveManager in engine_init\n");
+    free(engine);
+    return;
+  }
+
   ui_layout_stack_push(&engine->ui_manager, &layout_version_text);
   char **fps_text = calloc(1, sizeof(char *));
   layout_fps_counter.user_data = fps_text;
@@ -308,6 +317,7 @@ void engine_start_game(){
   event_listener_register(EVENT_PLAYER_ITEM_PICKUP, event_listener_on_item_pickup_add_to_inventory, engine->scene_manager.active_scene);
   event_listener_register(EVENT_PLAYER_ITEM_PICKUP, event_listener_on_item_pickup_sound, &engine->audio_manager);
   event_listener_register(EVENT_PLAYER_ITEM_PICKUP, event_listener_on_item_pickup_remove_entity, engine->scene_manager.active_scene);
+  event_listener_register(EVENT_PLAYER_ITEM_PICKUP, event_listener_on_objective_event, &engine->objective_manager);
 
   // Pop main menu layout
   ui_layout_stack_pop(&engine->ui_manager);

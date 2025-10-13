@@ -37,3 +37,9 @@ bool event_listener_on_item_pickup_remove_entity(struct GameEvent *game_event, v
   scene_remove_entity(active_scene, game_event->data.item_pickup.item_entity_id);
   return true;
 }
+
+bool event_listener_on_objective_event(struct GameEvent *game_event, void *user_data){
+  struct ObjectiveManager *objective_manager = (struct ObjectiveManager *)user_data;
+  objective_manager_update_on_event(manager, game_event);
+  return true;
+}
