@@ -5,6 +5,7 @@
 #include "scene.h"
 #include "audio_manager.h"
 #include "inventory.h"
+#include "objective.h"
 
 bool event_listener_on_item_pickup_add_to_inventory(struct GameEvent *game_event, void *user_data){
   struct Scene *active_scene = (struct Scene *)user_data;
@@ -40,6 +41,6 @@ bool event_listener_on_item_pickup_remove_entity(struct GameEvent *game_event, v
 
 bool event_listener_on_objective_event(struct GameEvent *game_event, void *user_data){
   struct ObjectiveManager *objective_manager = (struct ObjectiveManager *)user_data;
-  objective_manager_update_on_event(manager, game_event);
-  return true;
+  objective_manager_update_on_event(objective_manager, game_event);
+  return false;
 }

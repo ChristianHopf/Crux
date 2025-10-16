@@ -8,6 +8,7 @@
 	"models": [
 		"resources/basic/grass_plane/grass_plane.gltf",
 		"resources/objects/magic_potion/scene.gltf",
+		"resources/objects/evil_poison/scene.gltf",
     "resources/objects/wizard/WizardusMaximus.glb"
 	],
   "sounds": {
@@ -161,7 +162,7 @@
             "children": []
           },
           {
-            "model_index": 2,
+            "model_index": 3,
             "shader_index": 0,
             "position": [-2.0, 2.0, 0.0],
             "rotation": [0.0, 0.0, 0.0],
@@ -179,7 +180,7 @@
               }
             },
             "components": [
-              {"type": 0, "model_index": 2, "shader_index": 0},
+              {"type": 0, "model_index": 3, "shader_index": 0},
               {"type": 1, "sound_index": 0}
             ],
             "entity_type": 1,
@@ -211,7 +212,7 @@
             "children": []
           },
           {
-            "model_index": 1,
+            "model_index": 2,
             "shader_index": 0,
             "position": [2.0, 4.0, -3.0],
             "rotation": [0.0, 0.0, 0.0],
@@ -228,9 +229,9 @@
               }
             },
             "components": [
-              {"type": 0, "model_index": 1, "shader_index": 0},
+              {"type": 0, "model_index": 2, "shader_index": 0},
               {"type": 1, "sound_index": 0},
-              {"type": 2, "id": 1, "count": 1}
+              {"type": 2, "id": 2, "count": 1}
             ],
             "entity_type": 2,
             "children": []
@@ -261,7 +262,7 @@
             "children": []
           },
           {
-            "model_index": 1,
+            "model_index": 2,
             "shader_index": 0,
             "position": [0.0, 3.0, -4.0],
             "rotation": [0.0, 0.0, 0.0],
@@ -278,9 +279,9 @@
               }
             },
             "components": [
-              {"type": 0, "model_index": 1, "shader_index": 0},
+              {"type": 0, "model_index": 2, "shader_index": 0},
               {"type": 1, "sound_index": 0},
-              {"type": 2, "id": 1, "count": 1}
+              {"type": 2, "id": 2, "count": 1}
             ],
             "entity_type": 2,
             "children": []
@@ -293,6 +294,11 @@
     {
       "id": 1,
       "name": "Magic Potion",
+      "max_count": 3
+    },
+    {
+      "id": 2,
+      "name": "Evil Poison",
       "max_count": 3
     }
   ],

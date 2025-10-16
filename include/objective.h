@@ -10,6 +10,7 @@ typedef enum {
 
 struct Objective {
   ObjectiveType type;
+  char *description;
   union {
     struct {
       int item_id;
