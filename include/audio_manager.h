@@ -35,9 +35,15 @@ struct SoundEffect {
   ALuint buffer;
 };
 
+struct AudioSource {
+  ALuint source_id;
+  int sound_effect_index;
+};
+
 struct AudioComponent {
   uuid_t entity_id;
-  ALuint sources[MAX_COMPONENT_SOURCES];
+  struct AudioSource sources[MAX_COMPONENT_SOURCES];
+  // ALuint sources[MAX_COMPONENT_SOURCES];
   unsigned int num_active_sources;
   // bool is_playing;
   vec3 position;

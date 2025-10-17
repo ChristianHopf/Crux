@@ -480,11 +480,13 @@ void audio_component_create(struct Scene *scene, uuid_t entity_id, struct AudioM
 void audio_component_update(struct AudioManager *audio_manager, struct AudioComponent *audio_component){
   // Return inactive sources to source pool, update positions
   for (unsigned int i = 0; i < audio_component->num_active_sources; i++){
+    struct AudioSource *audio_source = &audio_component->sources[i];
+
     ALint state;
-    alGetSourcei(audio_component->sources[i], AL_SOURCE_STATE, &state);
+    alGetSourcei(audio_source->source_id, AL_SOURCE_STATE, &state);
     if (state != AL_PLAYING){
       // Return to pool
-      audio_source_pool_return_source(audio_manager, audio_component->sources[i]);
+      audio_source_pool_return_source(audio_manager, audio_source->source_id);
       // Swap and pop sources (will have to shift down if/when order matters)
       audio_component->sources[i] = audio_component->sources[audio_component->num_active_sources - 1];
       audio_component->num_active_sources--;
@@ -497,9 +499,11 @@ void audio_component_update(struct AudioManager *audio_manager, struct AudioComp
   // Get scene manager and entity to get position
   struct SceneManager *scene_manager = engine_get_scene_manager();
   struct Entity *entity = scene_get_entity_by_entity_id(scene_manager->active_scene, audio_component->entity_id);
-  for (int i = 0; i < audio_component->num_active_sources; i++){
+  for (unsigned int i = 0; i < audio_component->num_active_sources; i++){
+    struct AudioSource *audio_source = &audio_component->sources[i];
+
     glm_vec3_copy(entity->position, audio_component->position);
-    alSource3f(audio_component->sources[i], AL_POSITION, entity->position[0], entity->position[1], entity->position[2]);
+    alSource3f(audio_source->source_id, AL_POSITION, entity->position[0], entity->position[1], entity->position[2]);
   }
 }
 
@@ -525,6 +529,34 @@ void audio_component_play(struct AudioManager *audio_manager, struct AudioCompon
     }
   }
 
+  // If this component already has a source playing the given sound, restart it.
+  // Maybe add a parameter to choose between restarting or playing a new instance
+  for (unsigned int i = 0; i < audio_component->num_active_sources; i++){
+    if (audio_component->sources[i].sound_effect_index == sound_effect_index){
+      struct AudioSource *audio_source = &audio_component->sources[i];
+
+      // I'm pretty sure audio_component_update should guarantee that any source
+      // still "active" will still be playing, so this check may be redundant.
+      ALint state;
+      alGetSourcei(audio_source->source_id, AL_SOURCE_STATE, &state);
+      if (state == AL_PLAYING){
+        alSourceStop(audio_source->source_id);
+        ALenum error = alGetError();
+        if (error != AL_NO_ERROR){
+          fprintf(stderr, "Error stopping source in audio_component_play: %d\n", error);
+          return;
+        }
+
+        alSourcePlay(audio_source->source_id);
+        error = alGetError();
+        if (error != AL_NO_ERROR){
+          fprintf(stderr, "Error playing source in audio_component_play: %d\n", error);
+        }
+        return;
+      }
+    }
+  }
+
   // Get source from the audio manager's source pool,
   // then set its position and add to audio component's sources
   ALuint source;
@@ -546,10 +578,12 @@ void audio_component_play(struct AudioManager *audio_manager, struct AudioCompon
     return;
   }
 
-  audio_component->sources[audio_component->num_active_sources++] = source;
+  struct AudioSource *audio_source = &audio_component->sources[audio_component->num_active_sources++];
+  audio_source->source_id = source;
+  audio_source->sound_effect_index = sound_effect_index;
 
   // Play the sound
-  alSourcePlay(source);
+  alSourcePlay(audio_source->source_id);
   error = alGetError();
   if (error != AL_NO_ERROR){
     fprintf(stderr, "Error playing sound effect: %d\n", error);
@@ -559,8 +593,8 @@ void audio_component_play(struct AudioManager *audio_manager, struct AudioCompon
 
 void audio_component_destroy(struct AudioManager *audio_manager, struct AudioComponent *audio_component){
   // Return all sources to source pool
-  for (int i = 0; i < audio_component->num_active_sources; i++){
-    audio_source_pool_return_source(audio_manager, audio_component->sources[i]);
+  for (unsigned int i = 0; i < audio_component->num_active_sources; i++){
+    audio_source_pool_return_source(audio_manager, audio_component->sources[i].source_id);
   }
 }
 

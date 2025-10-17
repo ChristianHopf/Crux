@@ -1052,6 +1052,7 @@ void scene_player_create(
     fprintf(stderr, "Error: failed to get AudioManager in scene_player_create\n");
     return;
   }
+
   audio_component_create(scene, player->entity_id, audio_manager, 0);
 
   // Set listener position to camera position

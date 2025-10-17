@@ -10,7 +10,6 @@ bool objective_manager_init(struct ObjectiveManager *objective_manager){
 }
 
 void objective_manager_update_on_event(struct ObjectiveManager *objective_manager, struct GameEvent *game_event){
-  printf("Calling objective_manager_update_on_event\n");
   // For each objective, if it isn't complete, switch on its ObjectiveType
   // and check if this event satisfies its conditions
   for (unsigned int i = 0; i < objective_manager->num_objectives; i++){

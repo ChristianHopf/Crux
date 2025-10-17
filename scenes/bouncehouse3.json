@@ -13,10 +13,8 @@
   "sounds": {
     "music": "resources/music/mookid.wav",
     "effects": [
-      {
-        "path": "resources/sfx/vineboom.wav",
-        "name": "vine_boom"
-      }
+      "resources/sfx/vineboom.wav",
+      "resources/sfx/elevatording.ogg"
     ]
   },
   "entity_count": 17,

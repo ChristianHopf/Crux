@@ -146,7 +146,7 @@ void game_event_queue_process(){
         //
         // if (inventory_add_item(inventory_component, &game_event_queue.scene->item_registry, game_event.data.item_pickup.item_id, game_event.data.item_pickup.item_count)){
         //   scene_remove_entity(game_event_queue.scene, game_event.data.item_pickup.item_entity_id);
-        //   inventory_print(&game_event_queue.scene->item_registry, inventory_component);
+          // inventory_print(&game_event_queue.scene->item_registry, inventory_component);
         // }
         // else{
         //   // printf("Failed to add %d item(s) to the player's inventory\n", game_event.data.item_pickup.item_count);

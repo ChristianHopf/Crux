@@ -17,6 +17,7 @@ bool inventory_add_item(struct InventoryComponent *inventory_component, struct I
         item_component->count += count;
         return true;
       }
+      printf("Inventory has %d of item %d\n", item_component->count, item_id);
       return false;
     }
   }
