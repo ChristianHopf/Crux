@@ -259,6 +259,8 @@ void physics_step(struct PhysicsWorld *physics_world, float delta_time){
             event.data.item_pickup.item_count = body_A->entity->item->count;
             memcpy(event.data.item_pickup.item_entity_id, body_A->entity->id, 16);
             break;
+          case EVENT_TRIGGER:
+            break;
         }
 
         game_event_queue_enqueue(event);

@@ -5,6 +5,7 @@ typedef enum {
   ENTITY_WORLD,
   ENTITY_ITEM,
   ENTITY_PLAYER,
+  ENTITY_TRIGGER,
   ENTITY_TYPE_COUNT
 } EntityType;
 

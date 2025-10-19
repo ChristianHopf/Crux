@@ -18,7 +18,7 @@
       "resources/sfx/elevatording.ogg"
     ]
   },
-  "entity_count": 14,
+  "entity_count": 15,
 	"nodes": {
     "position": [0.0, 0.0, 0.0],
     "rotation": [0.0, 0.0, 0.0],
@@ -159,6 +159,27 @@
               {"type": 0, "model_index": 0, "shader_index": 0}
             ],
             "entity_type": 1,
+            "children": []
+          },
+          {
+            "model_index": -1,
+            "shader_index": -1,
+            "position": [-3.0, 1.0, -3.0],
+            "rotation": [0.0, 0.0, 0.0],
+            "scale": [1.0, 1.0, 1.0],
+            "velocity": [0.0, 0.0, 0.0],
+            "collider": {
+              "type": 0,
+              "dynamic": false,
+              "units": 2,
+              "restitution": 1.0,
+              "data": {
+                "center": [0.0, 0.1, 0.0],
+                "extents": [0.1, 0.12, 0.1]
+              }
+            },
+            "components": [],
+            "entity_type": 4,
             "children": []
           },
           {

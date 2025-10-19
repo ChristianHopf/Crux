@@ -13,6 +13,7 @@ typedef enum {
   EVENT_COLLISION = 0,
   EVENT_PLAYER_COLLISION,
   EVENT_PLAYER_ITEM_PICKUP,
+  EVENT_TRIGGER
 } EventType;
 
 struct GameEvent {

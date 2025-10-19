@@ -12,12 +12,14 @@
 static struct GameEventQueue game_event_queue;
 // static bool game_event_queue_initialized;
 
+// For collisions
 static EventType event_types[ENTITY_TYPE_COUNT][ENTITY_TYPE_COUNT] = {
-  //              GROUPING        WORLD             ITEM                      PLAYER
-  /* GROUPING */{EVENT_COLLISION, EVENT_COLLISION,  EVENT_COLLISION,          EVENT_COLLISION},
-  /* WORLD */   {EVENT_COLLISION, EVENT_COLLISION,  EVENT_COLLISION,          EVENT_PLAYER_COLLISION},
-  /* ITEM */    {EVENT_COLLISION, EVENT_COLLISION,  EVENT_COLLISION,          EVENT_PLAYER_ITEM_PICKUP},
-  /* PLAYER */  {EVENT_COLLISION, EVENT_PLAYER_COLLISION,  EVENT_PLAYER_ITEM_PICKUP, EVENT_COLLISION}
+  //              GROUPING, WORLD, ITEM, PLAYER, TRIGGER
+  /* GROUPING */{EVENT_COLLISION, EVENT_COLLISION,  EVENT_COLLISION,          EVENT_COLLISION, EVENT_TRIGGER},
+  /* WORLD */   {EVENT_COLLISION, EVENT_COLLISION,  EVENT_COLLISION,          EVENT_PLAYER_COLLISION, EVENT_TRIGGER},
+  /* ITEM */    {EVENT_COLLISION, EVENT_COLLISION,  EVENT_COLLISION,          EVENT_PLAYER_ITEM_PICKUP, EVENT_TRIGGER},
+  /* PLAYER */  {EVENT_COLLISION, EVENT_PLAYER_COLLISION,  EVENT_PLAYER_ITEM_PICKUP, EVENT_COLLISION, EVENT_TRIGGER},
+  /* TRIGGER */  {EVENT_TRIGGER, EVENT_TRIGGER,  EVENT_TRIGGER, EVENT_TRIGGER, EVENT_TRIGGER}
 };
 
 
@@ -151,6 +153,10 @@ void game_event_queue_process(){
         // else{
         //   // printf("Failed to add %d item(s) to the player's inventory\n", game_event.data.item_pickup.item_count);
         // }
+        break;
+      }
+      case EVENT_TRIGGER: {
+        printf("Processing event with type EVENT_TRIGGER\n");
         break;
       }
       default: {
