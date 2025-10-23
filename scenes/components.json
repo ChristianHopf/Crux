@@ -179,7 +179,7 @@
               }
             },
             "components": [
-              {"type": 3, "behavior_type": 0}
+              {"type": 3, "behavior_type": 0, "req_obj_compl": true}
             ],
             "entity_type": 4,
             "children": []

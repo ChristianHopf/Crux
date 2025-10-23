@@ -8,7 +8,7 @@
 #include "engine.h"
 
 typedef enum {
-  TRIGGER_EXIT_LEVEL,
+  TRIGGER_EXIT_LEVEL = 0,
   TRIGGER_CUSTOM
 } TriggerBehaviorType;
 
@@ -29,7 +29,7 @@ struct TriggerComponent {
 };
 
 
-void trigger_component_create(struct Scene *scene, uuid_t entity_id, TriggerBehaviorType behavior_type);
+void trigger_component_create(struct Scene *scene, uuid_t entity_id);
 void trigger_component_destroy(struct TriggerComponent *trigger_component);
 void trigger_process_event(struct Scene *scene, struct ObjectiveManager *objective_manager, struct GameEvent *game_event);
 

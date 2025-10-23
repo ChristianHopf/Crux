@@ -244,6 +244,8 @@ void physics_step(struct PhysicsWorld *physics_world, float delta_time){
         event.type = get_event_type(type_A, type_B);
         switch(event.type){
           case EVENT_PLAYER_COLLISION:
+            // Player body is initially body_A.
+            // If body_swap is true, the player body is body_B.
             if (body_swap) {
               memcpy(event.data.player_collision.player_entity_id, body_B->entity->id, 16);
             }
@@ -260,6 +262,12 @@ void physics_step(struct PhysicsWorld *physics_world, float delta_time){
             memcpy(event.data.item_pickup.item_entity_id, body_A->entity->id, 16);
             break;
           case EVENT_TRIGGER:
+            if (body_swap){
+              memcpy(event.data.trigger.trigger_entity_id, body_A->entity->id, 16);
+            }
+            else{
+              memcpy(event.data.trigger.trigger_entity_id, body_B->entity->id, 16);
+            }
             break;
         }
 
@@ -358,6 +366,14 @@ void physics_step(struct PhysicsWorld *physics_world, float delta_time){
             event.data.item_pickup.item_id = body_A->entity->item->id;
             event.data.item_pickup.item_count = body_A->entity->item->count;
             memcpy(event.data.item_pickup.item_entity_id, body_A->entity->id, 16);
+            break;
+          case EVENT_TRIGGER:
+            if (body_swap){
+              memcpy(event.data.trigger.trigger_entity_id, body_A->entity->id, 16);
+            }
+            else{
+              memcpy(event.data.trigger.trigger_entity_id, body_B->entity->id, 16);
+            }
             break;
         }
 

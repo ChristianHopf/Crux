@@ -896,8 +896,23 @@ void scene_process_node_json(
           return;
         }
 
+        trigger_component_create(scene, entity->id);
+
         TriggerBehaviorType behavior_type = cJSON_GetNumberValue(behavior_type_json);
-        trigger_component_create(scene, entity->id, behavior_type);
+        switch(behavior_type){
+          case TRIGGER_EXIT_LEVEL:
+            cJSON *req_obj_compl_json = cJSON_GetObjectItemCaseSensitive(component_json, "req_obj_compl");
+            if (!cJSON_IsBool(req_obj_compl_json)){
+              fprintf(stderr, "Error: failed to get req_obj_compl in scene_process_node_json, either invalid or does not exist\n");
+              return;
+            }
+            bool require_objectives_complete = false;
+            if (cJSON_IsTrue(req_obj_compl_json)) require_objectives_complete = true;
+
+            struct TriggerComponent *trigger_component = scene_get_trigger_component_by_entity_id(scene, entity->id);
+            trigger_component_add_behavior_exit_level(trigger_component, require_objectives_complete);
+            break;
+        }
         break;
       }
       default: {
