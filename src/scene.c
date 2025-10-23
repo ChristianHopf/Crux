@@ -18,6 +18,7 @@
 #include "physics/debug_renderer.h"
 #include "physics/utils.h"
 #include "event.h"
+#include "trigger.h"
 #include "engine.h"
 #include "utils.h"
 
@@ -296,6 +297,15 @@ struct Scene *scene_load(const char *scene_path){
     return NULL;
   }
   scene->num_inventory_components = 0;
+
+  // TriggerComponents
+  scene->max_trigger_components = entity_count;
+  scene->trigger_components = (struct TriggerComponent *)calloc(scene->max_trigger_components, sizeof(struct TriggerComponent));
+  if (!scene->trigger_components){
+    fprintf(stderr, "Error: failed to allocate TriggerComponents in scene_init\n");
+    return NULL;
+  }
+  scene->num_trigger_components = 0;
 
   scene_process_node_json(scene, nodes_json, scene->root_node, NULL, models, shaders, scene->physics_world);
   scene->max_entities = 64;
@@ -879,6 +889,17 @@ void scene_process_node_json(
         entity->item->count = cJSON_GetNumberValue(item_count_json);
         break;
       }
+      case COMPONENT_TRIGGER: {
+        cJSON *behavior_type_json = cJSON_GetObjectItemCaseSensitive(component_json, "behavior_type");
+        if (!cJSON_IsNumber(behavior_type_json)){
+          fprintf(stderr, "Error: failed to get trigger behavior type in scene_process_node_json, either invalid or does not exist\n");
+          return;
+        }
+
+        TriggerBehaviorType behavior_type = cJSON_GetNumberValue(behavior_type_json);
+        trigger_component_create(scene, entity->id, behavior_type);
+        break;
+      }
       default: {
         break;
       }
@@ -1284,6 +1305,15 @@ struct AudioComponent *scene_get_audio_component_by_entity_id(struct Scene *scen
   for (unsigned int i = 0; i < scene->num_audio_components; i++){
     if (uuid_compare(scene->audio_components[i].entity_id, entity_id) == 0){
       return &scene->audio_components[i];
+    }
+  }
+  return NULL;
+}
+
+struct TriggerComponent *scene_get_trigger_component_by_entity_id(struct Scene *scene, uuid_t entity_id){
+  for (unsigned int i = 0; i < scene->num_trigger_components; i++){
+    if (uuid_compare(scene->trigger_components[i].entity_id, entity_id) == 0){
+      return &scene->trigger_components[i];
     }
   }
   return NULL;

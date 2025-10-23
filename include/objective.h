@@ -32,3 +32,4 @@ bool objective_manager_init(struct ObjectiveManager *objective_manager);
 void objective_manager_update_on_event(struct ObjectiveManager *objective_manager, struct GameEvent *game_event);
 void objective_manager_destroy(struct ObjectiveManager *objective_manager);
 void objective_manager_objective_add(struct ObjectiveManager *objective_manager, struct Objective objective);
+bool objective_manager_all_complete(struct ObjectiveManager *objective_manager);

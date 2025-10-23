@@ -7,6 +7,7 @@
 #include "player.h"
 #include "inventory.h"
 #include "audio_manager.h"
+#include "trigger.h"
 #include "engine.h"
 
 static struct GameEventQueue game_event_queue;
@@ -157,6 +158,10 @@ void game_event_queue_process(){
       }
       case EVENT_TRIGGER: {
         printf("Processing event with type EVENT_TRIGGER\n");
+        struct SceneManager *scene_manager = engine_get_scene_manager();
+        struct ObjectiveManager *objective_manager = engine_get_objective_manager();
+
+        trigger_process_event(scene_manager->active_scene, objective_manager, &game_event);
         break;
       }
       default: {

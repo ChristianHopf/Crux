@@ -48,3 +48,12 @@ void objective_manager_objective_add(struct ObjectiveManager *objective_manager,
 
   objective_manager->objectives[objective_manager->num_objectives++] = objective;
 }
+
+bool objective_manager_all_complete(struct ObjectiveManager *objective_manager){
+  for (unsigned int i = 0; i < objective_manager->num_objectives; i++){
+    if (!objective_manager->objectives[i].complete){
+      return false;
+    }
+  }
+  return true;
+}

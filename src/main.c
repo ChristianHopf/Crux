@@ -298,6 +298,10 @@ struct UIManager *engine_get_ui_manager(){
   return &engine->ui_manager;
 }
 
+struct ObjectiveManager *engine_get_objective_manager(){
+  return &engine->objective_manager;
+}
+
 void engine_start_game(){
   if (!engine){
     fprintf(stderr, "Error: engine is null in engine_start_game\n");

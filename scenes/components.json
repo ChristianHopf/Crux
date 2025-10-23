@@ -178,7 +178,9 @@
                 "extents": [0.1, 0.12, 0.1]
               }
             },
-            "components": [],
+            "components": [
+              {"type": 3, "behavior_type": 0}
+            ],
             "entity_type": 4,
             "children": []
           },

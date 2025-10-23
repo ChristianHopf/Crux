@@ -36,6 +36,10 @@ struct GameEvent {
       int item_count;
       uuid_t item_entity_id;
     } item_pickup;
+    struct {
+      uuid_t trigger_entity_id;
+      // Might also need player entity id
+    } trigger;
     // Custom event data
     void *custom;
   } data;

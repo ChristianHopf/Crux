@@ -24,13 +24,13 @@ struct TriggerBehavior {
 
 struct TriggerComponent {
   uuid_t entity_id;
-  struct AABB aabb;
-  struct TriggerBehavior behavior;
+  // struct AABB aabb;
+  struct TriggerBehavior trigger_behavior;
 };
 
 
-void trigger_component_create(struct Scene *scene, uuid_t entity_id, struct AABB aabb);
+void trigger_component_create(struct Scene *scene, uuid_t entity_id, TriggerBehaviorType behavior_type);
 void trigger_component_destroy(struct TriggerComponent *trigger_component);
-void trigger_component_process_event(struct TriggerComponent *trigger_component, struct GameEvent *game_event);
+void trigger_process_event(struct Scene *scene, struct ObjectiveManager *objective_manager, struct GameEvent *game_event);
 
 void trigger_component_add_behavior_exit_level(struct TriggerComponent *trigger_component, bool require_objectives_complete);
