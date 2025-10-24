@@ -33,3 +33,4 @@ void objective_manager_update_on_event(struct ObjectiveManager *objective_manage
 void objective_manager_destroy(struct ObjectiveManager *objective_manager);
 void objective_manager_objective_add(struct ObjectiveManager *objective_manager, struct Objective objective);
 bool objective_manager_all_complete(struct ObjectiveManager *objective_manager);
+void objective_manager_print(struct ObjectiveManager *objective_manager);

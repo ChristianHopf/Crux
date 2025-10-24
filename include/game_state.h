@@ -11,7 +11,8 @@ struct ListNode {
 typedef enum {
   GAME_STATE_MAIN_MENU,
   GAME_STATE_PLAYING,
-  GAME_STATE_PAUSED
+  GAME_STATE_PAUSED,
+  GAME_STATE_SHOULD_EXIT
 } GameStateMode;
 
 struct GameState {
@@ -33,6 +34,7 @@ void game_state_quit();
 bool game_state_is_paused();
 bool game_state_is_main_menu();
 bool game_state_is_playing();
+bool game_state_should_exit();
 bool game_state_should_quit();
 void game_state_update();
 

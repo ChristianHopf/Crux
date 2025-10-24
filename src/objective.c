@@ -10,6 +10,7 @@ bool objective_manager_init(struct ObjectiveManager *objective_manager){
 }
 
 void objective_manager_update_on_event(struct ObjectiveManager *objective_manager, struct GameEvent *game_event){
+
   // For each objective, if it isn't complete, switch on its ObjectiveType
   // and check if this event satisfies its conditions
   for (unsigned int i = 0; i < objective_manager->num_objectives; i++){
@@ -21,10 +22,10 @@ void objective_manager_update_on_event(struct ObjectiveManager *objective_manage
         if (game_event->type == EVENT_PLAYER_ITEM_PICKUP){
           if (game_event->data.item_pickup.item_id == objective->data.collect_item.item_id){
             objective->data.collect_item.current_count += game_event->data.item_pickup.item_count;
-          printf("Objective: %s\nRequired item count: %d\nCurrent item count: %d\n\n", objective->description, objective->data.collect_item.required_count, objective->data.collect_item.current_count);
+          // printf("Objective: %s\nRequired item count: %d\nCurrent item count: %d\n\n", objective->description, objective->data.collect_item.required_count, objective->data.collect_item.current_count);
             if (objective->data.collect_item.current_count >= objective->data.collect_item.required_count){
               objective->complete = true;
-              printf("Objective complete!\n");
+              // printf("Objective complete!\n");
             }
           }
         }
@@ -35,6 +36,7 @@ void objective_manager_update_on_event(struct ObjectiveManager *objective_manage
       }
     }
   }
+  objective_manager_print(objective_manager);
 }
 
 void objective_manager_destroy(struct ObjectiveManager *objective_manager){
@@ -56,4 +58,23 @@ bool objective_manager_all_complete(struct ObjectiveManager *objective_manager){
     }
   }
   return true;
+}
+
+void objective_manager_print(struct ObjectiveManager *objective_manager){
+  printf("\n--- OBJECTIVES ---\n");
+  for (unsigned int i = 0; i < objective_manager->num_objectives; i++){
+    struct Objective *objective = &objective_manager->objectives[i];
+    switch (objective->type){
+      case OBJECTIVE_COLLECT_ITEM: {
+        printf("Objective %d: %s\nRequired item count: %d\nCurrent item count: %d\n", i + 1, objective->description, objective->data.collect_item.required_count, objective->data.collect_item.current_count);
+        if (objective->data.collect_item.current_count >= objective->data.collect_item.required_count){
+          printf("Status: Complete\n\n");
+        }
+        else{
+          printf("Status: Incomplete\n\n");
+        }
+        break;
+      }
+    }
+  }
 }

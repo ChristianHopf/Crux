@@ -18,18 +18,17 @@ void trigger_component_destroy(struct TriggerComponent *trigger_component){
 }
 
 void trigger_process_event(struct Scene *scene, struct ObjectiveManager *objective_manager, struct GameEvent *game_event){
-  printf("trigger_process_event\n");
   // Get TriggerComponent
   struct TriggerComponent *trigger_component = scene_get_trigger_component_by_entity_id(scene, game_event->data.trigger.trigger_entity_id);
 
   // Switch on TriggerBehaviorType and process event
   struct TriggerBehavior *trigger_behavior = &trigger_component->trigger_behavior;
-  printf("Trigger behavior type is %d\n", trigger_behavior->type);
   switch (trigger_behavior->type){
     case TRIGGER_EXIT_LEVEL:
       if (trigger_behavior->data.exit_level.require_objectives_complete){
         if (objective_manager_all_complete(objective_manager)){
           printf("Objectives complete! Time to exit level\n");
+          engine_request_exit();
         }
         else{
           printf("There are still objectives to complete, cannot exit level\n");

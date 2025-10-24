@@ -279,8 +279,6 @@ void engine_init(){
   }
   attach_observer(ui_game_state_observer);
 
-
-
   // Timing
   engine->delta_time = 0.0f;
   engine->last_frame = 0.0f;
@@ -326,10 +324,10 @@ void engine_start_game(){
   // Add objective
   struct Objective objective1 = {
     .type = OBJECTIVE_COLLECT_ITEM,
-    .description = "Collect 1 Magic Potion",
+    .description = "Collect 2 Magic Potions",
     .data.collect_item = {
       .item_id = 1,
-      .required_count = 1,
+      .required_count = 2,
       .current_count = 0
     },
     .complete = false,
@@ -358,16 +356,29 @@ void engine_start_game(){
   stbi_set_flip_vertically_on_load(true);
 }
 
+void engine_request_exit(){
+  // GameState will eventually be moved from a singleton to a property of Engine,
+  // so this goes here
+  game_state_set_mode(GAME_STATE_SHOULD_EXIT);
+}
+
 void engine_exit_game(){
   if (!engine || !engine->scene_manager.active_scene){
     fprintf(stderr, "Error: failed to start game in start_game, engine or scene_manager is null\n");
     return;
   }
 
+  // // Pause game if still playing
+  // if (game_state_is_playing()){
+  //   printf("Should set game to paused\n");
+  //   game_state_pause();
+  // }
+
   // Unload scene
   scene_manager_unload_scene(&engine->scene_manager);
   game_event_queue_destroy();
   game_state_exit();
+  printf("Successfully exited game\n");
 
   // Pop pause menu, push main menu
   struct Menu *main_menu = menu_manager_get_main_menu();
@@ -414,11 +425,11 @@ int main(){
 		// Handle input
 		processInput(engine->window);
 
-    // if (game_state_is_paused()){
 
     // Update Clay layout dimensions and pointer state
     ui_update_frame(&engine->ui_manager, engine->screen_width, engine->screen_height, engine->delta_time);
 
+    // Only update mouse pos in UI if a menu is open
     GameStateMode mode = game_state_get_mode();
     if (mode != GAME_STATE_PLAYING){
       double xpos, ypos;
@@ -426,13 +437,22 @@ int main(){
       ui_update_mouse(xpos, ypos, engine->mouse_down);
     }
 
+    // If a scene is active and the game is playing, update the scene.
+    // If the game should exit, exit and reenter the loop. if not, render the scene.
     struct Scene *active_scene = engine->scene_manager.active_scene;
     if (active_scene){
       if (mode == GAME_STATE_PLAYING){
         scene_update(active_scene, engine->delta_time);
       }
+
+      if (game_state_should_exit()){
+        engine_exit_game();
+        continue;
+      }
+
       scene_render(active_scene);
     }
+
     // Render UI
     ui_render_frame(&engine->ui_manager);
 

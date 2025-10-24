@@ -93,6 +93,10 @@ bool game_state_is_playing(){
   return game_state.mode == GAME_STATE_PLAYING;
 }
 
+bool game_state_should_exit(){
+  return game_state.mode == GAME_STATE_SHOULD_EXIT;
+}
+
 bool game_state_should_quit(){
   return game_state.should_quit;
 }
