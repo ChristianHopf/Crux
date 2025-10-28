@@ -17,7 +17,9 @@
 #include "ui/base_layouts.h"
 #include "game_state.h"
 #include "window_manager.h"
+#include "objective.h"
 #include "event.h"
+#include "event/callbacks.h"
 #include <uuid/uuid.h>
 #include "engine.h"
 
@@ -30,6 +32,7 @@ typedef struct {
   struct SceneManager scene_manager;
   struct AudioManager audio_manager;
   struct UIManager ui_manager;
+  struct ObjectiveManager objective_manager;
   struct GameEventQueue game_event_queue;
   float delta_time;
   float last_frame;
@@ -242,6 +245,13 @@ void engine_init(){
     return;
   }
 
+  // ObjectiveManager
+  if (!objective_manager_init(&engine->objective_manager)){
+    fprintf(stderr, "Error: failed to initialize ObjectiveManager in engine_init\n");
+    free(engine);
+    return;
+  }
+
   ui_layout_stack_push(&engine->ui_manager, &layout_version_text);
   char **fps_text = calloc(1, sizeof(char *));
   layout_fps_counter.user_data = fps_text;
@@ -286,6 +296,10 @@ struct UIManager *engine_get_ui_manager(){
   return &engine->ui_manager;
 }
 
+struct ObjectiveManager *engine_get_objective_manager(){
+  return &engine->objective_manager;
+}
+
 void engine_start_game(){
   if (!engine){
     fprintf(stderr, "Error: engine is null in engine_start_game\n");
@@ -301,6 +315,38 @@ void engine_start_game(){
   game_state_set_mode(GAME_STATE_PLAYING);
   game_event_queue_init(engine->scene_manager.active_scene);
 
+  // Register event listeners
+  event_listener_register(EVENT_PLAYER_ITEM_PICKUP, event_listener_on_item_pickup_add_to_inventory, engine->scene_manager.active_scene);
+  event_listener_register(EVENT_PLAYER_ITEM_PICKUP, event_listener_on_item_pickup_sound, &engine->audio_manager);
+  event_listener_register(EVENT_PLAYER_ITEM_PICKUP, event_listener_on_objective_event, &engine->objective_manager);
+  event_listener_register(EVENT_PLAYER_ITEM_PICKUP, event_listener_on_item_pickup_remove_entity, engine->scene_manager.active_scene);
+
+  // Add objective
+  struct Objective objective1 = {
+    .type = OBJECTIVE_COLLECT_ITEM,
+    .description = "Collect 2 Magic Potions",
+    .data.collect_item = {
+      .item_id = 1,
+      .required_count = 2,
+      .current_count = 0
+    },
+    .complete = false,
+    .user_data = NULL
+  };
+  struct Objective objective2 = {
+    .type = OBJECTIVE_COLLECT_ITEM,
+    .description = "Collect 1 Evil Poison",
+    .data.collect_item = {
+      .item_id = 2,
+      .required_count = 1,
+      .current_count = 0
+    },
+    .complete = false,
+    .user_data = NULL
+  };
+  objective_manager_objective_add(&engine->objective_manager, objective1);
+  objective_manager_objective_add(&engine->objective_manager, objective2);
+
   // Pop main menu layout
   ui_layout_stack_pop(&engine->ui_manager);
 
@@ -310,16 +356,29 @@ void engine_start_game(){
   stbi_set_flip_vertically_on_load(true);
 }
 
+void engine_request_exit(){
+  // GameState will eventually be moved from a singleton to a property of Engine,
+  // so this goes here
+  game_state_set_mode(GAME_STATE_SHOULD_EXIT);
+}
+
 void engine_exit_game(){
   if (!engine || !engine->scene_manager.active_scene){
     fprintf(stderr, "Error: failed to start game in start_game, engine or scene_manager is null\n");
     return;
   }
 
+  // // Pause game if still playing
+  // if (game_state_is_playing()){
+  //   printf("Should set game to paused\n");
+  //   game_state_pause();
+  // }
+
   // Unload scene
   scene_manager_unload_scene(&engine->scene_manager);
   game_event_queue_destroy();
   game_state_exit();
+  printf("Successfully exited game\n");
 
   // Pop pause menu, push main menu
   struct Menu *main_menu = menu_manager_get_main_menu();
@@ -366,11 +425,11 @@ int main(){
 		// Handle input
 		processInput(engine->window);
 
-    // if (game_state_is_paused()){
 
     // Update Clay layout dimensions and pointer state
     ui_update_frame(&engine->ui_manager, engine->screen_width, engine->screen_height, engine->delta_time);
 
+    // Only update mouse pos in UI if a menu is open
     GameStateMode mode = game_state_get_mode();
     if (mode != GAME_STATE_PLAYING){
       double xpos, ypos;
@@ -378,13 +437,22 @@ int main(){
       ui_update_mouse(xpos, ypos, engine->mouse_down);
     }
 
+    // If a scene is active and the game is playing, update the scene.
+    // If the game should exit, exit and reenter the loop. if not, render the scene.
     struct Scene *active_scene = engine->scene_manager.active_scene;
     if (active_scene){
       if (mode == GAME_STATE_PLAYING){
         scene_update(active_scene, engine->delta_time);
       }
+
+      if (game_state_should_exit()){
+        engine_exit_game();
+        continue;
+      }
+
       scene_render(active_scene);
     }
+
     // Render UI
     ui_render_frame(&engine->ui_manager);
 

@@ -15,7 +15,8 @@
 typedef enum {
   COMPONENT_RENDER = 0,
   COMPONENT_AUDIO,
-  COMPONENT_ITEM
+  COMPONENT_ITEM,
+  COMPONENT_TRIGGER
 } ComponentType;
 
 struct Light {
@@ -80,6 +81,9 @@ struct Scene {
   struct InventoryComponent *inventory_components;
   unsigned int num_inventory_components;
   unsigned int max_inventory_components;
+  struct TriggerComponent *trigger_components;
+  unsigned int num_trigger_components;
+  unsigned int max_trigger_components;
 
   struct ItemRegistry item_registry;
   uuid_t local_player_entity_id;
@@ -131,6 +135,7 @@ struct PlayerComponent *scene_get_player_by_entity_id(struct Scene *scene, uuid_
 struct InventoryComponent *scene_get_inventory_by_entity_id(struct Scene *scene, uuid_t entity_id);
 struct CameraComponent *scene_get_camera_by_entity_id(struct Scene *scene, uuid_t entity_id);
 struct AudioComponent *scene_get_audio_component_by_entity_id(struct Scene *scene, uuid_t entity_id);
+struct TriggerComponent *scene_get_trigger_component_by_entity_id(struct Scene *scene, uuid_t entity_id);
 
 bool scene_remove_render_component_by_entity_id(struct Scene *scene, uuid_t entity_id);
 bool scene_remove_audio_component_by_entity_id(struct Scene *scene, uuid_t entity_id);

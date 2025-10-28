@@ -1,27 +1,32 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <string.h>
 #include "event.h"
 #include "scene.h"
 #include "player.h"
 #include "inventory.h"
 #include "audio_manager.h"
+#include "trigger.h"
 #include "engine.h"
 
 static struct GameEventQueue game_event_queue;
-static bool game_event_queue_initialized;
+// static bool game_event_queue_initialized;
 
+// For collisions
 static EventType event_types[ENTITY_TYPE_COUNT][ENTITY_TYPE_COUNT] = {
-  //              GROUPING        WORLD             ITEM                      PLAYER
-  /* GROUPING */{EVENT_COLLISION, EVENT_COLLISION,  EVENT_COLLISION,          EVENT_COLLISION},
-  /* WORLD */   {EVENT_COLLISION, EVENT_COLLISION,  EVENT_COLLISION,          EVENT_COLLISION},
-  /* ITEM */    {EVENT_COLLISION, EVENT_COLLISION,  EVENT_COLLISION,          EVENT_PLAYER_ITEM_PICKUP},
-  /* PLAYER */  {EVENT_COLLISION, EVENT_COLLISION,  EVENT_PLAYER_ITEM_PICKUP, EVENT_COLLISION}
+  //              GROUPING, WORLD, ITEM, PLAYER, TRIGGER
+  /* GROUPING */{EVENT_COLLISION, EVENT_COLLISION,  EVENT_COLLISION,          EVENT_COLLISION, EVENT_TRIGGER},
+  /* WORLD */   {EVENT_COLLISION, EVENT_COLLISION,  EVENT_COLLISION,          EVENT_PLAYER_COLLISION, EVENT_TRIGGER},
+  /* ITEM */    {EVENT_COLLISION, EVENT_COLLISION,  EVENT_COLLISION,          EVENT_PLAYER_ITEM_PICKUP, EVENT_TRIGGER},
+  /* PLAYER */  {EVENT_COLLISION, EVENT_PLAYER_COLLISION,  EVENT_PLAYER_ITEM_PICKUP, EVENT_COLLISION, EVENT_TRIGGER},
+  /* TRIGGER */  {EVENT_TRIGGER, EVENT_TRIGGER,  EVENT_TRIGGER, EVENT_TRIGGER, EVENT_TRIGGER}
 };
 
 
 void game_event_queue_init(struct Scene *scene){
-  if (game_event_queue_initialized) return;
+  memset(&game_event_queue, 0, sizeof(struct GameEventQueue));
+  // if (game_event_queue_initialized) return;
 
   game_event_queue.capacity = 1024;
   game_event_queue.events = (struct GameEvent *)calloc(game_event_queue.capacity, sizeof(struct GameEvent));
@@ -35,11 +40,11 @@ void game_event_queue_init(struct Scene *scene){
 
   game_event_queue.scene = scene;
 
-  game_event_queue_initialized = true;
+  // Init registry
+  memset(&game_event_queue.event_registry, 0, sizeof(struct EventRegistry));
 }
 
 void game_event_queue_destroy(){
-  if (!game_event_queue_initialized) return;
   
   // Not needed unless I refactor events to be an array of pointers
   // to dynamically allocated GameEvents, but passing them by value should be fine.
@@ -54,9 +59,13 @@ void game_event_queue_destroy(){
   // }
 
   // Free queue
-  free(game_event_queue.events);
+  if (game_event_queue.events){
+    printf("Time to free game_event_queue.events\n");
+    free(game_event_queue.events);
+  }
+  printf("Successfully freed game_event_queue.events\n");
 
-  game_event_queue_initialized = false;
+  // game_event_queue_initialized = false;
 }
 
 void game_event_queue_enqueue(struct GameEvent game_event){
@@ -103,6 +112,16 @@ bool game_event_queue_is_empty(){
 void game_event_queue_process(){
   struct GameEvent game_event;
   while (game_event_queue_dequeue(&game_event)){
+    // Call the callback function for each of this event type's registered listeners.
+    // If a callback returns true, processing that event should stop
+    // (break the loop and dequeue the next event)
+    int count = game_event_queue.event_registry.listener_counts[game_event.type];
+    for (int i = 0; i < count; i++){
+      struct EventListener *event_listener = &game_event_queue.event_registry.listeners[game_event.type][i];
+      if (event_listener->callback(&game_event, event_listener->user_data)) break;
+    }
+
+    // Built-in behavior
     switch (game_event.type){
       case EVENT_COLLISION: {
         // Get colliding entities' AudioComponents
@@ -111,21 +130,38 @@ void game_event_queue_process(){
 
         struct AudioManager *audio_manager = engine_get_audio_manager();
 
-        if (audio_component_A) audio_component_play(audio_manager, audio_component_A);
-        if (audio_component_B) audio_component_play(audio_manager, audio_component_B);
+        if (audio_component_A) audio_component_play(audio_manager, audio_component_A, 0);
+        if (audio_component_B) audio_component_play(audio_manager, audio_component_B, 0);
+        break;
+      }
+      case EVENT_PLAYER_COLLISION: {
+        // Get colliding entities' AudioComponents
+        struct AudioComponent *player_audio_component = scene_get_audio_component_by_entity_id(game_event_queue.scene, game_event.data.collision.entity_A_id);
+
+        struct AudioManager *audio_manager = engine_get_audio_manager();
+
+        if (player_audio_component) audio_component_play(audio_manager, player_audio_component, 0);
         break;
       }
       case EVENT_PLAYER_ITEM_PICKUP: {
-        struct PlayerComponent *player = scene_get_player_by_entity_id(game_event_queue.scene, game_event.data.item_pickup.player_entity_id);
-        struct InventoryComponent *inventory_component = scene_get_inventory_by_entity_id(game_event_queue.scene, game_event.data.item_pickup.player_entity_id);
+        // struct PlayerComponent *player = scene_get_player_by_entity_id(game_event_queue.scene, game_event.data.item_pickup.player_entity_id);
+        // struct InventoryComponent *inventory_component = scene_get_inventory_by_entity_id(game_event_queue.scene, game_event.data.item_pickup.player_entity_id);
+        //
+        // if (inventory_add_item(inventory_component, &game_event_queue.scene->item_registry, game_event.data.item_pickup.item_id, game_event.data.item_pickup.item_count)){
+        //   scene_remove_entity(game_event_queue.scene, game_event.data.item_pickup.item_entity_id);
+          // inventory_print(&game_event_queue.scene->item_registry, inventory_component);
+        // }
+        // else{
+        //   // printf("Failed to add %d item(s) to the player's inventory\n", game_event.data.item_pickup.item_count);
+        // }
+        break;
+      }
+      case EVENT_TRIGGER: {
+        printf("Processing event with type EVENT_TRIGGER\n");
+        struct SceneManager *scene_manager = engine_get_scene_manager();
+        struct ObjectiveManager *objective_manager = engine_get_objective_manager();
 
-        if (inventory_add_item(inventory_component, &game_event_queue.scene->item_registry, game_event.data.item_pickup.item_id, game_event.data.item_pickup.item_count)){
-          scene_remove_entity(game_event_queue.scene, game_event.data.item_pickup.item_entity_id);
-          inventory_print(&game_event_queue.scene->item_registry, inventory_component);
-        }
-        else{
-          // printf("Failed to add %d item(s) to the player's inventory\n", game_event.data.item_pickup.item_count);
-        }
+        trigger_process_event(scene_manager->active_scene, objective_manager, &game_event);
         break;
       }
       default: {
@@ -155,6 +191,37 @@ void game_event_print(struct GameEvent *game_event){
     default: {
       printf("Unknown event type in game_event_print\n");
       break;
+    }
+  }
+}
+
+void event_listener_register(EventType type, EventCallback callback, void *user_data){
+  // Check valid type
+  if (type < 0 || type >= MAX_EVENT_TYPES) return;
+
+  // Check if space is available to register a new listener to this type
+  int count = game_event_queue.event_registry.listener_counts[type];
+  if (count >= MAX_LISTENERS_PER_TYPE) return;
+
+  // Initialize listener
+  struct EventListener *event_listener = &game_event_queue.event_registry.listeners[type][count];
+  event_listener->callback = callback;
+  event_listener->user_data = user_data;
+  game_event_queue.event_registry.listener_counts[type]++;
+}
+
+void event_listener_unregister(EventType type, EventCallback callback){
+  // Check valid type
+  if (type < 0 || type >= MAX_EVENT_TYPES) return;
+
+  // Find listener, swap and pop, decrement count
+  // (This will have to change in the future if order of listener registration matters, or if we introduce event listener priority)
+  int count = game_event_queue.event_registry.listener_counts[type];
+  for (int i = 0; i < count; i++){
+    if (game_event_queue.event_registry.listeners[type][i].callback == callback){
+      game_event_queue.event_registry.listeners[type][i] = game_event_queue.event_registry.listeners[type][count - 1];
+      game_event_queue.event_registry.listener_counts[type]--;
+      return;
     }
   }
 }

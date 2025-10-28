@@ -1,30 +1,60 @@
 #pragma once
 
 #include <stdint.h>
+#include <stdbool.h>
 #include <uuid/uuid.h>
 #include "time.h"
 #include "types.h"
 
+#define MAX_EVENT_TYPES 64
+#define MAX_LISTENERS_PER_TYPE 32
+
 typedef enum {
   EVENT_COLLISION = 0,
+  EVENT_PLAYER_COLLISION,
   EVENT_PLAYER_ITEM_PICKUP,
+  EVENT_TRIGGER
 } EventType;
 
 struct GameEvent {
   EventType type;
   struct timespec timestamp;
   union {
+    // Collision
     struct {
       uuid_t entity_A_id;
       uuid_t entity_B_id;
     } collision;
+    // Player collision
+    struct {
+      uuid_t player_entity_id;
+    } player_collision;
+    // Player item pickup
     struct {
       uuid_t player_entity_id;
       int item_id;
       int item_count;
       uuid_t item_entity_id;
     } item_pickup;
+    struct {
+      uuid_t trigger_entity_id;
+      // Might also need player entity id
+    } trigger;
+    // Custom event data
+    void *custom;
   } data;
+};
+
+typedef bool (*EventCallback)(struct GameEvent *game_event, void *user_data);
+
+struct EventListener {
+  EventCallback callback;
+  void *user_data;
+};
+
+struct EventRegistry {
+  struct EventListener listeners[MAX_EVENT_TYPES][MAX_LISTENERS_PER_TYPE];
+  int listener_counts[MAX_EVENT_TYPES];
 };
 
 struct GameEventQueue {
@@ -34,6 +64,7 @@ struct GameEventQueue {
   int back;
   int size;
   struct Scene *scene;
+  struct EventRegistry event_registry;
 };
 
 
@@ -50,3 +81,7 @@ bool game_event_queue_is_empty();
 void game_event_queue_process();
 EventType get_event_type(EntityType type_A, EntityType type_B);
 void game_event_print(struct GameEvent *game_event);
+
+// Listeners
+void event_listener_register(EventType type, EventCallback callback, void *user_data);
+void event_listener_unregister(EventType type, EventCallback callback);

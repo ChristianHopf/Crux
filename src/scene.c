@@ -18,6 +18,7 @@
 #include "physics/debug_renderer.h"
 #include "physics/utils.h"
 #include "event.h"
+#include "trigger.h"
 #include "engine.h"
 #include "utils.h"
 
@@ -50,9 +51,6 @@ void scene_manager_unload_scene(struct SceneManager *scene_manager){
   if (!scene_manager || !scene_manager->active_scene) return;
 
   scene_free(scene_manager->active_scene);
-  // Might move GameEventQueue to live in Engine or Scene, in which case
-  // game event queue will have to be destroyed elsewhere and this can be removed
-  game_event_queue_destroy();
   scene_manager->active_scene = NULL;
 }
 
@@ -211,12 +209,16 @@ struct Scene *scene_load(const char *scene_path){
     fprintf(stderr, "Error: failed to get effects array in sounds object in scene_init, effects is either invalid or does not exist\n");
     return NULL;
   }
-  // num_sound_effects = cJSON_GetArraySize(sound_effects_json);
+  // int num_sound_effects = cJSON_GetArraySize(sound_effects_json);
   const cJSON *effect_json = NULL;
   cJSON_ArrayForEach(effect_json, sound_effects_json){
-    cJSON *path;
-    cJSON *name;
-    audio_sound_effect_create(audio_manager, "resources/sfx/vineboom.wav", "vine_boom");
+    // cJSON *path;
+    // cJSON *name;
+    if (cJSON_IsString(effect_json)){
+      audio_sound_effect_create(audio_manager, cJSON_GetStringValue(effect_json), "");
+    }
+    // audio_sound_effect_create(audio_manager, "resources/sfx/vineboom.wav", "vine_boom");
+    // audio_sound_effect_create(audio_manager, "resources/sfx/elevatording.ogg", "item_pickup");
   }
 
   scene->physics_world = physics_world_create();
@@ -295,6 +297,15 @@ struct Scene *scene_load(const char *scene_path){
     return NULL;
   }
   scene->num_inventory_components = 0;
+
+  // TriggerComponents
+  scene->max_trigger_components = entity_count;
+  scene->trigger_components = (struct TriggerComponent *)calloc(scene->max_trigger_components, sizeof(struct TriggerComponent));
+  if (!scene->trigger_components){
+    fprintf(stderr, "Error: failed to allocate TriggerComponents in scene_init\n");
+    return NULL;
+  }
+  scene->num_trigger_components = 0;
 
   scene_process_node_json(scene, nodes_json, scene->root_node, NULL, models, shaders, scene->physics_world);
   scene->max_entities = 64;
@@ -405,7 +416,16 @@ void scene_update(struct Scene *scene, float delta_time){
 
   // Update player
   player_update(scene, scene->local_player_entity_id, delta_time);
+
+  // Update scene graph
   scene_node_update(scene, scene->root_node);
+
+  // Update components
+  struct AudioManager *audio_manager = engine_get_audio_manager();
+  for (int i = 0; i < scene->num_audio_components; i++){
+    audio_component_update(audio_manager, &scene->audio_components[i]);
+  }
+
   // struct PlayerComponent *player = scene->player_components[0];
   // inventory_print(&scene->item_registry, scene_get_inventory_by_entity_id(scene, player->entity_id));
   // printf("Successfully printed inventory\n");
@@ -869,6 +889,32 @@ void scene_process_node_json(
         entity->item->count = cJSON_GetNumberValue(item_count_json);
         break;
       }
+      case COMPONENT_TRIGGER: {
+        cJSON *behavior_type_json = cJSON_GetObjectItemCaseSensitive(component_json, "behavior_type");
+        if (!cJSON_IsNumber(behavior_type_json)){
+          fprintf(stderr, "Error: failed to get trigger behavior type in scene_process_node_json, either invalid or does not exist\n");
+          return;
+        }
+
+        trigger_component_create(scene, entity->id);
+
+        TriggerBehaviorType behavior_type = cJSON_GetNumberValue(behavior_type_json);
+        switch(behavior_type){
+          case TRIGGER_EXIT_LEVEL:
+            cJSON *req_obj_compl_json = cJSON_GetObjectItemCaseSensitive(component_json, "req_obj_compl");
+            if (!cJSON_IsBool(req_obj_compl_json)){
+              fprintf(stderr, "Error: failed to get req_obj_compl in scene_process_node_json, either invalid or does not exist\n");
+              return;
+            }
+            bool require_objectives_complete = false;
+            if (cJSON_IsTrue(req_obj_compl_json)) require_objectives_complete = true;
+
+            struct TriggerComponent *trigger_component = scene_get_trigger_component_by_entity_id(scene, entity->id);
+            trigger_component_add_behavior_exit_level(trigger_component, require_objectives_complete);
+            break;
+        }
+        break;
+      }
       default: {
         break;
       }
@@ -1042,6 +1088,7 @@ void scene_player_create(
     fprintf(stderr, "Error: failed to get AudioManager in scene_player_create\n");
     return;
   }
+
   audio_component_create(scene, player->entity_id, audio_manager, 0);
 
   // Set listener position to camera position
@@ -1086,17 +1133,18 @@ void scene_node_update(struct Scene *scene, struct SceneNode *current_node){
   }
 
   // Update AudioComponent
-  struct AudioComponent *audio_component = scene_get_audio_component_by_entity_id(scene, current_node->entity->id);
-  if (audio_component){
-    alSource3f(audio_component->source_id, AL_POSITION,
-               current_node->entity->position[0],
-               current_node->entity->position[1],
-               current_node->entity->position[2]);
-    ALenum position_error = alGetError();
-    if (position_error != AL_NO_ERROR){
-      fprintf(stderr, "Error matching Entity audio_source position with entity position in scene_update: %d\n", position_error);
-    }
-  }
+  // struct AudioComponent *audio_component = scene_get_audio_component_by_entity_id(scene, current_node->entity->id);
+  // if (audio_component){
+  //   audio_component_update(audio_manager, audio_component);
+  //   alSource3f(audio_component->source_id, AL_POSITION,
+  //              current_node->entity->position[0],
+  //              current_node->entity->position[1],
+  //              current_node->entity->position[2]);
+  //   ALenum position_error = alGetError();
+  //   if (position_error != AL_NO_ERROR){
+  //     fprintf(stderr, "Error matching Entity audio_source position with entity position in scene_update: %d\n", position_error);
+  //   }
+  // }
 
   for (unsigned int i = 0; i < current_node->num_children; i++){
     scene_node_update(scene, current_node->children[i]);
@@ -1272,6 +1320,15 @@ struct AudioComponent *scene_get_audio_component_by_entity_id(struct Scene *scen
   for (unsigned int i = 0; i < scene->num_audio_components; i++){
     if (uuid_compare(scene->audio_components[i].entity_id, entity_id) == 0){
       return &scene->audio_components[i];
+    }
+  }
+  return NULL;
+}
+
+struct TriggerComponent *scene_get_trigger_component_by_entity_id(struct Scene *scene, uuid_t entity_id){
+  for (unsigned int i = 0; i < scene->num_trigger_components; i++){
+    if (uuid_compare(scene->trigger_components[i].entity_id, entity_id) == 0){
+      return &scene->trigger_components[i];
     }
   }
   return NULL;

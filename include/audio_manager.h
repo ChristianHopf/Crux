@@ -15,6 +15,7 @@
 #define BUFFER_FRAMES 8192
 #define MAX_SOUND_EFFECTS 32
 #define MAX_SOURCES 64
+#define MAX_COMPONENT_SOURCES 32
 
 struct AudioStream {
   SNDFILE *file;
@@ -34,11 +35,17 @@ struct SoundEffect {
   ALuint buffer;
 };
 
-struct AudioComponent {
-  uuid_t entity_id;
+struct AudioSource {
   ALuint source_id;
   int sound_effect_index;
-  bool is_playing;
+};
+
+struct AudioComponent {
+  uuid_t entity_id;
+  struct AudioSource sources[MAX_COMPONENT_SOURCES];
+  // ALuint sources[MAX_COMPONENT_SOURCES];
+  unsigned int num_active_sources;
+  // bool is_playing;
   vec3 position;
 };
 
@@ -49,6 +56,7 @@ struct AudioManager {
 
   // Sources
   ALuint sources[MAX_SOURCES];
+  bool free_sources[MAX_SOURCES];
   int num_active_sources;
 
   // Music stream
@@ -67,9 +75,9 @@ bool audio_manager_init(struct AudioManager *audio_manager);
 void audio_manager_destroy(struct AudioManager *audio_manager);
 struct AudioManager *audio_manager_get_global();
 
-// Add and remove sources
-bool audio_add_source(struct AudioManager *audio_manager, ALuint source);
-bool audio_remove_source(struct AudioManager *audio_manager, ALuint source);
+// Source pool
+bool audio_source_pool_get_source(struct AudioManager *audio_manager, ALuint *source);
+void audio_source_pool_return_source(struct AudioManager *audio_manager, ALuint source);
 
 // Pause and unpause
 void audio_pause(struct AudioManager *audio_manager);
@@ -87,8 +95,9 @@ void audio_sound_effect_play(struct SoundEffect *sound_effect);
 
 // AudioComponent
 void audio_component_create(struct Scene *scene, uuid_t entity_id, struct AudioManager *audio_manager, int sound_effect_index);
+void audio_component_update(struct AudioManager *audio_manager, struct AudioComponent *audio_component);
+void audio_component_play(struct AudioManager *audio_manager, struct AudioComponent *audio_component, int sound_effect_index);
 void audio_component_destroy(struct AudioManager *audio_manager, struct AudioComponent *audio_component);
-void audio_component_play(struct AudioManager *audio_manager, struct AudioComponent *audio_component);
 
 // Listener
 void audio_listener_update(struct Scene *scene, uuid_t entity_id);

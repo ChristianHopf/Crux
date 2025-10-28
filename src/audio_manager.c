@@ -4,19 +4,15 @@
 #include "camera.h"
 #include "game_state.h"
 #include "entity.h"
+#include "engine.h"
 // #include <AL/al.h>
 #include <locale.h>
 #include <time.h>
 
 bool audio_manager_init(struct AudioManager *audio_manager){
-  // global_audio_manager = (struct AudioManager *)calloc(1, sizeof(struct AudioManager));
-  // if (!global_audio_manager){
-  //   fprintf(stderr, "Error: failed to allocate AudioManager in audio_manager_init\n");
-  //   return;
-  // }
-
   // Device
   audio_manager->device = alcOpenDevice(NULL);
+  ALenum error;
   if (!audio_manager->device){
     ALCenum error = alcGetError(NULL);
     fprintf(stderr, "Error: failed to open OpenAL device: %d\\n", error);
@@ -33,6 +29,14 @@ bool audio_manager_init(struct AudioManager *audio_manager){
   alcMakeContextCurrent(audio_manager->context);
 
   // Sources
+  alGenSources(MAX_SOURCES, audio_manager->sources);
+  error = alGetError();
+  if (error != AL_NO_ERROR){
+    fprintf(stderr, "Error: failed to generate source pool in audio_manager_init: %d\n", error);
+  }
+  for (int i = 0; i < MAX_SOURCES; i++){
+    audio_manager->free_sources[i] = true;
+  }
   audio_manager->num_active_sources = 0;
 
   // Global configuration
@@ -57,33 +61,52 @@ void audio_manager_destroy(struct AudioManager *audio_manager){
   }
 }
 
-// struct AudioManager *audio_manager_get_global(){
-//   return audio_manager;
-// }
-
-bool audio_add_source(struct AudioManager *audio_manager, ALuint source){
-  // Check if active_sources is full
-  if (audio_manager->num_active_sources >= MAX_SOURCES){
-    return false;
-  }
-
-  // Add source and increment num_active_sources
-  audio_manager->sources[audio_manager->num_active_sources] = source;
-  audio_manager->num_active_sources++;
-  return true;
-}
-
-bool audio_remove_source(struct AudioManager *audio_manager, ALuint source){
-  // Check if source is in sources
-  for (int i = 0; i < audio_manager->num_active_sources; i++){
-    if (audio_manager->sources[i] == source){
-      // Remove source and decrement num_active_sources
-      audio_manager->sources[i] = audio_manager->sources[audio_manager->num_active_sources - 1];
-      audio_manager->num_active_sources--;
+bool audio_source_pool_get_source(struct AudioManager *audio_manager, ALuint *source){
+  // Find free source, update bool array and return it
+  for (int i = 0; i < MAX_SOURCES; i++){
+    if (audio_manager->free_sources[i]){
+      audio_manager->free_sources[i] = false;
+      audio_manager->num_active_sources++;
+      *source = audio_manager->sources[i];
       return true;
     }
   }
   return false;
+
+  // // Check if active_sources is full
+  // if (audio_manager->num_active_sources >= MAX_SOURCES){
+  //   return false;
+  // }
+  //
+  // // Add source and increment num_active_sources
+  // audio_manager->sources[audio_manager->num_active_sources] = source;
+  // audio_manager->num_active_sources++;
+  // return true;
+}
+
+void audio_source_pool_return_source(struct AudioManager *audio_manager, ALuint source){
+  // Find source in sources array
+  for (int i = 0; i < MAX_SOURCES; i++){
+    if (audio_manager->sources[i] == source && !audio_manager->free_sources[i]){
+      // Stop source and detach buffer
+      alSourceStop(source);
+      alSourcei(source, AL_BUFFER, 0);
+      // Mark source as free and decrement active soruces
+      audio_manager->free_sources[i] = true;
+      audio_manager->num_active_sources--;
+    }
+  }
+
+  // // Check if source is in sources
+  // for (int i = 0; i < audio_manager->num_active_sources; i++){
+  //   if (audio_manager->sources[i] == source){
+  //     // Remove source and decrement num_active_sources
+  //     audio_manager->sources[i] = audio_manager->sources[audio_manager->num_active_sources - 1];
+  //     audio_manager->num_active_sources--;
+  //     return true;
+  //   }
+  // }
+  // return false;
 }
 
 void audio_pause(struct AudioManager *audio_manager){
@@ -106,7 +129,7 @@ void audio_pause(struct AudioManager *audio_manager){
   }
 
   // Pause all playing sources
-  for(int i = 0; i < audio_manager->num_active_sources; i++){
+  for(int i = 0; i < MAX_SOURCES; i++){
     alGetSourcei(audio_manager->sources[i], AL_SOURCE_STATE, &state);
     if (state == AL_PLAYING){
       alSourcePause(audio_manager->sources[i]);
@@ -139,8 +162,8 @@ void audio_unpause(struct AudioManager *audio_manager){
     fprintf(stderr, "Error: failed to get music stream state or unpause music stream: %d\n", error);
   }
 
-  // Pause all playing sources
-  for(int i = 0; i < audio_manager->num_active_sources; i++){
+  // Unpause all playing sources
+  for(int i = 0; i < MAX_SOURCES; i++){
     alGetSourcei(audio_manager->sources[i], AL_SOURCE_STATE, &state);
     if (state == AL_PAUSED){
       alSourcePlay(audio_manager->sources[i]);
@@ -203,18 +226,23 @@ void audio_stream_create(struct AudioManager *audio_manager, char *path){
     }
   }
 
-  // Generate source and add to source pool
-  alGenSources(1, &stream->source);
-  stream_error = alGetError();
-  if (stream_error != AL_NO_ERROR){
-    fprintf(stderr, "Error: failed to generate source in audio_stream_create\n");
+  // Get source from pool
+  // ALuint source;
+  if (!audio_source_pool_get_source(audio_manager, &stream->source)){
     return;
   }
-  if (!audio_add_source(audio_manager, stream->source)){
-    fprintf(stderr, "Error: failed to add source to source pool in audio_stream_create\n");
-    alDeleteSources(1, &stream->source);
-    return;
-  }
+
+  // alGenSources(1, &stream->source);
+  // stream_error = alGetError();
+  // if (stream_error != AL_NO_ERROR){
+  //   fprintf(stderr, "Error: failed to generate source in audio_stream_create\n");
+  //   return;
+  // }
+  // if (!audio_add_source(audio_manager, stream->source)){
+  //   fprintf(stderr, "Error: failed to add source to source pool in audio_stream_create\n");
+  //   alDeleteSources(1, &stream->source);
+  //   return;
+  // }
 
   alSourcef(stream->source, AL_GAIN, 1.0f);
   alSourcef(stream->source, AL_PITCH, 1.0f);
@@ -405,56 +433,93 @@ void audio_component_create(struct Scene *scene, uuid_t entity_id, struct AudioM
   struct AudioComponent *audio_component = &scene->audio_components[scene->num_audio_components++];
   memcpy(audio_component->entity_id, entity_id, 16);
   
-  alGenSources(1, &audio_component->source_id);
-  ALenum audio_component_error = alGetError();
-  if (audio_component_error != AL_NO_ERROR){
-    fprintf(stderr, "Error generating AudioComponent source in audio_component_create: %d\n", audio_component_error);
-    return;
-  }
-  if (!audio_add_source(audio_manager, audio_component->source_id)){
-    fprintf(stderr, "Error: failed to add source to source pool in audio_component_create\n");
-    alDeleteSources(1, &audio_component->source_id);
-    return;
-  }
+  // alGenSources(1, &audio_component->source_id);
+  // ALenum audio_component_error = alGetError();
+  // if (audio_component_error != AL_NO_ERROR){
+  //   fprintf(stderr, "Error generating AudioComponent source in audio_component_create: %d\n", audio_component_error);
+  //   return;
+  // }
+  // if (!audio_add_source(audio_manager, audio_component->source_id)){
+  //   fprintf(stderr, "Error: failed to add source to source pool in audio_component_create\n");
+  //   alDeleteSources(1, &audio_component->source_id);
+  //   return;
+  // }
 
   // Set source position and options for spatial audio
-  struct Entity *entity = scene_get_entity_by_entity_id(scene, entity_id);
-  if (!entity){
-    fprintf(stderr, "Error: failed to fetch entity in audio_component_create\n");
-    return;
-  }
-  alSource3f(audio_component->source_id, AL_POSITION, entity->position[0], entity->position[1], entity->position[2]);
-  audio_component_error = alGetError();
-  if (audio_component_error != AL_NO_ERROR){
-    fprintf(stderr, "Error setting AudioComponent source position in audio_component_create: %d\n", audio_component_error);
-    return;
-  }
-  alSourcef(audio_component->source_id, AL_REFERENCE_DISTANCE, 5.0f);
-  alSourcef(audio_component->source_id, AL_MAX_DISTANCE, 50.0f);
-  alSourcef(audio_component->source_id, AL_ROLLOFF_FACTOR, 1.0f);
-  alSourcei(audio_component->source_id, AL_SOURCE_RELATIVE, AL_FALSE);
-  audio_component_error = alGetError();
-  if (audio_component_error != AL_NO_ERROR){
-    fprintf(stderr, "Error setting AudioComponent source spatial audio options in audio_component_create: %d\n", audio_component_error);
-    return;
-  }
+  // Maybe pass position as an argument?
+  // struct Entity *entity = scene_get_entity_by_entity_id(scene, entity_id);
+  // if (!entity){
+  //   fprintf(stderr, "Error: failed to fetch entity in audio_component_create\n");
+  //   return;
+  // }
+  // alSource3f(audio_component->source_id, AL_POSITION, entity->position[0], entity->position[1], entity->position[2]);
+  // ALenum audio_component_error = alGetError();
+  // if (audio_component_error != AL_NO_ERROR){
+  //   fprintf(stderr, "Error setting AudioComponent source position in audio_component_create: %d\n", audio_component_error);
+  //   return;
+  // }
+  // alSourcef(audio_component->source_id, AL_REFERENCE_DISTANCE, 5.0f);
+  // alSourcef(audio_component->source_id, AL_MAX_DISTANCE, 50.0f);
+  // alSourcef(audio_component->source_id, AL_ROLLOFF_FACTOR, 1.0f);
+  // alSourcei(audio_component->source_id, AL_SOURCE_RELATIVE, AL_FALSE);
+  // audio_component_error = alGetError();
+  // if (audio_component_error != AL_NO_ERROR){
+  //   fprintf(stderr, "Error setting AudioComponent source spatial audio options in audio_component_create: %d\n", audio_component_error);
+  //   return;
+  // }
 
   // Assign buffer from sound effects
-  alSourcei(audio_component->source_id, AL_BUFFER, audio_manager->sound_effects[sound_effect_index].buffer);
-  audio_component_error = alGetError();
-  if (audio_component_error != AL_NO_ERROR){
-    fprintf(stderr, "Error setting AudioComponent buffer in audio_component_create: %d\n", audio_component_error);
+  // alSourcei(audio_component->source_id, AL_BUFFER, audio_manager->sound_effects[sound_effect_index].buffer);
+  // audio_component_error = alGetError();
+  // if (audio_component_error != AL_NO_ERROR){
+  //   fprintf(stderr, "Error setting AudioComponent buffer in audio_component_create: %d\n", audio_component_error);
+  //   return;
+  // }
+}
+
+void audio_component_update(struct AudioManager *audio_manager, struct AudioComponent *audio_component){
+  // Return inactive sources to source pool, update positions
+  for (unsigned int i = 0; i < audio_component->num_active_sources; i++){
+    struct AudioSource *audio_source = &audio_component->sources[i];
+
+    ALint state;
+    alGetSourcei(audio_source->source_id, AL_SOURCE_STATE, &state);
+    if (state != AL_PLAYING){
+      // Return to pool
+      audio_source_pool_return_source(audio_manager, audio_source->source_id);
+      // Swap and pop sources (will have to shift down if/when order matters)
+      audio_component->sources[i] = audio_component->sources[audio_component->num_active_sources - 1];
+      audio_component->num_active_sources--;
+    }
+  }
+
+  // Update position (remove from other entity update function)
+  // Eventually optimize with dirty flag?
+
+  // Get scene manager and entity to get position
+  struct SceneManager *scene_manager = engine_get_scene_manager();
+  struct Entity *entity = scene_get_entity_by_entity_id(scene_manager->active_scene, audio_component->entity_id);
+  for (unsigned int i = 0; i < audio_component->num_active_sources; i++){
+    struct AudioSource *audio_source = &audio_component->sources[i];
+
+    glm_vec3_copy(entity->position, audio_component->position);
+    alSource3f(audio_source->source_id, AL_POSITION, entity->position[0], entity->position[1], entity->position[2]);
+  }
+}
+
+void audio_component_play(struct AudioManager *audio_manager, struct AudioComponent *audio_component, int sound_effect_index){
+  // Check for valid sound effect index
+  if (sound_effect_index < 0 || sound_effect_index >= audio_manager->num_sound_effects){
+    fprintf(stderr, "Error: invalid sound_effect_index %d\n", sound_effect_index);
     return;
   }
-}
 
-void audio_component_destroy(struct AudioManager *audio_manager, struct AudioComponent *audio_component){
-  if (!audio_remove_source(audio_manager, audio_component->source_id)){
-    fprintf(stderr, "Error: failed to remove audio source in audio_component_destroy\n");
+  // Check for space to add a new source
+  if (audio_component->num_active_sources >= MAX_COMPONENT_SOURCES){
+    fprintf(stderr, "Error: audio component is at max sources\n");
+    return;
   }
-}
 
-void audio_component_play(struct AudioManager *audio_manager, struct AudioComponent *audio_component){
   // Set context if not set
   if (!alcGetCurrentContext()) {
     alcMakeContextCurrent(audio_manager->context);
@@ -464,41 +529,72 @@ void audio_component_play(struct AudioManager *audio_manager, struct AudioCompon
     }
   }
 
-  // Get current state of the AudioComponent's source
-  ALint state;
-  alGetSourcei(audio_component->source_id, AL_SOURCE_STATE, &state);
-  ALenum error = alGetError();
-  if (error != AL_NO_ERROR) {
-    fprintf(stderr, "Error checking entity->audio_source state: %d\n", error);
-    return;
-  }
+  // If this component already has a source playing the given sound, restart it.
+  // Maybe add a parameter to choose between restarting or playing a new instance
+  for (unsigned int i = 0; i < audio_component->num_active_sources; i++){
+    if (audio_component->sources[i].sound_effect_index == sound_effect_index){
+      struct AudioSource *audio_source = &audio_component->sources[i];
 
-  // If it's already playing, stop it
-  // - later implement generating new sources for overlapping sound effects from the same entity
-  if (state == AL_PLAYING){
-    alSourceStop(audio_component->source_id);
-    error = alGetError();
-    if (error != AL_NO_ERROR){
-      fprintf(stderr, "Error stopping entity->audio_source: %d\n", error);
-      return;
+      // I'm pretty sure audio_component_update should guarantee that any source
+      // still "active" will still be playing, so this check may be redundant.
+      ALint state;
+      alGetSourcei(audio_source->source_id, AL_SOURCE_STATE, &state);
+      if (state == AL_PLAYING){
+        alSourceStop(audio_source->source_id);
+        ALenum error = alGetError();
+        if (error != AL_NO_ERROR){
+          fprintf(stderr, "Error stopping source in audio_component_play: %d\n", error);
+          return;
+        }
+
+        alSourcePlay(audio_source->source_id);
+        error = alGetError();
+        if (error != AL_NO_ERROR){
+          fprintf(stderr, "Error playing source in audio_component_play: %d\n", error);
+        }
+        return;
+      }
     }
   }
 
-  // This is no longer needed while an AudioComponent can only have one sound effect: assume its source already uses the right buffer
-  //
-  // alSourcei(audio_component->source_id, AL_BUFFER, audio_manager->sound_effects[audio_component->sound_effect_index]);
-  // error = alGetError();
-  // if (error != AL_NO_ERROR){
-  //   fprintf(stderr, "Error assigning sound effect buffer to entity->audio_source %d\n", error);
-  //   return;
-  // }
+  // Get source from the audio manager's source pool,
+  // then set its position and add to audio component's sources
+  ALuint source;
+  if (!audio_source_pool_get_source(audio_manager, &source)){
+    return;
+  }
+
+  alSourcei(source, AL_BUFFER, audio_manager->sound_effects[sound_effect_index].buffer);
+  ALenum error = alGetError();
+  if (error != AL_NO_ERROR){
+    fprintf(stderr, "Error setting AudioComponent buffer in audio_component_play: %d\n", error);
+    return;
+  }
+
+  alSource3f(source, AL_POSITION, audio_component->position[0], audio_component->position[1], audio_component->position[2]);
+  error = alGetError();
+  if (error != AL_NO_ERROR){
+    fprintf(stderr, "Error setting source position in audio_component_play: %d\n", error);
+    return;
+  }
+
+  struct AudioSource *audio_source = &audio_component->sources[audio_component->num_active_sources++];
+  audio_source->source_id = source;
+  audio_source->sound_effect_index = sound_effect_index;
 
   // Play the sound
-  alSourcePlay(audio_component->source_id);
+  alSourcePlay(audio_source->source_id);
   error = alGetError();
   if (error != AL_NO_ERROR){
     fprintf(stderr, "Error playing sound effect: %d\n", error);
     return;
+  }
+}
+
+void audio_component_destroy(struct AudioManager *audio_manager, struct AudioComponent *audio_component){
+  // Return all sources to source pool
+  for (unsigned int i = 0; i < audio_component->num_active_sources; i++){
+    audio_source_pool_return_source(audio_manager, audio_component->sources[i].source_id);
   }
 }
 
